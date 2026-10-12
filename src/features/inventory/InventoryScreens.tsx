@@ -16,6 +16,7 @@ import {
   tableHeadClasses,
   tableRowClasses,
 } from "@/components/ui/TablePanel";
+import { useCan } from "@/lib/accessContext";
 import { errorKind, notFound, tryLoad } from "@/lib/api/client";
 import { parsePageNumber } from "@/lib/api/pagination";
 import { formatCount, formatDateTime, formatQuantity } from "@/lib/format";
@@ -155,15 +156,18 @@ function ResourceCard({ resource }: { resource: Resource }) {
 
 function MaterialSetUpCard({ project }: { project: ProjectId }) {
   const t = useTranslations("inventory");
+  const canAdd = useCan()("inventory", "add");
 
   return (
     <section className="rounded-card border-line bg-surface flex flex-col items-start gap-4 border-[1.5px] p-6">
       <h2 className="text-ink text-[20px] font-bold">{t("kinds.mercury")}</h2>
       <p className="text-ink-muted text-[14px] font-semibold">{t("material.missing")}</p>
-      <ButtonLink href={inventoryProjectHref(project, "material")} variant="secondary">
-        <Icon name="plus" />
-        {t("material.setUp")}
-      </ButtonLink>
+      {canAdd ? (
+        <ButtonLink href={inventoryProjectHref(project, "material")} variant="secondary">
+          <Icon name="plus" />
+          {t("material.setUp")}
+        </ButtonLink>
+      ) : null}
     </section>
   );
 }
@@ -174,6 +178,7 @@ export function InventoryProjectScreen() {
   const common = useTranslations("common");
   const locale = useLocale();
   const { close } = useRouteDrawer(inventoryProjectHref(project.id));
+  const canAdd = useCan()("inventory", "add");
   const material = resources.find((resource) => resource.isRefiningMaterial);
   const others = resources.filter((resource) => !resource.isRefiningMaterial);
 
@@ -188,10 +193,12 @@ export function InventoryProjectScreen() {
           : undefined
       }
       action={
-        <ButtonLink href={inventoryProjectHref(project.id, "resource")} variant="primary">
-          <Icon name="plus" />
-          {t("new")}
-        </ButtonLink>
+        canAdd ? (
+          <ButtonLink href={inventoryProjectHref(project.id, "resource")} variant="primary">
+            <Icon name="plus" />
+            {t("new")}
+          </ButtonLink>
+        ) : null
       }
     >
       {loadStatus === undefined ? (
@@ -212,7 +219,7 @@ export function InventoryProjectScreen() {
       )}
 
       <Drawer
-        open={create !== undefined}
+        open={create !== undefined && canAdd}
         title={create === "material" ? t("material.setUp") : t("form.newTitle")}
         closeLabel={common("close")}
         onClose={close}
@@ -339,6 +346,11 @@ export function ResourceScreen() {
   const common = useTranslations("common");
   const locale = useLocale();
   const { close } = useRouteDrawer(resourceHref(resource.id, { page }));
+  const can = useCan();
+  const canChange = can("inventory", "add");
+  const canEdit = can("inventory", "edit") && kindOf(resource) === "other";
+  const allowedAction =
+    action === "edit" ? (canEdit ? action : undefined) : canChange ? action : undefined;
   const { pageCount } = history;
   const label = resourceLabel(resource, (kind) => t(`kinds.${kind}`));
 
@@ -350,21 +362,25 @@ export function ResourceScreen() {
       description={resource.isRefiningMaterial ? t("material.hint") : undefined}
       action={
         <>
-          <ButtonLink
-            href={resourceHref(resource.id, { page, action: "increase" })}
-            variant="primary"
-          >
-            <Icon name="plus" />
-            {t("increase")}
-          </ButtonLink>
-          <ButtonLink
-            href={resourceHref(resource.id, { page, action: "decrease" })}
-            variant="secondary"
-          >
-            <Icon name="minus" />
-            {t("decrease")}
-          </ButtonLink>
-          {kindOf(resource) === "other" ? (
+          {canChange ? (
+            <>
+              <ButtonLink
+                href={resourceHref(resource.id, { page, action: "increase" })}
+                variant="primary"
+              >
+                <Icon name="plus" />
+                {t("increase")}
+              </ButtonLink>
+              <ButtonLink
+                href={resourceHref(resource.id, { page, action: "decrease" })}
+                variant="secondary"
+              >
+                <Icon name="minus" />
+                {t("decrease")}
+              </ButtonLink>
+            </>
+          ) : null}
+          {canEdit ? (
             <ButtonLink
               href={resourceHref(resource.id, { page, action: "edit" })}
               variant="secondary"
@@ -410,27 +426,27 @@ export function ResourceScreen() {
       </TablePanel>
 
       <Drawer
-        open={action !== undefined}
+        open={allowedAction !== undefined}
         title={
-          action === undefined || action === "edit"
+          allowedAction === undefined || allowedAction === "edit"
             ? t("form.title")
-            : t(`form.${action}Title`, { name: label })
+            : t(`form.${allowedAction}Title`, { name: label })
         }
         closeLabel={common("close")}
         onClose={close}
       >
-        {action === "edit" ? (
+        {allowedAction === "edit" ? (
           <ResourceForm
             project={{ id: resource.project, name: resource.projectName }}
             resource={resource}
             onCancel={close}
             onSaved={close}
           />
-        ) : action === undefined ? null : (
+        ) : allowedAction === undefined ? null : (
           <ResourceChangeForm
-            key={action}
+            key={allowedAction}
             resource={resource}
-            type={action}
+            type={allowedAction}
             refiningOperations={refiningOperations}
             onCancel={close}
             onSaved={close}

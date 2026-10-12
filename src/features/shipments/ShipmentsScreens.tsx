@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/TablePanel";
 import { TextField } from "@/components/ui/TextField";
 import { useReplace } from "@/i18n/navigation";
+import { useCan } from "@/lib/accessContext";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { formatCount, formatDateTime } from "@/lib/format";
 import { idleMachines, machinesFromGrinders, remainingBags } from "@/lib/grinding";
@@ -113,6 +114,7 @@ export function ShipmentsScreen() {
   const { projects, stored } = useLoaderData<typeof shipmentsLoader>();
   const t = useTranslations("shipments");
   const locale = useLocale();
+  const canAdd = useCan()("shipments", "add");
 
   return (
     <div className="flex flex-col gap-6">
@@ -130,10 +132,12 @@ export function ShipmentsScreen() {
         </div>
 
         <div className="flex flex-1 items-center justify-end">
-          <ButtonLink href={NEW_SHIPMENT_HREF} variant="primary">
-            <Icon name="plus" />
-            {t("addNew")}
-          </ButtonLink>
+          {canAdd ? (
+            <ButtonLink href={NEW_SHIPMENT_HREF} variant="primary">
+              <Icon name="plus" />
+              {t("addNew")}
+            </ButtonLink>
+          ) : null}
         </div>
       </div>
 
@@ -206,7 +210,7 @@ async function getGrindingChoices(project: string) {
   const [grinders, operations, operators] = await Promise.all([
     getGrinders(project),
     getGrindingOperations(project),
-    getOperators(project),
+    getOperators(project, "grinding"),
   ]);
 
   return { idle: idleMachines(machinesFromGrinders(grinders), operations), operations, operators };
@@ -242,6 +246,7 @@ function ClientQueueTable({
   const t = useTranslations("shipments");
   const text = useTranslations("shipments.project");
   const locale = useLocale();
+  const canStart = useCan()("grinding", "add");
 
   if (shipments.length === 0) {
     return <p className="text-ink-muted p-6 text-[15px] font-semibold">{text("empty")}</p>;
@@ -257,9 +262,11 @@ function ClientQueueTable({
             <th className={tableHeadClasses}>{text("client")}</th>
             <th className={tableHeadClasses}>{text("arrivedAt")}</th>
             <th className={tableEndHeadClasses}>{t("bagsLabel")}</th>
-            <th className={tableHeadClasses}>
-              <span className="sr-only">{text("action")}</span>
-            </th>
+            {canStart ? (
+              <th className={tableHeadClasses}>
+                <span className="sr-only">{text("action")}</span>
+              </th>
+            ) : null}
           </tr>
         </thead>
 
@@ -281,15 +288,17 @@ function ClientQueueTable({
               <td className={`${tableCellClasses} text-ink text-end font-bold`}>
                 {formatCount(shipment.bagCount, locale)}
               </td>
-              <td className={`${tableCellClasses} text-end`}>
-                <ActionLink
-                  href={startGrindingHref(project, shipment.shipmentNumber)}
-                  icon="player-play"
-                  ariaLabel={`${text("startMilling")} ${shipment.shipmentNumber}`}
-                >
-                  {text("startMilling")}
-                </ActionLink>
-              </td>
+              {canStart ? (
+                <td className={`${tableCellClasses} text-end`}>
+                  <ActionLink
+                    href={startGrindingHref(project, shipment.shipmentNumber)}
+                    icon="player-play"
+                    ariaLabel={`${text("startMilling")} ${shipment.shipmentNumber}`}
+                  >
+                    {text("startMilling")}
+                  </ActionLink>
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>
@@ -353,6 +362,7 @@ export function ProjectStorageScreen() {
   const t = useTranslations("shipments");
   const history = useTranslations("shipments.history");
   const locale = useLocale();
+  const canStart = useCan()("grinding", "add");
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
@@ -375,7 +385,11 @@ export function ProjectStorageScreen() {
         <ClientQueueTable project={project.id} shipments={shipments} />
       </TablePanel>
 
-      <StartGrindingDrawer project={project} shipments={shipments} grinding={grinding} />
+      <StartGrindingDrawer
+        project={project}
+        shipments={shipments}
+        grinding={canStart ? grinding : undefined}
+      />
     </div>
   );
 }

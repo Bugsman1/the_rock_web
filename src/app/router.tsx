@@ -60,15 +60,16 @@ import {
   ShipmentsScreen,
   shipmentsLoader,
 } from "@/features/shipments";
-import { UsersScreen, usersLoader } from "@/features/users";
+import { RolesScreen, rolesLoader, UsersScreen, usersLoader } from "@/features/users";
 import { defaultLocale, isLocale } from "@/i18n/locales";
 import type { Locale } from "@/i18n/locales";
 import { localizedHref, Redirect, usePathname } from "@/i18n/navigation";
-import { canOpen, homeHref } from "@/lib/access";
+import { accessFromApi, canOpen, homeHref } from "@/lib/access";
+import { AccessContext } from "@/lib/accessContext";
 import { apiClient, errorKind } from "@/lib/api/client";
-import { sessionRole } from "@/lib/api/session";
+import { hasSession } from "@/lib/api/session";
 import { displayName } from "@/lib/profile";
-import { LOGIN_HREF } from "@/lib/routes";
+import { DASHBOARD_HREF, LOGIN_HREF } from "@/lib/routes";
 import { LocaleLayout } from "./LocaleLayout";
 
 function localeOf(params: Params): Locale {
@@ -76,28 +77,26 @@ function localeOf(params: Params): Locale {
 }
 
 function redirectSignedIn({ params }: { params: Params }) {
-  const role = sessionRole(new Date());
-
-  return role === undefined ? null : redirect(localizedHref(localeOf(params), homeHref(role)));
+  return hasSession(new Date()) ? redirect(localizedHref(localeOf(params), DASHBOARD_HREF)) : null;
 }
 
 async function loadSignedInUser({ params }: { params: Params }) {
   const toLogin = redirect(localizedHref(localeOf(params), LOGIN_HREF));
-  const role = sessionRole(new Date());
-
-  if (role === undefined) {
+  if (!hasSession(new Date())) {
     return toLogin;
   }
 
   const { data } = await apiClient.GET("/api/v1/auth/me/");
 
-  return data === undefined ? toLogin : { role, userName: displayName(data) };
+  return data === undefined
+    ? toLogin
+    : { access: accessFromApi(data), userName: displayName(data), roleName: data.role?.name ?? "" };
 }
 
 const pageShapes: readonly (readonly [RegExp, SkeletonShape])[] = [
   [/^\/shipments\/new$/, "form"],
   [/^\/settings\/projects\/(new|\d+\/edit|\d+\/machines\/(new|\d+))$/, "form"],
-  [/^\/(customers|users|refining)$/, "table"],
+  [/^\/(customers|users|users\/roles|refining)$/, "table"],
   [/^\/inventory\/(projects|resources)\/\d+$/, "table"],
   [/^\/(shipments|milling)\/projects\/\d+(\/history)?$/, "table"],
   [/^\/settings\/(profile|projects\/\d+)$/, "detail"],
@@ -142,7 +141,7 @@ function PageError() {
   const error = useRouteError();
   const t = useTranslations("errors");
   const revalidator = useRevalidator();
-  const role = sessionRole(new Date());
+  const signedIn = hasSession(new Date());
   const status = isRouteErrorResponse(error) ? error.status : undefined;
   const kind = errorKind(status);
 
@@ -172,7 +171,7 @@ function PageError() {
             <Icon name="refresh" />
             {t("retry")}
           </Button>
-          <ButtonLink href={role === undefined ? LOGIN_HREF : homeHref(role)} variant="secondary">
+          <ButtonLink href={signedIn ? DASHBOARD_HREF : LOGIN_HREF} variant="secondary">
             <Icon name="arrow-left" />
             {t("home")}
           </ButtonLink>
@@ -183,25 +182,28 @@ function PageError() {
 }
 
 function SignedInLayout() {
-  const { role, userName } = useLoaderData<typeof loadSignedInUser>();
+  const { access, userName, roleName } = useLoaderData<typeof loadSignedInUser>();
   const locale = useLocale();
   const pathname = usePathname();
   const nextPathname = useNextPathname();
 
-  if (!canOpen(role, pathname)) {
-    return <Redirect locale={locale} href={homeHref(role)} />;
+  if (!canOpen(access, pathname)) {
+    return <Redirect locale={locale} href={homeHref(access)} />;
   }
 
   return (
-    <AppShell role={role} userName={userName}>
-      {nextPathname === undefined ? <Outlet /> : <LoadingPage pathname={nextPathname} />}
-    </AppShell>
+    <AccessContext value={access}>
+      <AppShell access={access} userName={userName} roleName={roleName}>
+        {nextPathname === undefined ? <Outlet /> : <LoadingPage pathname={nextPathname} />}
+      </AppShell>
+    </AccessContext>
   );
 }
 
 const sectionRoutes: RouteObject[] = [
   { path: "customers", loader: customersLoader, element: <CustomersScreen /> },
   { path: "users", loader: usersLoader, element: <UsersScreen /> },
+  { path: "users/roles", loader: rolesLoader, element: <RolesScreen /> },
   { path: "shipments", loader: shipmentsLoader, element: <ShipmentsScreen /> },
   { path: "shipments/new", loader: newShipmentLoader, element: <NewShipmentScreen /> },
   {

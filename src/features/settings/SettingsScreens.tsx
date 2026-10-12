@@ -10,10 +10,9 @@ import { languageName } from "@/i18n/languageName";
 import { locales } from "@/i18n/locales";
 import type { Locale } from "@/i18n/locales";
 import { Link } from "@/i18n/navigation";
-import { canOpen } from "@/lib/access";
-import type { UserRole } from "@/lib/access";
+import { accessFromApi, canOpen } from "@/lib/access";
+import type { Access } from "@/lib/access";
 import { apiClient, unwrap } from "@/lib/api/client";
-import { sessionRole } from "@/lib/api/session";
 import { cn } from "@/lib/cn";
 import { profileFromApi } from "@/lib/profile";
 import {
@@ -23,6 +22,7 @@ import {
   SETTINGS_PROJECTS_HREF,
 } from "@/lib/routes";
 import { matchesSearch } from "@/lib/search";
+import { roleLabel } from "@/lib/users";
 
 type SettingsSectionKey = "profile" | "language" | "projects";
 
@@ -32,19 +32,19 @@ const settingsSections: readonly { key: SettingsSectionKey; href: string; icon: 
   { key: "projects", href: SETTINGS_PROJECTS_HREF, icon: "mill" },
 ];
 
-export function settingsSectionsFor(role: UserRole) {
-  return settingsSections.filter((section) => canOpen(role, section.href));
+export function settingsSectionsFor(access: Access) {
+  return settingsSections.filter((section) => canOpen(access, section.href));
 }
 
-export function settingsHomeLoader() {
-  return { role: sessionRole(new Date()) ?? "supervisor" };
+export async function settingsHomeLoader() {
+  return { access: accessFromApi(unwrap(await apiClient.GET("/api/v1/auth/me/"))) };
 }
 
 export function SettingsHomeScreen() {
-  const { role } = useLoaderData<typeof settingsHomeLoader>();
+  const { access } = useLoaderData<typeof settingsHomeLoader>();
   const t = useTranslations("settings");
   const [query, setQuery] = useState("");
-  const cards = settingsSectionsFor(role)
+  const cards = settingsSectionsFor(access)
     .map((section) => ({
       ...section,
       title: t(`${section.key}.title`),
@@ -105,7 +105,8 @@ export function ProfileScreen() {
   const t = useTranslations("settings.profile");
   const common = useTranslations("common");
   const roles = useTranslations("roles");
-  const role = profile.role === undefined ? t("none") : roles(profile.role);
+  const role =
+    profile.roleName === "" ? t("none") : roleLabel(profile.roleName, (name) => roles(name));
 
   return (
     <PageLayout

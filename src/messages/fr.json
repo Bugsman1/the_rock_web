@@ -237,6 +237,66 @@
         "passwordShort": "Le mot de passe doit contenir au moins {min} caractères",
         "projectRequired": "Choisissez le projet du superviseur"
       }
+    },
+    "chooseRole": "Choisir le rôle",
+    "tabs": {
+      "label": "Utilisateurs et rôles",
+      "users": "Utilisateurs",
+      "roles": "Rôles et permissions"
+    },
+    "roles": {
+      "count": "Rôles : {count}",
+      "new": "Nouveau rôle",
+      "listTitle": "Rôles",
+      "empty": "Aucun rôle pour le moment.",
+      "edit": "Modifier",
+      "editLabel": "Modifier le rôle {name}",
+      "delete": "Supprimer",
+      "deleteLabel": "Supprimer le rôle {name}",
+      "yes": "Oui",
+      "no": "Non",
+      "noSection": "N'ouvre aucune section",
+      "fields": {
+        "name": "Nom du rôle",
+        "sections": "Sections ouvertes",
+        "projectScoped": "Limité à un seul projet",
+        "users": "Utilisateurs",
+        "action": "Action",
+        "section": "Section"
+      },
+      "rights": {
+        "view": "Voir",
+        "add": "Ajouter",
+        "edit": "Modifier",
+        "delete": "Supprimer"
+      },
+      "modules": {
+        "shipments": "Expéditions",
+        "grinding": "Broyage",
+        "refining": "Affinage",
+        "inventory": "Inventaire",
+        "customers": "Clients",
+        "accounts": "Utilisateurs et permissions",
+        "locations": "Projets et machines"
+      },
+      "form": {
+        "newTitle": "Nouveau rôle",
+        "title": "Modifier le rôle",
+        "permissions": "Ce que ce rôle peut faire",
+        "rightLabel": "{right} : {section}",
+        "viewHint": "Ajouter, modifier ou supprimer dans une section donne aussi le droit de la voir.",
+        "projectScopedHint": "Les utilisateurs de ce rôle ne voient que leur projet, et chacun doit en avoir un.",
+        "create": "Ajouter le rôle",
+        "submit": "Enregistrer les modifications",
+        "saving": "Enregistrement du rôle"
+      },
+      "remove": {
+        "title": "Supprimer le rôle",
+        "question": "Voulez-vous supprimer le rôle {name} ?",
+        "confirm": "Oui, supprimer le rôle",
+        "deleting": "Suppression du rôle",
+        "failed": "La suppression a échoué, réessayez dans un instant"
+      }
     }
   },
   "shipments": {

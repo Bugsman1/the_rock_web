@@ -10,7 +10,7 @@ import { LoadingDots } from "@/components/ui/LoadingDots";
 import { PasswordField } from "@/components/ui/PasswordField";
 import { TextField } from "@/components/ui/TextField";
 import { Link, useReplace } from "@/i18n/navigation";
-import { homeHref } from "@/lib/access";
+import { DASHBOARD_HREF } from "@/lib/routes";
 import { signIn } from "../signIn";
 import type { SignInFailure } from "../signIn";
 import { createLoginSchema } from "../schemas/loginSchema";
@@ -47,7 +47,7 @@ export function LoginForm() {
 
     if (result.ok) {
       setSignedIn(true);
-      replace(homeHref(result.role));
+      replace(DASHBOARD_HREF);
     } else {
       setFailure(result.reason);
     }

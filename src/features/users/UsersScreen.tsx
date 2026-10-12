@@ -19,16 +19,19 @@ import {
   tableRowClasses,
 } from "@/components/ui/TablePanel";
 import { TextField } from "@/components/ui/TextField";
-import { userRoles } from "@/lib/access";
+import { useCan } from "@/lib/accessContext";
 import { parsePageNumber } from "@/lib/api/pagination";
 import { formatCount } from "@/lib/format";
 import { PHONE_PLACEHOLDER, sanitizePhone } from "@/lib/phone";
 import { findProject } from "@/lib/projects";
 import type { Project } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
-import { usersHref } from "@/lib/routes";
+import { Link, usePathname } from "@/i18n/navigation";
+import { cn } from "@/lib/cn";
+import { ROLES_HREF, USERS_HREF, usersHref } from "@/lib/routes";
+import { getRoles, roleLabel } from "@/lib/users";
+import type { Role, User } from "@/lib/users";
 import { createUserSchema, isUserField, PASSWORD_MIN_LENGTH } from "./users";
-import type { User } from "@/lib/users";
 import type { UserValues } from "./users";
 import { createUser, getUser, getUserPage, updateUser } from "./usersApi";
 
@@ -36,23 +39,57 @@ export async function usersLoader({ request }: LoaderFunctionArgs) {
   const params = new URL(request.url).searchParams;
   const page = parsePageNumber(params.get("page"));
   const editId = params.get("edit");
-  const [users, projects, editing] = await Promise.all([
+  const [users, projects, roles, editing] = await Promise.all([
     getUserPage(page),
     getProjects(),
+    getRoles(),
     editId === null ? undefined : getUser(editId),
   ]);
 
-  return { page, users, projects, editing, creating: params.get("new") === "1" };
+  return { page, users, projects, roles, editing, creating: params.get("new") === "1" };
+}
+
+export function UsersTabs() {
+  const t = useTranslations("users.tabs");
+  const pathname = usePathname();
+  const tabs = [
+    { href: USERS_HREF, label: t("users"), current: pathname === USERS_HREF },
+    { href: ROLES_HREF, label: t("roles"), current: pathname === ROLES_HREF },
+  ];
+
+  return (
+    <nav
+      aria-label={t("label")}
+      className="rounded-field border-line bg-surface shadow-subtle inline-flex w-fit gap-1 border-[1.5px] p-1"
+    >
+      {tabs.map((tab) => (
+        <Link
+          key={tab.href}
+          href={tab.href}
+          aria-current={tab.current ? "page" : undefined}
+          className={cn(
+            "rounded-action inline-flex h-9 items-center px-4 text-[14px] font-semibold",
+            tab.current
+              ? "bg-brand-700 text-ink-inverted"
+              : "text-ink-muted hover:bg-surface-hover hover:text-ink-label",
+          )}
+        >
+          {tab.label}
+        </Link>
+      ))}
+    </nav>
+  );
 }
 
 type UserFormProps = {
   user?: User;
   projects: readonly Project[];
+  roles: readonly Role[];
   onSaved: () => void;
   onCancel: () => void;
 };
 
-export function UserForm({ user, projects, onSaved, onCancel }: UserFormProps) {
+export function UserForm({ user, projects, roles: roleChoices, onSaved, onCancel }: UserFormProps) {
   const t = useTranslations("users");
   const common = useTranslations("common");
   const roles = useTranslations("roles");
@@ -69,9 +106,13 @@ export function UserForm({ user, projects, onSaved, onCancel }: UserFormProps) {
           passwordShort: t("form.errors.passwordShort", { min: PASSWORD_MIN_LENGTH }),
           projectRequired: t("form.errors.projectRequired"),
         },
-        { passwordRequired: creating },
+        {
+          passwordRequired: creating,
+          isProjectScoped: (roleId) =>
+            roleChoices.some((choice) => choice.id === roleId && choice.projectScoped),
+        },
       ),
-    [common, t, creating],
+    [common, t, creating, roleChoices],
   );
 
   const { control, register, handleSubmit, formState, setError } = useForm<UserValues>({
@@ -81,20 +122,23 @@ export function UserForm({ user, projects, onSaved, onCancel }: UserFormProps) {
       name: user?.name ?? "",
       email: user?.email ?? "",
       phone: user?.phone ?? "",
-      role: user?.role ?? "supervisor",
+      role: user?.role?.id ?? "",
       password: "",
       project: user?.project ?? "",
     },
   });
 
   const { errors } = formState;
-  const role = useWatch({ control, name: "role" });
+  const roleId = useWatch({ control, name: "role" });
+  const projectScoped = roleChoices.some((choice) => choice.id === roleId && choice.projectScoped);
 
   async function onSubmit(values: UserValues) {
     setFailed(false);
 
     const result =
-      user === undefined ? await createUser(values) : await updateUser(user.id, values);
+      user === undefined
+        ? await createUser(values, roleChoices)
+        : await updateUser(user.id, values, roleChoices);
 
     if (result.ok) {
       onSaved();
@@ -156,12 +200,16 @@ export function UserForm({ user, projects, onSaved, onCancel }: UserFormProps) {
         id="user-role"
         label={t("fields.role")}
         required
-        options={userRoles.map((key) => ({ value: key, label: roles(key) }))}
+        placeholder={t("chooseRole")}
+        options={roleChoices.map((choice) => ({
+          value: choice.id,
+          label: roleLabel(choice.name, (name) => roles(name)),
+        }))}
         error={errors.role?.message}
         {...register("role")}
       />
 
-      {role === "supervisor" ? (
+      {projectScoped ? (
         <Select
           id="user-project"
           label={t("fields.project")}
@@ -211,13 +259,14 @@ function UserTable({
 }) {
   const t = useTranslations("users");
   const roles = useTranslations("roles");
+  const canEdit = useCan()("accounts", "edit");
 
   if (users.length === 0) {
     return <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("empty")}</p>;
   }
 
   function projectLabel(user: User) {
-    if (user.role === "manager") return t("allProjects");
+    if (user.role !== undefined && !user.role.projectScoped) return t("allProjects");
     if (user.project === undefined) return "";
 
     return findProject(projects, user.project)?.name ?? user.project;
@@ -233,9 +282,11 @@ function UserTable({
             <th className={tableHeadClasses}>{t("fields.phone")}</th>
             <th className={tableHeadClasses}>{t("fields.role")}</th>
             <th className={tableHeadClasses}>{t("fields.project")}</th>
-            <th className={tableHeadClasses}>
-              <span className="sr-only">{t("fields.action")}</span>
-            </th>
+            {canEdit ? (
+              <th className={tableHeadClasses}>
+                <span className="sr-only">{t("fields.action")}</span>
+              </th>
+            ) : null}
           </tr>
         </thead>
 
@@ -252,20 +303,24 @@ function UserTable({
                 <span dir="ltr">{user.phone}</span>
               </td>
               <td className={`${tableCellClasses} text-ink font-semibold`}>
-                {user.role === undefined ? t("noRole") : roles(user.role)}
+                {user.role === undefined
+                  ? t("noRole")
+                  : roleLabel(user.role.name, (name) => roles(name))}
               </td>
               <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
                 {projectLabel(user)}
               </td>
-              <td className={`${tableCellClasses} text-end`}>
-                <ActionLink
-                  href={usersHref({ page, edit: user.id })}
-                  icon="pencil"
-                  ariaLabel={t("editLabel", { name: user.name })}
-                >
-                  {t("edit")}
-                </ActionLink>
-              </td>
+              {canEdit ? (
+                <td className={`${tableCellClasses} text-end`}>
+                  <ActionLink
+                    href={usersHref({ page, edit: user.id })}
+                    icon="pencil"
+                    ariaLabel={t("editLabel", { name: user.name })}
+                  >
+                    {t("edit")}
+                  </ActionLink>
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>
@@ -275,11 +330,14 @@ function UserTable({
 }
 
 export function UsersScreen() {
-  const { page, users, projects, editing, creating } = useLoaderData<typeof usersLoader>();
+  const { page, users, projects, roles, editing, creating } = useLoaderData<typeof usersLoader>();
   const t = useTranslations("users");
   const common = useTranslations("common");
   const locale = useLocale();
   const { close } = useRouteDrawer(usersHref({ page }));
+  const can = useCan();
+  const adding = creating && can("accounts", "add");
+  const editingAllowed = editing !== undefined && can("accounts", "edit");
   const { pageCount } = users;
 
   return (
@@ -292,11 +350,15 @@ export function UsersScreen() {
           </p>
         </div>
 
-        <ButtonLink href={usersHref({ page, create: true })} variant="primary">
-          <Icon name="plus" />
-          {t("new")}
-        </ButtonLink>
+        {can("accounts", "add") ? (
+          <ButtonLink href={usersHref({ page, create: true })} variant="primary">
+            <Icon name="plus" />
+            {t("new")}
+          </ButtonLink>
+        ) : null}
       </div>
+
+      <UsersTabs />
 
       <TablePanel title={t("listTitle")}>
         <UserTable users={users.items} projects={projects} page={page} />
@@ -316,15 +378,16 @@ export function UsersScreen() {
       </TablePanel>
 
       <Drawer
-        open={creating || editing !== undefined}
-        title={creating ? t("form.newTitle") : t("form.title")}
+        open={adding || editingAllowed}
+        title={adding ? t("form.newTitle") : t("form.title")}
         closeLabel={common("close")}
         onClose={close}
       >
         <UserForm
           key={editing?.id ?? "new"}
-          user={creating ? undefined : editing}
+          user={adding ? undefined : editing}
           projects={projects}
+          roles={roles}
           onCancel={close}
           onSaved={close}
         />

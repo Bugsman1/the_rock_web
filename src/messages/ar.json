@@ -237,6 +237,66 @@
         "passwordShort": "يجب أن تتكون كلمة المرور من {min} أحرف على الأقل",
         "projectRequired": "اختر مشروع المشرف"
       }
+    },
+    "chooseRole": "اختر الدور",
+    "tabs": {
+      "label": "المستخدمون والأدوار",
+      "users": "المستخدمون",
+      "roles": "الأدوار والصلاحيات"
+    },
+    "roles": {
+      "count": "عدد الأدوار: {count}",
+      "new": "دور جديد",
+      "listTitle": "الأدوار",
+      "empty": "لا توجد أدوار بعد.",
+      "edit": "تعديل",
+      "editLabel": "تعديل الدور {name}",
+      "delete": "حذف",
+      "deleteLabel": "حذف الدور {name}",
+      "yes": "نعم",
+      "no": "لا",
+      "noSection": "لا يفتح أي قسم",
+      "fields": {
+        "name": "اسم الدور",
+        "sections": "الأقسام المفتوحة",
+        "projectScoped": "محصور في مشروع واحد",
+        "users": "المستخدمون",
+        "action": "إجراء",
+        "section": "القسم"
+      },
+      "rights": {
+        "view": "عرض",
+        "add": "إضافة",
+        "edit": "تعديل",
+        "delete": "حذف"
+      },
+      "modules": {
+        "shipments": "الشحنات",
+        "grinding": "الطحن",
+        "refining": "التصفية",
+        "inventory": "المخزون",
+        "customers": "العملاء",
+        "accounts": "المستخدمون والصلاحيات",
+        "locations": "المشاريع والآلات"
+      },
+      "form": {
+        "newTitle": "دور جديد",
+        "title": "تعديل الدور",
+        "permissions": "ما يستطيع هذا الدور فعله",
+        "rightLabel": "{right}: {section}",
+        "viewHint": "الإضافة أو التعديل أو الحذف في قسم تمنح عرضه أيضًا.",
+        "projectScopedHint": "يرى مستخدمو هذا الدور مشروعهم فقط، ويجب تحديد مشروع لكل منهم.",
+        "create": "إضافة الدور",
+        "submit": "حفظ التعديلات",
+        "saving": "جارٍ حفظ الدور"
+      },
+      "remove": {
+        "title": "حذف الدور",
+        "question": "هل تريد حذف الدور {name}؟",
+        "confirm": "نعم، احذف الدور",
+        "deleting": "جارٍ حذف الدور",
+        "failed": "تعذر حذف الدور، حاول مرة أخرى بعد قليل"
+      }
     }
   },
   "shipments": {

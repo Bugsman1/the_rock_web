@@ -1,10 +1,20 @@
-import { describe, expect, it } from "vitest";
-import { operatorsOfProject, roleIdsFromApi, userFromApi } from "./users";
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { getOperators, roleFromApi, roleLabel, userFromApi } from "./users";
+import type { Role } from "./users";
 
-const roleIds = new Map([
-  ["manager", 1],
-  ["supervisor", 2],
-] as const);
+const supervisor: Role = {
+  id: "2",
+  name: "supervisor",
+  projectScoped: true,
+};
+
+const refiner: Role = {
+  id: "5",
+  name: "Raffineur",
+  projectScoped: false,
+};
 
 const backendUser = {
   id: 4,
@@ -16,60 +26,78 @@ const backendUser = {
   is_active: true,
 };
 
-describe("roleIdsFromApi", () => {
-  it("keeps the id of each role", () => {
+const API = `${window.location.origin}/api/v1`;
+const server = setupServer();
+
+beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+describe("roleFromApi", () => {
+  it("keeps the name and the project scope of the role", () => {
     expect(
-      roleIdsFromApi([
-        { id: 1, name: "manager", permissions: [] },
-        { id: 2, name: "supervisor", permissions: [] },
-      ]),
-    ).toEqual(roleIds);
+      roleFromApi({
+        id: 2,
+        name: "supervisor",
+        is_project_scoped: true,
+        users_count: 1,
+        permissions: [
+          { module: "grinding", can_view: true },
+          { module: "refining", can_view: true, can_add: true },
+          { module: "inventory", can_view: false },
+        ],
+      }),
+    ).toEqual(supervisor);
+  });
+});
+
+describe("roleLabel", () => {
+  it("translates the built-in roles and keeps custom names", () => {
+    const builtIn = (name: string) => `[${name}]`;
+
+    expect(roleLabel("manager", builtIn)).toBe("[manager]");
+    expect(roleLabel("Raffineur", builtIn)).toBe("Raffineur");
   });
 });
 
 describe("userFromApi", () => {
   it("turns a backend user into ours", () => {
-    expect(userFromApi(backendUser, roleIds)).toEqual({
+    expect(userFromApi(backendUser, [supervisor, refiner])).toEqual({
       id: "4",
       name: "عائشة بنت محمد",
       email: "aicha@mills.mr",
       phone: "+222 22 41 18 30",
-      role: "supervisor",
+      role: supervisor,
       project: "3",
     });
   });
 
   it("falls back to the email when there is no name", () => {
-    expect(userFromApi({ ...backendUser, full_name: "" }, roleIds).name).toBe("aicha@mills.mr");
+    expect(userFromApi({ ...backendUser, full_name: "" }, [supervisor]).name).toBe(
+      "aicha@mills.mr",
+    );
   });
 
   it("has no role or project when the backend has none", () => {
-    const user = userFromApi({ ...backendUser, role: null, project: null }, roleIds);
+    const user = userFromApi({ ...backendUser, role: null, project: null }, [supervisor]);
 
     expect(user.role).toBeUndefined();
     expect(user.project).toBeUndefined();
   });
 });
 
-describe("operatorsOfProject", () => {
-  it("offers the managers and the supervisors of the project", () => {
-    const user = (id: string, role: "manager" | "supervisor", project?: string) => ({
-      id,
-      name: id,
-      email: `${id}@mills.mr`,
-      phone: "",
-      role,
-      project,
-    });
+describe("getOperators", () => {
+  it("asks the backend for the operators of the module on the project", async () => {
+    let requested: URL | undefined;
+    server.use(
+      http.get(`${API}/operators/`, ({ request }) => {
+        requested = new URL(request.url);
+        return HttpResponse.json([{ id: 4, name: "Aicha" }]);
+      }),
+    );
 
-    expect(
-      operatorsOfProject(
-        [user("boss", "manager"), user("here", "supervisor", "3"), user("away", "supervisor", "4")],
-        "3",
-      ),
-    ).toEqual([
-      { id: "boss", name: "boss" },
-      { id: "here", name: "here" },
-    ]);
+    expect(await getOperators("3", "refining")).toEqual([{ id: "4", name: "Aicha" }]);
+    expect(requested?.searchParams.get("module")).toBe("refining");
+    expect(requested?.searchParams.get("project")).toBe("3");
   });
 });

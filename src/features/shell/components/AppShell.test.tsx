@@ -3,14 +3,25 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { IntlProvider } from "use-intl";
 import { describe, expect, it } from "vitest";
-import type { UserRole } from "@/lib/access";
+import { modules, rightsFromApi } from "@/lib/access";
+import type { Access, Module } from "@/lib/access";
 import { readSession, saveSession } from "@/lib/api/session";
 import messages from "@/messages/fr.json";
 import { AppShell } from "./AppShell";
 
 const nav = messages.shell.nav;
 
-function renderShell(role: UserRole = "manager", path = "/fr/shipments") {
+function viewing(viewable: readonly Module[]): Access {
+  return {
+    superuser: false,
+    rights: rightsFromApi(viewable.map((module) => ({ module, can_view: true }))),
+  };
+}
+
+const everything = viewing(modules);
+const supervisor = viewing(["shipments", "grinding", "refining", "customers"]);
+
+function renderShell(access: Access = everything, roleName = "manager", path = "/fr/shipments") {
   return render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
       <MemoryRouter initialEntries={[path]}>
@@ -19,7 +30,7 @@ function renderShell(role: UserRole = "manager", path = "/fr/shipments") {
           <Route
             path="/fr/*"
             element={
-              <AppShell role={role} userName="Sidi">
+              <AppShell access={access} userName="Sidi" roleName={roleName}>
                 <p>page</p>
               </AppShell>
             }
@@ -52,7 +63,7 @@ function desktopMenuButton() {
 
 describe("AppShell", () => {
   it("shows who is signed in and their role", () => {
-    renderShell("supervisor");
+    renderShell(supervisor, "supervisor");
 
     expect(screen.getByText("Sidi")).toBeInTheDocument();
     expect(screen.getByText(messages.roles.supervisor)).toBeInTheDocument();
@@ -73,7 +84,13 @@ describe("AppShell", () => {
     expect(shipments).not.toHaveAttribute("aria-current");
   });
 
-  it("shows the manager every section and the settings", () => {
+  it("shows a custom role by its name", () => {
+    renderShell(supervisor, "Contrôleur");
+
+    expect(screen.getByText("Contrôleur")).toBeInTheDocument();
+  });
+
+  it("shows a role that can view everything every section and the settings", () => {
     renderShell();
 
     expect(screen.getByRole("link", { name: nav.dashboard })).toBeInTheDocument();
@@ -81,8 +98,8 @@ describe("AppShell", () => {
     expect(screen.getByRole("link", { name: messages.shell.settings })).toBeInTheDocument();
   });
 
-  it("shows a supervisor only the operations pages and their settings", () => {
-    renderShell("supervisor");
+  it("shows only the sections the role can view and the settings", () => {
+    renderShell(supervisor, "supervisor");
 
     expect(screen.getByRole("link", { name: nav.shipments })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: nav.refining })).toBeInTheDocument();

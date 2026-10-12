@@ -5,7 +5,9 @@ import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { saveSession } from "@/lib/api/session";
+import { modules, noAccess, rightsFromApi } from "@/lib/access";
+import type { Access, Module } from "@/lib/access";
+import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
 import {
   GrinderFormScreen,
@@ -23,6 +25,8 @@ import {
   settingsHomeLoader,
   settingsSectionsFor,
 } from "./SettingsScreens";
+
+const allRights: Access = { ...noAccess, superuser: true };
 
 const settingsRoutes = [
   { path: "settings", loader: settingsHomeLoader, element: <SettingsHomeScreen /> },
@@ -53,10 +57,34 @@ const stamps = {
 
 const zouerat = { id: 3, name: "Zouérat 1", site: "zouerat", status: "active", ...stamps };
 
-function signInAs(role: string) {
-  const exp = Math.floor(Date.now() / 1000) + 3600;
-  const token = `header.${btoa(JSON.stringify({ exp, role })).replace(/=+$/, "")}.signature`;
-  saveSession({ access: token, refresh: token }, true);
+function viewing(viewable: readonly Module[]): Access {
+  return {
+    superuser: false,
+    rights: rightsFromApi(viewable.map((module) => ({ module, can_view: true }))),
+  };
+}
+
+const everything = viewing(modules);
+const supervisor = viewing(["shipments", "grinding", "refining"]);
+
+function signInWith(viewable: readonly Module[]) {
+  server.use(
+    http.get(`${API}/auth/me/`, () =>
+      HttpResponse.json({
+        id: 4,
+        email: "aicha@mills.mr",
+        full_name: "Aicha",
+        phone: "",
+        is_superuser: false,
+        role: {
+          id: 2,
+          name: "Contrôleur",
+          is_project_scoped: false,
+          permissions: viewable.map((module) => ({ module, can_view: true })),
+        },
+      }),
+    ),
+  );
 }
 
 function answerProjects() {
@@ -75,14 +103,16 @@ function answerProjects() {
   );
 }
 
-function openAt(path: string) {
+function openAt(path: string, access: Access = allRights) {
   const router = createMemoryRouter([{ path: "/fr", children: settingsRoutes }], {
     initialEntries: [path],
   });
 
   render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <RouterProvider router={router} />
+      <AccessContext value={access}>
+        <RouterProvider router={router} />
+      </AccessContext>
     </IntlProvider>,
   );
 
@@ -90,16 +120,16 @@ function openAt(path: string) {
 }
 
 describe("settingsSectionsFor", () => {
-  it("gives the manager every section", () => {
-    expect(settingsSectionsFor("manager").map((section) => section.key)).toEqual([
+  it("gives a role that manages the projects every section", () => {
+    expect(settingsSectionsFor(everything).map((section) => section.key)).toEqual([
       "profile",
       "language",
       "projects",
     ]);
   });
 
-  it("gives the supervisor their own settings only", () => {
-    expect(settingsSectionsFor("supervisor").map((section) => section.key)).toEqual([
+  it("gives other roles their own settings only", () => {
+    expect(settingsSectionsFor(supervisor).map((section) => section.key)).toEqual([
       "profile",
       "language",
     ]);
@@ -108,7 +138,7 @@ describe("settingsSectionsFor", () => {
 
 describe("settings home", () => {
   it("opens each setting on its own page", async () => {
-    signInAs("manager");
+    signInWith(modules);
     openAt("/fr/settings");
 
     expect(
@@ -121,7 +151,7 @@ describe("settings home", () => {
   });
 
   it("filters the settings and says when nothing matches", async () => {
-    signInAs("manager");
+    signInWith(modules);
     const user = userEvent.setup();
     openAt("/fr/settings");
 
@@ -134,8 +164,8 @@ describe("settings home", () => {
     expect(screen.getByText(text.noResults)).toBeVisible();
   });
 
-  it("shows a supervisor only their own settings", async () => {
-    signInAs("supervisor");
+  it("shows a role without the projects only their own settings", async () => {
+    signInWith(["shipments", "refining"]);
     openAt("/fr/settings");
 
     await screen.findByRole("link", { name: new RegExp(text.profile.title) });
@@ -154,7 +184,8 @@ describe("profile", () => {
           email: "aicha@mills.mr",
           full_name: "Aicha",
           phone: "",
-          role: { id: 2, name: "supervisor" },
+          is_superuser: false,
+          role: { id: 2, name: "supervisor", is_project_scoped: true, permissions: [] },
         }),
       ),
     );

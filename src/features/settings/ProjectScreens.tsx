@@ -22,6 +22,7 @@ import {
   tableRowClasses,
 } from "@/components/ui/TablePanel";
 import { TextField } from "@/components/ui/TextField";
+import { useCan } from "@/lib/accessContext";
 import { notFound } from "@/lib/api/client";
 import { formatCount } from "@/lib/format";
 import {
@@ -70,6 +71,7 @@ export function ProjectsScreen() {
   const sites = useTranslations("sites");
   const statuses = useTranslations("activityStatuses");
   const locale = useLocale();
+  const canAdd = useCan()("locations", "add");
 
   return (
     <PageLayout
@@ -78,10 +80,12 @@ export function ProjectsScreen() {
       title={t("title")}
       description={t("description")}
       action={
-        <ButtonLink href={NEW_PROJECT_HREF} variant="primary">
-          <Icon name="plus" />
-          {t("new")}
-        </ButtonLink>
+        canAdd ? (
+          <ButtonLink href={NEW_PROJECT_HREF} variant="primary">
+            <Icon name="plus" />
+            {t("new")}
+          </ButtonLink>
+        ) : null
       }
     >
       {projects.length === 0 ? (
@@ -182,6 +186,7 @@ function GrinderTable({ project, grinders }: { project: ProjectId; grinders: rea
   const t = useTranslations("settings.grinders");
   const statuses = useTranslations("activityStatuses");
   const locale = useLocale();
+  const canEdit = useCan()("locations", "edit");
 
   if (grinders.length === 0) {
     return <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("empty")}</p>;
@@ -194,9 +199,11 @@ function GrinderTable({ project, grinders }: { project: ProjectId; grinders: rea
           <tr className="border-line border-b-[1.5px]">
             <th className={tableHeadClasses}>{t("fields.number")}</th>
             <th className={tableHeadClasses}>{t("fields.status")}</th>
-            <th className={tableHeadClasses}>
-              <span className="sr-only">{t("fields.action")}</span>
-            </th>
+            {canEdit ? (
+              <th className={tableHeadClasses}>
+                <span className="sr-only">{t("fields.action")}</span>
+              </th>
+            ) : null}
           </tr>
         </thead>
 
@@ -212,15 +219,17 @@ function GrinderTable({ project, grinders }: { project: ProjectId; grinders: rea
                 <td className={tableCellClasses}>
                   <StatusBadge label={statuses(grinder.status)} />
                 </td>
-                <td className={`${tableCellClasses} text-end`}>
-                  <ActionLink
-                    href={grinderHref(project, grinder.id)}
-                    icon="pencil"
-                    ariaLabel={t("editLabel", { number })}
-                  >
-                    {t("edit")}
-                  </ActionLink>
-                </td>
+                {canEdit ? (
+                  <td className={`${tableCellClasses} text-end`}>
+                    <ActionLink
+                      href={grinderHref(project, grinder.id)}
+                      icon="pencil"
+                      ariaLabel={t("editLabel", { number })}
+                    >
+                      {t("edit")}
+                    </ActionLink>
+                  </td>
+                ) : null}
               </tr>
             );
           })}
@@ -236,6 +245,7 @@ export function ProjectSettingsScreen() {
   const common = useTranslations("common");
   const sites = useTranslations("sites");
   const statuses = useTranslations("activityStatuses");
+  const can = useCan();
 
   return (
     <PageLayout
@@ -244,18 +254,24 @@ export function ProjectSettingsScreen() {
       title={common("projectTitle", { name: project.name })}
       action={
         <>
-          <ButtonLink href={deleteProjectHref(project.id)} variant="danger">
-            <Icon name="trash" />
-            {t("projects.delete.open")}
-          </ButtonLink>
-          <ButtonLink href={editProjectHref(project.id)} variant="secondary">
-            <Icon name="pencil" />
-            {t("projects.edit")}
-          </ButtonLink>
-          <ButtonLink href={newGrinderHref(project.id)} variant="primary">
-            <Icon name="plus" />
-            {t("grinders.new")}
-          </ButtonLink>
+          {can("locations", "delete") ? (
+            <ButtonLink href={deleteProjectHref(project.id)} variant="danger">
+              <Icon name="trash" />
+              {t("projects.delete.open")}
+            </ButtonLink>
+          ) : null}
+          {can("locations", "edit") ? (
+            <ButtonLink href={editProjectHref(project.id)} variant="secondary">
+              <Icon name="pencil" />
+              {t("projects.edit")}
+            </ButtonLink>
+          ) : null}
+          {can("locations", "add") ? (
+            <ButtonLink href={newGrinderHref(project.id)} variant="primary">
+              <Icon name="plus" />
+              {t("grinders.new")}
+            </ButtonLink>
+          ) : null}
         </>
       }
     >
@@ -273,7 +289,7 @@ export function ProjectSettingsScreen() {
         <GrinderTable project={project.id} grinders={grinders} />
       </TablePanel>
 
-      <DeleteProjectDrawer project={project} open={deleting} />
+      <DeleteProjectDrawer project={project} open={deleting && can("locations", "delete")} />
     </PageLayout>
   );
 }

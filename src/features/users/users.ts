@@ -1,12 +1,14 @@
 import { z } from "zod";
-import { userRoles } from "@/lib/access";
-import type { BackendFieldErrors, FieldErrors } from "@/lib/api/client";
+import { emptyRights, modules, rightsFromApi } from "@/lib/access";
+import type { Rights } from "@/lib/access";
+import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/client";
 import { formatPhone, isValidPhone } from "@/lib/phone";
 import { isRecordId } from "@/lib/projects";
 
 export const PASSWORD_MIN_LENGTH = 8;
 
 const NAME_MAX_LENGTH = 150;
+const ROLE_NAME_MAX_LENGTH = 100;
 
 type ValidationMessages = {
   required: string;
@@ -18,11 +20,12 @@ type ValidationMessages = {
 
 type UserSchemaOptions = {
   passwordRequired: boolean;
+  isProjectScoped: (roleId: string) => boolean;
 };
 
 export function createUserSchema(
   messages: ValidationMessages,
-  { passwordRequired }: UserSchemaOptions,
+  { passwordRequired, isProjectScoped }: UserSchemaOptions,
 ) {
   return z
     .object({
@@ -37,7 +40,7 @@ export function createUserSchema(
         .trim()
         .min(1, { message: messages.required, abort: true })
         .refine(isValidPhone, messages.phoneInvalid),
-      role: z.enum(userRoles),
+      role: z.string().min(1, messages.required),
       password: z
         .string()
         .refine((value) => !passwordRequired || value !== "", {
@@ -50,7 +53,7 @@ export function createUserSchema(
         ),
       project: z.string(),
     })
-    .refine((user) => user.role === "manager" || isRecordId(user.project), {
+    .refine((user) => !isProjectScoped(user.role) || isRecordId(user.project), {
       message: messages.projectRequired,
       path: ["project"],
       when: ({ issues }) =>
@@ -75,14 +78,14 @@ export function isUserField(value: string): value is keyof UserValues {
 
 export function userToApi(
   { name, email, phone, role, password, project }: UserValues,
-  roleId: number,
+  projectScoped: boolean,
 ) {
   return {
     full_name: name.trim(),
     email: email.trim().toLowerCase(),
     phone: formatPhone(phone),
-    role: roleId,
-    project: role === "supervisor" ? Number(project) : null,
+    role: Number(role),
+    project: projectScoped ? Number(project) : null,
     ...(password === "" ? {} : { password }),
   };
 }
@@ -95,5 +98,87 @@ export function userErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof
     ...(errors.role === undefined ? {} : { role: errors.role }),
     ...(errors.password === undefined ? {} : { password: errors.password }),
     ...(errors.project === undefined ? {} : { project: errors.project }),
+  };
+}
+
+export type RoleDetails = {
+  id: string;
+  name: string;
+  projectScoped: boolean;
+  usersCount: number;
+  rights: Rights;
+};
+
+export function roleDetailsFromApi(role: ApiSchema<"Role">): RoleDetails {
+  return {
+    id: String(role.id),
+    name: role.name,
+    projectScoped: role.is_project_scoped ?? false,
+    usersCount: role.users_count,
+    rights: rightsFromApi(role.permissions ?? []),
+  };
+}
+
+const moduleRightsSchema = z.object({
+  view: z.boolean(),
+  add: z.boolean(),
+  edit: z.boolean(),
+  delete: z.boolean(),
+});
+
+export function createRoleSchema(messages: { required: string }) {
+  return z.object({
+    name: z.string().trim().min(1, messages.required).max(ROLE_NAME_MAX_LENGTH),
+    projectScoped: z.boolean(),
+    rights: z.object({
+      shipments: moduleRightsSchema,
+      grinding: moduleRightsSchema,
+      refining: moduleRightsSchema,
+      inventory: moduleRightsSchema,
+      customers: moduleRightsSchema,
+      accounts: moduleRightsSchema,
+      locations: moduleRightsSchema,
+    }),
+  });
+}
+
+export type RoleValues = z.infer<ReturnType<typeof createRoleSchema>>;
+
+export function newRoleValues(): RoleValues {
+  return { name: "", projectScoped: false, rights: emptyRights() };
+}
+
+export function roleValuesOf(role: RoleDetails): RoleValues {
+  return { name: role.name, projectScoped: role.projectScoped, rights: role.rights };
+}
+
+export function roleToApi(values: RoleValues) {
+  return {
+    name: values.name,
+    is_project_scoped: values.projectScoped,
+    permissions: modules.flatMap((module) => {
+      const granted = values.rights[module];
+      const anything = granted.view || granted.add || granted.edit || granted.delete;
+
+      return anything
+        ? [
+            {
+              module,
+              can_view: true,
+              can_add: granted.add,
+              can_edit: granted.edit,
+              can_delete: granted.delete,
+              can_approve: granted.edit,
+            },
+          ]
+        : [];
+    }),
+  };
+}
+
+export function roleErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof RoleValues> {
+  return {
+    ...(errors.name === undefined ? {} : { name: errors.name }),
+    ...(errors.is_project_scoped === undefined ? {} : { projectScoped: errors.is_project_scoped }),
   };
 }

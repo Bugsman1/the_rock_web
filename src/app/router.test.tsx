@@ -4,6 +4,8 @@ import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { modules } from "@/lib/access";
+import type { Module } from "@/lib/access";
 import { saveSession } from "@/lib/api/session";
 import messages from "@/messages/ar.json";
 import { routes, skeletonShapeFor } from "./router";
@@ -15,20 +17,27 @@ beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-function tokenFor(role: string): string {
+function signIn() {
   const exp = Math.floor(Date.now() / 1000) + 3600;
+  const token = `header.${btoa(JSON.stringify({ exp, role: "manager" })).replace(/=+$/, "")}.signature`;
 
-  return `header.${btoa(JSON.stringify({ exp, role })).replace(/=+$/, "")}.signature`;
+  saveSession({ access: token, refresh: token }, true);
 }
 
-function signInAs(role: string) {
-  saveSession({ access: tokenFor(role), refresh: tokenFor(role) }, true);
-}
-
-function answerMe(fullName: string) {
+function answerMe(fullName: string, role = "manager", viewable: readonly Module[] = modules) {
   server.use(
     http.get(ME_URL, () =>
-      HttpResponse.json({ full_name: fullName, email: "user@mills.mr", is_superuser: false }),
+      HttpResponse.json({
+        full_name: fullName,
+        email: "user@mills.mr",
+        is_superuser: false,
+        role: {
+          id: 1,
+          name: role,
+          is_project_scoped: false,
+          permissions: viewable.map((module) => ({ module, can_view: true })),
+        },
+      }),
     ),
   );
 }
@@ -50,8 +59,8 @@ describe("routes", () => {
     expect(router.state.location.pathname).toBe("/ar/login");
   });
 
-  it("opens the app with the user's name for a signed in manager", async () => {
-    signInAs("manager");
+  it("opens the app with the user's name and role", async () => {
+    signIn();
     answerMe("Sidi Mohamed");
     const router = openAt("/ar/dashboard");
 
@@ -60,9 +69,9 @@ describe("routes", () => {
     expect(router.state.location.pathname).toBe("/ar/dashboard");
   });
 
-  it("sends a supervisor away from pages they cannot open", async () => {
-    signInAs("supervisor");
-    answerMe("Amadou");
+  it("sends a role away from pages it cannot open", async () => {
+    signIn();
+    answerMe("Amadou", "supervisor", ["shipments", "grinding", "refining"]);
     server.use(
       http.get(`${window.location.origin}/api/v1/projects/`, () =>
         HttpResponse.json({ count: 0, results: [] }),
@@ -78,7 +87,7 @@ describe("routes", () => {
   });
 
   it("skips the login page when already signed in", async () => {
-    signInAs("manager");
+    signIn();
     answerMe("Sidi Mohamed");
     const router = openAt("/ar/login");
 
@@ -87,7 +96,7 @@ describe("routes", () => {
   });
 
   it("returns to the login page when the server refuses the session", async () => {
-    signInAs("manager");
+    signIn();
     server.use(http.get(ME_URL, () => new HttpResponse(null, { status: 401 })));
     const router = openAt("/ar/dashboard");
 
@@ -98,7 +107,7 @@ describe("routes", () => {
   });
 
   it("shows a not-found page inside the app when a page's data is missing", async () => {
-    signInAs("manager");
+    signIn();
     answerMe("Sidi Mohamed");
     openAt("/ar/inventory/resources/abc");
 
@@ -113,7 +122,7 @@ describe("routes", () => {
   });
 
   it("says when the user's role may not open the data, with the error code", async () => {
-    signInAs("manager");
+    signIn();
     answerMe("Sidi Mohamed");
     server.use(
       http.get(
@@ -134,7 +143,7 @@ describe("routes", () => {
   });
 
   it("offers to try again when the backend fails", async () => {
-    signInAs("manager");
+    signIn();
     answerMe("Sidi Mohamed");
     let calls = 0;
     server.use(
@@ -163,7 +172,7 @@ describe("routes", () => {
   });
 
   it("shows the page skeleton only while the next page's data is on its way", async () => {
-    signInAs("manager");
+    signIn();
     answerMe("Sidi Mohamed");
     const emptyList = () => HttpResponse.json({ count: 0, results: [] });
     let answerCustomers: () => void = () => {};
@@ -195,7 +204,7 @@ describe("routes", () => {
   });
 
   it("keeps the page while only its search changes", async () => {
-    signInAs("manager");
+    signIn();
     answerMe("Sidi Mohamed");
     let answerSearch: () => void = () => {};
     const searchArrived = new Promise<void>((resolve) => {

@@ -4,6 +4,9 @@ import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { noAccess, rightsFromApi } from "@/lib/access";
+import type { Access } from "@/lib/access";
+import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
 import {
   InventoryProjectScreen,
@@ -13,6 +16,8 @@ import {
   ResourceScreen,
   resourceLoader,
 } from "./InventoryScreens";
+
+const allRights: Access = { ...noAccess, superuser: true };
 
 const API = `${window.location.origin}/api/v1`;
 const server = setupServer();
@@ -70,7 +75,7 @@ beforeEach(() => {
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-function openAt(path: string) {
+function openAt(path: string, access: Access = allRights) {
   const router = createMemoryRouter(
     [
       {
@@ -95,7 +100,9 @@ function openAt(path: string) {
 
   render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <RouterProvider router={router} />
+      <AccessContext value={access}>
+        <RouterProvider router={router} />
+      </AccessContext>
     </IntlProvider>,
   );
 }
@@ -241,6 +248,19 @@ describe("ResourceScreen", () => {
       "Lot 4",
       "Aicha",
     ]);
+  });
+
+  it("shows a view-only role the resource and its history with no way to change it", async () => {
+    openAt("/fr/inventory/resources/2?action=increase", {
+      superuser: false,
+      rights: rightsFromApi([{ module: "inventory", can_view: true }]),
+    });
+
+    expect(await screen.findByRole("heading", { name: "Mercure" })).toBeVisible();
+    expect(cellsOf(screen.getAllByRole("row")[1])[1]).toBe(text.refiningChangeTypes.decrease);
+    expect(screen.queryByRole("link", { name: new RegExp(text.increase) })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: new RegExp(text.decrease) })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("offers the project's refining operations when decreasing", async () => {

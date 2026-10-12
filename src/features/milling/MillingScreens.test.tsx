@@ -5,6 +5,9 @@ import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { noAccess } from "@/lib/access";
+import type { Access } from "@/lib/access";
+import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
 import { endOperation, getMillingData } from "./millingApi";
 import {
@@ -15,6 +18,8 @@ import {
   MillingScreen,
   millingLoader,
 } from "./MillingScreens";
+
+const allRights: Access = { ...noAccess, superuser: true };
 
 const API = `${window.location.origin}/api/v1`;
 const server = setupServer();
@@ -89,7 +94,7 @@ beforeEach(() => {
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-function openAt(path: string) {
+function openAt(path: string, access: Access = allRights) {
   const router = createMemoryRouter(
     [
       {
@@ -114,7 +119,9 @@ function openAt(path: string) {
 
   render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <RouterProvider router={router} />
+      <AccessContext value={access}>
+        <RouterProvider router={router} />
+      </AccessContext>
     </IntlProvider>,
   );
 }

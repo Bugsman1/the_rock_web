@@ -11,6 +11,7 @@ import {
   tableHeadClasses,
   tableRowClasses,
 } from "@/components/ui/TablePanel";
+import { useCan } from "@/lib/accessContext";
 import { errorKind } from "@/lib/api/client";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { formatCount, formatDateTime, formatQuantity } from "@/lib/format";
@@ -18,7 +19,7 @@ import type { MillingOperation } from "@/lib/grinding";
 import { findProject, grinderCode } from "@/lib/projects";
 import type { RefiningOperation } from "@/lib/refining";
 import { REFINING_HREF, startRefiningHref } from "@/lib/routes";
-import { getActiveUsers, operatorsOfProject } from "@/lib/users";
+import { getOperators } from "@/lib/users";
 import { isLossReasonKey, refiningQueue } from "./refining";
 import { getRefiningData } from "./refiningApi";
 import { RefiningForm } from "./RefiningForm";
@@ -29,8 +30,7 @@ export async function refiningLoader({ request }: LoaderFunctionArgs) {
   const refinings = data.operations.ok ? data.operations.data : [];
   const queue = refiningQueue(data.grindings, refinings);
   const selected = queue.find((operation) => operation.id === grinding);
-  const workers =
-    selected === undefined ? [] : operatorsOfProject(await getActiveUsers(), selected.project);
+  const workers = selected === undefined ? [] : await getOperators(selected.project, "refining");
 
   return { data, queue, refinings, selected, workers };
 }
@@ -44,6 +44,7 @@ function RefiningQueueTable({
 }) {
   const t = useTranslations("refining");
   const locale = useLocale();
+  const canStart = useCan()("refining", "add");
 
   if (operations.length === 0) {
     return <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("queueEmpty")}</p>;
@@ -60,9 +61,11 @@ function RefiningQueueTable({
             <th className={tableHeadClasses}>{t("fields.machine")}</th>
             <th className={tableEndHeadClasses}>{t("fields.bags")}</th>
             <th className={tableHeadClasses}>{t("fields.groundAt")}</th>
-            <th className={tableHeadClasses}>
-              <span className="sr-only">{t("fields.action")}</span>
-            </th>
+            {canStart ? (
+              <th className={tableHeadClasses}>
+                <span className="sr-only">{t("fields.action")}</span>
+              </th>
+            ) : null}
           </tr>
         </thead>
         <tbody>
@@ -86,15 +89,17 @@ function RefiningQueueTable({
               <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
                 {operation.endedAt === undefined ? "—" : formatDateTime(operation.endedAt, locale)}
               </td>
-              <td className={`${tableCellClasses} text-end`}>
-                <ActionLink
-                  href={startRefiningHref(operation.id)}
-                  icon="flame"
-                  ariaLabel={t("startLabel", { number: operation.shipmentNumber })}
-                >
-                  {t("start")}
-                </ActionLink>
-              </td>
+              {canStart ? (
+                <td className={`${tableCellClasses} text-end`}>
+                  <ActionLink
+                    href={startRefiningHref(operation.id)}
+                    icon="flame"
+                    ariaLabel={t("startLabel", { number: operation.shipmentNumber })}
+                  >
+                    {t("start")}
+                  </ActionLink>
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>
@@ -203,6 +208,7 @@ export function RefiningScreen() {
   const errors = useTranslations("errors");
   const common = useTranslations("common");
   const { close } = useRouteDrawer(REFINING_HREF);
+  const refining = useCan()("refining", "add") ? selected : undefined;
   const projectName = (project: string) => findProject(data.projects, project)?.name ?? "—";
   const now = new Date();
 
@@ -226,16 +232,16 @@ export function RefiningScreen() {
       </TablePanel>
 
       <Drawer
-        open={selected !== undefined}
+        open={refining !== undefined}
         title={t("new")}
         closeLabel={common("close")}
         onClose={close}
       >
-        {selected === undefined ? null : (
+        {refining === undefined ? null : (
           <RefiningForm
-            key={selected.id}
-            operation={selected}
-            projectName={projectName(selected.project)}
+            key={refining.id}
+            operation={refining}
+            projectName={projectName(refining.project)}
             workers={workers}
             defaultDate={todayAsInputValue(now)}
             defaultTime={nowAsTimeValue(now)}

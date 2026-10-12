@@ -4,9 +4,10 @@ import { Icon } from "./Icon";
 type CheckboxProps = Omit<ComponentPropsWithoutRef<"input">, "className" | "id" | "type"> & {
   id: string;
   label: string;
+  hideLabel?: boolean;
 };
 
-export function Checkbox({ id, label, ...props }: CheckboxProps) {
+export function Checkbox({ id, label, hideLabel = false, ...props }: CheckboxProps) {
   return (
     <label htmlFor={id} className="flex min-h-11 cursor-pointer items-center gap-2.5">
       <span className="relative inline-flex size-4.5 shrink-0">
@@ -21,7 +22,9 @@ export function Checkbox({ id, label, ...props }: CheckboxProps) {
           className="text-ink-inverted pointer-events-none absolute inset-0 m-auto hidden size-3 peer-checked:block"
         />
       </span>
-      <span className="text-ink-label text-[14px] font-medium">{label}</span>
+      <span className={hideLabel ? "sr-only" : "text-ink-label text-[14px] font-medium"}>
+        {label}
+      </span>
     </label>
   );
 }

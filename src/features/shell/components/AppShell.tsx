@@ -1,17 +1,18 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { useTranslations } from "use-intl";
-import type { UserRole } from "@/lib/access";
+import type { Access } from "@/lib/access";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 
 type AppShellProps = {
-  role: UserRole;
+  access: Access;
   userName: string;
+  roleName: string;
   children: ReactNode;
 };
 
-export function AppShell({ role, userName, children }: AppShellProps) {
+export function AppShell({ access, userName, roleName, children }: AppShellProps) {
   const common = useTranslations("common");
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -19,7 +20,7 @@ export function AppShell({ role, userName, children }: AppShellProps) {
   return (
     <div className="bg-surface-page flex h-dvh flex-col overflow-hidden">
       <TopBar
-        role={role}
+        roleName={roleName}
         userName={userName}
         sidebarCollapsed={collapsed}
         mobileMenuOpen={mobileOpen}
@@ -37,7 +38,7 @@ export function AppShell({ role, userName, children }: AppShellProps) {
           />
         ) : null}
         <Sidebar
-          role={role}
+          access={access}
           collapsed={collapsed}
           mobileOpen={mobileOpen}
           onNavigate={() => setMobileOpen(false)}

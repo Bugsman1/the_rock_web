@@ -303,6 +303,27 @@ export interface paths {
         patch: operations["v1_grinding_operations_partial_update"];
         trace?: never;
     };
+    "/api/v1/operators/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The users who may run a grinding or a refining on a project: those whose role can view
+         *     that module, on that project when the role is project-scoped. Open to whoever may add or
+         *     edit in the module, so the forms can offer them without access to the users module.
+         */
+        get: operations["v1_operators_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/": {
         parameters: {
             query?: never;
@@ -739,7 +760,11 @@ export interface paths {
          */
         put: operations["v1_roles_update"];
         post?: never;
-        delete?: never;
+        /**
+         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
+         *     for every create, update and destroy (soft delete) action.
+         */
+        delete: operations["v1_roles_destroy"];
         options?: never;
         head?: never;
         /**
@@ -1004,11 +1029,19 @@ export interface components {
             full_name: $Read<string>;
             phone: $Read<string>;
             role: $Read<components["schemas"]["MeRole"]>;
+            /**
+             * حالة المستخدم الفائق
+             * @description يقضي بأن هذا المستخدم يمتلك كافة الصلاحيات دون الحاجة لمنحها له تصريحاً.
+             */
+            is_superuser: $Read<boolean>;
         };
         MeRole: {
             id: $Read<number>;
             /** الاسم */
-            name: $Read<components["schemas"]["NameEnum"]>;
+            name: $Read<string>;
+            /** Limited to one project */
+            is_project_scoped: $Read<boolean>;
+            permissions: $Read<components["schemas"]["RoleModulePermission"][]>;
         };
         /**
          * @description * `accounts` - Accounts
@@ -1017,15 +1050,14 @@ export interface components {
          *     * `shipments` - Shipments
          *     * `grinding` - Grinding
          *     * `refining` - Refining
+         *     * `inventory` - Inventory
          * @enum {string}
          */
-        ModuleEnum: "accounts" | "locations" | "customers" | "shipments" | "grinding" | "refining";
-        /**
-         * @description * `manager` - Manager
-         *     * `supervisor` - Supervisor
-         * @enum {string}
-         */
-        NameEnum: "manager" | "supervisor";
+        ModuleEnum: "accounts" | "locations" | "customers" | "shipments" | "grinding" | "refining" | "inventory";
+        Operator: {
+            id: $Read<number>;
+            name: $Read<string>;
+        };
         PaginatedCustomerList: {
             /** @example 123 */
             count: number;
@@ -1337,11 +1369,19 @@ export interface components {
             /** Format: date-time */
             updated_at?: $Read<string>;
         };
+        /**
+         * @description A role with its permissions. On write, `permissions` is the role's full set: modules
+         *     left out lose their access.
+         */
         PatchedRole: {
             id?: $Read<number>;
             /** الاسم */
-            name?: components["schemas"]["NameEnum"];
-            permissions?: $Read<components["schemas"]["RolePermission"][]>;
+            name?: string;
+            /** Limited to one project */
+            is_project_scoped?: boolean;
+            permissions?: components["schemas"]["RoleModulePermission"][];
+            /** @default 0 */
+            users_count: $Read<number>;
         };
         PatchedRolePermission: {
             id?: $Read<number>;
@@ -1508,7 +1548,6 @@ export interface components {
             refining_operation: $Read<number | null>;
             shipment_number: $Read<string>;
             note: $Read<string>;
-            /** @default  */
             created_by_name: $Read<string>;
             /**
              * أنشئت في
@@ -1516,11 +1555,28 @@ export interface components {
              */
             created_at: $Read<string>;
         };
+        /**
+         * @description A role with its permissions. On write, `permissions` is the role's full set: modules
+         *     left out lose their access.
+         */
         Role: {
             id: $Read<number>;
             /** الاسم */
-            name: components["schemas"]["NameEnum"];
-            permissions: $Read<components["schemas"]["RolePermission"][]>;
+            name: string;
+            /** Limited to one project */
+            is_project_scoped?: boolean;
+            permissions?: components["schemas"]["RoleModulePermission"][];
+            /** @default 0 */
+            users_count: $Read<number>;
+        };
+        /** @description One module's flags inside a role; the role comes from the parent. */
+        RoleModulePermission: {
+            module: components["schemas"]["ModuleEnum"];
+            can_view?: boolean;
+            can_add?: boolean;
+            can_edit?: boolean;
+            can_delete?: boolean;
+            can_approve?: boolean;
         };
         RolePermission: {
             id: $Read<number>;
@@ -2155,6 +2211,32 @@ export interface operations {
             };
         };
     };
+    v1_operators_list: {
+        parameters: {
+            query: {
+                /**
+                 * @description * `grinding` - grinding
+                 *     * `refining` - refining
+                 */
+                module: "grinding" | "refining";
+                project: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Operator"][];
+                };
+            };
+        };
+    };
     v1_projects_list: {
         parameters: {
             query?: {
@@ -2748,8 +2830,9 @@ export interface operations {
                  *     * `shipments` - Shipments
                  *     * `grinding` - Grinding
                  *     * `refining` - Refining
+                 *     * `inventory` - Inventory
                  */
-                module?: "accounts" | "customers" | "grinding" | "locations" | "refining" | "shipments";
+                module?: "accounts" | "customers" | "grinding" | "inventory" | "locations" | "refining" | "shipments";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -2882,11 +2965,7 @@ export interface operations {
     v1_roles_list: {
         parameters: {
             query?: {
-                /**
-                 * @description * `manager` - Manager
-                 *     * `supervisor` - Supervisor
-                 */
-                name?: "manager" | "supervisor";
+                name?: string;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -2984,6 +3063,27 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Role"];
                 };
+            };
+        };
+    };
+    v1_roles_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this role. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

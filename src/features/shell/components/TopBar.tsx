@@ -3,7 +3,7 @@ import { Icon } from "@/components/ui/Icon";
 import { IconButton } from "@/components/ui/IconButton";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { SearchField } from "@/components/ui/SearchField";
-import type { UserRole } from "@/lib/access";
+import { roleLabel } from "@/lib/users";
 
 type UserBadgeProps = {
   name: string;
@@ -28,7 +28,7 @@ function UserBadge({ name, role }: UserBadgeProps) {
 const SEARCH_ID = "global-search";
 
 type TopBarProps = {
-  role: UserRole;
+  roleName: string;
   userName: string;
   sidebarCollapsed: boolean;
   mobileMenuOpen: boolean;
@@ -37,7 +37,7 @@ type TopBarProps = {
 };
 
 export function TopBar({
-  role,
+  roleName,
   userName,
   sidebarCollapsed,
   mobileMenuOpen,
@@ -83,7 +83,7 @@ export function TopBar({
       <div className="flex flex-1 items-center justify-end gap-2">
         <LanguageSwitcher label={common("language")} />
         <IconButton icon="bell" label={t("notifications")} />
-        <UserBadge name={userName} role={roles(role)} />
+        <UserBadge name={userName} role={roleLabel(roleName, (name) => roles(name))} />
       </div>
     </header>
   );

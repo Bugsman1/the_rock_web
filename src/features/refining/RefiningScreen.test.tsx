@@ -4,8 +4,13 @@ import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { noAccess, rightsFromApi } from "@/lib/access";
+import type { Access } from "@/lib/access";
+import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
 import { RefiningScreen, refiningLoader } from "./RefiningScreen";
+
+const allRights: Access = { ...noAccess, superuser: true };
 
 const API = `${window.location.origin}/api/v1`;
 const server = setupServer();
@@ -57,16 +62,6 @@ const refined = {
   updated_at: "2026-10-07T10:00:00Z",
 };
 
-const user = (id: number, name: string, project: number) => ({
-  id,
-  email: `${id}@mills.mr`,
-  full_name: name,
-  phone: "",
-  role: 2,
-  project,
-  is_active: true,
-});
-
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 beforeEach(() => {
   server.use(
@@ -81,13 +76,11 @@ beforeEach(() => {
       ]),
     ),
     http.get(`${API}/refining-operations/`, () => page([refined])),
-    http.get(`${API}/roles/`, () =>
-      page([
-        { id: 1, name: "manager", permissions: [] },
-        { id: 2, name: "supervisor", permissions: [] },
-      ]),
+    http.get(`${API}/operators/`, ({ request }) =>
+      HttpResponse.json(
+        new URL(request.url).searchParams.get("project") === "3" ? [{ id: 4, name: "Aicha" }] : [],
+      ),
     ),
-    http.get(`${API}/users/`, () => page([user(4, "Aicha", 3), user(5, "Omar", 9)])),
     http.get(`${API}/resources/`, () =>
       page([
         {
@@ -106,7 +99,7 @@ beforeEach(() => {
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-function openAt(path: string) {
+function openAt(path: string, access: Access = allRights) {
   const router = createMemoryRouter(
     [{ path: "/fr/refining", loader: refiningLoader, element: <RefiningScreen /> }],
     { initialEntries: [path] },
@@ -114,7 +107,9 @@ function openAt(path: string) {
 
   render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <RouterProvider router={router} />
+      <AccessContext value={access}>
+        <RouterProvider router={router} />
+      </AccessContext>
     </IntlProvider>,
   );
 }
@@ -210,6 +205,21 @@ describe("RefiningScreen", () => {
         .map((option) => option.textContent),
     ).toEqual(["Aicha"]);
     expect(dialog.queryByText("95")).toBeNull();
+  });
+
+  it("shows a view-only role every refining but no way to start one", async () => {
+    const viewer: Access = {
+      superuser: false,
+      rights: rightsFromApi([{ module: "refining", can_view: true }]),
+    };
+    openAt("/fr/refining?grinding=2", viewer);
+
+    await screen.findByRole("heading", { name: text.queueTitle });
+
+    expect(panel(text.queueTitle).getByText("SH-2")).toBeVisible();
+    expect(panel(text.operationsTitle).getByText("SH-3")).toBeVisible();
+    expect(screen.queryByRole("link", { name: /SH-2/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("keeps the queue and explains refused operations inside their panel", async () => {

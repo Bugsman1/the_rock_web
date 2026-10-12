@@ -1,12 +1,11 @@
-import { roleOfToken } from "@/lib/access";
-import type { UserRole } from "@/lib/access";
 import { requestTokens } from "@/lib/api/auth";
 import { saveSession } from "@/lib/api/session";
+import { decodeJwtPayload } from "@/lib/jwt";
 import type { LoginValues } from "./schemas/loginSchema";
 
 export type SignInFailure = "invalidCredentials" | "unavailable" | "noAccess";
 
-type SignInResult = { ok: true; role: UserRole } | { ok: false; reason: SignInFailure };
+type SignInResult = { ok: true } | { ok: false; reason: SignInFailure };
 
 export async function signIn({ email, password, rememberMe }: LoginValues): Promise<SignInResult> {
   const result = await requestTokens({ email, password });
@@ -15,13 +14,13 @@ export async function signIn({ email, password, rememberMe }: LoginValues): Prom
     return result;
   }
 
-  const role = roleOfToken(result.tokens.access);
+  const role = decodeJwtPayload(result.tokens.access)?.role;
 
-  if (role === undefined) {
+  if (typeof role !== "string" || role === "") {
     return { ok: false, reason: "noAccess" };
   }
 
   saveSession(result.tokens, rememberMe);
 
-  return { ok: true, role };
+  return { ok: true };
 }

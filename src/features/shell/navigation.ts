@@ -1,6 +1,6 @@
 import type { IconName } from "@/components/ui/Icon";
 import { canOpen } from "@/lib/access";
-import type { UserRole } from "@/lib/access";
+import type { Access } from "@/lib/access";
 import {
   CUSTOMERS_HREF,
   DASHBOARD_HREF,
@@ -80,9 +80,9 @@ const navGroups: readonly NavGroup[] = [
   },
 ];
 
-export function navGroupsFor(role: UserRole): readonly NavGroup[] {
+export function navGroupsFor(access: Access): readonly NavGroup[] {
   return navGroups
-    .map((group) => ({ ...group, items: group.items.filter((item) => canOpen(role, item.href)) }))
+    .map((group) => ({ ...group, items: group.items.filter((item) => canOpen(access, item.href)) }))
     .filter((group) => group.items.length > 0);
 }
 

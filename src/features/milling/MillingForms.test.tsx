@@ -3,9 +3,14 @@ import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { noAccess, rightsFromApi } from "@/lib/access";
+import type { Access } from "@/lib/access";
+import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
 import type { MillingOperation } from "@/lib/grinding";
 import { EndMillingAction } from "./MillingForms";
+
+const allRights: Access = { ...noAccess, superuser: true };
 
 const api = vi.hoisted(() => ({ endOperation: vi.fn() }));
 
@@ -18,10 +23,10 @@ beforeEach(() => {
   api.endOperation.mockResolvedValue({ ok: true });
 });
 
-function inFrench(children: React.ReactNode) {
+function inFrench(children: React.ReactNode, access: Access = allRights) {
   return render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      {children}
+      <AccessContext value={access}>{children}</AccessContext>
     </IntlProvider>,
   );
 }
@@ -39,7 +44,7 @@ const running: MillingOperation = {
   notes: "",
 };
 
-async function openEndMilling() {
+async function openEndMilling(access: Access = allRights) {
   const router = createMemoryRouter(
     [
       {
@@ -63,7 +68,7 @@ async function openEndMilling() {
   );
   const user = userEvent.setup();
 
-  inFrench(<RouterProvider router={router} />);
+  inFrench(<RouterProvider router={router} />, access);
   await user.click(screen.getByRole("button", { name: "Terminer" }));
   await user.type(screen.getByLabelText(end.bagsMilled), "2");
 
@@ -125,5 +130,23 @@ describe("ending a milling operation", () => {
     expect(`${router.state.location.pathname}${router.state.location.search}`).toBe(
       "/fr/refining?grinding=42",
     );
+  });
+
+  it("stays on the machine when the role may not start the refining", async () => {
+    const { user, router } = await openEndMilling({
+      superuser: false,
+      rights: rightsFromApi([
+        { module: "grinding", can_view: true, can_edit: true },
+        { module: "refining", can_view: true },
+      ]),
+    });
+
+    await user.click(screen.getByRole("button", { name: end.submit }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    expect(api.endOperation).toHaveBeenCalled();
+    expect(router.state.location.pathname).toBe("/");
   });
 });

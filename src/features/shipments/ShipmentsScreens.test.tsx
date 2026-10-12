@@ -5,9 +5,13 @@ import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { noAccess } from "@/lib/access";
+import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
 import type { ShipmentRecord } from "@/lib/shipments";
 import { ProjectStorageScreen, projectStorageLoader, ShipmentHistory } from "./ShipmentsScreens";
+
+const allRights = { ...noAccess, superuser: true };
 
 const history = messages.shipments.history;
 function record(shipmentNumber: string, customerName: string, arrivedAt: string): ShipmentRecord {
@@ -143,10 +147,7 @@ function answerGrindingChoices() {
       page([{ id: 7, project: 3, code: "P3-1", status: "active", ...stamps }]),
     ),
     http.get(`${API}/grinding-operations/`, () => page([])),
-    http.get(`${API}/roles/`, () => page([{ id: 1, name: "manager", permissions: [] }])),
-    http.get(`${API}/users/`, () =>
-      page([{ id: 4, email: "a@m.mr", full_name: "Aicha", phone: "", role: 1, is_active: true }]),
-    ),
+    http.get(`${API}/operators/`, () => HttpResponse.json([{ id: 4, name: "Aicha" }])),
   );
 }
 
@@ -165,7 +166,9 @@ function openProject(path: string) {
 
   render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <RouterProvider router={router} />
+      <AccessContext value={allRights}>
+        <RouterProvider router={router} />
+      </AccessContext>
     </IntlProvider>,
   );
 

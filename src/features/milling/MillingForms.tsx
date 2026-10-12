@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import { useRevalidator } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { Button } from "@/components/ui/Button";
 import { DateField } from "@/components/ui/DateField";
@@ -10,6 +11,7 @@ import { Icon } from "@/components/ui/Icon";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
 import { useReplace } from "@/i18n/navigation";
+import { useCan } from "@/lib/accessContext";
 import { combineDateAndTime } from "@/lib/datetime";
 import { formatCount, formatMoney } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
@@ -213,6 +215,18 @@ export function EndMillingAction({
 }: EndMillingActionProps) {
   const [open, setOpen] = useState(false);
   const replace = useReplace();
+  const revalidator = useRevalidator();
+  const canRefine = useCan()("refining", "add");
+
+  function onSaved() {
+    if (canRefine) {
+      replace(startRefiningHref(formProps.operation.id));
+      return;
+    }
+
+    setOpen(false);
+    void revalidator.revalidate();
+  }
 
   return (
     <>
@@ -222,11 +236,7 @@ export function EndMillingAction({
       </Button>
 
       <Drawer open={open} title={title} closeLabel={closeLabel} onClose={() => setOpen(false)}>
-        <EndMillingForm
-          {...formProps}
-          onCancel={() => setOpen(false)}
-          onSaved={() => replace(startRefiningHref(formProps.operation.id))}
-        />
+        <EndMillingForm {...formProps} onCancel={() => setOpen(false)} onSaved={onSaved} />
       </Drawer>
     </>
   );

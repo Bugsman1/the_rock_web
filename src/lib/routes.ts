@@ -58,6 +58,18 @@ export function usersHref(params: Omit<ListPageParams, "query"> = {}): string {
   return listPageHref(USERS_HREF, params);
 }
 
+export const ROLES_HREF = `${USERS_HREF}/roles`;
+
+export function rolesHref(
+  drawer?: { create: true } | { edit: string } | { remove: string },
+): string {
+  if (drawer === undefined) return ROLES_HREF;
+  if ("create" in drawer) return `${ROLES_HREF}?new=1`;
+  if ("edit" in drawer) return `${ROLES_HREF}?${new URLSearchParams({ edit: drawer.edit })}`;
+
+  return `${ROLES_HREF}?${new URLSearchParams({ delete: drawer.remove })}`;
+}
+
 export function settingsProjectHref(project: string): string {
   return `${SETTINGS_PROJECTS_HREF}/${project}`;
 }

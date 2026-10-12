@@ -5,8 +5,13 @@ import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { noAccess, rightsFromApi } from "@/lib/access";
+import type { Access } from "@/lib/access";
+import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
 import { CustomersScreen, customersLoader } from "./CustomersScreen";
+
+const allRights: Access = { ...noAccess, superuser: true };
 
 const CUSTOMERS_URL = `${window.location.origin}/api/v1/customers/`;
 const server = setupServer();
@@ -36,7 +41,7 @@ function answerList(count: number, results: readonly object[], seen: URL[] = [])
   return seen;
 }
 
-function openAt(path: string) {
+function openAt(path: string, access: Access = allRights) {
   const router = createMemoryRouter(
     [{ path: "/fr/customers", loader: customersLoader, element: <CustomersScreen /> }],
     { initialEntries: [path] },
@@ -44,7 +49,9 @@ function openAt(path: string) {
 
   render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <RouterProvider router={router} />
+      <AccessContext value={access}>
+        <RouterProvider router={router} />
+      </AccessContext>
     </IntlProvider>,
   );
 
@@ -69,6 +76,19 @@ describe("CustomersScreen", () => {
       "href",
       "/fr/customers?q=a&page=2&edit=2",
     );
+  });
+
+  it("shows a view-only role the customers with no way to add or edit them", async () => {
+    answerList(52, apiCustomers);
+    openAt("/fr/customers?new=1", {
+      superuser: false,
+      rights: rightsFromApi([{ module: "customers", can_view: true }]),
+    });
+
+    expect(await shownNames()).toEqual(["Ahmed", "Fatima"]);
+    expect(screen.queryByRole("link", { name: messages.customers.new })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Modifier Fatima" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("searches on the server once the user stops typing", async () => {

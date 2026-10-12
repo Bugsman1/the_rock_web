@@ -4,7 +4,7 @@ import { Icon } from "@/components/ui/Icon";
 import type { IconName } from "@/components/ui/Icon";
 import { Link, usePathname, useReplace } from "@/i18n/navigation";
 import { canOpen } from "@/lib/access";
-import type { UserRole } from "@/lib/access";
+import type { Access } from "@/lib/access";
 import { clearSession } from "@/lib/api/session";
 import { cn } from "@/lib/cn";
 import { isWithinHref, LOGIN_HREF, SETTINGS_HREF } from "@/lib/routes";
@@ -70,14 +70,14 @@ function SidebarItem({
 }
 
 type SidebarProps = {
-  role: UserRole;
+  access: Access;
   collapsed: boolean;
   mobileOpen: boolean;
   onNavigate: () => void;
 };
 
 export function Sidebar({
-  role,
+  access,
   collapsed: desktopCollapsed,
   mobileOpen,
   onNavigate,
@@ -116,7 +116,7 @@ export function Sidebar({
     >
       <nav aria-label={t("navigation")} className="scrollbar-on-hover flex-1 overflow-y-auto py-4">
         <ul className="flex flex-col gap-4">
-          {navGroupsFor(role).map((group) => (
+          {navGroupsFor(access).map((group) => (
             <li key={group.key ?? "primary"}>
               {group.key === null || collapsed ? null : (
                 <p className="text-ink-label px-4 pt-1 pb-1.5 text-[13px] font-bold tracking-wide">
@@ -143,7 +143,7 @@ export function Sidebar({
       </nav>
 
       <div className="border-line-subtle flex flex-col gap-0.5 border-t-[1.5px] py-3">
-        {canOpen(role, SETTINGS_HREF) ? (
+        {canOpen(access, SETTINGS_HREF) ? (
           <SidebarItem
             href={SETTINGS_HREF}
             icon="settings"

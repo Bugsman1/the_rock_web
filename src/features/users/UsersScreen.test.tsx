@@ -4,7 +4,7 @@ import { IntlProvider } from "use-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import messages from "@/messages/fr.json";
 import type { Project } from "@/lib/projects";
-import type { User } from "@/lib/users";
+import type { Role, User } from "@/lib/users";
 import { UserForm } from "./UsersScreen";
 
 const { createUserMock, updateUserMock } = vi.hoisted(() => ({
@@ -31,12 +31,24 @@ const fields = messages.users.fields;
 const form = messages.users.form;
 const validation = messages.common.validation;
 
+const manager: Role = {
+  id: "1",
+  name: "manager",
+  projectScoped: false,
+};
+
+const supervisor: Role = { ...manager, id: "2", name: "supervisor", projectScoped: true };
+
+const refiner: Role = { ...manager, id: "5", name: "Raffineur", projectScoped: true };
+
+const roles = [manager, supervisor, refiner];
+
 const aicha: User = {
   id: "4",
   name: "Aicha Mint Mohamed",
   email: "aicha@mills.mr",
   phone: "+222 22 41 18 30",
-  role: "supervisor",
+  role: supervisor,
   project: "2",
 };
 
@@ -49,7 +61,13 @@ const projects: readonly Project[] = [
 function renderForm(user?: User) {
   return render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <UserForm user={user} projects={projects} onSaved={onSaved} onCancel={vi.fn()} />
+      <UserForm
+        user={user}
+        projects={projects}
+        roles={roles}
+        onSaved={onSaved}
+        onCancel={vi.fn()}
+      />
     </IntlProvider>,
   );
 }
@@ -63,7 +81,8 @@ async function replace(label: string, value: string) {
   return user;
 }
 
-async function fillNewUser() {
+async function fillNewUser(role = "Raffineur") {
+  await userEvent.setup().selectOptions(screen.getByLabelText(fields.role), role);
   await replace(fields.name, "Sidi Salem");
   await replace(fields.email, "sidi@mills.mr");
   await replace(fields.phone, "46109325");
@@ -73,35 +92,39 @@ async function fillNewUser() {
 }
 
 describe("UserForm when adding", () => {
-  it("starts empty with the supervisor role", () => {
+  it("starts empty with no role chosen", () => {
     renderForm();
 
     expect(screen.getByLabelText(fields.name)).toHaveValue("");
     expect(screen.getByLabelText(fields.email)).toHaveValue("");
-    expect(screen.getByLabelText(fields.role)).toHaveValue("supervisor");
+    expect(screen.getByLabelText(fields.role)).toHaveValue("");
     expect(screen.getByLabelText(fields.password)).toHaveValue("");
+    expect(screen.queryByLabelText(fields.project)).not.toBeInTheDocument();
   });
 
-  it("adds a supervisor with their project", async () => {
+  it("adds a user of a project-scoped role with their project", async () => {
     renderForm();
 
     const user = await fillNewUser();
     await user.click(screen.getByRole("button", { name: form.create }));
 
     await waitFor(() => {
-      expect(createUserMock).toHaveBeenCalledWith({
-        name: "Sidi Salem",
-        email: "sidi@mills.mr",
-        phone: "46109325",
-        role: "supervisor",
-        password: "secret123",
-        project: "3",
-      });
+      expect(createUserMock).toHaveBeenCalledWith(
+        {
+          name: "Sidi Salem",
+          email: "sidi@mills.mr",
+          phone: "46109325",
+          role: "5",
+          password: "secret123",
+          project: "3",
+        },
+        roles,
+      );
     });
     expect(onSaved).toHaveBeenCalled();
   });
 
-  it("asks no project for a manager", async () => {
+  it("asks no project for a role that sees every project", async () => {
     renderForm();
 
     const user = await fillNewUser();
@@ -112,13 +135,14 @@ describe("UserForm when adding", () => {
     await user.click(screen.getByRole("button", { name: form.create }));
 
     await waitFor(() => {
-      expect(createUserMock).toHaveBeenCalledWith(expect.objectContaining({ role: "manager" }));
+      expect(createUserMock).toHaveBeenCalledWith(expect.objectContaining({ role: "1" }), roles);
     });
   });
 
-  it("requires a project for a supervisor", async () => {
+  it("requires a project for a project-scoped role", async () => {
     renderForm();
 
+    await userEvent.setup().selectOptions(screen.getByLabelText(fields.role), "Raffineur");
     await replace(fields.name, "Sidi Salem");
     await replace(fields.email, "sidi@mills.mr");
     await replace(fields.phone, "46109325");
@@ -135,7 +159,7 @@ describe("UserForm when adding", () => {
 
     await user.click(screen.getByRole("button", { name: form.create }));
 
-    expect(await screen.findAllByText(validation.required)).toHaveLength(4);
+    expect(await screen.findAllByText(validation.required)).toHaveLength(5);
     expect(createUserMock).not.toHaveBeenCalled();
   });
 
@@ -183,7 +207,7 @@ describe("UserForm when editing", () => {
     expect(screen.getByLabelText(fields.name)).toHaveValue("Aicha Mint Mohamed");
     expect(screen.getByLabelText(fields.email)).toHaveValue("aicha@mills.mr");
     expect(screen.getByLabelText(fields.phone)).toHaveValue("+222 22 41 18 30");
-    expect(screen.getByLabelText(fields.role)).toHaveValue("supervisor");
+    expect(screen.getByLabelText(fields.role)).toHaveValue("2");
     expect(screen.getByLabelText(fields.newPassword)).toHaveValue("");
     expect(screen.getByLabelText(fields.project)).toHaveValue("2");
   });
@@ -195,14 +219,18 @@ describe("UserForm when editing", () => {
     await user.click(screen.getByRole("button", { name: form.submit }));
 
     await waitFor(() => {
-      expect(updateUserMock).toHaveBeenCalledWith("4", {
-        name: "Aicha Mint Mohamed",
-        email: "aicha@mills.mr",
-        phone: "+222 22 41 18 30",
-        role: "supervisor",
-        password: "",
-        project: "2",
-      });
+      expect(updateUserMock).toHaveBeenCalledWith(
+        "4",
+        {
+          name: "Aicha Mint Mohamed",
+          email: "aicha@mills.mr",
+          phone: "+222 22 41 18 30",
+          role: "2",
+          password: "",
+          project: "2",
+        },
+        roles,
+      );
     });
     expect(createUserMock).not.toHaveBeenCalled();
     expect(onSaved).toHaveBeenCalled();

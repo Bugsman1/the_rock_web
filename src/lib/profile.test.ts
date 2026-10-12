@@ -6,7 +6,8 @@ const me: Parameters<typeof profileFromApi>[0] = {
   email: "aicha@mills.mr",
   full_name: "Aicha Mint Mohamed",
   phone: "+222 22 41 18 30",
-  role: { id: 2, name: "supervisor" },
+  is_superuser: false,
+  role: { id: 2, name: "supervisor", is_project_scoped: true, permissions: [] },
 };
 
 describe("displayName", () => {
@@ -27,7 +28,7 @@ describe("profileFromApi", () => {
       name: "Aicha Mint Mohamed",
       email: "aicha@mills.mr",
       phone: "+222 22 41 18 30",
-      role: "supervisor",
+      roleName: "supervisor",
     });
   });
 });

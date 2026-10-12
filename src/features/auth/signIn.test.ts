@@ -21,16 +21,16 @@ function answerWith(access: string) {
 const values = { email: "manager@mills.mr", password: "secret123", rememberMe: true };
 
 describe("signIn", () => {
-  it("keeps the session and gives the role of the account", async () => {
-    const access = tokenWithRole("manager");
+  it("keeps the session of an account with a role", async () => {
+    const access = tokenWithRole("Raffineur");
     answerWith(access);
 
-    expect(await signIn(values)).toEqual({ ok: true, role: "manager" });
+    expect(await signIn(values)).toEqual({ ok: true });
     expect(localStorage.getItem("the_rock.access")).toBe(access);
   });
 
-  it("refuses an account without an allowed role and keeps no session", async () => {
-    answerWith(tokenWithRole("cashier"));
+  it("refuses an account without a role and keeps no session", async () => {
+    answerWith(tokenWithRole(null));
 
     expect(await signIn(values)).toEqual({ ok: false, reason: "noAccess" });
     expect(localStorage.length).toBe(0);

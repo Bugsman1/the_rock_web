@@ -1,5 +1,3 @@
-import { roleOfToken } from "@/lib/access";
-import type { UserRole } from "@/lib/access";
 import { isTokenExpired } from "@/lib/jwt";
 
 export type SessionTokens = {
@@ -42,10 +40,8 @@ export function readSession(): SessionTokens | undefined {
   return undefined;
 }
 
-export function sessionRole(now: Date): UserRole | undefined {
+export function hasSession(now: Date): boolean {
   const session = readSession();
 
-  return session === undefined || isTokenExpired(session.refresh, now)
-    ? undefined
-    : roleOfToken(session.access);
+  return session !== undefined && !isTokenExpired(session.refresh, now);
 }

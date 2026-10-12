@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/TablePanel";
 import { Tabs } from "@/components/ui/Tabs";
 import { Link } from "@/i18n/navigation";
+import { useCan } from "@/lib/accessContext";
 import { notFound } from "@/lib/api/client";
 import { cn } from "@/lib/cn";
 import { durationParts, isSameDay, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
@@ -261,7 +262,7 @@ export async function millingProjectLoader({ params, request }: LoaderFunctionAr
   const machine = search.get("machine");
   const [data, operators] = await Promise.all([
     getMillingData(),
-    creating ? getOperators(projectId) : [],
+    creating ? getOperators(projectId, "grinding") : [],
   ]);
 
   return {
@@ -286,6 +287,7 @@ type MachineRow = {
 function MachineList({ project, rows }: { project: string; rows: readonly MachineRow[] }) {
   const t = useTranslations("milling");
   const locale = useLocale();
+  const canStart = useCan()("grinding", "add");
   const [filter, setFilter] = useState<MachineStatusFilter>("all");
   const visible = filter === "all" ? rows : rows.filter((row) => row.status === filter);
   const now = new Date().toISOString();
@@ -380,7 +382,7 @@ function MachineList({ project, rows }: { project: string; rows: readonly Machin
                   {operation === undefined ? "—" : estimatedEndLabel(operation.estimatedEndAt)}
                 </td>
                 <td className={`${tableCellClasses} text-end`}>
-                  {status === "idle" ? (
+                  {canStart && status === "idle" ? (
                     <ActionLink
                       href={newMillingOperationHref(project, { machine: number })}
                       icon="plus"
@@ -424,6 +426,7 @@ type QueueRow = {
 function MillingQueueTable({ rows }: { rows: readonly QueueRow[] }) {
   const t = useTranslations("milling.project");
   const locale = useLocale();
+  const canStart = useCan()("grinding", "add");
   const [expanded, setExpanded] = useState(false);
 
   if (rows.length === 0) {
@@ -443,9 +446,11 @@ function MillingQueueTable({ rows }: { rows: readonly QueueRow[] }) {
               <th className={tableHeadClasses}>{t("queueColumns.client")}</th>
               <th className={tableHeadClasses}>{t("queueColumns.remaining")}</th>
               <th className={tableHeadClasses}>{t("queueColumns.status")}</th>
-              <th className={tableHeadClasses}>
-                <span className="sr-only">{t("queueColumns.action")}</span>
-              </th>
+              {canStart ? (
+                <th className={tableHeadClasses}>
+                  <span className="sr-only">{t("queueColumns.action")}</span>
+                </th>
+              ) : null}
             </tr>
           </thead>
           <tbody>
@@ -462,11 +467,13 @@ function MillingQueueTable({ rows }: { rows: readonly QueueRow[] }) {
                 <td className={tableCellClasses}>
                   <StatusBadge label={row.status} />
                 </td>
-                <td className={`${tableCellClasses} text-end`}>
-                  <ActionLink href={row.startHref} icon="player-play">
-                    {t("start")}
-                  </ActionLink>
-                </td>
+                {canStart ? (
+                  <td className={`${tableCellClasses} text-end`}>
+                    <ActionLink href={row.startHref} icon="player-play">
+                      {t("start")}
+                    </ActionLink>
+                  </td>
+                ) : null}
               </tr>
             ))}
           </tbody>
@@ -494,6 +501,7 @@ export function MillingProjectScreen() {
   const common = useTranslations("common");
   const locale = useLocale();
   const { close } = useRouteDrawer(millingProjectHref(project.id));
+  const canStart = useCan()("grinding", "add");
   const count = (value: number) => formatCount(value, locale);
   const machines = machinesOfProject(data.machines, project.id);
   const counts = countMachines(machines, data.operations);
@@ -506,10 +514,12 @@ export function MillingProjectScreen() {
         <BackLink href={MILLING_HREF} label={common("back")} />
         <div className="flex flex-wrap items-center justify-between gap-4">
           <PageTitle>{common("projectTitle", { name: project.name })}</PageTitle>
-          <ButtonLink href={newMillingOperationHref(project.id)} variant="primary">
-            <Icon name="plus" />
-            {t("project.newOperation")}
-          </ButtonLink>
+          {canStart ? (
+            <ButtonLink href={newMillingOperationHref(project.id)} variant="primary">
+              <Icon name="plus" />
+              {t("project.newOperation")}
+            </ButtonLink>
+          ) : null}
         </div>
       </div>
 
@@ -555,7 +565,7 @@ export function MillingProjectScreen() {
       </TablePanel>
 
       <Drawer
-        open={newOperation !== undefined}
+        open={newOperation !== undefined && canStart}
         title={t("operation.title")}
         closeLabel={common("close")}
         onClose={close}
@@ -678,6 +688,7 @@ export function MachineDetailScreen() {
   const t = useTranslations("milling");
   const common = useTranslations("common");
   const locale = useLocale();
+  const can = useCan();
   const now = new Date();
   const count = (value: number) => formatCount(value, locale);
   const status = machineStatus(machine, data.operations);
@@ -719,7 +730,7 @@ export function MachineDetailScreen() {
             },
           ]}
         />
-        {shipment === undefined ? null : (
+        {shipment === undefined || !can("grinding", "edit") ? null : (
           <div>
             <EndMillingAction
               label={t("machine.endMilling")}
@@ -743,13 +754,15 @@ export function MachineDetailScreen() {
     currentPanel = (
       <div className="flex flex-col items-start gap-4">
         <p className="text-ink-muted text-[15px] font-semibold">{t("machine.noOperation")}</p>
-        <ButtonLink
-          href={newMillingOperationHref(project.id, { machine: machine.number })}
-          variant="secondary"
-        >
-          <Icon name="plus" />
-          {t("machine.startOperation")}
-        </ButtonLink>
+        {can("grinding", "add") ? (
+          <ButtonLink
+            href={newMillingOperationHref(project.id, { machine: machine.number })}
+            variant="secondary"
+          >
+            <Icon name="plus" />
+            {t("machine.startOperation")}
+          </ButtonLink>
+        ) : null}
       </div>
     );
   }

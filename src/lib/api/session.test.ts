@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clearSession, readSession, saveSession, sessionRole, updateSession } from "./session";
+import { clearSession, hasSession, readSession, saveSession, updateSession } from "./session";
 
 const tokens = { access: "access-token", refresh: "refresh-token" };
 const now = new Date("2026-10-11T12:00:00Z");
@@ -68,21 +68,21 @@ describe("readSession and clearSession", () => {
   });
 });
 
-describe("sessionRole", () => {
-  it("gives the role while the session can still be renewed", () => {
+describe("hasSession", () => {
+  it("is signed in while the session can still be renewed", () => {
     saveSession(
       { access: tokenFor("supervisor", -60), refresh: tokenFor("supervisor", 600) },
       true,
     );
 
-    expect(sessionRole(now)).toBe("supervisor");
+    expect(hasSession(now)).toBe(true);
   });
 
-  it("gives nothing once the session has ended or when signed out", () => {
-    expect(sessionRole(now)).toBeUndefined();
+  it("is signed out once the session has ended or when there is none", () => {
+    expect(hasSession(now)).toBe(false);
 
     saveSession({ access: tokenFor("manager", 600), refresh: tokenFor("manager", -60) }, true);
 
-    expect(sessionRole(now)).toBeUndefined();
+    expect(hasSession(now)).toBe(false);
   });
 });

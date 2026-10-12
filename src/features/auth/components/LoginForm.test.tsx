@@ -33,7 +33,7 @@ const login = messages.auth.login;
 beforeEach(() => {
   replace.mockReset();
   signInMock.mockReset();
-  signInMock.mockResolvedValue({ ok: true, role: "manager" });
+  signInMock.mockResolvedValue({ ok: true });
 });
 
 const languageTrigger = () =>
@@ -60,20 +60,6 @@ describe("LoginForm", () => {
     expect(screen.queryByRole("button", { name: login.submit })).toBeNull();
     expect(screen.getByRole("status", { name: login.submitting })).toBeInTheDocument();
     expect(screen.queryByText(login.errors.emailRequired)).toBeNull();
-  });
-
-  it("opens the shipments for a supervisor", async () => {
-    signInMock.mockResolvedValue({ ok: true, role: "supervisor" });
-    const user = userEvent.setup();
-    renderForm();
-
-    await user.type(screen.getByLabelText(login.email.label), "supervisor@mills.mr");
-    await user.type(screen.getByLabelText(login.password.label), "secret123");
-    await user.click(screen.getByRole("button", { name: login.submit }));
-
-    await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith("/shipments");
-    });
   });
 
   it("shows the credentials error and keeps the form when sign in fails", async () => {

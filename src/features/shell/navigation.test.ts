@@ -1,9 +1,18 @@
 import { describe, expect, it } from "vitest";
+import { modules, rightsFromApi } from "@/lib/access";
+import type { Access, Module } from "@/lib/access";
 import { navGroupsFor, sectionHrefs } from "./navigation";
 
+function viewing(viewable: readonly Module[]): Access {
+  return {
+    superuser: false,
+    rights: rightsFromApi(viewable.map((module) => ({ module, can_view: true }))),
+  };
+}
+
 describe("navGroupsFor", () => {
-  it("gives the manager every group", () => {
-    expect(navGroupsFor("manager").map((group) => group.key)).toEqual([
+  it("gives a role that can view everything every group", () => {
+    expect(navGroupsFor(viewing(modules)).map((group) => group.key)).toEqual([
       null,
       "operations",
       "accounts",
@@ -12,8 +21,8 @@ describe("navGroupsFor", () => {
     ]);
   });
 
-  it("gives the supervisor only the operations", () => {
-    const groups = navGroupsFor("supervisor");
+  it("gives a role only the sections it can view", () => {
+    const groups = navGroupsFor(viewing(["shipments", "grinding", "refining"]));
 
     expect(groups.map((group) => group.key)).toEqual(["operations"]);
     expect(groups[0]?.items.map((item) => item.key)).toEqual(["shipments", "milling", "refining"]);

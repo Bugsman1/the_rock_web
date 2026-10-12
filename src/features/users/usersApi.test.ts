@@ -1,7 +1,17 @@
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { createUser, getUser, getUserPage, updateUser } from "./usersApi";
+import type { Role } from "@/lib/users";
+import {
+  createRole,
+  createUser,
+  deleteRole,
+  getUser,
+  getUserPage,
+  updateRole,
+  updateUser,
+} from "./usersApi";
+import { newRoleValues } from "./users";
 
 const API = `${window.location.origin}/api/v1`;
 const server = setupServer();
@@ -14,11 +24,21 @@ const roles = http.get(`${API}/roles/`, () =>
   HttpResponse.json({
     count: 2,
     results: [
-      { id: 1, name: "manager", permissions: [] },
-      { id: 2, name: "supervisor", permissions: [] },
+      { id: 1, name: "manager", is_project_scoped: false, users_count: 1, permissions: [] },
+      { id: 2, name: "supervisor", is_project_scoped: true, users_count: 1, permissions: [] },
     ],
   }),
 );
+
+const manager: Role = {
+  id: "1",
+  name: "manager",
+  projectScoped: false,
+};
+
+const supervisor: Role = { ...manager, id: "2", name: "supervisor", projectScoped: true };
+
+const knownRoles = [manager, supervisor];
 
 const aicha = {
   id: 4,
@@ -34,7 +54,7 @@ const values = {
   name: "Sidi Salem",
   email: "sidi@mills.mr",
   phone: "46109325",
-  role: "supervisor" as const,
+  role: "2",
   password: "secret123",
   project: "3",
 };
@@ -58,7 +78,7 @@ describe("getUserPage", () => {
         name: "Aicha",
         email: "aicha@mills.mr",
         phone: "+222 22 41 18 30",
-        role: "supervisor",
+        role: supervisor,
         project: "3",
       },
     ]);
@@ -83,14 +103,13 @@ describe("createUser", () => {
   it("sends the new user with the role and project ids", async () => {
     let body: unknown;
     server.use(
-      roles,
       http.post(`${API}/users/`, async ({ request }) => {
         body = await request.json();
         return HttpResponse.json({}, { status: 201 });
       }),
     );
 
-    expect(await createUser(values)).toEqual({ ok: true });
+    expect(await createUser(values, knownRoles)).toEqual({ ok: true });
     expect(body).toEqual({
       full_name: "Sidi Salem",
       email: "sidi@mills.mr",
@@ -103,13 +122,12 @@ describe("createUser", () => {
 
   it("shows the backend field errors on our fields", async () => {
     server.use(
-      roles,
       http.post(`${API}/users/`, () =>
         HttpResponse.json({ email: ["Existe déjà."] }, { status: 400 }),
       ),
     );
 
-    expect(await createUser(values)).toEqual({
+    expect(await createUser(values, knownRoles)).toEqual({
       ok: false,
       fieldErrors: { email: "Existe déjà." },
       failed: false,
@@ -118,17 +136,16 @@ describe("createUser", () => {
 });
 
 describe("updateUser", () => {
-  it("keeps the current password and sends no project for a manager", async () => {
+  it("keeps the current password and sends no project for a role on every project", async () => {
     let body: unknown;
     server.use(
-      roles,
       http.patch(`${API}/users/4/`, async ({ request }) => {
         body = await request.json();
         return HttpResponse.json({});
       }),
     );
 
-    expect(await updateUser("4", { ...values, role: "manager", password: "" })).toEqual({
+    expect(await updateUser("4", { ...values, role: "1", password: "" }, knownRoles)).toEqual({
       ok: true,
     });
     expect(body).toEqual({
@@ -141,6 +158,67 @@ describe("updateUser", () => {
   });
 
   it("refuses an id that is not a number without calling the backend", async () => {
-    expect(await updateUser("../1", values)).toEqual({ ok: false, fieldErrors: {}, failed: true });
+    expect(await updateUser("../1", values, knownRoles)).toEqual({
+      ok: false,
+      fieldErrors: {},
+      failed: true,
+    });
+  });
+});
+
+describe("createRole", () => {
+  it("sends the name, the project scope and the granted sections", async () => {
+    let body: unknown;
+    server.use(
+      http.post(`${API}/roles/`, async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({}, { status: 201 });
+      }),
+    );
+
+    expect(await createRole({ ...newRoleValues(), name: "Contrôleur" })).toEqual({ ok: true });
+    expect(body).toEqual({ name: "Contrôleur", is_project_scoped: false, permissions: [] });
+  });
+
+  it("shows a taken name on the name field", async () => {
+    server.use(
+      http.post(`${API}/roles/`, () =>
+        HttpResponse.json({ name: ["Ce nom existe déjà."] }, { status: 400 }),
+      ),
+    );
+
+    expect(await createRole({ ...newRoleValues(), name: "manager" })).toEqual({
+      ok: false,
+      fieldErrors: { name: "Ce nom existe déjà." },
+      failed: false,
+    });
+  });
+});
+
+describe("updateRole", () => {
+  it("refuses an id that is not a number without calling the backend", async () => {
+    expect(await updateRole("../1", newRoleValues())).toEqual({
+      ok: false,
+      fieldErrors: {},
+      failed: true,
+    });
+  });
+});
+
+describe("deleteRole", () => {
+  it("deletes the role", async () => {
+    server.use(http.delete(`${API}/roles/5/`, () => new HttpResponse(null, { status: 204 })));
+
+    expect(await deleteRole("5")).toEqual({ ok: true });
+  });
+
+  it("gives the backend reason when the role is still in use", async () => {
+    server.use(
+      http.delete(`${API}/roles/5/`, () =>
+        HttpResponse.json({ role: "Ce rôle est encore utilisé." }, { status: 400 }),
+      ),
+    );
+
+    expect(await deleteRole("5")).toEqual({ ok: false, reason: "Ce rôle est encore utilisé." });
   });
 });

@@ -16,6 +16,7 @@ import {
   tableRowClasses,
 } from "@/components/ui/TablePanel";
 import { useReplace } from "@/i18n/navigation";
+import { useCan } from "@/lib/accessContext";
 import { parsePageNumber } from "@/lib/api/pagination";
 import type { Customer } from "@/lib/customers";
 import { getCustomer, getCustomerPage } from "@/lib/customersApi";
@@ -46,6 +47,7 @@ type CustomerTableProps = {
 function CustomerTable({ customers, query, page }: CustomerTableProps) {
   const t = useTranslations("customers");
   const locale = useLocale();
+  const canEdit = useCan()("customers", "edit");
 
   if (customers.length === 0) {
     return (
@@ -63,9 +65,11 @@ function CustomerTable({ customers, query, page }: CustomerTableProps) {
             <th className={tableHeadClasses}>{t("fields.name")}</th>
             <th className={tableHeadClasses}>{t("fields.phone")}</th>
             <th className={tableHeadClasses}>{t("fields.addedAt")}</th>
-            <th className={tableHeadClasses}>
-              <span className="sr-only">{t("fields.action")}</span>
-            </th>
+            {canEdit ? (
+              <th className={tableHeadClasses}>
+                <span className="sr-only">{t("fields.action")}</span>
+              </th>
+            ) : null}
           </tr>
         </thead>
 
@@ -81,15 +85,17 @@ function CustomerTable({ customers, query, page }: CustomerTableProps) {
               <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
                 {formatDate(customer.addedAt, locale)}
               </td>
-              <td className={`${tableCellClasses} text-end`}>
-                <ActionLink
-                  href={customersHref({ query, page, edit: customer.id })}
-                  icon="pencil"
-                  ariaLabel={t("editLabel", { name: customer.name })}
-                >
-                  {t("edit")}
-                </ActionLink>
-              </td>
+              {canEdit ? (
+                <td className={`${tableCellClasses} text-end`}>
+                  <ActionLink
+                    href={customersHref({ query, page, edit: customer.id })}
+                    icon="pencil"
+                    ariaLabel={t("editLabel", { name: customer.name })}
+                  >
+                    {t("edit")}
+                  </ActionLink>
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>
@@ -134,7 +140,10 @@ export function CustomersScreen() {
   const common = useTranslations("common");
   const locale = useLocale();
   const { close } = useRouteDrawer(customersHref({ query, page }));
+  const can = useCan();
   const { pageCount } = customers;
+  const adding = creating && can("customers", "add");
+  const editingAllowed = editing !== undefined && can("customers", "edit");
 
   return (
     <div className="flex flex-col gap-6">
@@ -148,10 +157,12 @@ export function CustomersScreen() {
 
         <CustomerSearch key={query} query={query} />
 
-        <ButtonLink href={customersHref({ query, page, create: true })} variant="primary">
-          <Icon name="plus" />
-          {t("new")}
-        </ButtonLink>
+        {can("customers", "add") ? (
+          <ButtonLink href={customersHref({ query, page, create: true })} variant="primary">
+            <Icon name="plus" />
+            {t("new")}
+          </ButtonLink>
+        ) : null}
       </div>
 
       <TablePanel title={t("listTitle")}>
@@ -172,14 +183,14 @@ export function CustomersScreen() {
       </TablePanel>
 
       <Drawer
-        open={creating || editing !== undefined}
-        title={creating ? t("form.newTitle") : t("form.title")}
+        open={adding || editingAllowed}
+        title={adding ? t("form.newTitle") : t("form.title")}
         closeLabel={common("close")}
         onClose={close}
       >
         <CustomerForm
           key={editing?.id ?? "new"}
-          customer={creating ? undefined : editing}
+          customer={adding ? undefined : editing}
           onCancel={close}
           onSaved={close}
         />
