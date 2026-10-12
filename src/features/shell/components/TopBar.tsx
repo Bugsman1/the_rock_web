@@ -1,0 +1,90 @@
+import { useTranslations } from "use-intl";
+import { Icon } from "@/components/ui/Icon";
+import { IconButton } from "@/components/ui/IconButton";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
+import { SearchField } from "@/components/ui/SearchField";
+import type { UserRole } from "@/lib/access";
+
+type UserBadgeProps = {
+  name: string;
+  role: string;
+};
+
+function UserBadge({ name, role }: UserBadgeProps) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="bg-brand-50 text-brand-700 inline-flex size-9 shrink-0 items-center justify-center rounded-full">
+        <Icon name="user" />
+      </span>
+
+      <span className="hidden min-w-0 flex-col text-start sm:flex">
+        <span className="text-ink truncate text-[14px] font-semibold">{name}</span>
+        <span className="text-ink-muted truncate text-[12px]">{role}</span>
+      </span>
+    </div>
+  );
+}
+
+const SEARCH_ID = "global-search";
+
+type TopBarProps = {
+  role: UserRole;
+  userName: string;
+  sidebarCollapsed: boolean;
+  mobileMenuOpen: boolean;
+  onToggleSidebar: () => void;
+  onToggleMobileMenu: () => void;
+};
+
+export function TopBar({
+  role,
+  userName,
+  sidebarCollapsed,
+  mobileMenuOpen,
+  onToggleSidebar,
+  onToggleMobileMenu,
+}: TopBarProps) {
+  const t = useTranslations("shell");
+  const common = useTranslations("common");
+  const roles = useTranslations("roles");
+
+  return (
+    <header className="border-line bg-surface flex h-16 shrink-0 items-center gap-2 border-b-[1.5px] px-4 md:gap-4 md:px-6">
+      <div className="flex flex-1 items-center gap-2">
+        <span className="rounded-field bg-brand-700 text-ink-inverted inline-flex size-10 items-center justify-center">
+          <Icon name="box" className="h-6 w-6" />
+        </span>
+        <span className="md:hidden">
+          <IconButton
+            icon="menu"
+            label={t("toggleSidebar")}
+            aria-expanded={mobileMenuOpen}
+            onClick={onToggleMobileMenu}
+          />
+        </span>
+        <span className="hidden md:inline-flex">
+          <IconButton
+            icon="menu"
+            label={t("toggleSidebar")}
+            aria-expanded={!sidebarCollapsed}
+            onClick={onToggleSidebar}
+          />
+        </span>
+      </div>
+
+      <div className="hidden w-100 max-w-full shrink md:block">
+        <SearchField
+          id={SEARCH_ID}
+          label={t("search.label")}
+          placeholder={t("search.placeholder")}
+        />
+      </div>
+
+      <div className="flex flex-1 items-center justify-end gap-2">
+        <LanguageSwitcher label={common("language")} />
+        <IconButton icon="bell" label={t("notifications")} />
+        <UserBadge name={userName} role={roles(role)} />
+      </div>
+    </header>
+  );
+}

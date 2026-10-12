@@ -1,0 +1,122 @@
+import { describe, expect, it } from "vitest";
+import {
+  customersHref,
+  editProjectHref,
+  grinderHref,
+  inventoryProjectHref,
+  isWithinHref,
+  millingMachineHref,
+  millingProjectHref,
+  millingSiteHref,
+  newGrinderHref,
+  newMillingOperationHref,
+  resourceHref,
+  settingsProjectHref,
+  shipmentsHistoryHref,
+  shipmentsProjectHref,
+  startGrindingHref,
+  startRefiningHref,
+  usersHref,
+} from "./routes";
+
+describe("isWithinHref", () => {
+  it("matches the section itself and the pages under it", () => {
+    expect(isWithinHref("/shipments", "/shipments")).toBe(true);
+    expect(isWithinHref("/shipments/projects/2", "/shipments")).toBe(true);
+  });
+
+  it("does not match a section that only starts with the same letters", () => {
+    expect(isWithinHref("/shipments-old", "/shipments")).toBe(false);
+    expect(isWithinHref("/", "/shipments")).toBe(false);
+  });
+});
+
+describe("customersHref", () => {
+  it("opens the list, the add drawer or the edit drawer", () => {
+    expect(customersHref()).toBe("/customers");
+    expect(customersHref({ create: true })).toBe("/customers?new=1");
+    expect(customersHref({ edit: "3" })).toBe("/customers?edit=3");
+  });
+
+  it("keeps the search and page of the list, ignoring defaults", () => {
+    expect(customersHref({ query: " fati ", page: 2, edit: "3" })).toBe(
+      "/customers?q=fati&page=2&edit=3",
+    );
+    expect(customersHref({ query: "", page: 1 })).toBe("/customers");
+  });
+});
+
+describe("settings routes", () => {
+  it("gives every project and machine page its own address", () => {
+    expect(settingsProjectHref("3")).toBe("/settings/projects/3");
+    expect(editProjectHref("3")).toBe("/settings/projects/3/edit");
+    expect(newGrinderHref("3")).toBe("/settings/projects/3/machines/new");
+    expect(grinderHref("3", "9")).toBe("/settings/projects/3/machines/9");
+  });
+});
+
+describe("usersHref", () => {
+  it("opens the list, the add drawer or the edit drawer on a page", () => {
+    expect(usersHref()).toBe("/users");
+    expect(usersHref({ create: true })).toBe("/users?new=1");
+    expect(usersHref({ page: 2, edit: "4" })).toBe("/users?page=2&edit=4");
+  });
+});
+
+describe("shipments routes", () => {
+  it("builds the project and history pages", () => {
+    expect(shipmentsProjectHref("3")).toBe("/shipments/projects/3");
+    expect(shipmentsHistoryHref("3")).toBe("/shipments/projects/3/history");
+  });
+});
+
+describe("milling routes", () => {
+  it("builds the site filter, project and machine pages", () => {
+    expect(millingSiteHref("zouerat")).toBe("/milling?site=zouerat");
+    expect(millingProjectHref("3")).toBe("/milling/projects/3");
+    expect(millingMachineHref("3", 7)).toBe("/milling/projects/3/machines/7");
+  });
+
+  it("opens the new-operation drawer, pre-filled when asked", () => {
+    expect(newMillingOperationHref("3")).toBe("/milling/projects/3?operation=new");
+    expect(newMillingOperationHref("3", { shipmentNumber: "SH-1041" })).toBe(
+      "/milling/projects/3?operation=new&shipment=SH-1041",
+    );
+    expect(newMillingOperationHref("3", { machine: 3 })).toBe(
+      "/milling/projects/3?operation=new&machine=3",
+    );
+  });
+});
+
+describe("start grinding route", () => {
+  it("opens the grinding drawer on a shipment of the project", () => {
+    expect(startGrindingHref("3", "SHP-2026-00002")).toBe(
+      "/shipments/projects/3?grind=SHP-2026-00002",
+    );
+  });
+});
+
+describe("refining routes", () => {
+  it("opens the refining drawer of a finished grinding operation", () => {
+    expect(startRefiningHref("5")).toBe("/refining?grinding=5");
+  });
+});
+
+describe("inventory routes", () => {
+  it("opens a project's resources, its new resource form or its mercury set-up", () => {
+    expect(inventoryProjectHref("3")).toBe("/inventory/projects/3");
+    expect(inventoryProjectHref("3", "resource")).toBe("/inventory/projects/3?new=resource");
+    expect(inventoryProjectHref("3", "material")).toBe("/inventory/projects/3?new=material");
+  });
+
+  it("opens a resource's page, a page of its history and its actions", () => {
+    expect(resourceHref("2")).toBe("/inventory/resources/2");
+    expect(resourceHref("2", { page: 3 })).toBe("/inventory/resources/2?page=3");
+    expect(resourceHref("2", { action: "decrease" })).toBe(
+      "/inventory/resources/2?action=decrease",
+    );
+    expect(resourceHref("2", { page: 2, action: "edit" })).toBe(
+      "/inventory/resources/2?page=2&action=edit",
+    );
+  });
+});

@@ -1,0 +1,607 @@
+{
+  "common": {
+    "appName": "Système Moulins Ehl Taya",
+    "companyName": "Moulins Ehl Taya",
+    "language": "Langue",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "close": "Fermer",
+    "cancel": "Annuler",
+    "search": "Rechercher",
+    "saveFailed": "L'enregistrement a échoué, réessayez dans un instant",
+    "pageOf": "Page {page} sur {count}",
+    "previousPage": "Précédent",
+    "nextPage": "Suivant",
+    "validation": {
+      "required": "Ce champ est obligatoire",
+      "phoneInvalid": "Saisissez un numéro à 8 chiffres, par exemple +222 22 33 44 55",
+      "dateInvalid": "Saisissez une date valide au format jj/mm/aaaa",
+      "timeInvalid": "Saisissez une heure valide au format hh:mm"
+    },
+    "back": "Retour",
+    "projectTitle": "Projet {name}",
+    "openCalendar": "Ouvrir le calendrier",
+    "datePlaceholder": "jj/mm/aaaa",
+    "timePlaceholder": "hh:mm",
+    "openProject": "Ouvrir le projet",
+    "loading": "Chargement"
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "subtitle": "Saisissez vos informations pour continuer",
+      "welcomeTitle": "Bon retour",
+      "welcomeBody": "Connectez-vous pour poursuivre votre travail et accéder à votre tableau de bord.",
+      "copyright": "© {year} {company}",
+      "email": {
+        "label": "Adresse e-mail",
+        "placeholder": "name@example.com"
+      },
+      "password": {
+        "label": "Mot de passe",
+        "placeholder": "••••••••",
+        "forgot": "Mot de passe oublié ?"
+      },
+      "rememberMe": "Se souvenir de moi",
+      "submit": "Se connecter",
+      "submitting": "Connexion en cours",
+      "errors": {
+        "invalidCredentials": "L'adresse e-mail ou le mot de passe est incorrect",
+        "unavailable": "Le serveur est injoignable pour le moment, réessayez plus tard",
+        "noAccess": "Ce compte n'a pas de rôle autorisé, contactez le directeur",
+        "emailRequired": "L'adresse e-mail est requise",
+        "emailInvalid": "Le format de l'adresse e-mail est invalide",
+        "passwordRequired": "Le mot de passe est requis"
+      },
+      "contactAdmin": "Si vous n'avez pas de compte, veuillez contacter votre superviseur ou le directeur."
+    }
+  },
+  "shell": {
+    "toggleSidebar": "Afficher ou masquer le menu",
+    "navigation": "Menu principal",
+    "notifications": "Notifications",
+    "settings": "Paramètres",
+    "logout": "Se déconnecter",
+    "search": {
+      "label": "Recherche",
+      "placeholder": "Rechercher dans le système..."
+    },
+    "nav": {
+      "dashboard": "Tableau de bord",
+      "shipments": "Expéditions",
+      "milling": "Broyage",
+      "refining": "Affinage",
+      "customers": "Clients",
+      "settlement": "Règlement final",
+      "accounting": "Comptabilité",
+      "treasury": "Trésorerie et banques",
+      "employees": "Employés et paie",
+      "inventory": "Inventaire",
+      "assets": "Actifs",
+      "reports": "Rapports",
+      "users": "Utilisateurs et permissions",
+      "auditLog": "Journal d'audit"
+    },
+    "navGroups": {
+      "operations": "Opérations",
+      "accounts": "Comptes",
+      "resources": "Ressources",
+      "management": "Gestion"
+    }
+  },
+  "roles": {
+    "manager": "Directeur",
+    "supervisor": "Superviseur"
+  },
+  "customers": {
+    "title": "Clients",
+    "listTitle": "Liste des clients",
+    "count": "Clients : {count}",
+    "new": "Nouveau client",
+    "searchPlaceholder": "Nom ou téléphone",
+    "noResults": "Aucun client ne correspond à cette recherche.",
+    "empty": "Aucun client pour le moment.",
+    "edit": "Modifier",
+    "editLabel": "Modifier {name}",
+    "fields": {
+      "name": "Nom du client",
+      "phone": "Téléphone",
+      "addedAt": "Date d'ajout",
+      "action": "Action"
+    },
+    "form": {
+      "title": "Modifier le client",
+      "submit": "Enregistrer les modifications",
+      "create": "Ajouter le client",
+      "saving": "Enregistrement du client",
+      "errors": {
+        "phoneTaken": "Ce numéro appartient déjà à un autre client"
+      },
+      "newTitle": "Nouveau client"
+    }
+  },
+  "sites": {
+    "zouerat": "Zouerate",
+    "sfariyat": "Sfariyat"
+  },
+  "activityStatuses": {
+    "active": "Actif",
+    "maintenance": "En maintenance",
+    "inactive": "Inactif"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "searchLabel": "Rechercher dans les paramètres",
+    "searchPlaceholder": "Rechercher un réglage...",
+    "noResults": "Aucun réglage ne correspond à cette recherche.",
+    "profile": {
+      "title": "Profil",
+      "description": "Les informations de votre compte. Pour les modifier, contactez le directeur.",
+      "name": "Nom",
+      "email": "Adresse e-mail",
+      "phone": "Téléphone",
+      "role": "Rôle",
+      "none": "—"
+    },
+    "language": {
+      "title": "Langue",
+      "description": "Langue d'affichage de l'application sur cet appareil.",
+      "current": "Utilisée actuellement"
+    },
+    "projects": {
+      "title": "Projets et machines",
+      "description": "Ajoutez les projets et leurs machines, et réglez leur statut.",
+      "new": "Nouveau projet",
+      "empty": "Aucun projet pour le moment.",
+      "open": "Ouvrir",
+      "machines": "Machines",
+      "edit": "Modifier le projet",
+      "fields": {
+        "name": "Nom du projet",
+        "site": "Lieu",
+        "status": "Statut"
+      },
+      "form": {
+        "newTitle": "Nouveau projet",
+        "title": "Modifier le projet",
+        "create": "Ajouter le projet",
+        "submit": "Enregistrer les modifications",
+        "saving": "Enregistrement du projet"
+      },
+      "delete": {
+        "open": "Supprimer le projet",
+        "title": "Supprimer le projet",
+        "question": "Voulez-vous supprimer le projet {name} ?",
+        "explanation": "Le projet disparaîtra de toutes les listes. Ses machines, expéditions et opérations passées restent enregistrées.",
+        "confirm": "Oui, supprimer le projet",
+        "deleting": "Suppression du projet",
+        "failed": "La suppression a échoué, réessayez dans un instant"
+      }
+    },
+    "grinders": {
+      "title": "Machines",
+      "new": "Nouvelle machine",
+      "empty": "Aucune machine dans ce projet.",
+      "machine": "Machine {number}",
+      "edit": "Modifier",
+      "editLabel": "Modifier la machine {number}",
+      "fields": {
+        "number": "Numéro de la machine",
+        "status": "Statut",
+        "action": "Action"
+      },
+      "form": {
+        "newTitle": "Nouvelle machine",
+        "title": "Modifier la machine",
+        "create": "Ajouter la machine",
+        "submit": "Enregistrer les modifications",
+        "saving": "Enregistrement de la machine",
+        "errors": {
+          "numberInvalid": "Saisissez un nombre entier entre 1 et 9999",
+          "numberTaken": "Ce numéro est déjà utilisé par une autre machine de ce projet"
+        },
+        "nextFree": "Prochain numéro libre : {number}"
+      }
+    }
+  },
+  "users": {
+    "title": "Utilisateurs",
+    "listTitle": "Liste des utilisateurs",
+    "count": "Utilisateurs : {count}",
+    "new": "Nouvel utilisateur",
+    "empty": "Aucun utilisateur pour le moment.",
+    "noRole": "Sans rôle",
+    "allProjects": "Tous les projets",
+    "chooseProject": "Choisir un projet",
+    "edit": "Modifier",
+    "editLabel": "Modifier {name}",
+    "fields": {
+      "name": "Nom complet",
+      "email": "Adresse e-mail",
+      "phone": "Téléphone",
+      "role": "Rôle",
+      "project": "Projet",
+      "password": "Mot de passe",
+      "newPassword": "Nouveau mot de passe",
+      "action": "Action"
+    },
+    "passwordKeep": "Laissez vide pour garder le mot de passe actuel",
+    "form": {
+      "newTitle": "Nouvel utilisateur",
+      "title": "Modifier l'utilisateur",
+      "create": "Ajouter l'utilisateur",
+      "submit": "Enregistrer les modifications",
+      "saving": "Enregistrement de l'utilisateur",
+      "errors": {
+        "emailInvalid": "Le format de l'adresse e-mail est invalide",
+        "passwordShort": "Le mot de passe doit contenir au moins {min} caractères",
+        "projectRequired": "Choisissez le projet du superviseur"
+      }
+    }
+  },
+  "shipments": {
+    "title": "Expéditions",
+    "addNew": "Nouvelle expédition",
+    "form": {
+      "title": "Nouvelle expédition",
+      "customerName": "Nom du client",
+      "phone": "Téléphone",
+      "arrivalDate": "Date d'arrivée",
+      "arrivalTime": "Heure d'arrivée",
+      "bagCount": "Nombre de sacs",
+      "transportMethod": "Moyen de transport",
+      "source": "Source",
+      "submit": "Enregistrer l'expédition",
+      "saving": "Enregistrement de l'expédition",
+      "errors": {
+        "bagCountInvalid": "Saisissez un nombre de sacs valide, au moins 1",
+        "amountInvalid": "Saisissez un montant valide, 0 ou plus",
+        "passengerCountInvalid": "Saisissez un nombre de passagers valide, 0 ou plus",
+        "phoneTaken": "Ce numéro appartient au client {name}"
+      },
+      "mill": "Projet",
+      "status": "Statut",
+      "notes": "Notes",
+      "sections": {
+        "client": "Client",
+        "shipment": "Expédition",
+        "destination": "Destination",
+        "transportCost": "Frais de transport"
+      },
+      "bagFare": "Prix du transport par sac (MRU)",
+      "passengerCount": "Nombre de passagers",
+      "passengerFare": "Prix par passager (MRU)",
+      "bagsTransportCost": "Transport des sacs",
+      "passengersTransportCost": "Transport des passagers",
+      "transportTotal": "Total du transport",
+      "amountValue": "{amount} MRU",
+      "sourcePlaceholder": "Écrivez la provenance de l'expédition"
+    },
+    "totalBags": "Total des sacs dans tous les projets",
+    "clientsLabel": "Clients",
+    "bagsLabel": "Sacs",
+    "topClients": "Principaux clients par nombre de sacs",
+    "transportMethods": {
+      "truck": "Camion",
+      "hilux": "Toyota Hilux",
+      "other": "Autre"
+    },
+    "statuses": {
+      "pending": "En attente",
+      "grinding": "Broyage en cours",
+      "completed": "Terminée"
+    },
+    "noClients": "Aucun client pour le moment.",
+    "project": {
+      "queueTitle": "Clients par heure d'arrivée",
+      "position": "Ordre",
+      "shipment": "N° d'expédition",
+      "client": "Client",
+      "arrivedAt": "Heure d'arrivée",
+      "empty": "Aucune expédition dans ce projet.",
+      "action": "Action",
+      "startMilling": "Démarrer le broyage"
+    },
+    "history": {
+      "open": "Historique",
+      "title": "Historique des expéditions · {project}",
+      "searchPlaceholder": "Client, téléphone ou n° d'expédition",
+      "from": "Du",
+      "to": "Au",
+      "count": "Expéditions : {count}",
+      "clear": "Effacer les filtres",
+      "empty": "Aucune expédition ne correspond à ces filtres.",
+      "columns": {
+        "shipment": "N° d'expédition",
+        "client": "Client",
+        "phone": "Téléphone",
+        "arrivedAt": "Date d'arrivée",
+        "bags": "Sacs",
+        "status": "Statut",
+        "notes": "Notes"
+      }
+    }
+  },
+  "milling": {
+    "title": "Broyage",
+    "siteFilter": "Filtrer par site",
+    "allSites": "Tous",
+    "kpis": {
+      "machinesRunning": "Machines en marche",
+      "bagsMilling": "Sacs en cours de broyage",
+      "bagsWaiting": "Sacs en attente",
+      "bagsMilledToday": "Sacs broyés aujourd'hui"
+    },
+    "statuses": {
+      "running": "En marche",
+      "idle": "Disponible",
+      "maintenance": "En maintenance"
+    },
+    "shipmentStatuses": {
+      "pending": "En attente",
+      "partiallyMilled": "Partiellement broyée",
+      "milled": "Broyée"
+    },
+    "outOf": "sur {total}",
+    "project": {
+      "machinesRunning": "Machines en marche",
+      "bagsMilling": "Sacs en broyage",
+      "waitingShipments": "Expéditions en attente",
+      "newOperation": "Nouvelle opération",
+      "machinesTitle": "Machines",
+      "statusFilter": "Filtrer par statut",
+      "filterAll": "Toutes",
+      "machineNumber": "Machine {number}",
+      "noMachines": "Aucune machine avec ce statut.",
+      "columns": {
+        "machine": "Machine",
+        "status": "Statut",
+        "assignment": "Client · expédition",
+        "bags": "Sacs",
+        "estimatedEnd": "Fin estimée",
+        "action": "Action",
+        "details": "Détails"
+      },
+      "start": "Démarrer",
+      "openMachine": "Ouvrir la machine {number}",
+      "queueTitle": "Expéditions en attente, par ordre d'arrivée",
+      "queueEmpty": "Aucune expédition en attente pour ce projet.",
+      "queueColumns": {
+        "position": "Rang",
+        "shipment": "Expédition",
+        "client": "Client",
+        "remaining": "Restants",
+        "status": "Statut",
+        "action": "Action"
+      },
+      "remainingOf": "{remaining} sur {total}",
+      "showAll": "Afficher tout ({count})",
+      "showLess": "Afficher moins"
+    },
+    "operation": {
+      "title": "Nouvelle opération de broyage",
+      "shipment": "N° d'expédition",
+      "shipmentSearch": "N° ou client",
+      "client": "Client",
+      "project": "Projet",
+      "machine": "Machine",
+      "machinePlaceholder": "Choisir une machine disponible",
+      "noIdleMachines": "Aucune machine disponible dans ce projet pour le moment.",
+      "bags": "Nombre de sacs",
+      "remainingAfter": "Restants après cette opération : {count}",
+      "startDate": "Date de début",
+      "startTime": "Heure de début",
+      "operator": "Opérateur",
+      "operatorPlaceholder": "Choisir un opérateur",
+      "notes": "Notes",
+      "estimatedEnd": "Fin estimée",
+      "estimatedEndPending": "Renseignez les sacs et l'heure de début",
+      "capacity": "Capacité : {bags} sacs par machine toutes les {hours} heures",
+      "submit": "Démarrer le broyage",
+      "saving": "Démarrage du broyage",
+      "errors": {
+        "bagsInvalid": "Saisissez un nombre entier d'au moins 1",
+        "bagsTooMany": "Ne peut pas dépasser les sacs restants",
+        "machineUnavailable": "Cette machine n'est plus disponible"
+      },
+      "remaining": "Restants : {count}"
+    },
+    "machine": {
+      "title": "Machine {number}",
+      "tabsLabel": "Sections de la machine",
+      "tabs": {
+        "current": "Opération en cours",
+        "maintenance": "Maintenance"
+      },
+      "client": "Client",
+      "shipment": "Expédition",
+      "bags": "Sacs",
+      "startedAt": "Début",
+      "estimatedEnd": "Fin estimée",
+      "operator": "Opérateur",
+      "notes": "Notes",
+      "noNotes": "Aucune note",
+      "noOperation": "Aucune opération en cours sur cette machine.",
+      "startOperation": "Démarrer une opération",
+      "inMaintenance": "Machine en maintenance : aucune opération possible.",
+      "endMilling": "Terminer",
+      "duration": "{hours} h {minutes} min",
+      "history": {
+        "empty": "Aucun broyage sur cette machine pour le moment.",
+        "shipment": "Expédition",
+        "client": "Client",
+        "bags": "Sacs",
+        "start": "Début",
+        "end": "Fin",
+        "duration": "Durée",
+        "operator": "Opérateur",
+        "title": "Tous les broyages de cette machine",
+        "running": "En cours"
+      },
+      "maintenance": {
+        "status": "Statut",
+        "inService": "En service",
+        "underMaintenance": "En maintenance",
+        "placeholder": "Le suivi détaillé de la maintenance arrivera avec le module dédié."
+      }
+    },
+    "end": {
+      "title": "Terminer le broyage",
+      "endDate": "Date de fin",
+      "endTime": "Heure de fin",
+      "bagsMilled": "Sacs réellement broyés",
+      "notes": "Notes",
+      "cost": "Coût",
+      "costValue": "{amount} MRU",
+      "costRate": "{bags} sacs × {rate} MRU",
+      "submit": "Terminer le broyage",
+      "saving": "Enregistrement de la fin du broyage",
+      "errors": {
+        "endBeforeStart": "La fin doit être après le début",
+        "bagsMilledInvalid": "Saisissez un nombre entre 1 et les sacs affectés"
+      }
+    }
+  },
+  "refining": {
+    "title": "Affinage",
+    "new": "Nouvelle opération d'affinage",
+    "queueTitle": "Broyages en attente d'affinage",
+    "queueEmpty": "Aucun broyage terminé n'attend l'affinage.",
+    "operationsTitle": "Opérations d'affinage",
+    "operationsEmpty": "Aucune opération d'affinage pour le moment.",
+    "start": "Démarrer l'affinage",
+    "startLabel": "Démarrer l'affinage de l'expédition {number}",
+    "machineNumber": "Machine {number}",
+    "fields": {
+      "shipment": "N° d'expédition",
+      "client": "Client",
+      "project": "Projet",
+      "machine": "Machine",
+      "bags": "Sacs",
+      "groundAt": "Fin du broyage",
+      "action": "Action",
+      "refinedAt": "Date d'affinage",
+      "date": "Date d'affinage",
+      "time": "Heure d'affinage",
+      "worker": "Responsable",
+      "weightBefore": "Poids avant affinage (g)",
+      "weightAfter": "Poids après affinage (g)",
+      "weightLoss": "Écart de poids (g)",
+      "gold": "Or extrait (g)",
+      "goldWithMaterial": "Or avec matière (g)",
+      "goldWithoutMaterial": "Or sans matière (g)",
+      "loss": "Perte (g)",
+      "lossReason": "Raison de la perte",
+      "notes": "Notes"
+    },
+    "form": {
+      "workerPlaceholder": "Choisir le responsable",
+      "submit": "Enregistrer l'affinage",
+      "saving": "Enregistrement de l'affinage",
+      "lossReasonPlaceholder": "Choisir la raison de la perte"
+    },
+    "errors": {
+      "bagsInvalid": "Saisissez un nombre entier de 1 à {max}",
+      "weightInvalid": "Saisissez un poids valide",
+      "weightAfterTooHigh": "Ne peut pas dépasser le poids avant affinage",
+      "goldTooHeavy": "L'or ne peut pas peser plus que la matière affinée",
+      "withoutMaterialTooHeavy": "L'or sans matière ne peut pas peser plus que l'or avec matière"
+    },
+    "lossReasons": {
+      "normalShortage": "Manque normal",
+      "noLoss": "Aucune perte",
+      "weighingError": "Erreur de pesée",
+      "machineFault": "Panne ou fuite de la machine",
+      "mixedWithSoil": "Mélange avec la terre",
+      "arghawa": "Arghawa",
+      "workerNegligence": "Négligence d'un ouvrier"
+    }
+  },
+  "inventory": {
+    "title": "Inventaire",
+    "count": "Ressources : {count}",
+    "new": "Nouvelle ressource",
+    "increase": "Augmenter",
+    "decrease": "Diminuer",
+    "edit": "Modifier",
+    "historyListTitle": "Mouvements de quantité",
+    "historyEmpty": "Aucun mouvement pour cette ressource pour le moment.",
+    "changeTypes": {
+      "increase": "Augmentation",
+      "decrease": "Diminution"
+    },
+    "fields": {
+      "name": "Nom de la ressource",
+      "project": "Projet",
+      "initialQuantity": "Quantité initiale",
+      "currentQuantity": "Quantité actuelle",
+      "action": "Action",
+      "quantity": "Quantité",
+      "quantityBefore": "Quantité avant",
+      "quantityAfter": "Quantité après",
+      "refiningOperation": "Opération d'affinage",
+      "note": "Note",
+      "shipment": "Expédition",
+      "changedAt": "Date",
+      "changeType": "Type",
+      "changedBy": "Par",
+      "kind": "Type de ressource"
+    },
+    "form": {
+      "newTitle": "Nouvelle ressource",
+      "title": "Modifier la ressource",
+      "increaseTitle": "Augmenter {name}",
+      "decreaseTitle": "Diminuer {name}",
+      "quantityFixed": "La quantité ne change que par une augmentation ou une diminution.",
+      "create": "Ajouter la ressource",
+      "submit": "Enregistrer les modifications",
+      "saving": "Enregistrement",
+      "noRefiningOperation": "Sans opération d'affinage",
+      "refiningOperationOption": "{shipment} · {client} · {date}",
+      "increaseSubmit": "Enregistrer l'augmentation",
+      "decreaseSubmit": "Enregistrer la diminution",
+      "kindPlaceholder": "Choisir le type"
+    },
+    "errors": {
+      "quantityInvalid": "Saisissez une quantité valide d'au moins 0",
+      "changeInvalid": "Saisissez une quantité supérieure à 0",
+      "quantityTooMuch": "Il ne reste que {left}"
+    },
+    "refiningMaterial": "Matière d'affinage",
+    "refiningChangeTypes": {
+      "decrease": "Perte d'affinage",
+      "increase": "Perte d'affinage rendue"
+    },
+    "noProjects": "Aucun projet pour le moment. Ajoutez-en depuis les paramètres.",
+    "resourceCount": "Ressources",
+    "material": {
+      "setUp": "Configurer le mercure",
+      "missing": "Le mercure de ce projet n'est pas encore configuré. Saisissez sa quantité initiale pour que la perte de chaque affinage en soit retirée automatiquement.",
+      "hint": "La perte de chaque affinage en est retirée automatiquement."
+    },
+    "open": "Ouvrir",
+    "kinds": {
+      "mercury": "Mercure",
+      "water": "Eau",
+      "fuel": "Essence",
+      "other": "Autre"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "Introuvable",
+      "description": "La page ou les données demandées n'existent pas ou ne sont pas disponibles sur le serveur."
+    },
+    "forbidden": {
+      "title": "Accès refusé",
+      "description": "Votre rôle n'a pas la permission d'ouvrir ces données. Contactez le directeur."
+    },
+    "failed": {
+      "title": "Une erreur est survenue",
+      "description": "Les données n'ont pas pu être chargées. Réessayez dans un instant."
+    },
+    "status": "Code d'erreur : {status}",
+    "retry": "Réessayer",
+    "home": "Retour à l'accueil"
+  }
+}

@@ -1,0 +1,607 @@
+{
+  "common": {
+    "appName": "نظام مطاحن أهل الطايع",
+    "companyName": "مطاحن أهل الطايع",
+    "language": "اللغة",
+    "showPassword": "إظهار كلمة المرور",
+    "hidePassword": "إخفاء كلمة المرور",
+    "close": "إغلاق",
+    "cancel": "إلغاء",
+    "search": "بحث",
+    "saveFailed": "تعذر الحفظ، حاول مرة أخرى بعد قليل",
+    "pageOf": "الصفحة {page} من {count}",
+    "previousPage": "السابق",
+    "nextPage": "التالي",
+    "validation": {
+      "required": "هذا الحقل مطلوب",
+      "phoneInvalid": "أدخل رقمًا من 8 أرقام، مثل ‎+222 22 33 44 55",
+      "dateInvalid": "أدخل تاريخًا صحيحًا بصيغة يوم/شهر/سنة",
+      "timeInvalid": "أدخل وقتًا صحيحًا بصيغة ساعة:دقيقة"
+    },
+    "back": "رجوع",
+    "projectTitle": "مشروع {name}",
+    "openCalendar": "فتح التقويم",
+    "datePlaceholder": "dd/mm/yyyy",
+    "timePlaceholder": "hh:mm",
+    "openProject": "فتح المشروع",
+    "loading": "جارٍ التحميل"
+  },
+  "auth": {
+    "login": {
+      "title": "تسجيل الدخول",
+      "subtitle": "أدخل بياناتك للمتابعة",
+      "welcomeTitle": "مرحبًا بعودتك",
+      "welcomeBody": "سجّل دخولك لمتابعة عملك والوصول إلى لوحة التحكم الخاصة بك.",
+      "copyright": "© {year} {company}",
+      "email": {
+        "label": "البريد الإلكتروني",
+        "placeholder": "name@example.com"
+      },
+      "password": {
+        "label": "كلمة المرور",
+        "placeholder": "••••••••",
+        "forgot": "نسيت كلمة المرور؟"
+      },
+      "rememberMe": "تذكرني",
+      "submit": "تسجيل الدخول",
+      "submitting": "جارٍ تسجيل الدخول",
+      "errors": {
+        "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+        "unavailable": "تعذر الاتصال بالخادم حاليًا، حاول مرة أخرى لاحقًا",
+        "noAccess": "هذا الحساب ليس له دور مسموح به، يرجى التواصل مع المدير",
+        "emailRequired": "البريد الإلكتروني مطلوب",
+        "emailInvalid": "صيغة البريد الإلكتروني غير صحيحة",
+        "passwordRequired": "كلمة المرور مطلوبة"
+      },
+      "contactAdmin": "إذا لم يكن لديك حساب، يرجى التواصل مع المشرف أو المدير."
+    }
+  },
+  "shell": {
+    "toggleSidebar": "إظهار أو إخفاء القائمة",
+    "navigation": "القائمة الرئيسية",
+    "notifications": "الإشعارات",
+    "settings": "الإعدادات",
+    "logout": "تسجيل الخروج",
+    "search": {
+      "label": "بحث",
+      "placeholder": "ابحث في النظام..."
+    },
+    "nav": {
+      "dashboard": "لوحة التحكم",
+      "shipments": "الشحنات",
+      "milling": "الطحن",
+      "refining": "التصفية",
+      "customers": "العملاء",
+      "settlement": "التسوية النهائية",
+      "accounting": "المحاسبة",
+      "treasury": "الصناديق والبنوك",
+      "employees": "الموظفون والرواتب",
+      "inventory": "المخزون",
+      "assets": "الأصول",
+      "reports": "التقارير",
+      "users": "المستخدمون والصلاحيات",
+      "auditLog": "سجل التغييرات"
+    },
+    "navGroups": {
+      "operations": "العمليات",
+      "accounts": "الحسابات",
+      "resources": "الموارد",
+      "management": "الإدارة"
+    }
+  },
+  "roles": {
+    "manager": "مدير",
+    "supervisor": "مشرف"
+  },
+  "customers": {
+    "title": "العملاء",
+    "listTitle": "قائمة العملاء",
+    "count": "عدد العملاء: {count}",
+    "new": "عميل جديد",
+    "searchPlaceholder": "الاسم أو الهاتف",
+    "noResults": "لا يوجد عميل يطابق هذا البحث.",
+    "empty": "لا يوجد عملاء حاليًا.",
+    "edit": "تعديل",
+    "editLabel": "تعديل {name}",
+    "fields": {
+      "name": "اسم العميل",
+      "phone": "الهاتف",
+      "addedAt": "تاريخ الإضافة",
+      "action": "إجراء"
+    },
+    "form": {
+      "title": "تعديل العميل",
+      "submit": "حفظ التعديلات",
+      "create": "إضافة العميل",
+      "saving": "جارٍ حفظ العميل",
+      "errors": {
+        "phoneTaken": "هذا الرقم مسجل لعميل آخر"
+      },
+      "newTitle": "عميل جديد"
+    }
+  },
+  "sites": {
+    "zouerat": "ازويرات",
+    "sfariyat": "الصفريات"
+  },
+  "activityStatuses": {
+    "active": "نشط",
+    "maintenance": "في الصيانة",
+    "inactive": "غير نشط"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "searchLabel": "ابحث في الإعدادات",
+    "searchPlaceholder": "ابحث عن إعداد...",
+    "noResults": "لا يوجد إعداد يطابق هذا البحث.",
+    "profile": {
+      "title": "الملف الشخصي",
+      "description": "معلومات حسابك. لتعديلها، تواصل مع المدير.",
+      "name": "الاسم",
+      "email": "البريد الإلكتروني",
+      "phone": "الهاتف",
+      "role": "الدور",
+      "none": "—"
+    },
+    "language": {
+      "title": "اللغة",
+      "description": "لغة عرض التطبيق على هذا الجهاز.",
+      "current": "المستخدمة حاليًا"
+    },
+    "projects": {
+      "title": "المشاريع والآلات",
+      "description": "أضف المشاريع وآلاتها وحدّد حالتها.",
+      "new": "مشروع جديد",
+      "empty": "لا توجد مشاريع حاليًا.",
+      "open": "فتح",
+      "machines": "الآلات",
+      "edit": "تعديل المشروع",
+      "fields": {
+        "name": "اسم المشروع",
+        "site": "المكان",
+        "status": "الحالة"
+      },
+      "form": {
+        "newTitle": "مشروع جديد",
+        "title": "تعديل المشروع",
+        "create": "إضافة المشروع",
+        "submit": "حفظ التعديلات",
+        "saving": "جارٍ حفظ المشروع"
+      },
+      "delete": {
+        "open": "حذف المشروع",
+        "title": "حذف المشروع",
+        "question": "هل تريد حذف المشروع {name}؟",
+        "explanation": "سيختفي المشروع من كل القوائم. تبقى آلاته وشحناته وعملياته السابقة محفوظة في السجلات.",
+        "confirm": "نعم، احذف المشروع",
+        "deleting": "جارٍ حذف المشروع",
+        "failed": "تعذر حذف المشروع، حاول مرة أخرى بعد قليل"
+      }
+    },
+    "grinders": {
+      "title": "الآلات",
+      "new": "آلة جديدة",
+      "empty": "لا توجد آلات في هذا المشروع.",
+      "machine": "الآلة {number}",
+      "edit": "تعديل",
+      "editLabel": "تعديل الآلة {number}",
+      "fields": {
+        "number": "رقم الآلة",
+        "status": "الحالة",
+        "action": "إجراء"
+      },
+      "form": {
+        "newTitle": "آلة جديدة",
+        "title": "تعديل الآلة",
+        "create": "إضافة الآلة",
+        "submit": "حفظ التعديلات",
+        "saving": "جارٍ حفظ الآلة",
+        "errors": {
+          "numberInvalid": "أدخل رقمًا صحيحًا بين 1 و9999",
+          "numberTaken": "هذا الرقم مستخدم لآلة أخرى في هذا المشروع"
+        },
+        "nextFree": "أول رقم متاح: {number}"
+      }
+    }
+  },
+  "users": {
+    "title": "المستخدمون",
+    "listTitle": "قائمة المستخدمين",
+    "count": "عدد المستخدمين: {count}",
+    "new": "مستخدم جديد",
+    "empty": "لا يوجد مستخدمون حاليًا.",
+    "noRole": "بدون دور",
+    "allProjects": "كل المشاريع",
+    "chooseProject": "اختر مشروعًا",
+    "edit": "تعديل",
+    "editLabel": "تعديل {name}",
+    "fields": {
+      "name": "الاسم الكامل",
+      "email": "البريد الإلكتروني",
+      "phone": "الهاتف",
+      "role": "الدور",
+      "project": "المشروع",
+      "password": "كلمة المرور",
+      "newPassword": "كلمة مرور جديدة",
+      "action": "إجراء"
+    },
+    "passwordKeep": "اتركها فارغة للإبقاء على كلمة المرور الحالية",
+    "form": {
+      "newTitle": "مستخدم جديد",
+      "title": "تعديل المستخدم",
+      "create": "إضافة المستخدم",
+      "submit": "حفظ التعديلات",
+      "saving": "جارٍ حفظ المستخدم",
+      "errors": {
+        "emailInvalid": "صيغة البريد الإلكتروني غير صحيحة",
+        "passwordShort": "يجب أن تتكون كلمة المرور من {min} أحرف على الأقل",
+        "projectRequired": "اختر مشروع المشرف"
+      }
+    }
+  },
+  "shipments": {
+    "title": "الشحنات",
+    "addNew": "شحنة جديدة",
+    "form": {
+      "title": "شحنة جديدة",
+      "customerName": "اسم العميل",
+      "phone": "الهاتف",
+      "arrivalDate": "تاريخ الوصول",
+      "arrivalTime": "وقت الوصول",
+      "bagCount": "عدد الأكياس",
+      "transportMethod": "وسيلة النقل",
+      "source": "المصدر",
+      "submit": "حفظ الشحنة",
+      "saving": "جارٍ حفظ الشحنة",
+      "errors": {
+        "bagCountInvalid": "أدخل عدد أكياس صحيحًا لا يقل عن 1",
+        "amountInvalid": "أدخل مبلغًا صحيحًا، 0 أو أكثر",
+        "passengerCountInvalid": "أدخل عددًا صحيحًا للركاب، 0 أو أكثر",
+        "phoneTaken": "هذا الرقم مسجل للعميل {name}"
+      },
+      "mill": "المشروع",
+      "status": "حالة الشحنة",
+      "notes": "ملاحظات",
+      "sections": {
+        "client": "العميل",
+        "shipment": "الشحنة",
+        "destination": "الوجهة",
+        "transportCost": "تكاليف النقل"
+      },
+      "bagFare": "سعر نقل الكيس الواحد (أوقية)",
+      "passengerCount": "عدد الركاب",
+      "passengerFare": "سعر نقل الراكب الواحد (أوقية)",
+      "bagsTransportCost": "تكلفة نقل الأكياس",
+      "passengersTransportCost": "تكلفة نقل الركاب",
+      "transportTotal": "إجمالي تكلفة النقل",
+      "amountValue": "{amount} أوقية",
+      "sourcePlaceholder": "اكتب مصدر الشحنة"
+    },
+    "totalBags": "إجمالي الأكياس في جميع المشاريع",
+    "clientsLabel": "العملاء",
+    "bagsLabel": "الأكياس",
+    "topClients": "أكبر العملاء بعدد الأكياس",
+    "transportMethods": {
+      "truck": "شاحنة",
+      "hilux": "تويوتا هيلوكس",
+      "other": "أخرى"
+    },
+    "statuses": {
+      "pending": "في الانتظار",
+      "grinding": "قيد الطحن",
+      "completed": "مكتملة"
+    },
+    "noClients": "لا يوجد عملاء حاليًا.",
+    "project": {
+      "queueTitle": "العملاء بحسب وقت الوصول",
+      "position": "الترتيب",
+      "shipment": "رقم الشحنة",
+      "client": "العميل",
+      "arrivedAt": "وقت الوصول",
+      "empty": "لا توجد شحنات في هذا المشروع.",
+      "action": "إجراء",
+      "startMilling": "بدء الطحن"
+    },
+    "history": {
+      "open": "السجل",
+      "title": "سجل الشحنات · {project}",
+      "searchPlaceholder": "العميل أو الهاتف أو رقم الشحنة",
+      "from": "من",
+      "to": "إلى",
+      "count": "عدد الشحنات: {count}",
+      "clear": "مسح التصفية",
+      "empty": "لا توجد شحنات مطابقة لهذه التصفية.",
+      "columns": {
+        "shipment": "رقم الشحنة",
+        "client": "العميل",
+        "phone": "الهاتف",
+        "arrivedAt": "تاريخ الوصول",
+        "bags": "الأكياس",
+        "status": "الحالة",
+        "notes": "ملاحظات"
+      }
+    }
+  },
+  "milling": {
+    "title": "الطحن",
+    "siteFilter": "التصفية حسب الموقع",
+    "allSites": "الكل",
+    "kpis": {
+      "machinesRunning": "الآلات العاملة",
+      "bagsMilling": "أكياس قيد الطحن",
+      "bagsWaiting": "أكياس في الانتظار",
+      "bagsMilledToday": "أكياس طُحنت اليوم"
+    },
+    "statuses": {
+      "running": "تعمل",
+      "idle": "متاحة",
+      "maintenance": "في الصيانة"
+    },
+    "shipmentStatuses": {
+      "pending": "في الانتظار",
+      "partiallyMilled": "مطحونة جزئيًا",
+      "milled": "مطحونة"
+    },
+    "outOf": "من {total}",
+    "project": {
+      "machinesRunning": "الآلات العاملة",
+      "bagsMilling": "أكياس قيد الطحن",
+      "waitingShipments": "شحنات في الانتظار",
+      "newOperation": "عملية طحن جديدة",
+      "machinesTitle": "الآلات",
+      "statusFilter": "التصفية حسب الحالة",
+      "filterAll": "الكل",
+      "machineNumber": "الآلة {number}",
+      "noMachines": "لا توجد آلات بهذه الحالة.",
+      "columns": {
+        "machine": "الآلة",
+        "status": "الحالة",
+        "assignment": "العميل · الشحنة",
+        "bags": "الأكياس",
+        "estimatedEnd": "النهاية المتوقعة",
+        "action": "إجراء",
+        "details": "التفاصيل"
+      },
+      "start": "بدء",
+      "openMachine": "فتح الآلة {number}",
+      "queueTitle": "الشحنات المنتظرة بحسب وقت الوصول",
+      "queueEmpty": "لا توجد شحنات في انتظار هذا المشروع.",
+      "queueColumns": {
+        "position": "الترتيب",
+        "shipment": "الشحنة",
+        "client": "العميل",
+        "remaining": "المتبقي",
+        "status": "الحالة",
+        "action": "إجراء"
+      },
+      "remainingOf": "{remaining} من {total}",
+      "showAll": "عرض الكل ({count})",
+      "showLess": "عرض أقل"
+    },
+    "operation": {
+      "title": "عملية طحن جديدة",
+      "shipment": "رقم الشحنة",
+      "shipmentSearch": "الرقم أو العميل",
+      "client": "العميل",
+      "project": "المشروع",
+      "machine": "الآلة",
+      "machinePlaceholder": "اختر آلة متاحة",
+      "noIdleMachines": "لا توجد آلات متاحة في هذا المشروع حاليًا.",
+      "bags": "عدد الأكياس",
+      "remainingAfter": "المتبقي بعد هذه العملية: {count}",
+      "startDate": "تاريخ البدء",
+      "startTime": "وقت البدء",
+      "operator": "المشغّل",
+      "operatorPlaceholder": "اختر المشغّل",
+      "notes": "ملاحظات",
+      "estimatedEnd": "النهاية المتوقعة",
+      "estimatedEndPending": "أدخل عدد الأكياس ووقت البدء",
+      "capacity": "الطاقة: {bags} أكياس لكل آلة كل {hours} ساعات",
+      "submit": "بدء الطحن",
+      "saving": "جارٍ بدء الطحن",
+      "errors": {
+        "bagsInvalid": "أدخل عددًا صحيحًا لا يقل عن 1",
+        "bagsTooMany": "لا يمكن أن يتجاوز الأكياس المتبقية",
+        "machineUnavailable": "هذه الآلة لم تعد متاحة"
+      },
+      "remaining": "المتبقي: {count}"
+    },
+    "machine": {
+      "title": "الآلة {number}",
+      "tabsLabel": "أقسام الآلة",
+      "tabs": {
+        "current": "العملية الجارية",
+        "maintenance": "الصيانة"
+      },
+      "client": "العميل",
+      "shipment": "الشحنة",
+      "bags": "الأكياس",
+      "startedAt": "البدء",
+      "estimatedEnd": "النهاية المتوقعة",
+      "operator": "المشغّل",
+      "notes": "ملاحظات",
+      "noNotes": "لا توجد ملاحظات",
+      "noOperation": "لا توجد عملية جارية على هذه الآلة.",
+      "startOperation": "بدء عملية",
+      "inMaintenance": "الآلة في الصيانة، لا يمكن بدء أي عملية.",
+      "endMilling": "إنهاء الطحن",
+      "duration": "{hours} س {minutes} د",
+      "history": {
+        "empty": "لم تتم أي عملية طحن على هذه الآلة بعد.",
+        "shipment": "الشحنة",
+        "client": "العميل",
+        "bags": "الأكياس",
+        "start": "البدء",
+        "end": "الانتهاء",
+        "duration": "المدة",
+        "operator": "المشغّل",
+        "title": "كل عمليات الطحن على هذه الآلة",
+        "running": "قيد الطحن"
+      },
+      "maintenance": {
+        "status": "الحالة",
+        "inService": "في الخدمة",
+        "underMaintenance": "في الصيانة",
+        "placeholder": "ستتوفر المتابعة التفصيلية للصيانة مع الوحدة المخصصة لها."
+      }
+    },
+    "end": {
+      "title": "إنهاء الطحن",
+      "endDate": "تاريخ الانتهاء",
+      "endTime": "وقت الانتهاء",
+      "bagsMilled": "الأكياس المطحونة فعليًا",
+      "notes": "ملاحظات",
+      "cost": "التكلفة",
+      "costValue": "{amount} أوقية",
+      "costRate": "{bags} كيس × {rate} أوقية",
+      "submit": "إنهاء الطحن",
+      "saving": "جارٍ حفظ إنهاء الطحن",
+      "errors": {
+        "endBeforeStart": "يجب أن يكون الانتهاء بعد البدء",
+        "bagsMilledInvalid": "أدخل عددًا بين 1 والأكياس المخصصة"
+      }
+    }
+  },
+  "refining": {
+    "title": "التصفية",
+    "new": "عملية تصفية جديدة",
+    "queueTitle": "عمليات طحن بانتظار التصفية",
+    "queueEmpty": "لا توجد عمليات طحن منتهية بانتظار التصفية.",
+    "operationsTitle": "عمليات التصفية",
+    "operationsEmpty": "لا توجد عمليات تصفية بعد.",
+    "start": "بدء التصفية",
+    "startLabel": "بدء تصفية الشحنة {number}",
+    "machineNumber": "الآلة {number}",
+    "fields": {
+      "shipment": "رقم الشحنة",
+      "client": "العميل",
+      "project": "المشروع",
+      "machine": "الآلة",
+      "bags": "الأكياس",
+      "groundAt": "نهاية الطحن",
+      "action": "إجراء",
+      "refinedAt": "تاريخ التصفية",
+      "date": "تاريخ التصفية",
+      "time": "وقت التصفية",
+      "worker": "المسؤول",
+      "weightBefore": "الوزن قبل التصفية (غ)",
+      "weightAfter": "الوزن بعد التصفية (غ)",
+      "weightLoss": "فرق الوزن (غ)",
+      "gold": "الذهب المستخرج (غ)",
+      "goldWithMaterial": "الذهب مع المادة (غ)",
+      "goldWithoutMaterial": "الذهب بدون المادة (غ)",
+      "loss": "الفاقد (غ)",
+      "lossReason": "سبب الفاقد",
+      "notes": "ملاحظات"
+    },
+    "form": {
+      "workerPlaceholder": "اختر المسؤول",
+      "submit": "تسجيل التصفية",
+      "saving": "جارٍ تسجيل التصفية",
+      "lossReasonPlaceholder": "اختر سبب الفاقد"
+    },
+    "errors": {
+      "bagsInvalid": "أدخل عددًا صحيحًا من 1 إلى {max}",
+      "weightInvalid": "أدخل وزنًا صحيحًا",
+      "weightAfterTooHigh": "لا يمكن أن يتجاوز الوزن قبل التصفية",
+      "goldTooHeavy": "لا يمكن أن يزن الذهب أكثر من المادة المصفّاة",
+      "withoutMaterialTooHeavy": "لا يمكن أن يزن الذهب بدون المادة أكثر منه مع المادة"
+    },
+    "lossReasons": {
+      "normalShortage": "نقص عادي",
+      "noLoss": "لا توجد خسارة",
+      "weighingError": "خطأ في الوزن",
+      "machineFault": "عطل أو تسريب في المكينة",
+      "mixedWithSoil": "اختلاط مع التراب",
+      "arghawa": "ارقاوة",
+      "workerNegligence": "إهمال عامل"
+    }
+  },
+  "inventory": {
+    "title": "المخزون",
+    "count": "عدد الموارد: {count}",
+    "new": "مورد جديد",
+    "increase": "زيادة",
+    "decrease": "إنقاص",
+    "edit": "تعديل",
+    "historyListTitle": "حركات الكمية",
+    "historyEmpty": "لا توجد حركات لهذا المورد بعد.",
+    "changeTypes": {
+      "increase": "زيادة",
+      "decrease": "إنقاص"
+    },
+    "fields": {
+      "name": "اسم المورد",
+      "project": "المشروع",
+      "initialQuantity": "الكمية الأولية",
+      "currentQuantity": "الكمية الحالية",
+      "action": "إجراء",
+      "quantity": "الكمية",
+      "quantityBefore": "الكمية قبل",
+      "quantityAfter": "الكمية بعد",
+      "refiningOperation": "عملية التصفية",
+      "note": "ملاحظة",
+      "shipment": "الشحنة",
+      "changedAt": "التاريخ",
+      "changeType": "النوع",
+      "changedBy": "بواسطة",
+      "kind": "نوع المورد"
+    },
+    "form": {
+      "newTitle": "مورد جديد",
+      "title": "تعديل المورد",
+      "increaseTitle": "زيادة {name}",
+      "decreaseTitle": "إنقاص {name}",
+      "quantityFixed": "لا تتغير الكمية إلا بالزيادة أو الإنقاص.",
+      "create": "إضافة المورد",
+      "submit": "حفظ التعديلات",
+      "saving": "جارٍ الحفظ",
+      "noRefiningOperation": "بدون عملية تصفية",
+      "refiningOperationOption": "{shipment} · {client} · {date}",
+      "increaseSubmit": "تسجيل الزيادة",
+      "decreaseSubmit": "تسجيل الإنقاص",
+      "kindPlaceholder": "اختر النوع"
+    },
+    "errors": {
+      "quantityInvalid": "أدخل كمية صحيحة لا تقل عن 0",
+      "changeInvalid": "أدخل كمية أكبر من 0",
+      "quantityTooMuch": "المتبقي {left} فقط"
+    },
+    "refiningMaterial": "مادة التصفية",
+    "refiningChangeTypes": {
+      "decrease": "فاقد التصفية",
+      "increase": "إرجاع فاقد التصفية"
+    },
+    "noProjects": "لا توجد مشاريع بعد. أضفها من الإعدادات.",
+    "resourceCount": "الموارد",
+    "material": {
+      "setUp": "إعداد الزئبق",
+      "missing": "لم يُعدّ زئبق هذا المشروع بعد. أدخل كميته الأولية ليُخصم منه فاقد التصفية تلقائيًا.",
+      "hint": "يُخصم منه فاقد كل عملية تصفية تلقائيًا."
+    },
+    "open": "فتح",
+    "kinds": {
+      "mercury": "الزئبق",
+      "water": "الماء",
+      "fuel": "البنزين",
+      "other": "أخرى"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "غير موجود",
+      "description": "الصفحة أو البيانات المطلوبة غير موجودة أو غير متاحة على الخادم."
+    },
+    "forbidden": {
+      "title": "لا تملك الصلاحية",
+      "description": "دورك لا يملك صلاحية فتح هذه البيانات. تواصل مع المدير."
+    },
+    "failed": {
+      "title": "حدث خطأ",
+      "description": "تعذر تحميل البيانات. حاول مرة أخرى بعد قليل."
+    },
+    "status": "رمز الخطأ: {status}",
+    "retry": "إعادة المحاولة",
+    "home": "العودة إلى الرئيسية"
+  }
+}
