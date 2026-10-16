@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
@@ -62,6 +63,20 @@ const decrease = {
   created_at: "2026-10-12T11:00:00Z",
 };
 
+const initial = {
+  ...decrease,
+  id: 10,
+  change_type: "initial",
+  quantity: "10.000",
+  quantity_before: "0.000",
+  quantity_after: "10.000",
+  refining_operation: null,
+  shipment_number: null,
+  note: "",
+  created_by_name: "",
+  created_at: "2026-10-12T08:00:00Z",
+};
+
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 beforeEach(() => {
   server.use(
@@ -69,7 +84,7 @@ beforeEach(() => {
     http.get(`${API}/projects/3/`, () => HttpResponse.json(zouerat)),
     http.get(`${API}/resources/`, () => page([mercury])),
     http.get(`${API}/resources/2/`, () => HttpResponse.json(mercury)),
-    http.get(`${API}/resource-history/`, () => page([decrease])),
+    http.get(`${API}/resource-history/`, () => page([decrease, initial])),
   );
 });
 afterEach(() => server.resetHandlers());
@@ -151,13 +166,14 @@ describe("InventoryScreen", () => {
     expect(await cardLink("Projet Sfariyat 1")).toHaveAttribute("href", "/fr/inventory/projects/4");
   });
 
-  it("shows the project's mercury first and every other resource as a card", async () => {
+  it("shows the project's mercury first, then water and fuel, and hides any other resource", async () => {
     let askedProject: string | null = null;
     server.use(
       http.get(`${API}/resources/`, ({ request }) => {
         askedProject = new URL(request.url).searchParams.get("project");
         return page([
-          { ...mercury, id: 6, name: "Chaux", current_quantity: "40.000" },
+          { ...mercury, id: 7, name: "Chaux" },
+          { ...mercury, id: 6, name: "Water", current_quantity: "40.000" },
           { ...mercury, is_refining_material: true },
         ]);
       }),
@@ -165,7 +181,10 @@ describe("InventoryScreen", () => {
     openAt("/fr/inventory/projects/3");
 
     const headings = await screen.findAllByRole("heading", { level: 2 });
-    expect(headings.map((heading) => heading.textContent)).toEqual(["Mercure", "Chaux"]);
+    expect(headings.map((heading) => heading.textContent)).toEqual([
+      text.kinds.mercury,
+      text.kinds.water,
+    ]);
     expect(askedProject).toBe("3");
 
     const card = cardOf("Mercure");
@@ -175,7 +194,7 @@ describe("InventoryScreen", () => {
       "href",
       "/fr/inventory/resources/2",
     );
-    expect(cardOf("Chaux").getByRole("link", { name: text.open })).toHaveAttribute(
+    expect(cardOf(text.kinds.water).getByRole("link", { name: text.open })).toHaveAttribute(
       "href",
       "/fr/inventory/resources/6",
     );
@@ -185,26 +204,53 @@ describe("InventoryScreen", () => {
     );
   });
 
-  it("offers to set up the mercury when the project has none", async () => {
-    server.use(http.get(`${API}/resources/`, () => page([{ ...mercury, id: 6, name: "Chaux" }])));
+  it("finds a resource of the project by its name", async () => {
+    server.use(
+      http.get(`${API}/resources/`, () =>
+        page([
+          { ...mercury, id: 6, name: "fuel" },
+          { ...mercury, is_refining_material: true },
+        ]),
+      ),
+    );
+    const user = userEvent.setup();
     openAt("/fr/inventory/projects/3");
 
-    const card = await findCardOf(text.kinds.mercury);
-    expect(card.getByText(text.material.missing)).toBeVisible();
-    expect(card.getByRole("link", { name: new RegExp(text.material.setUp) })).toHaveAttribute(
+    const search = await screen.findByLabelText(
+      messages.common.searchIn.replace("{list}", text.title),
+    );
+    await user.type(search, "ess");
+
+    expect(
+      screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent),
+    ).toEqual([text.kinds.fuel]);
+
+    await user.clear(search);
+    await user.type(search, "fer");
+    expect(screen.getByText(messages.common.noMatch)).toBeVisible();
+  });
+
+  it("shows no mercury card until the mercury is added as a new resource", async () => {
+    server.use(http.get(`${API}/resources/`, () => page([{ ...mercury, id: 6, name: "Water" }])));
+    openAt("/fr/inventory/projects/3");
+
+    await findCardOf(text.kinds.water);
+
+    expect(
+      screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent),
+    ).toEqual([text.kinds.water]);
+    expect(screen.getByRole("link", { name: text.new })).toHaveAttribute(
       "href",
-      "/fr/inventory/projects/3?new=material",
+      "/fr/inventory/projects/3?new=resource",
     );
   });
 
-  it("prepares the mercury when setting it up, leaving its quantity to type", async () => {
-    server.use(http.get(`${API}/resources/`, () => page([])));
-    openAt("/fr/inventory/projects/3?new=material");
+  it("says the project has no resources yet, not that a search found nothing", async () => {
+    server.use(http.get(`${API}/resources/`, () => page([{ ...mercury, id: 6, name: "Chaux" }])));
+    openAt("/fr/inventory/projects/3");
 
-    const dialog = within(await screen.findByRole("dialog", { name: text.material.setUp }));
-    expect(dialog.getByLabelText(text.fields.kind)).toHaveValue("mercury");
-    expect(dialog.queryByLabelText(text.fields.name)).toBeNull();
-    expect(dialog.getByLabelText(text.fields.initialQuantity)).toHaveValue(null);
+    expect(await screen.findByText(text.empty)).toBeVisible();
+    expect(screen.queryByText(messages.common.noMatch)).toBeNull();
   });
 
   it("keeps the add button and explains a refused list", async () => {
@@ -216,6 +262,47 @@ describe("InventoryScreen", () => {
     expect(alert).toHaveTextContent(messages.errors.forbidden.description);
     expect(alert).toHaveTextContent("Code d'erreur : 403");
     expect(screen.getByRole("link", { name: text.new })).toBeVisible();
+  });
+
+  it("offers no new resource once the project has mercury, water and fuel", async () => {
+    server.use(
+      http.get(`${API}/resources/`, () =>
+        page([
+          { ...mercury, is_refining_material: true },
+          { ...mercury, id: 6, name: "Water" },
+          { ...mercury, id: 7, name: "Fuel" },
+        ]),
+      ),
+    );
+    openAt("/fr/inventory/projects/3?new=resource");
+
+    await findCardOf(text.kinds.fuel);
+
+    expect(screen.queryByRole("link", { name: text.new })).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("opens the new resource's page, its history starting with the initial quantity", async () => {
+    const water = { ...mercury, id: 6, name: "water", initial_quantity: "5.000" };
+    server.use(
+      http.post(`${API}/resources/`, () => HttpResponse.json(water, { status: 201 })),
+      http.get(`${API}/resources/6/`, () => HttpResponse.json(water)),
+      http.get(`${API}/resource-history/`, () =>
+        page([{ ...initial, resource: 6, quantity: "5.000", quantity_after: "5.000" }]),
+      ),
+    );
+    const user = userEvent.setup();
+    openAt("/fr/inventory/projects/3?new=resource");
+
+    const dialog = within(await screen.findByRole("dialog", { name: text.form.newTitle }));
+    await user.selectOptions(dialog.getByLabelText(text.fields.kind), "water");
+    await user.type(dialog.getByLabelText(text.fields.initialQuantity), "5");
+    await user.click(dialog.getByRole("button", { name: text.form.create }));
+
+    expect(await screen.findByRole("heading", { name: text.kinds.water })).toBeVisible();
+    expect(screen.getAllByRole("row").slice(1).map(cellsOf)).toEqual([
+      ["12/10/2026 08:00", text.changeTypes.initial, "5", "0", "5", "—", "—"],
+    ]);
   });
 });
 
@@ -234,19 +321,26 @@ describe("ResourceScreen", () => {
       text.fields.quantity,
       text.fields.quantityBefore,
       text.fields.quantityAfter,
-      text.fields.shipment,
       text.fields.note,
       text.fields.changedBy,
     ]);
     expect(cellsOf(screen.getAllByRole("row")[1])).toEqual([
       "12/10/2026 11:00",
-      text.refiningChangeTypes.decrease,
+      `${text.refiningChangeTypes.decrease}SH-4`,
       "1,5",
       "10",
       "8,5",
-      "SH-4",
       "Lot 4",
       "Aicha",
+    ]);
+    expect(cellsOf(screen.getAllByRole("row")[2])).toEqual([
+      "12/10/2026 08:00",
+      text.changeTypes.initial,
+      "10",
+      "0",
+      "10",
+      "—",
+      "—",
     ]);
   });
 
@@ -257,48 +351,21 @@ describe("ResourceScreen", () => {
     });
 
     expect(await screen.findByRole("heading", { name: "Mercure" })).toBeVisible();
-    expect(cellsOf(screen.getAllByRole("row")[1])[1]).toBe(text.refiningChangeTypes.decrease);
+    expect(cellsOf(screen.getAllByRole("row")[1])[1]).toBe(
+      `${text.refiningChangeTypes.decrease}SH-4`,
+    );
     expect(screen.queryByRole("link", { name: new RegExp(text.increase) })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: new RegExp(text.decrease) })).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("offers the project's refining operations when decreasing", async () => {
-    let askedProject: string | null = null;
-    server.use(
-      http.get(`${API}/refining-operations/`, ({ request }) => {
-        askedProject = new URL(request.url).searchParams.get("project");
-        return page([
-          {
-            id: 5,
-            shipment_number: "SH-4",
-            customer_name: "Sidi",
-            grinder_code: "P3-2",
-            project_name: "Zouérat 1",
-            worker_name: "Aicha",
-            refining_date: "2026-10-12T09:30:00Z",
-            weight_before: "120.000",
-            weight_after: "118.000",
-            weight_loss: "2.000",
-            gold_weight: "14.000",
-            loss_reason: "",
-            notes: "",
-            created_at: "2026-10-12T10:00:00Z",
-            updated_at: "2026-10-12T10:00:00Z",
-          },
-        ]);
-      }),
-    );
+  it("decreases by a quantity and a note only, with no shipment to pick", async () => {
     openAt("/fr/inventory/resources/2?action=decrease");
 
     const dialog = within(await screen.findByRole("dialog", { name: "Diminuer Mercure" }));
 
-    expect(
-      within(dialog.getByLabelText(text.fields.refiningOperation))
-        .getAllByRole("option")
-        .map((option) => option.textContent),
-    ).toEqual([text.form.noRefiningOperation, "SH-4 · Sidi · 12/10/2026"]);
-    expect(askedProject).toBe("3");
+    expect(dialog.getByLabelText(text.fields.quantity)).toBeVisible();
+    expect(dialog.queryAllByRole("combobox")).toHaveLength(0);
   });
 
   it("answers not found for an unknown resource", async () => {

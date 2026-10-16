@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
@@ -42,6 +43,7 @@ const grinding = (id: number, shipment: string, code: string, endTime: string | 
 
 const refined = {
   id: 9,
+  grinding_operation: 3,
   shipment_number: "SH-3",
   customer_name: "Client SH-3",
   grinder_code: "P3-2",
@@ -155,7 +157,6 @@ describe("RefiningScreen", () => {
       text.fields.bags,
       text.fields.weightBefore,
       text.fields.weightAfter,
-      text.fields.weightLoss,
       text.fields.gold,
       text.fields.goldWithMaterial,
       text.fields.goldWithoutMaterial,
@@ -183,7 +184,6 @@ describe("RefiningScreen", () => {
       "4",
       "120,5",
       "118,25",
-      "2,25",
       "14,3",
       "20",
       "14,3",
@@ -220,6 +220,29 @@ describe("RefiningScreen", () => {
     expect(panel(text.operationsTitle).getByText("SH-3")).toBeVisible();
     expect(screen.queryByRole("link", { name: /SH-2/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("searches the queue and the refinings separately", async () => {
+    const user = userEvent.setup();
+    openAt("/fr/refining");
+
+    await user.type(
+      await screen.findByLabelText(
+        messages.common.searchIn.replace("{list}", text.operationsTitle),
+      ),
+      "aicha",
+    );
+
+    expect(panel(text.operationsTitle).getByText("SH-3")).toBeVisible();
+    expect(panel(text.queueTitle).getByText("SH-2")).toBeVisible();
+
+    await user.type(
+      screen.getByLabelText(messages.common.searchIn.replace("{list}", text.queueTitle)),
+      "SH-9",
+    );
+
+    expect(panel(text.queueTitle).getByText(messages.common.noMatch)).toBeVisible();
+    expect(panel(text.operationsTitle).getByText("SH-3")).toBeVisible();
   });
 
   it("keeps the queue and explains refused operations inside their panel", async () => {

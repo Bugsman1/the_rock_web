@@ -24,7 +24,10 @@
     "datePlaceholder": "jj/mm/aaaa",
     "timePlaceholder": "hh:mm",
     "openProject": "Ouvrir le projet",
-    "loading": "Chargement"
+    "loading": "Chargement",
+    "searchList": "Rechercher dans la liste",
+    "noMatch": "Aucun résultat pour cette recherche.",
+    "searchIn": "Rechercher dans {list}"
   },
   "auth": {
     "login": {
@@ -62,10 +65,6 @@
     "notifications": "Notifications",
     "settings": "Paramètres",
     "logout": "Se déconnecter",
-    "search": {
-      "label": "Recherche",
-      "placeholder": "Rechercher dans le système..."
-    },
     "nav": {
       "dashboard": "Tableau de bord",
       "shipments": "Expéditions",
@@ -297,7 +296,8 @@
         "deleting": "Suppression du rôle",
         "failed": "La suppression a échoué, réessayez dans un instant"
       }
-    }
+    },
+    "searchPlaceholder": "Rechercher par nom, e-mail ou téléphone..."
   },
   "shipments": {
     "title": "Expéditions",
@@ -317,7 +317,8 @@
         "bagCountInvalid": "Saisissez un nombre de sacs valide, au moins 1",
         "amountInvalid": "Saisissez un montant valide, 0 ou plus",
         "passengerCountInvalid": "Saisissez un nombre de passagers valide, 0 ou plus",
-        "phoneTaken": "Ce numéro appartient au client {name}"
+        "phoneTaken": "Ce numéro appartient au client {name}",
+        "paymentTooHigh": "Ne peut pas dépasser le total du transport"
       },
       "mill": "Projet",
       "status": "Statut",
@@ -328,14 +329,27 @@
         "destination": "Destination",
         "transportCost": "Frais de transport"
       },
-      "bagFare": "Prix du transport par sac (MRU)",
+      "bagFare": "Prix du transport par sac",
       "passengerCount": "Nombre de passagers",
-      "passengerFare": "Prix par passager (MRU)",
+      "passengerFare": "Prix par passager",
       "bagsTransportCost": "Transport des sacs",
       "passengersTransportCost": "Transport des passagers",
       "transportTotal": "Total du transport",
-      "amountValue": "{amount} MRU",
-      "sourcePlaceholder": "Écrivez la provenance de l'expédition"
+      "sourcePlaceholder": "Écrivez la provenance de l'expédition",
+      "currentPayment": "Paiement actuel",
+      "remainingToPay": "Reste à payer",
+      "saved": {
+        "title": "Expédition enregistrée",
+        "body": "Téléchargez la facture du transport de cette expédition, en arabe ou en français.",
+        "download": {
+          "ar": "Facture en arabe (PDF)",
+          "fr": "Facture en français (PDF)"
+        },
+        "downloading": "Téléchargement de la facture",
+        "failed": "La facture n'a pas pu être téléchargée, réessayez.",
+        "back": "Retour aux expéditions",
+        "fileName": "facture-expedition-{id}-{language}.pdf"
+      }
     },
     "totalBags": "Total des sacs dans tous les projets",
     "clientsLabel": "Clients",
@@ -360,7 +374,10 @@
       "arrivedAt": "Heure d'arrivée",
       "empty": "Aucune expédition dans ce projet.",
       "action": "Action",
-      "startMilling": "Démarrer le broyage"
+      "startMilling": "Démarrer le broyage",
+      "remaining": "Sacs restants",
+      "remainingOf": "{remaining} sur {total}",
+      "status": "Statut"
     },
     "history": {
       "open": "Historique",
@@ -387,10 +404,7 @@
     "siteFilter": "Filtrer par site",
     "allSites": "Tous",
     "kpis": {
-      "machinesRunning": "Machines en marche",
-      "bagsMilling": "Sacs en cours de broyage",
-      "bagsWaiting": "Sacs en attente",
-      "bagsMilledToday": "Sacs broyés aujourd'hui"
+      "machinesRunning": "Machines en marche"
     },
     "statuses": {
       "running": "En marche",
@@ -460,9 +474,10 @@
       "submit": "Démarrer le broyage",
       "saving": "Démarrage du broyage",
       "errors": {
-        "bagsInvalid": "Saisissez un nombre entier d'au moins 1",
+        "bagsInvalid": "Saisissez des sacs par demi-sac : 0,5, 1, 1,5 ou 2",
         "bagsTooMany": "Ne peut pas dépasser les sacs restants",
-        "machineUnavailable": "Cette machine n'est plus disponible"
+        "machineUnavailable": "Cette machine n'est plus disponible",
+        "bagsOverCapacity": "Une machine ne peut pas broyer plus de {max} sacs à la fois"
       },
       "remaining": "Restants : {count}"
     },
@@ -510,16 +525,34 @@
       "endDate": "Date de fin",
       "endTime": "Heure de fin",
       "bagsMilled": "Sacs réellement broyés",
+      "price": "Prix du broyage",
       "notes": "Notes",
-      "cost": "Coût",
-      "costValue": "{amount} MRU",
-      "costRate": "{bags} sacs × {rate} MRU",
       "submit": "Terminer le broyage",
       "saving": "Enregistrement de la fin du broyage",
       "errors": {
         "endBeforeStart": "La fin doit être après le début",
-        "bagsMilledInvalid": "Saisissez un nombre entre 1 et les sacs affectés"
+        "bagsMilledInvalid": "Saisissez un nombre de sacs par demi-sac, de 0,5 aux sacs affectés",
+        "priceInvalid": "Saisissez un prix valide, 0 ou plus"
       }
+    },
+    "flow": {
+      "title": "Flux du broyage",
+      "waiting": "En attente",
+      "milling": "En broyage",
+      "milledToday": "Broyés aujourd'hui",
+      "bags": "sacs",
+      "backlog": "Engorgement"
+    },
+    "mercury": {
+      "column": "Mercure",
+      "pending": "Mercure pas encore ajouté",
+      "added": "Mercure ajouté",
+      "markHint": "Cliquez ici quand le mercure est ajouté à ce broyage",
+      "confirm": "Le mercure a-t-il été ajouté à ce broyage ? Ce choix est définitif.",
+      "confirmYes": "Oui, ajouté",
+      "saving": "Enregistrement",
+      "addedOn": "{date} · {name}",
+      "notYet": "Pas encore ajouté"
     }
   },
   "refining": {
@@ -546,13 +579,16 @@
       "worker": "Responsable",
       "weightBefore": "Poids avant affinage (g)",
       "weightAfter": "Poids après affinage (g)",
-      "weightLoss": "Écart de poids (g)",
       "gold": "Or extrait (g)",
       "goldWithMaterial": "Or avec matière (g)",
       "goldWithoutMaterial": "Or sans matière (g)",
       "loss": "Perte (g)",
       "lossReason": "Raison de la perte",
-      "notes": "Notes"
+      "notes": "Notes",
+      "operator": "Opérateur du broyage",
+      "bagsGround": "Sacs broyés à affiner",
+      "groundFrom": "Début du broyage",
+      "grindingPrice": "Prix du broyage"
     },
     "form": {
       "workerPlaceholder": "Choisir le responsable",
@@ -561,7 +597,6 @@
       "lossReasonPlaceholder": "Choisir la raison de la perte"
     },
     "errors": {
-      "bagsInvalid": "Saisissez un nombre entier de 1 à {max}",
       "weightInvalid": "Saisissez un poids valide",
       "weightAfterTooHigh": "Ne peut pas dépasser le poids avant affinage",
       "goldTooHeavy": "L'or ne peut pas peser plus que la matière affinée",
@@ -581,12 +616,12 @@
     "title": "Inventaire",
     "count": "Ressources : {count}",
     "new": "Nouvelle ressource",
+    "empty": "Aucune ressource dans ce projet pour le moment. Ajoutez le mercure, l'eau ou l'essence avec « Nouvelle ressource ».",
     "increase": "Augmenter",
     "decrease": "Diminuer",
-    "edit": "Modifier",
     "historyListTitle": "Mouvements de quantité",
-    "historyEmpty": "Aucun mouvement pour cette ressource pour le moment.",
     "changeTypes": {
+      "initial": "Quantité initiale",
       "increase": "Augmentation",
       "decrease": "Diminution"
     },
@@ -599,9 +634,7 @@
       "quantity": "Quantité",
       "quantityBefore": "Quantité avant",
       "quantityAfter": "Quantité après",
-      "refiningOperation": "Opération d'affinage",
       "note": "Note",
-      "shipment": "Expédition",
       "changedAt": "Date",
       "changeType": "Type",
       "changedBy": "Par",
@@ -609,15 +642,10 @@
     },
     "form": {
       "newTitle": "Nouvelle ressource",
-      "title": "Modifier la ressource",
       "increaseTitle": "Augmenter {name}",
       "decreaseTitle": "Diminuer {name}",
-      "quantityFixed": "La quantité ne change que par une augmentation ou une diminution.",
       "create": "Ajouter la ressource",
-      "submit": "Enregistrer les modifications",
       "saving": "Enregistrement",
-      "noRefiningOperation": "Sans opération d'affinage",
-      "refiningOperationOption": "{shipment} · {client} · {date}",
       "increaseSubmit": "Enregistrer l'augmentation",
       "decreaseSubmit": "Enregistrer la diminution",
       "kindPlaceholder": "Choisir le type"
@@ -635,16 +663,13 @@
     "noProjects": "Aucun projet pour le moment. Ajoutez-en depuis les paramètres.",
     "resourceCount": "Ressources",
     "material": {
-      "setUp": "Configurer le mercure",
-      "missing": "Le mercure de ce projet n'est pas encore configuré. Saisissez sa quantité initiale pour que la perte de chaque affinage en soit retirée automatiquement.",
       "hint": "La perte de chaque affinage en est retirée automatiquement."
     },
     "open": "Ouvrir",
     "kinds": {
       "mercury": "Mercure",
       "water": "Eau",
-      "fuel": "Essence",
-      "other": "Autre"
+      "fuel": "Essence"
     }
   },
   "errors": {

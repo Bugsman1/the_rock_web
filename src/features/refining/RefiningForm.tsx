@@ -4,28 +4,26 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
 import { DateField } from "@/components/ui/DateField";
 import { DrawerActions } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
+import { FieldError, FormError } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
 import { combineDateAndTime } from "@/lib/datetime";
-import { formatCount, formatQuantity } from "@/lib/format";
+import { formatCount, formatDateTime, formatMoney, formatQuantity } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
 import type { Operator } from "@/lib/users";
-import { createRefiningSchema, lossReasonKeys, weightLoss } from "./refining";
+import { createRefiningSchema, lossReasonKeys, refiningLoss } from "./refining";
 import type { RefiningValues } from "./refining";
 import { createRefiningOperation } from "./refiningApi";
 
 const refiningFields: readonly (keyof RefiningValues)[] = [
   "workerId",
-  "bags",
   "date",
   "time",
   "weightBefore",
   "weightAfter",
   "goldWithMaterial",
   "goldWithoutMaterial",
-  "loss",
   "lossReason",
   "notes",
 ];
@@ -34,8 +32,7 @@ function isRefiningField(value: string): value is keyof RefiningValues {
   return refiningFields.some((field) => field === value);
 }
 
-type WeightFieldName =
-  "weightBefore" | "weightAfter" | "goldWithMaterial" | "goldWithoutMaterial" | "loss";
+type WeightFieldName = "weightBefore" | "weightAfter" | "goldWithMaterial" | "goldWithoutMaterial";
 
 type RefiningFormProps = {
   operation: MillingOperation;
@@ -60,24 +57,21 @@ export function RefiningForm({
   const common = useTranslations("common");
   const locale = useLocale();
   const [failed, setFailed] = useState(false);
-  const maxBags = operation.bagsMilled ?? operation.bags;
+  const [lossError, setLossError] = useState<string>();
+  const bags = operation.bagsMilled ?? operation.bags;
 
   const schema = useMemo(
     () =>
-      createRefiningSchema(
-        {
-          required: common("validation.required"),
-          dateInvalid: common("validation.dateInvalid"),
-          timeInvalid: common("validation.timeInvalid"),
-          bagsInvalid: t("errors.bagsInvalid", { max: formatCount(maxBags, locale) }),
-          weightInvalid: t("errors.weightInvalid"),
-          weightAfterTooHigh: t("errors.weightAfterTooHigh"),
-          goldTooHeavy: t("errors.goldTooHeavy"),
-          withoutMaterialTooHeavy: t("errors.withoutMaterialTooHeavy"),
-        },
-        { maxBags },
-      ),
-    [t, common, locale, maxBags],
+      createRefiningSchema({
+        required: common("validation.required"),
+        dateInvalid: common("validation.dateInvalid"),
+        timeInvalid: common("validation.timeInvalid"),
+        weightInvalid: t("errors.weightInvalid"),
+        weightAfterTooHigh: t("errors.weightAfterTooHigh"),
+        goldTooHeavy: t("errors.goldTooHeavy"),
+        withoutMaterialTooHeavy: t("errors.withoutMaterialTooHeavy"),
+      }),
+    [t, common],
   );
 
   const { control, register, handleSubmit, formState, setError } = useForm<RefiningValues>({
@@ -85,14 +79,12 @@ export function RefiningForm({
     resolver: zodResolver(schema),
     defaultValues: {
       workerId: "",
-      bags: Number.NaN,
       date: defaultDate,
       time: defaultTime,
       weightBefore: Number.NaN,
       weightAfter: Number.NaN,
       goldWithMaterial: Number.NaN,
       goldWithoutMaterial: Number.NaN,
-      loss: Number.NaN,
       lossReason: "",
       notes: "",
     },
@@ -103,10 +95,11 @@ export function RefiningForm({
     control,
     name: ["weightBefore", "weightAfter"],
   });
-  const difference = weightLoss(weightBefore, weightAfter);
+  const loss = refiningLoss(weightBefore, weightAfter);
 
   async function onSubmit(values: RefiningValues) {
     setFailed(false);
+    setLossError(undefined);
 
     const refinedAt = combineDateAndTime(values.date, values.time);
 
@@ -126,7 +119,9 @@ export function RefiningForm({
     }
 
     for (const [field, message] of Object.entries(result.fieldErrors)) {
-      if (isRefiningField(field)) {
+      if (field === "loss") {
+        setLossError(message);
+      } else if (isRefiningField(field)) {
         setError(field, { message });
       }
     }
@@ -160,18 +155,19 @@ export function RefiningForm({
           label={t("fields.machine")}
           value={t("machineNumber", { number: formatCount(operation.machine, locale) })}
         />
-
-        <TextField
-          id="refining-bags"
-          type="number"
-          min={1}
-          max={maxBags}
-          step={1}
-          inputMode="numeric"
-          label={t("fields.bags")}
-          required
-          error={errors.bags?.message}
-          {...register("bags", { valueAsNumber: true })}
+        <ReadOnlyField label={t("fields.operator")} value={operation.operatorName} />
+        <ReadOnlyField label={t("fields.bagsGround")} value={formatCount(bags, locale)} />
+        <ReadOnlyField
+          label={t("fields.groundFrom")}
+          value={formatDateTime(operation.startedAt, locale)}
+        />
+        <ReadOnlyField
+          label={t("fields.groundAt")}
+          value={operation.endedAt === undefined ? "—" : formatDateTime(operation.endedAt, locale)}
+        />
+        <ReadOnlyField
+          label={t("fields.grindingPrice")}
+          value={formatMoney(operation.cost, locale)}
         />
 
         <Select
@@ -218,14 +214,16 @@ export function RefiningForm({
         {weightField("weightBefore", t("fields.weightBefore"), true)}
         {weightField("weightAfter", t("fields.weightAfter"), true)}
 
-        <ReadOnlyField
-          label={t("fields.weightLoss")}
-          value={difference === undefined ? "—" : formatQuantity(difference, locale)}
-          emphasis={difference !== undefined}
-        />
         {weightField("goldWithMaterial", t("fields.goldWithMaterial"), true)}
         {weightField("goldWithoutMaterial", t("fields.goldWithoutMaterial"), true)}
-        {weightField("loss", t("fields.loss"), true)}
+        <div className="flex flex-col gap-1.5">
+          <ReadOnlyField
+            label={t("fields.loss")}
+            value={loss === undefined ? "—" : formatQuantity(loss, locale)}
+            emphasis={loss !== undefined}
+          />
+          <FieldError id="refining-loss-error" message={lossError} />
+        </div>
 
         <Select
           id="refining-loss-reason"

@@ -11,17 +11,20 @@ import { FormSection } from "@/components/ui/Cards";
 import { DateField } from "@/components/ui/DateField";
 import { Drawer } from "@/components/ui/Drawer";
 import { FormError } from "@/components/ui/FieldError";
+import { Icon } from "@/components/ui/Icon";
 import { LoadingDots } from "@/components/ui/LoadingDots";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { PageTitle, BackLink } from "@/components/ui/PageHeader";
 import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
+import { locales } from "@/i18n/locales";
+import type { Locale } from "@/i18n/locales";
 import { useReplace } from "@/i18n/navigation";
 import { findCustomer } from "@/lib/customers";
 import type { Customer, CustomerValues } from "@/lib/customers";
 import { getCustomerChoices } from "@/lib/customersApi";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
-import { formatMoney, toOldOuguiya } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { isInService } from "@/lib/projects";
 import type { Project } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
@@ -33,11 +36,73 @@ import {
   createNewShipmentSchema,
   isShipmentField,
   passengersCost,
+  remainingToPay,
   transportMethodKeys,
   transportTotal,
 } from "./shipments";
 import type { NewShipmentValues } from "./shipments";
-import { createShipment } from "./shipmentsApi";
+import { createShipment, getInvoice } from "./shipmentsApi";
+
+function SavedShipment({ shipmentId }: { shipmentId: string }) {
+  const t = useTranslations("shipments.form.saved");
+  const [downloading, setDownloading] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  async function download(language: Locale) {
+    setDownloading(true);
+    setFailed(false);
+
+    const invoice = await getInvoice(shipmentId, language);
+
+    setDownloading(false);
+
+    if (invoice === undefined) {
+      setFailed(true);
+      return;
+    }
+
+    const url = URL.createObjectURL(invoice.file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = invoice.fileName ?? t("fileName", { id: shipmentId, language });
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <p className="text-ink-muted text-[15px] font-semibold">{t("body")}</p>
+
+      {failed ? <FormError message={t("failed")} /> : null}
+
+      <div className="flex flex-wrap items-center gap-3">
+        {downloading ? (
+          <div className="w-50">
+            <LoadingDots label={t("downloading")} />
+          </div>
+        ) : (
+          <>
+            {locales.map((language) => (
+              <Button
+                key={language}
+                variant="primary"
+                width="auto"
+                onClick={() => void download(language)}
+              >
+                <Icon name="receipt" />
+                {t(`download.${language}`)}
+              </Button>
+            ))}
+          </>
+        )}
+
+        <ButtonLink href={SHIPMENTS_HREF} variant="secondary">
+          {t("back")}
+        </ButtonLink>
+      </div>
+    </div>
+  );
+}
 
 type NewShipmentFormProps = {
   defaultArrivalDate: string;
@@ -61,6 +126,7 @@ export function NewShipmentForm({
   const locale = useLocale();
   const [failed, setFailed] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState<string | undefined>(undefined);
+  const [savedId, setSavedId] = useState<string>();
 
   const schema = useMemo(
     () =>
@@ -72,6 +138,7 @@ export function NewShipmentForm({
         timeInvalid: common("validation.timeInvalid"),
         amountInvalid: t("errors.amountInvalid"),
         passengerCountInvalid: t("errors.passengerCountInvalid"),
+        paymentTooHigh: t("errors.paymentTooHigh"),
       }),
     [t, common],
   );
@@ -101,6 +168,7 @@ export function NewShipmentForm({
         bagFare: Number.NaN,
         passengerCount: Number.NaN,
         passengerFare: Number.NaN,
+        currentPayment: Number.NaN,
         mill: projects[0]?.id ?? "",
         status: shipmentStatusKeys[0],
         notes: "",
@@ -108,13 +176,14 @@ export function NewShipmentForm({
     });
 
   const { errors } = formState;
-  const [bagCount, bagFare, passengerCount, passengerFare] = useWatch({
+  const [bagCount, bagFare, passengerCount, passengerFare, currentPayment] = useWatch({
     control,
-    name: ["bagCount", "bagFare", "passengerCount", "passengerFare"],
+    name: ["bagCount", "bagFare", "passengerCount", "passengerFare", "currentPayment"],
   });
+  const total = transportTotal({ bagCount, bagFare, passengerCount, passengerFare });
 
   function money(amount: number) {
-    return t("amountValue", { amount: formatMoney(toOldOuguiya(amount), locale) });
+    return formatMoney(amount, locale);
   }
 
   function fillCustomerPhone(name: string) {
@@ -147,7 +216,7 @@ export function NewShipmentForm({
     const result = await createShipment(values, (name) => t("errors.phoneTaken", { name }));
 
     if (result.ok) {
-      replace(SHIPMENTS_HREF);
+      setSavedId(result.id);
       return;
     }
 
@@ -319,9 +388,22 @@ export function NewShipmentForm({
             value={money(passengersCost(passengerCount, passengerFare))}
           />
 
+          <ReadOnlyField label={t("transportTotal")} value={money(total)} emphasis />
+
+          <TextField
+            id="currentPayment"
+            type="number"
+            min={0}
+            step="any"
+            inputMode="decimal"
+            label={t("currentPayment")}
+            error={errors.currentPayment?.message}
+            {...register("currentPayment", { valueAsNumber: true })}
+          />
+
           <ReadOnlyField
-            label={t("transportTotal")}
-            value={money(transportTotal({ bagCount, bagFare, passengerCount, passengerFare }))}
+            label={t("remainingToPay")}
+            value={money(remainingToPay(total, currentPayment))}
             emphasis
           />
         </FormSection>
@@ -374,6 +456,15 @@ export function NewShipmentForm({
           </ButtonLink>
         </div>
       </form>
+
+      <Drawer
+        open={savedId !== undefined}
+        title={t("saved.title")}
+        closeLabel={common("close")}
+        onClose={() => replace(SHIPMENTS_HREF)}
+      >
+        {savedId === undefined ? null : <SavedShipment shipmentId={savedId} />}
+      </Drawer>
 
       <Drawer
         open={newCustomerName !== undefined}

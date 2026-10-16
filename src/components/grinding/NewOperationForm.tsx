@@ -14,6 +14,7 @@ import { cn } from "@/lib/cn";
 import { combineDateAndTime } from "@/lib/datetime";
 import { formatCount, formatDateTime } from "@/lib/format";
 import {
+  BAG_STEP,
   CAPACITY_BAGS,
   CAPACITY_HOURS,
   createNewOperationSchema,
@@ -84,6 +85,9 @@ export function NewOperationForm({
         {
           required: common("validation.required"),
           bagsInvalid: t("errors.bagsInvalid"),
+          bagsOverCapacity: t("errors.bagsOverCapacity", {
+            max: formatCount(CAPACITY_BAGS, locale),
+          }),
           bagsTooMany: t("errors.bagsTooMany"),
           machineUnavailable: t("errors.machineUnavailable"),
           dateInvalid: common("validation.dateInvalid"),
@@ -95,25 +99,26 @@ export function NewOperationForm({
           isMachineIdle: (machine) => idleMachines.some((item) => item.number === machine),
         },
       ),
-    [t, common, shipments, idleMachines],
+    [t, common, locale, shipments, idleMachines],
   );
 
-  const { control, register, handleSubmit, formState, setError } = useForm<NewOperationValues>({
-    mode: "onTouched",
-    resolver: zodResolver(schema),
-    defaultValues: {
-      shipmentNumber: initialShipment?.shipmentNumber ?? "",
-      machine:
-        defaultMachine !== undefined && findMachineNumber(defaultMachine) !== undefined
-          ? String(defaultMachine)
-          : "",
-      bags: Number.NaN,
-      startDate: defaultDate,
-      startTime: defaultTime,
-      operatorId: "",
-      notes: "",
-    },
-  });
+  const { control, register, handleSubmit, formState, setError, trigger } =
+    useForm<NewOperationValues>({
+      mode: "onTouched",
+      resolver: zodResolver(schema),
+      defaultValues: {
+        shipmentNumber: initialShipment?.shipmentNumber ?? "",
+        machine:
+          defaultMachine !== undefined && findMachineNumber(defaultMachine) !== undefined
+            ? String(defaultMachine)
+            : "",
+        bags: Number.NaN,
+        startDate: defaultDate,
+        startTime: defaultTime,
+        operatorId: "",
+        notes: "",
+      },
+    });
 
   const { errors } = formState;
   const [shipmentNumber, bags, startDate, startTime] = useWatch({
@@ -236,14 +241,17 @@ export function NewOperationForm({
           <TextField
             id="operation-bags"
             type="number"
-            min={1}
-            max={shipment?.remainingBags}
-            step={1}
-            inputMode="numeric"
+            min={BAG_STEP}
+            max={Math.min(CAPACITY_BAGS, shipment?.remainingBags ?? CAPACITY_BAGS)}
+            step={BAG_STEP}
+            inputMode="decimal"
             label={t("bags")}
             required
             error={errors.bags?.message}
-            {...register("bags", { valueAsNumber: true })}
+            {...register("bags", {
+              valueAsNumber: true,
+              onChange: () => void trigger("bags"),
+            })}
           />
           {remainingNote === undefined ? null : (
             <p

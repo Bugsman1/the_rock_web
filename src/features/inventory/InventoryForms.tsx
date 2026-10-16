@@ -7,67 +7,44 @@ import { FormError } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { TextArea, TextField } from "@/components/ui/TextField";
-import { formatDate, formatQuantity } from "@/lib/format";
+import { formatQuantity } from "@/lib/format";
 import type { Project } from "@/lib/projects";
-import type { RefiningOperation } from "@/lib/refining";
 import {
   availableKinds,
   createResourceChangeSchema,
   createResourceSchema,
-  kindOf,
   quantityAfterChange,
-  resourceLabel,
 } from "./resources";
 import type {
   Resource,
   ResourceChangeType,
   ResourceChangeValues,
-  ResourceKind,
   ResourceValues,
 } from "./resources";
-import { changeResourceQuantity, createResource, renameResource } from "./resourcesApi";
+import { changeResourceQuantity, createResource } from "./resourcesApi";
 
-const resourceFields: readonly (keyof ResourceValues)[] = [
-  "project",
-  "kind",
-  "name",
-  "initialQuantity",
-];
+const resourceFields: readonly (keyof ResourceValues)[] = ["project", "kind", "initialQuantity"];
 
 function isResourceField(value: string): value is keyof ResourceValues {
   return resourceFields.some((field) => field === value);
 }
 
-const changeFields: readonly (keyof ResourceChangeValues)[] = [
-  "quantity",
-  "refiningOperationId",
-  "note",
-];
+const changeFields: readonly (keyof ResourceChangeValues)[] = ["quantity", "note"];
 
 function isChangeField(value: string): value is keyof ResourceChangeValues {
   return changeFields.some((field) => field === value);
 }
 
 type ResourceFormProps = {
-  resource?: Resource;
   project: Pick<Project, "id" | "name">;
-  existing?: readonly Resource[];
-  initialKind?: ResourceKind;
-  onSaved: () => void;
+  existing: readonly Resource[];
+  onSaved: (id: string) => void;
   onCancel: () => void;
 };
 
-export function ResourceForm({
-  resource,
-  project,
-  existing = [],
-  initialKind,
-  onSaved,
-  onCancel,
-}: ResourceFormProps) {
+export function ResourceForm({ project, existing, onSaved, onCancel }: ResourceFormProps) {
   const t = useTranslations("inventory");
   const common = useTranslations("common");
-  const locale = useLocale();
   const [failed, setFailed] = useState(false);
   const kinds = availableKinds(existing);
 
@@ -85,9 +62,8 @@ export function ResourceForm({
     resolver: zodResolver(schema),
     defaultValues: {
       project: project.id,
-      kind: resource === undefined ? (initialKind ?? "") : kindOf(resource),
-      name: resource === undefined || kindOf(resource) !== "other" ? "" : resource.name,
-      initialQuantity: resource?.initialQuantity ?? Number.NaN,
+      kind: "",
+      initialQuantity: Number.NaN,
     },
   });
 
@@ -97,19 +73,16 @@ export function ResourceForm({
   async function onSubmit(values: ResourceValues) {
     setFailed(false);
 
-    const result =
-      resource === undefined
-        ? await createResource(values)
-        : await renameResource(resource.id, values.name);
+    const result = await createResource(values);
 
     if (result.ok) {
-      onSaved();
+      onSaved(result.id);
       return;
     }
 
     for (const [field, message] of Object.entries(result.fieldErrors)) {
       if (isResourceField(field)) {
-        setError(field === "name" && values.kind !== "other" ? "kind" : field, { message });
+        setError(field, { message });
       }
     }
 
@@ -120,68 +93,38 @@ export function ResourceForm({
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <ReadOnlyField label={t("fields.project")} value={project.name} />
 
-      {resource === undefined ? (
-        <Select
-          id="resource-kind"
-          label={t("fields.kind")}
-          required
-          placeholder={t("form.kindPlaceholder")}
-          options={kinds.map((option) => ({ value: option, label: t(`kinds.${option}`) }))}
-          error={errors.kind?.message}
-          {...register("kind")}
-        />
-      ) : (
-        <ReadOnlyField label={t("fields.kind")} value={t(`kinds.${kindOf(resource)}`)} />
-      )}
-
-      {kind === "other" ? (
-        <TextField
-          id="resource-name"
-          label={t("fields.name")}
-          required
-          autoComplete="off"
-          error={errors.name?.message}
-          {...register("name")}
-        />
-      ) : null}
+      <Select
+        id="resource-kind"
+        label={t("fields.kind")}
+        required
+        placeholder={t("form.kindPlaceholder")}
+        options={kinds.map((option) => ({ value: option, label: t(`kinds.${option}`) }))}
+        error={errors.kind?.message}
+        {...register("kind")}
+      />
 
       {kind === "mercury" ? (
         <p className="text-ink-muted -mt-2 text-[13px] font-semibold">{t("material.hint")}</p>
       ) : null}
 
-      {resource === undefined ? (
-        <TextField
-          id="resource-initial-quantity"
-          type="number"
-          min={0}
-          step="any"
-          inputMode="decimal"
-          label={t("fields.initialQuantity")}
-          required
-          error={errors.initialQuantity?.message}
-          {...register("initialQuantity", { valueAsNumber: true })}
-        />
-      ) : (
-        <>
-          <ReadOnlyField
-            label={t("fields.initialQuantity")}
-            value={formatQuantity(resource.initialQuantity, locale)}
-          />
-          <ReadOnlyField
-            label={t("fields.currentQuantity")}
-            value={formatQuantity(resource.currentQuantity, locale)}
-            emphasis
-          />
-          <p className="text-ink-muted text-[13px] font-semibold">{t("form.quantityFixed")}</p>
-        </>
-      )}
+      <TextField
+        id="resource-initial-quantity"
+        type="number"
+        min={0}
+        step="any"
+        inputMode="decimal"
+        label={t("fields.initialQuantity")}
+        required
+        error={errors.initialQuantity?.message}
+        {...register("initialQuantity", { valueAsNumber: true })}
+      />
 
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
         submitting={formState.isSubmitting}
-        submitIcon={resource === undefined ? "plus" : "circle-check"}
-        submitLabel={resource === undefined ? t("form.create") : t("form.submit")}
+        submitIcon="plus"
+        submitLabel={t("form.create")}
         savingLabel={t("form.saving")}
         cancelLabel={common("cancel")}
         onCancel={onCancel}
@@ -193,18 +136,11 @@ export function ResourceForm({
 type ResourceChangeFormProps = {
   resource: Resource;
   type: ResourceChangeType;
-  refiningOperations: readonly RefiningOperation[];
   onSaved: () => void;
   onCancel: () => void;
 };
 
-export function ResourceChangeForm({
-  resource,
-  type,
-  refiningOperations,
-  onSaved,
-  onCancel,
-}: ResourceChangeFormProps) {
+export function ResourceChangeForm({ resource, type, onSaved, onCancel }: ResourceChangeFormProps) {
   const t = useTranslations("inventory");
   const common = useTranslations("common");
   const locale = useLocale();
@@ -229,7 +165,7 @@ export function ResourceChangeForm({
   const { control, register, handleSubmit, formState, setError } = useForm<ResourceChangeValues>({
     mode: "onTouched",
     resolver: zodResolver(schema),
-    defaultValues: { quantity: Number.NaN, refiningOperationId: "", note: "" },
+    defaultValues: { quantity: Number.NaN, note: "" },
   });
 
   const { errors } = formState;
@@ -258,10 +194,7 @@ export function ResourceChangeForm({
   return (
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <div className="grid gap-x-4 gap-y-4 sm:grid-cols-2">
-        <ReadOnlyField
-          label={t("fields.name")}
-          value={resourceLabel(resource, (kind) => t(`kinds.${kind}`))}
-        />
+        <ReadOnlyField label={t("fields.name")} value={t(`kinds.${resource.kind}`)} />
         <ReadOnlyField label={t("fields.project")} value={resource.projectName} />
         <ReadOnlyField
           label={t("fields.currentQuantity")}
@@ -286,28 +219,6 @@ export function ResourceChangeForm({
             {...register("quantity", { valueAsNumber: true })}
           />
         </div>
-
-        {type === "decrease" ? (
-          <div className="sm:col-span-2">
-            <Select
-              id="resource-change-operation"
-              label={t("fields.refiningOperation")}
-              options={[
-                { value: "", label: t("form.noRefiningOperation") },
-                ...refiningOperations.map((operation) => ({
-                  value: operation.id,
-                  label: t("form.refiningOperationOption", {
-                    shipment: operation.shipmentNumber,
-                    client: operation.client,
-                    date: formatDate(operation.refinedAt, locale),
-                  }),
-                })),
-              ]}
-              error={errors.refiningOperationId?.message}
-              {...register("refiningOperationId")}
-            />
-          </div>
-        ) : null}
 
         <div className="sm:col-span-2">
           <TextArea

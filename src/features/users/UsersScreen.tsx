@@ -9,6 +9,7 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Drawer, DrawerActions, useRouteDrawer } from "@/components/ui/Drawer";
 import { FormError } from "@/components/ui/FieldError";
 import { Icon } from "@/components/ui/Icon";
+import { DelayedSearchField } from "@/components/ui/SearchField";
 import { Pagination } from "@/components/ui/Pagination";
 import { PasswordField } from "@/components/ui/PasswordField";
 import { Select } from "@/components/ui/Select";
@@ -37,16 +38,17 @@ import { createUser, getUser, getUserPage, updateUser } from "./usersApi";
 
 export async function usersLoader({ request }: LoaderFunctionArgs) {
   const params = new URL(request.url).searchParams;
+  const query = (params.get("q") ?? "").trim();
   const page = parsePageNumber(params.get("page"));
   const editId = params.get("edit");
   const [users, projects, roles, editing] = await Promise.all([
-    getUserPage(page),
+    getUserPage(query, page),
     getProjects(),
     getRoles(),
     editId === null ? undefined : getUser(editId),
   ]);
 
-  return { page, users, projects, roles, editing, creating: params.get("new") === "1" };
+  return { query, page, users, projects, roles, editing, creating: params.get("new") === "1" };
 }
 
 export function UsersTabs() {
@@ -251,18 +253,25 @@ export function UserForm({ user, projects, roles: roleChoices, onSaved, onCancel
 function UserTable({
   users,
   projects,
+  query,
   page,
 }: {
   users: readonly User[];
   projects: readonly Project[];
+  query: string;
   page: number;
 }) {
   const t = useTranslations("users");
+  const common = useTranslations("common");
   const roles = useTranslations("roles");
   const canEdit = useCan()("accounts", "edit");
 
   if (users.length === 0) {
-    return <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("empty")}</p>;
+    return (
+      <p className="text-ink-muted p-6 text-[15px] font-semibold">
+        {query === "" ? t("empty") : common("noMatch")}
+      </p>
+    );
   }
 
   function projectLabel(user: User) {
@@ -313,7 +322,7 @@ function UserTable({
               {canEdit ? (
                 <td className={`${tableCellClasses} text-end`}>
                   <ActionLink
-                    href={usersHref({ page, edit: user.id })}
+                    href={usersHref({ query, page, edit: user.id })}
                     icon="pencil"
                     ariaLabel={t("editLabel", { name: user.name })}
                   >
@@ -329,12 +338,17 @@ function UserTable({
   );
 }
 
+function searchHref(query: string): string {
+  return usersHref({ query });
+}
+
 export function UsersScreen() {
-  const { page, users, projects, roles, editing, creating } = useLoaderData<typeof usersLoader>();
+  const { query, page, users, projects, roles, editing, creating } =
+    useLoaderData<typeof usersLoader>();
   const t = useTranslations("users");
   const common = useTranslations("common");
   const locale = useLocale();
-  const { close } = useRouteDrawer(usersHref({ page }));
+  const { close } = useRouteDrawer(usersHref({ query, page }));
   const can = useCan();
   const adding = creating && can("accounts", "add");
   const editingAllowed = editing !== undefined && can("accounts", "edit");
@@ -351,17 +365,29 @@ export function UsersScreen() {
         </div>
 
         {can("accounts", "add") ? (
-          <ButtonLink href={usersHref({ page, create: true })} variant="primary">
+          <ButtonLink href={usersHref({ query, page, create: true })} variant="primary">
             <Icon name="plus" />
             {t("new")}
           </ButtonLink>
         ) : null}
       </div>
 
-      <UsersTabs />
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <UsersTabs />
+        <div className="w-full sm:w-72">
+          <DelayedSearchField
+            key={query}
+            id="user-search"
+            label={common("search")}
+            placeholder={t("searchPlaceholder")}
+            query={query}
+            hrefFor={searchHref}
+          />
+        </div>
+      </div>
 
       <TablePanel title={t("listTitle")}>
-        <UserTable users={users.items} projects={projects} page={page} />
+        <UserTable users={users.items} projects={projects} query={query} page={page} />
 
         {pageCount > 1 ? (
           <Pagination
@@ -371,8 +397,8 @@ export function UsersScreen() {
             })}
             previousLabel={common("previousPage")}
             nextLabel={common("nextPage")}
-            previousHref={page > 1 ? usersHref({ page: page - 1 }) : undefined}
-            nextHref={page < pageCount ? usersHref({ page: page + 1 }) : undefined}
+            previousHref={page > 1 ? usersHref({ query, page: page - 1 }) : undefined}
+            nextHref={page < pageCount ? usersHref({ query, page: page + 1 }) : undefined}
           />
         ) : null}
       </TablePanel>

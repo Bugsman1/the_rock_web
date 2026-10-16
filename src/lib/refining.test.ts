@@ -3,6 +3,7 @@ import { refiningOperationFromApi } from "./refining";
 
 const apiOperation = {
   id: 5,
+  grinding_operation: 11,
   shipment_number: "SH-0004",
   customer_name: "Sidi",
   grinder_code: "P3-2",
@@ -27,6 +28,7 @@ describe("refiningOperationFromApi", () => {
   it("reads the weights as numbers", () => {
     expect(refiningOperationFromApi(apiOperation)).toEqual({
       id: "5",
+      grindingOperationId: "11",
       shipmentNumber: "SH-0004",
       client: "Sidi",
       grinderCode: "P3-2",
@@ -36,7 +38,6 @@ describe("refiningOperationFromApi", () => {
       refinedAt: "2026-10-12T09:30:00Z",
       weightBefore: 120.5,
       weightAfter: 118.25,
-      weightLoss: 2.25,
       gold: 14.3,
       goldWithMaterial: 20,
       goldWithoutMaterial: 14.3,
@@ -53,7 +54,6 @@ describe("refiningOperationFromApi", () => {
       notes: _notes,
       gold_weight_with_mercury: _withMercury,
       gold_weight_without_mercury: _withoutMercury,
-      loss: _loss,
       ...bare
     } = apiOperation;
 
@@ -61,7 +61,6 @@ describe("refiningOperationFromApi", () => {
       refinedAt: "2026-10-12T10:00:00Z",
       goldWithMaterial: 0,
       goldWithoutMaterial: 0,
-      loss: 0,
       lossReason: "",
       notes: "",
     });

@@ -88,7 +88,6 @@ describe("startOperation", () => {
       bags_count: 2,
       start_time: "2026-10-08T08:00:00.000Z",
       operator: 4,
-      grinding_cost: "30000",
       notes: "",
     });
     expect(shipmentChange).toEqual({ status: "grinding" });

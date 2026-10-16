@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { MillingOperation } from "@/lib/grinding";
 import type { ShipmentRecord } from "@/lib/shipments";
 import {
   bagCount,
@@ -19,8 +20,11 @@ import {
   storedShipments,
   topClientsByBags,
   transportTotal,
+  createNewShipmentSchema,
+  remainingToPay,
+  invoiceFileName,
 } from "./shipments";
-import type { NewShipmentValues } from "./shipments";
+import type { NewShipmentValues, StoredShipment } from "./shipments";
 
 describe("storage", () => {
   function record(overrides: Partial<ShipmentRecord>): ShipmentRecord {
@@ -39,20 +43,26 @@ describe("storage", () => {
     };
   }
 
+  function stored(overrides: Partial<ShipmentRecord>): StoredShipment {
+    const base = record(overrides);
+
+    return { ...base, remainingBags: base.bagCount };
+  }
+
   const records = [
-    record({
+    stored({
       shipmentNumber: "SH-1",
       customerName: "b",
       bagCount: 20,
       arrivedAt: "2026-10-03T00:00:00Z",
     }),
-    record({
+    stored({
       shipmentNumber: "SH-2",
       customerName: "a",
       bagCount: 50,
       arrivedAt: "2026-10-01T00:00:00Z",
     }),
-    record({
+    stored({
       shipmentNumber: "SH-3",
       customerName: "c",
       bagCount: 35,
@@ -61,12 +71,12 @@ describe("storage", () => {
   ];
 
   describe("isInStorage", () => {
-    it("keeps only the shipments whose grinding has not started", () => {
+    it("keeps the shipments waiting or in grinding", () => {
       expect(isInStorage(record({ status: "pending" }))).toBe(true);
+      expect(isInStorage(record({ status: "grinding" }))).toBe(true);
     });
 
-    it("drops shipments in grinding or completed", () => {
-      expect(isInStorage(record({ status: "grinding" }))).toBe(false);
+    it("drops completed shipments", () => {
       expect(isInStorage(record({ status: "completed" }))).toBe(false);
     });
   });
@@ -82,14 +92,37 @@ describe("storage", () => {
     return list.map((item) => item.shipmentNumber);
   }
 
+  const grinding: MillingOperation = {
+    id: "op",
+    project: "zouerate1",
+    machine: 1,
+    shipmentNumber: "SH-11",
+    client: "a",
+    bags: 2,
+    operatorName: "Aicha",
+    startedAt: "2026-10-08T06:00:00.000Z",
+    estimatedEndAt: "2026-10-08T12:00:00.000Z",
+    cost: 0,
+    notes: "",
+  };
+
   describe("storedShipments", () => {
-    it("keeps the shipments in storage of the project", () => {
-      expect(numbers(storedShipments(mixed, "zouerate1"))).toEqual(["SH-10"]);
-      expect(storedShipments(mixed, "sfariyat2")).toEqual([]);
+    it("keeps the project's shipments that still have bags to grind, with the bags left", () => {
+      const left = storedShipments(mixed, [grinding], "zouerate1");
+
+      expect(numbers(left)).toEqual(["SH-10", "SH-11"]);
+      expect(left.map((shipment) => shipment.remainingBags)).toEqual([10, 8]);
+      expect(storedShipments(mixed, [], "sfariyat2")).toEqual([]);
+    });
+
+    it("drops a shipment once all its bags are on machines or ground", () => {
+      expect(numbers(storedShipments(mixed, [{ ...grinding, bags: 10 }], "zouerate1"))).toEqual([
+        "SH-10",
+      ]);
     });
 
     it("covers every project when none is given", () => {
-      expect(numbers(storedShipments(mixed))).toEqual(["SH-10", "SH-13"]);
+      expect(numbers(storedShipments(mixed, []))).toEqual(["SH-10", "SH-11", "SH-13"]);
     });
   });
 
@@ -100,8 +133,9 @@ describe("storage", () => {
   });
 
   describe("bagCount", () => {
-    it("sums the bags", () => {
+    it("sums the bags left", () => {
       expect(bagCount(records)).toBe(105);
+      expect(bagCount([{ ...stored({}), remainingBags: 1.5 }])).toBe(1.5);
     });
 
     it("is zero with no shipments", () => {
@@ -114,7 +148,7 @@ describe("storage", () => {
       expect(
         clientBags([
           ...records,
-          record({ shipmentNumber: "SH-4", customerName: "b", bagCount: 5 }),
+          stored({ shipmentNumber: "SH-4", customerName: "b", bagCount: 5 }),
         ]),
       ).toEqual([
         { name: "b", bagCount: 25 },
@@ -329,28 +363,68 @@ describe("backend form", () => {
     bagFare: 200,
     passengerCount: 2,
     passengerFare: 50.5,
+    currentPayment: 1000.5,
     mill: "3",
     status: "pending",
     notes: " Sacs mouillés ",
   };
 
   describe("shipmentToApi", () => {
-    it("sends the fares in old ouguiya, the ids as numbers and trimmed texts", () => {
+    it("sends the fares as typed, the ids as numbers and trimmed texts", () => {
       expect(
         shipmentToApi(values, { customerId: "7", arrivedAt: "2026-10-10T08:30:00.000Z" }),
       ).toEqual({
         customer: 7,
         arrival_date: "2026-10-10T08:30:00.000Z",
         bags_count: 16,
-        bag_transport_cost_per_bag: "2000",
+        bag_transport_cost_per_bag: "200",
         passengers_count: 2,
-        passenger_transport_cost_per_person: "505",
+        passenger_transport_cost_per_person: "50.5",
+        current_payment: "1000.5",
         transport_method: "hilux",
         source: "Chami",
         project: 3,
         status: "pending",
         notes: "Sacs mouillés",
       });
+    });
+  });
+
+  describe("current payment", () => {
+    const schema = createNewShipmentSchema({
+      required: "required",
+      bagCountInvalid: "bags",
+      phoneInvalid: "phone",
+      dateInvalid: "date",
+      timeInvalid: "time",
+      amountInvalid: "amount",
+      passengerCountInvalid: "passengers",
+      paymentTooHigh: "too high",
+    });
+    const issues = (currentPayment: number) =>
+      (schema.safeParse({ ...values, phone: "46109325", currentPayment }).error?.issues ?? []).map(
+        (issue) => [issue.path.join("."), issue.message],
+      );
+
+    it("may stay empty and is sent as zero", () => {
+      expect(issues(Number.NaN)).toEqual([]);
+      expect(
+        shipmentToApi(
+          { ...values, currentPayment: Number.NaN },
+          { customerId: "7", arrivedAt: "2026-10-10T08:30:00.000Z" },
+        ).current_payment,
+      ).toBe("0");
+    });
+
+    it("is never negative nor more than the transport total", () => {
+      expect(issues(-1)).toEqual([["currentPayment", "amount"]]);
+      expect(issues(3302)).toEqual([["currentPayment", "too high"]]);
+      expect(issues(3301)).toEqual([]);
+    });
+
+    it("leaves the rest of the transport total to pay", () => {
+      expect(remainingToPay(3301, 1000.5)).toBe(2300.5);
+      expect(remainingToPay(3301, Number.NaN)).toBe(3301);
     });
   });
 
@@ -371,5 +445,16 @@ describe("backend form", () => {
       expect(isShipmentField("arrivalTime")).toBe(true);
       expect(isShipmentField("shipmentNumber")).toBe(false);
     });
+  });
+});
+
+describe("invoiceFileName", () => {
+  it("reads the invoice number the backend names the file with", () => {
+    expect(invoiceFileName('attachment; filename="FAC-2026-0007.pdf"')).toBe("FAC-2026-0007.pdf");
+  });
+
+  it("gives nothing when the backend sends no file name", () => {
+    expect(invoiceFileName(null)).toBeUndefined();
+    expect(invoiceFileName("attachment")).toBeUndefined();
   });
 });

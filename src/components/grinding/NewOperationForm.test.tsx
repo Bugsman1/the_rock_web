@@ -33,7 +33,7 @@ const shipments: OperationShipment[] = [
     shipmentNumber: "SH-1053",
     client: "Abderrahmane",
     bags: 6,
-    remainingBags: 6,
+    remainingBags: 1,
     pending: false,
   },
 ];
@@ -122,11 +122,44 @@ describe("NewOperationForm", () => {
     expect(api.startOperation).not.toHaveBeenCalled();
   });
 
-  it("rejects more bags than remain on the shipment", async () => {
+  it("takes at most 2 bags on a machine, by half bags", async () => {
     const user = userEvent.setup();
     renderNewOperation({ shipment: "SH-1052", machine: 7 });
 
-    await user.type(screen.getByLabelText(form.bags), "11");
+    const bags = screen.getByLabelText(form.bags);
+    await user.selectOptions(screen.getByLabelText(form.operator), "emp-1");
+    await user.type(bags, "3");
+
+    expect(
+      await screen.findByText(form.errors.bagsOverCapacity.replace("{max}", "2")),
+    ).toBeVisible();
+
+    for (const value of ["0.7", "0"]) {
+      await user.clear(bags);
+      await user.type(bags, value);
+
+      expect(await screen.findByText(form.errors.bagsInvalid)).toBeVisible();
+    }
+    await user.click(screen.getByRole("button", { name: form.submit }));
+    expect(api.startOperation).not.toHaveBeenCalled();
+
+    await user.clear(bags);
+    await user.type(bags, "1.5");
+    await user.click(screen.getByRole("button", { name: form.submit }));
+
+    await waitFor(() => {
+      expect(api.startOperation).toHaveBeenCalledWith(
+        expect.objectContaining({ bags: 1.5 }),
+        expect.anything(),
+      );
+    });
+  });
+
+  it("rejects more bags than remain on the shipment", async () => {
+    const user = userEvent.setup();
+    renderNewOperation({ shipment: "SH-1053", machine: 7 });
+
+    await user.type(screen.getByLabelText(form.bags), "1.5");
     await user.selectOptions(screen.getByLabelText(form.operator), "emp-1");
     await user.click(screen.getByRole("button", { name: form.submit }));
 

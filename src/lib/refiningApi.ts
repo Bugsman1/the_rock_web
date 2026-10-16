@@ -1,12 +1,9 @@
 import { apiClient, unwrap } from "./api/client";
 import { fetchAllPages, MAX_PAGE_SIZE } from "./api/pagination";
-import type { ProjectId } from "./projects";
 import { refiningOperationFromApi } from "./refining";
 import type { RefiningOperation } from "./refining";
 
-export async function getRefiningOperations(
-  project?: ProjectId,
-): Promise<readonly RefiningOperation[]> {
+export async function getRefiningOperations(): Promise<readonly RefiningOperation[]> {
   const operations = await fetchAllPages(async (page) =>
     unwrap(
       await apiClient.GET("/api/v1/refining-operations/", {
@@ -15,7 +12,6 @@ export async function getRefiningOperations(
             ordering: "-refining_date",
             page,
             page_size: MAX_PAGE_SIZE,
-            ...(project === undefined ? {} : { project: Number(project) }),
           },
         },
       }),

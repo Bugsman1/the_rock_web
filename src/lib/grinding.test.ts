@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   activeOperationOf,
-  COST_PER_BAG,
   estimatedEnd,
   idleMachines,
   machinesFromGrinders,
   machinesOfProject,
   machineStatus,
-  millingCost,
+  isHalfBagCount,
   operationFromApi,
   remainingBags,
 } from "./grinding";
@@ -24,6 +23,7 @@ function operation(overrides: Partial<MillingOperation>): MillingOperation {
     operatorName: "Aicha",
     startedAt: "2026-10-08T06:00:00.000Z",
     estimatedEndAt: "2026-10-08T12:00:00.000Z",
+    cost: 0,
     notes: "",
     ...overrides,
   };
@@ -85,10 +85,12 @@ describe("estimatedEnd", () => {
   });
 });
 
-describe("millingCost", () => {
-  it("charges the rate per bag", () => {
-    expect(millingCost(3)).toBe(3 * COST_PER_BAG);
-    expect(millingCost(-1)).toBe(0);
+describe("bag counts", () => {
+  it("counts bags by halves", () => {
+    expect(isHalfBagCount(0.5)).toBe(true);
+    expect(isHalfBagCount(3)).toBe(true);
+    expect(isHalfBagCount(0.7)).toBe(false);
+    expect(isHalfBagCount(0)).toBe(false);
   });
 });
 
@@ -127,6 +129,8 @@ describe("operationFromApi", () => {
     end_time: null,
     operator_name: "Aicha",
     grinding_cost: "60000.00",
+    mercury_added_at: null,
+    mercury_added_by_name: "",
     notes: "",
     created_at: "2026-10-08T06:00:00Z",
     updated_at: "2026-10-08T06:00:00Z",
@@ -144,6 +148,7 @@ describe("operationFromApi", () => {
         operatorName: "Aicha",
         startedAt: "2026-10-08T06:00:00.000Z",
         estimatedEndAt: "2026-10-08T18:00:00.000Z",
+        cost: 60000,
         notes: "",
       },
     ]);
@@ -154,6 +159,16 @@ describe("operationFromApi", () => {
 
     expect(ended?.endedAt).toBe("2026-10-08T12:00:00.000Z");
     expect(ended?.bagsMilled).toBe(4);
+  });
+
+  it("says when the mercury was added and by whom", () => {
+    const [operation] = operationFromApi({
+      ...apiOperation,
+      mercury_added_at: "2026-10-08T07:00:00.000Z",
+      mercury_added_by_name: "Aicha",
+    });
+
+    expect(operation?.mercury).toEqual({ addedAt: "2026-10-08T07:00:00.000Z", byName: "Aicha" });
   });
 
   it("skips an operation whose grinder code it cannot read", () => {

@@ -1,5 +1,9 @@
+import { useEffect, useState } from "react";
 import type { ComponentPropsWithoutRef } from "react";
+import { useReplace } from "@/i18n/navigation";
 import { Icon } from "./Icon";
+
+const SEARCH_DELAY_MS = 350;
 
 type SearchFieldProps = Omit<ComponentPropsWithoutRef<"input">, "className" | "id" | "type"> & {
   id: string;
@@ -20,5 +24,45 @@ export function SearchField({ id, label, ...props }: SearchFieldProps) {
         {...props}
       />
     </div>
+  );
+}
+
+type DelayedSearchFieldProps = {
+  id: string;
+  label: string;
+  placeholder: string;
+  query: string;
+  hrefFor: (query: string) => string;
+};
+
+export function DelayedSearchField({
+  id,
+  label,
+  placeholder,
+  query,
+  hrefFor,
+}: DelayedSearchFieldProps) {
+  const replace = useReplace();
+  const [search, setSearch] = useState(query);
+
+  useEffect(() => {
+    if (search.trim() === query) {
+      return;
+    }
+
+    const timer = setTimeout(() => replace(hrefFor(search)), SEARCH_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [search, query, replace, hrefFor]);
+
+  return (
+    <SearchField
+      id={id}
+      label={label}
+      placeholder={placeholder}
+      autoComplete="off"
+      value={search}
+      onChange={(event) => setSearch(event.target.value)}
+    />
   );
 }

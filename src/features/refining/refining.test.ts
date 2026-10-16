@@ -6,7 +6,7 @@ import {
   refiningErrorsFromApi,
   refiningQueue,
   refiningToApi,
-  weightLoss,
+  refiningLoss,
 } from "./refining";
 import type { RefiningValues } from "./refining";
 
@@ -14,7 +14,6 @@ const messages = {
   required: "required",
   dateInvalid: "date",
   timeInvalid: "time",
-  bagsInvalid: "bags",
   weightInvalid: "weight",
   weightAfterTooHigh: "after too high",
   goldTooHeavy: "gold too heavy",
@@ -23,14 +22,12 @@ const messages = {
 
 const values: RefiningValues = {
   workerId: "2",
-  bags: 4,
   date: "2026-10-12",
   time: "09:30",
   weightBefore: 120.5,
   weightAfter: 118.25,
   goldWithMaterial: 20,
   goldWithoutMaterial: 14.3,
-  loss: 0.5,
   lossReason: "normalShortage",
   notes: "",
 };
@@ -46,6 +43,7 @@ function grinding(overrides: Partial<MillingOperation>): MillingOperation {
     operatorName: "Aicha",
     startedAt: "2026-10-12T06:00:00Z",
     estimatedEndAt: "2026-10-12T18:00:00Z",
+    cost: 0,
     notes: "",
     endedAt: "2026-10-12T18:00:00Z",
     bagsMilled: 4,
@@ -53,19 +51,19 @@ function grinding(overrides: Partial<MillingOperation>): MillingOperation {
   };
 }
 
-function refining(shipmentNumber: string, grinderCode: string): RefiningOperation {
+function refining(grindingOperationId: string): RefiningOperation {
   return {
     id: "9",
-    shipmentNumber,
+    grindingOperationId,
+    shipmentNumber: "SH-4",
     client: "Sidi",
-    grinderCode,
+    grinderCode: "P3-2",
     projectName: "Zouérat 1",
     workerName: "Aicha",
     bags: 4,
     refinedAt: "2026-10-13T09:00:00Z",
     weightBefore: 10,
     weightAfter: 9,
-    weightLoss: 1,
     gold: 2,
     goldWithMaterial: 0,
     goldWithoutMaterial: 0,
@@ -76,7 +74,7 @@ function refining(shipmentNumber: string, grinderCode: string): RefiningOperatio
 }
 
 function errorsOf(input: RefiningValues) {
-  const result = createRefiningSchema(messages, { maxBags: 4 }).safeParse(input);
+  const result = createRefiningSchema(messages).safeParse(input);
 
   return result.success
     ? {}
@@ -93,30 +91,19 @@ describe("refiningQueue", () => {
     ];
 
     expect(
-      refiningQueue(operations, [refining("SH-7", "P3-2")]).map((operation) => operation.id),
+      refiningQueue(operations, [refining("refined")]).map((operation) => operation.id),
     ).toEqual(["early", "late"]);
   });
 
-  it("matches one refining to one grinding of the same shipment and machine", () => {
+  it("matches a refining to its own grinding, not another of the same shipment and machine", () => {
     const operations = [
       grinding({ id: "first", endedAt: "2026-10-12T10:00:00Z" }),
       grinding({ id: "second", endedAt: "2026-10-12T12:00:00Z" }),
     ];
 
     expect(
-      refiningQueue(operations, [refining("SH-4", "P3-2")]).map((operation) => operation.id),
-    ).toEqual(["second"]);
-  });
-});
-
-describe("weightLoss", () => {
-  it("subtracts the weight after from the weight before", () => {
-    expect(weightLoss(120.5, 118.25)).toBe(2.25);
-    expect(weightLoss(0.3, 0.1)).toBe(0.2);
-  });
-
-  it("waits until both weights are entered", () => {
-    expect(weightLoss(120.5, Number.NaN)).toBeUndefined();
+      refiningQueue(operations, [refining("second")]).map((operation) => operation.id),
+    ).toEqual(["first"]);
   });
 });
 
@@ -142,11 +129,6 @@ describe("createRefiningSchema", () => {
     });
   });
 
-  it("keeps the bags between one and the bags ground", () => {
-    expect(errorsOf({ ...values, bags: 0 })).toEqual({ bags: "bags" });
-    expect(errorsOf({ ...values, bags: 5 })).toEqual({ bags: "bags" });
-  });
-
   it("refuses more weight after than before and more gold than material, all in grams", () => {
     expect(
       errorsOf({ ...values, weightBefore: 1, weightAfter: 2, goldWithoutMaterial: 2 }),
@@ -160,25 +142,26 @@ describe("createRefiningSchema", () => {
     expect(errorsOf({ ...values, goldWithoutMaterial: 25 })).toEqual({
       goldWithoutMaterial: "without too heavy",
     });
-    expect(errorsOf({ ...values, loss: -1 })).toEqual({ loss: "weight" });
+    expect(errorsOf({ ...values, goldWithMaterial: -1 })).toEqual({
+      goldWithMaterial: "weight",
+      goldWithoutMaterial: "without too heavy",
+    });
   });
 });
 
 describe("refiningToApi", () => {
-  it("sends the gold without material as the extracted gold, every weight as a decimal", () => {
+  it("sends the gold without material as the extracted gold, leaving bags and loss to the backend", () => {
     expect(
       refiningToApi(values, { grindingOperationId: "5", refinedAt: "2026-10-12T09:30:00.000Z" }),
     ).toEqual({
       grinding_operation: 5,
       worker: 2,
-      bags_count: 4,
       refining_date: "2026-10-12T09:30:00.000Z",
       weight_before: "120.500",
       weight_after: "118.250",
       gold_weight: "14.300",
       gold_weight_with_mercury: "20.000",
       gold_weight_without_mercury: "14.300",
-      loss: "0.500",
       loss_reason: "normalShortage",
       notes: "",
     });
@@ -189,10 +172,20 @@ describe("refiningErrorsFromApi", () => {
   it("puts the backend's errors on our fields", () => {
     expect(
       refiningErrorsFromApi({
-        bags_count: "Seulement 4 sacs.",
         gold_weight_without_mercury: "Trop lourd.",
         other: "x",
       }),
-    ).toEqual({ bags: "Seulement 4 sacs.", goldWithoutMaterial: "Trop lourd." });
+    ).toEqual({ goldWithoutMaterial: "Trop lourd." });
+  });
+});
+
+describe("refiningLoss", () => {
+  it("is the weight before less the weight after", () => {
+    expect(refiningLoss(120.5, 118.25)).toBe(2.25);
+    expect(refiningLoss(0.3, 0.1)).toBe(0.2);
+  });
+
+  it("waits until both weights are entered", () => {
+    expect(refiningLoss(120.5, Number.NaN)).toBeUndefined();
   });
 });

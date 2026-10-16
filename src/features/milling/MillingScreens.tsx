@@ -5,7 +5,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { ButtonLink } from "@/components/ui/ButtonLink";
-import { CardGrid, DetailList, KpiTile, LinkCard, StatGrid } from "@/components/ui/Cards";
+import { CardGrid, DetailList, LinkCard, StatGrid } from "@/components/ui/Cards";
 import { NewOperationForm } from "@/components/grinding/NewOperationForm";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
@@ -28,6 +28,7 @@ import { durationParts, isSameDay, nowAsTimeValue, todayAsInputValue } from "@/l
 import { formatCount, formatDateTime, formatTime } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import { findProject, isRecordId, isSiteKey, siteKeys } from "@/lib/projects";
+import { matchesSearch } from "@/lib/search";
 import { getOperators } from "@/lib/users";
 import {
   MILLING_HREF,
@@ -50,16 +51,18 @@ import {
   combineSummaries,
   countMachines,
   findMachine,
+  isBacklogged,
   millingQueue,
   operationHistory,
   projectsForSite,
   projectSummary,
+  runningShare,
   shipmentMillingStatus,
   shipmentStatusFor,
 } from "./milling";
-import type { MachineCounts, MachineStatusFilter, SiteFilter } from "./milling";
+import type { MachineCounts, MachineStatusFilter, MillingSummary, SiteFilter } from "./milling";
 import { getMillingData } from "./millingApi";
-import { EndMillingAction } from "./MillingForms";
+import { EndMillingAction, MercuryStatus } from "./MillingForms";
 
 const machineStatusStyles: Record<MachineStatus, { icon: IconName; dot: string; text: string }> = {
   running: { icon: "player-play", dot: "bg-success-700", text: "text-success-700" },
@@ -132,6 +135,104 @@ function MachineStatusBar({ counts }: { counts: MachineCounts }) {
   );
 }
 
+const flowStages = ["waiting", "milling", "milledToday"] as const;
+
+type FlowStage = (typeof flowStages)[number];
+
+function FlowStageCaption({ backlog }: { backlog: boolean }) {
+  const t = useTranslations("milling");
+
+  return backlog ? (
+    <span className="bg-brand-700/10 text-brand-700 rounded-full px-2.5 py-0.5 text-[12px] font-bold">
+      {t("flow.backlog")}
+    </span>
+  ) : (
+    <span className="text-ink-muted text-[12px] font-semibold">{t("flow.bags")}</span>
+  );
+}
+
+function FlowStrip({ summary }: { summary: MillingSummary }) {
+  const t = useTranslations("milling");
+  const locale = useLocale();
+  const count = (value: number) => formatCount(value, locale);
+  const bags: Record<FlowStage, number> = {
+    waiting: summary.bagsWaiting,
+    milling: summary.bagsMilling,
+    milledToday: summary.bagsMilledToday,
+  };
+  const share = runningShare(summary.machines);
+
+  return (
+    <section
+      aria-label={t("flow.title")}
+      className="rounded-card border-line bg-surface shadow-subtle flex flex-col border-[1.5px] lg:flex-row"
+    >
+      <div className="flex min-w-0 flex-1 flex-col gap-4 p-6">
+        <div aria-hidden className="relative grid grid-cols-3">
+          <span className="bg-line absolute inset-x-[16.667%] top-3 h-px" />
+          {flowStages.map((stage, index) => (
+            <span key={stage} className="relative flex justify-center">
+              <span
+                className={cn(
+                  "inline-flex size-6 items-center justify-center rounded-full text-[12px] font-bold",
+                  bags[stage] > 0
+                    ? "bg-brand-700 text-ink-inverted"
+                    : "border-line-strong bg-surface text-ink-faint border",
+                )}
+              >
+                {count(index + 1)}
+              </span>
+            </span>
+          ))}
+        </div>
+
+        <ol className="grid grid-cols-3">
+          {flowStages.map((stage, index) => (
+            <li
+              key={stage}
+              className={cn(
+                "flex flex-col items-center gap-1 px-2 text-center",
+                index > 0 && "border-line-subtle border-s",
+              )}
+            >
+              <span className="text-ink-muted text-[13px] font-semibold">{t(`flow.${stage}`)}</span>
+              <span className="text-brand-700 text-[28px] leading-tight font-bold">
+                {count(bags[stage])}
+              </span>
+              <FlowStageCaption backlog={stage === "waiting" && isBacklogged(bags[stage])} />
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div className="border-line flex items-center gap-4 border-t p-6 lg:w-72 lg:border-s lg:border-t-0">
+        <span className="bg-line-subtle text-brand-700 inline-flex size-11 shrink-0 items-center justify-center rounded-full">
+          <Icon name="player-play" />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <span className="text-ink-muted text-[13px] font-semibold">
+            {t("kpis.machinesRunning")}
+          </span>
+          <p className="flex flex-wrap items-baseline gap-x-1.5">
+            <span className="text-brand-700 text-[28px] leading-tight font-bold">
+              {count(summary.machines.running)}
+            </span>
+            <span className="text-ink-muted text-[15px] font-semibold">
+              {t("outOf", { total: count(summary.machines.total) })}
+            </span>
+          </p>
+          <span aria-hidden className="bg-line-subtle block h-1 w-full rounded-full">
+            <span
+              style={{ width: `${share}%` }}
+              className="bg-brand-700 block h-full rounded-full"
+            />
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function siteFilterOf(value: string | null): SiteFilter {
   return value !== null && isSiteKey(value) ? value : "all";
 }
@@ -195,21 +296,7 @@ export function MillingScreen() {
         <SiteFilterNav current={site} sites={sites} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiTile
-          icon="player-play"
-          label={t("kpis.machinesRunning")}
-          value={count(total.machines.running)}
-          detail={t("outOf", { total: count(total.machines.total) })}
-        />
-        <KpiTile icon="refresh" label={t("kpis.bagsMilling")} value={count(total.bagsMilling)} />
-        <KpiTile icon="hourglass" label={t("kpis.bagsWaiting")} value={count(total.bagsWaiting)} />
-        <KpiTile
-          icon="circle-check"
-          label={t("kpis.bagsMilledToday")}
-          value={count(total.bagsMilledToday)}
-        />
-      </div>
+      <FlowStrip summary={total} />
 
       <CardGrid>
         {summaries.map(({ project, summary }) => (
@@ -339,6 +426,7 @@ function MachineList({ project, rows }: { project: string; rows: readonly Machin
               <th className={tableHeadClasses}>{t("project.columns.machine")}</th>
               <th className={tableHeadClasses}>{t("project.columns.status")}</th>
               <th className={tableHeadClasses}>{t("project.columns.assignment")}</th>
+              <th className={tableHeadClasses}>{t("mercury.column")}</th>
               <th className={tableEndHeadClasses}>{t("project.columns.bags")}</th>
               <th className={tableHeadClasses}>{t("project.columns.estimatedEnd")}</th>
               <th className={tableHeadClasses}>
@@ -373,6 +461,13 @@ function MachineList({ project, rows }: { project: string; rows: readonly Machin
                         {operation.shipmentNumber}
                       </span>
                     </span>
+                  )}
+                </td>
+                <td className={tableCellClasses}>
+                  {operation === undefined ? (
+                    <span className="text-ink-faint">—</span>
+                  ) : (
+                    <MercuryStatus operation={operation} />
                   )}
                 </td>
                 <td className={`${tableCellClasses} text-ink text-end font-bold`}>
@@ -416,6 +511,7 @@ function MachineList({ project, rows }: { project: string; rows: readonly Machin
 const QUEUE_PREVIEW_LIMIT = 8;
 
 type QueueRow = {
+  position: number;
   shipmentNumber: string;
   client: string;
   remaining: string;
@@ -423,14 +519,22 @@ type QueueRow = {
   startHref: string;
 };
 
-function MillingQueueTable({ rows }: { rows: readonly QueueRow[] }) {
+function MillingQueueTable({ queue, query }: { queue: readonly QueueRow[]; query: string }) {
   const t = useTranslations("milling.project");
+  const common = useTranslations("common");
   const locale = useLocale();
   const canStart = useCan()("grinding", "add");
   const [expanded, setExpanded] = useState(false);
+  const rows = queue.filter((row) =>
+    matchesSearch({ texts: [row.shipmentNumber, row.client], phone: "" }, query),
+  );
 
   if (rows.length === 0) {
-    return <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("queueEmpty")}</p>;
+    return (
+      <p className="text-ink-muted p-6 text-[15px] font-semibold">
+        {queue.length === 0 ? t("queueEmpty") : common("noMatch")}
+      </p>
+    );
   }
 
   const visible = expanded ? rows : rows.slice(0, QUEUE_PREVIEW_LIMIT);
@@ -454,10 +558,10 @@ function MillingQueueTable({ rows }: { rows: readonly QueueRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {visible.map((row, index) => (
+            {visible.map((row) => (
               <tr key={row.shipmentNumber} className={tableRowClasses}>
                 <td className={`${tableCellClasses} text-brand-700 font-bold`}>
-                  {formatCount(index + 1, locale)}
+                  {formatCount(row.position, locale)}
                 </td>
                 <td className={`${tableCellClasses} text-ink font-bold`}>{row.shipmentNumber}</td>
                 <td className={`${tableCellClasses} text-ink font-bold`}>
@@ -507,6 +611,7 @@ export function MillingProjectScreen() {
   const counts = countMachines(machines, data.operations);
   const queue = millingQueue(data.shipments, data.operations, project.id);
   const now = new Date();
+  const [query, setQuery] = useState("");
 
   return (
     <div className="flex flex-col gap-6">
@@ -524,18 +629,13 @@ export function MillingProjectScreen() {
       </div>
 
       <section className="rounded-card shadow-subtle border-line bg-surface flex flex-col gap-4 border-[1.5px] p-5">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <h2 className="text-ink text-[16px] font-bold">
-            {t("project.machinesTitle")}{" "}
-            <span className="text-ink-muted font-semibold">
-              {t("project.machinesRunning")} {count(counts.running)}{" "}
-              {t("outOf", { total: count(counts.total) })}
-            </span>
-          </h2>
-          <div className="w-full max-w-md">
-            <MachineStatusBar counts={counts} />
-          </div>
-        </div>
+        <h2 className="text-ink text-[16px] font-bold">
+          {t("project.machinesTitle")}{" "}
+          <span className="text-ink-muted font-semibold">
+            {t("project.machinesRunning")} {count(counts.running)}{" "}
+            {t("outOf", { total: count(counts.total) })}
+          </span>
+        </h2>
 
         <MachineList
           project={project.id}
@@ -547,9 +647,19 @@ export function MillingProjectScreen() {
         />
       </section>
 
-      <TablePanel title={t("project.queueTitle")}>
+      <TablePanel
+        title={t("project.queueTitle")}
+        search={{
+          label: common("searchIn", { list: t("project.queueTitle") }),
+          placeholder: common("searchList"),
+          value: query,
+          onChange: setQuery,
+        }}
+      >
         <MillingQueueTable
-          rows={queue.map((shipment) => ({
+          query={query}
+          queue={queue.map((shipment, index) => ({
+            position: index + 1,
             shipmentNumber: shipment.shipmentNumber,
             client: shipment.client,
             remaining: t("project.remainingOf", {
@@ -612,13 +722,34 @@ export async function machineLoader({ params }: LoaderFunctionArgs) {
   };
 }
 
-function MachineHistoryTable({ operations }: { operations: readonly MillingOperation[] }) {
+function MachineHistoryTable({
+  history,
+  query,
+}: {
+  history: readonly MillingOperation[];
+  query: string;
+}) {
   const t = useTranslations("milling.machine");
+  const mercury = useTranslations("milling.mercury");
+  const common = useTranslations("common");
   const locale = useLocale();
   const count = (value: number) => formatCount(value, locale);
+  const operations = history.filter((operation) =>
+    matchesSearch(
+      {
+        texts: [operation.shipmentNumber, operation.client, operation.operatorName],
+        phone: "",
+      },
+      query,
+    ),
+  );
 
   if (operations.length === 0) {
-    return <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("history.empty")}</p>;
+    return (
+      <p className="text-ink-muted p-6 text-[15px] font-semibold">
+        {history.length === 0 ? t("history.empty") : common("noMatch")}
+      </p>
+    );
   }
 
   return (
@@ -633,6 +764,7 @@ function MachineHistoryTable({ operations }: { operations: readonly MillingOpera
             <th className={tableHeadClasses}>{t("history.end")}</th>
             <th className={tableHeadClasses}>{t("history.duration")}</th>
             <th className={tableHeadClasses}>{t("history.operator")}</th>
+            <th className={tableHeadClasses}>{mercury("column")}</th>
           </tr>
         </thead>
         <tbody>
@@ -674,6 +806,11 @@ function MachineHistoryTable({ operations }: { operations: readonly MillingOpera
                 <td className={`${tableCellClasses} text-ink font-semibold`}>
                   <span dir="auto">{operation.operatorName}</span>
                 </td>
+                <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
+                  {operation.mercury === undefined
+                    ? "—"
+                    : formatDateTime(operation.mercury.addedAt, locale)}
+                </td>
               </tr>
             );
           })}
@@ -694,6 +831,7 @@ export function MachineDetailScreen() {
   const status = machineStatus(machine, data.operations);
   const operation = activeOperationOf(data.operations, project.id, machine.number);
   const shipment = data.shipments.find((item) => item.shipmentNumber === operation?.shipmentNumber);
+  const [query, setQuery] = useState("");
 
   function statusAfterEnd(bagsMilled: number, endedAt: IsoTimestamp) {
     if (operation === undefined || shipment === undefined) {
@@ -725,11 +863,24 @@ export function MachineDetailScreen() {
             },
             { label: t("machine.operator"), value: operation.operatorName },
             {
+              label: t("mercury.column"),
+              value:
+                operation.mercury === undefined
+                  ? t("mercury.notYet")
+                  : t("mercury.addedOn", {
+                      date: formatDateTime(operation.mercury.addedAt, locale),
+                      name: operation.mercury.byName,
+                    }),
+            },
+            {
               label: t("machine.notes"),
               value: operation.notes === "" ? t("machine.noNotes") : operation.notes,
             },
           ]}
         />
+        <div>
+          <MercuryStatus operation={operation} />
+        </div>
         {shipment === undefined || !can("grinding", "edit") ? null : (
           <div>
             <EndMillingAction
@@ -810,9 +961,18 @@ export function MachineDetailScreen() {
         />
       </section>
 
-      <TablePanel title={t("machine.history.title")}>
+      <TablePanel
+        title={t("machine.history.title")}
+        search={{
+          label: common("searchIn", { list: t("machine.history.title") }),
+          placeholder: common("searchList"),
+          value: query,
+          onChange: setQuery,
+        }}
+      >
         <MachineHistoryTable
-          operations={operationHistory(data.operations, project.id, machine.number)}
+          history={operationHistory(data.operations, project.id, machine.number)}
+          query={query}
         />
       </TablePanel>
     </div>

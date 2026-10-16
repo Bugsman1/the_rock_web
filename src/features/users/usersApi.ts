@@ -19,11 +19,18 @@ type SaveUserResult = SaveResult<keyof UserValues>;
 
 type SaveRoleResult = SaveResult<keyof RoleValues>;
 
-export async function getUserPage(page: number): Promise<Page<User>> {
+export async function getUserPage(search: string, page: number): Promise<Page<User>> {
   const [roles, result] = await Promise.all([
     getRoles(),
     apiClient.GET("/api/v1/users/", {
-      params: { query: { is_active: true, page, page_size: PAGE_SIZE } },
+      params: {
+        query: {
+          is_active: true,
+          page,
+          page_size: PAGE_SIZE,
+          ...(search.trim() === "" ? {} : { search: search.trim() }),
+        },
+      },
     }),
   ]);
 

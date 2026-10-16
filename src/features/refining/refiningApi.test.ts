@@ -13,14 +13,12 @@ afterAll(() => server.close());
 
 const values: RefiningValues = {
   workerId: "2",
-  bags: 4,
   date: "2026-10-12",
   time: "09:30",
   weightBefore: 1200,
   weightAfter: 1150,
   goldWithMaterial: 20,
   goldWithoutMaterial: 14,
-  loss: 90,
   lossReason: "normalShortage",
   notes: "",
 };
@@ -38,7 +36,9 @@ describe("createRefiningOperation", () => {
     );
 
     expect(await createRefiningOperation(values, target)).toEqual({ ok: true });
-    expect(body).toMatchObject({ grinding_operation: 5, loss: "90.000" });
+    expect(body).toMatchObject({ grinding_operation: 5 });
+    expect(body).not.toHaveProperty("loss");
+    expect(body).not.toHaveProperty("bags_count");
   });
 
   it("shows on the loss field why the stock refused it", async () => {

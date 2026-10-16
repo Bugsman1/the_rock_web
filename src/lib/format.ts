@@ -6,9 +6,7 @@ const CALENDAR = "gregory";
 export type IsoTimestamp = string;
 
 export function formatCount(value: number, locale: Locale): string {
-  return new Intl.NumberFormat(toIntlLocale(locale), { maximumFractionDigits: 0 }).format(
-    Math.trunc(value),
-  );
+  return new Intl.NumberFormat(toIntlLocale(locale), { maximumFractionDigits: 1 }).format(value);
 }
 
 export function formatDate(timestamp: IsoTimestamp, locale: Locale): string {
@@ -43,19 +41,14 @@ export function formatTime(timestamp: IsoTimestamp, locale: Locale): string {
   }).format(new Date(timestamp));
 }
 
-const OLD_PER_NEW_OUGUIYA = 10;
+const MONEY_CENTS = 100;
 
-export type OldOuguiya = number;
-
-export function toOldOuguiya(newOuguiya: number): OldOuguiya {
-  return Math.round(newOuguiya * OLD_PER_NEW_OUGUIYA);
+export function toMoneyDecimal(amount: number): string {
+  return String(Math.round(amount * MONEY_CENTS) / MONEY_CENTS);
 }
 
-export function formatMoney(amount: OldOuguiya, locale: Locale): string {
-  return new Intl.NumberFormat(toIntlLocale(locale), {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  }).format(Math.trunc(amount) / OLD_PER_NEW_OUGUIYA);
+export function formatMoney(amount: number, locale: Locale): string {
+  return new Intl.NumberFormat(toIntlLocale(locale), { maximumFractionDigits: 2 }).format(amount);
 }
 
 const DECIMAL_PLACES = 3;

@@ -1,7 +1,8 @@
 import { z } from "zod";
 import type { ApiSchema } from "./api/client";
 import { addHours, isIsoDate, isTimeValue } from "./datetime";
-import type { IsoTimestamp, OldOuguiya } from "./format";
+import { fromDecimal } from "./format";
+import type { IsoTimestamp } from "./format";
 import { isInService, parseGrinderCode } from "./projects";
 import type { Grinder, ProjectId } from "./projects";
 
@@ -27,8 +28,15 @@ export type MillingOperation = {
   startedAt: IsoTimestamp;
   estimatedEndAt: IsoTimestamp;
   notes: string;
+  cost: number;
   endedAt?: IsoTimestamp;
   bagsMilled?: number;
+  mercury?: MercuryAdded;
+};
+
+type MercuryAdded = {
+  addedAt: IsoTimestamp;
+  byName: string;
 };
 
 export type OperationShipment = {
@@ -42,7 +50,11 @@ export type OperationShipment = {
 
 export const CAPACITY_BAGS = 2;
 export const CAPACITY_HOURS = 6;
-export const COST_PER_BAG: OldOuguiya = 15_000;
+export const BAG_STEP = 0.5;
+
+export function isHalfBagCount(bags: number): boolean {
+  return bags > 0 && Number.isInteger(bags / BAG_STEP);
+}
 
 export function machinesFromGrinders(grinders: readonly Grinder[]): readonly Machine[] {
   return grinders.filter(isInService).map((grinder) => ({
@@ -64,10 +76,6 @@ export function machinesOfProject(
 
 export function estimatedEnd(startedAt: IsoTimestamp, bags: number): IsoTimestamp {
   return addHours(startedAt, (bags * CAPACITY_HOURS) / CAPACITY_BAGS);
-}
-
-export function millingCost(bags: number): OldOuguiya {
-  return Math.max(0, Math.trunc(bags)) * COST_PER_BAG;
 }
 
 export function isRunning(operation: MillingOperation): boolean {
@@ -143,6 +151,7 @@ export function operationFromApi(
   }
 
   const endedAt = operation.end_time ?? undefined;
+  const mercuryAddedAt = operation.mercury_added_at ?? undefined;
 
   return [
     {
@@ -156,7 +165,11 @@ export function operationFromApi(
       startedAt: operation.start_time,
       estimatedEndAt: estimatedEnd(operation.start_time, operation.bags_count),
       notes: operation.notes ?? "",
+      cost: fromDecimal(operation.grinding_cost ?? "0"),
       ...(endedAt === undefined ? {} : { endedAt, bagsMilled: operation.bags_count }),
+      ...(mercuryAddedAt === undefined
+        ? {}
+        : { mercury: { addedAt: mercuryAddedAt, byName: operation.mercury_added_by_name } }),
     },
   ];
 }
@@ -170,6 +183,7 @@ export function createNewOperationSchema(
   messages: {
     required: string;
     bagsInvalid: string;
+    bagsOverCapacity: string;
     bagsTooMany: string;
     machineUnavailable: string;
     dateInvalid: string;
@@ -186,8 +200,8 @@ export function createNewOperationSchema(
         .refine((value) => rules.isMachineIdle(Number(value)), messages.machineUnavailable),
       bags: z
         .number({ error: messages.required })
-        .int(messages.bagsInvalid)
-        .min(1, messages.bagsInvalid),
+        .refine(isHalfBagCount, messages.bagsInvalid)
+        .refine((bags) => bags <= CAPACITY_BAGS, messages.bagsOverCapacity),
       startDate: z
         .string()
         .min(1, { message: messages.required, abort: true })

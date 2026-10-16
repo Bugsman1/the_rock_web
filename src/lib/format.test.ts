@@ -8,13 +8,18 @@ import {
   formatTime,
   fromDecimal,
   toDecimal,
-  toOldOuguiya,
+  toMoneyDecimal,
 } from "./format";
 
 describe("formatCount", () => {
   it("renders whole counts", () => {
     expect(formatCount(0, "ar")).toBe("0");
     expect(formatCount(7, "fr")).toBe("7");
+  });
+
+  it("keeps half bags", () => {
+    expect(formatCount(1.5, "fr")).toBe("1,5");
+    expect(formatCount(0.5, "ar")).toBe("0.5");
   });
 
   it("groups large counts per locale", () => {
@@ -45,44 +50,37 @@ describe("formatTime", () => {
   });
 });
 
-describe("toOldOuguiya", () => {
-  it("turns new ouguiya into whole old ouguiya", () => {
-    expect(toOldOuguiya(12.5)).toBe(125);
-    expect(toOldOuguiya(0.04)).toBe(0);
+describe("toMoneyDecimal", () => {
+  it("sends the amount as typed, to the cent", () => {
+    expect(toMoneyDecimal(1000)).toBe("1000");
+    expect(toMoneyDecimal(12.5)).toBe("12.5");
+    expect(toMoneyDecimal(0.004)).toBe("0");
   });
 });
 
 const FRENCH_GROUP_SEPARATOR = " ";
 
 describe("formatMoney", () => {
-  it("renders ten old ouguiya as one new ouguiya", () => {
-    expect(formatMoney(10, "fr")).toBe("1,0");
-  });
-
-  it("keeps the sub-unit digit instead of rounding it away", () => {
-    expect(formatMoney(5, "fr")).toBe("0,5");
-    expect(formatMoney(1, "fr")).toBe("0,1");
+  it("shows the amount as typed, the same figure as on the invoice", () => {
+    expect(formatMoney(1000, "ar")).toBe("1,000");
+    expect(formatMoney(12.5, "fr")).toBe("12,5");
   });
 
   it("groups thousands per locale", () => {
-    expect(formatMoney(12345, "ar")).toBe("1,234.5");
-    expect(formatMoney(12345, "fr")).toBe(`1${FRENCH_GROUP_SEPARATOR}234,5`);
+    expect(formatMoney(12345, "ar")).toBe("12,345");
+    expect(formatMoney(12345, "fr")).toBe(`12${FRENCH_GROUP_SEPARATOR}345`);
   });
 
   it("marks a debit balance as negative", () => {
-    expect(formatMoney(-12345, "fr")).toBe(`-1${FRENCH_GROUP_SEPARATOR}234,5`);
+    expect(formatMoney(-12345, "fr")).toBe(`-12${FRENCH_GROUP_SEPARATOR}345`);
   });
 
   it("keeps the negative digits intact in Arabic, which adds bidi marks", () => {
-    expect(formatMoney(-12345, "ar")).toContain("-1,234.5");
+    expect(formatMoney(-12345, "ar")).toContain("-12,345");
   });
 
   it("renders zero without a sign", () => {
-    expect(formatMoney(0, "fr")).toBe("0,0");
-  });
-
-  it("stays exact at the top of the safe integer range", () => {
-    expect(formatMoney(9007199254740990, "ar")).toBe("900,719,925,474,099.0");
+    expect(formatMoney(0, "fr")).toBe("0");
   });
 });
 

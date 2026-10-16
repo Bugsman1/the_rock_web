@@ -25,6 +25,7 @@ import { modules, rights } from "@/lib/access";
 import { useCan } from "@/lib/accessContext";
 import { formatCount } from "@/lib/format";
 import { rolesHref, ROLES_HREF } from "@/lib/routes";
+import { matchesSearch } from "@/lib/search";
 import { builtInRoleNames, roleLabel } from "@/lib/users";
 import { createRoleSchema, newRoleValues, roleValuesOf } from "./users";
 import type { RoleDetails, RoleValues } from "./users";
@@ -51,16 +52,22 @@ function useRoleName() {
   return (role: RoleDetails) => roleLabel(role.name, (name) => roles(name));
 }
 
-function RolesTable({ roles }: { roles: readonly RoleDetails[] }) {
+function RolesTable({ all, query }: { all: readonly RoleDetails[]; query: string }) {
   const t = useTranslations("users.roles");
+  const common = useTranslations("common");
   const locale = useLocale();
   const nameOf = useRoleName();
   const can = useCan();
   const canEdit = can("accounts", "edit");
   const canDelete = can("accounts", "delete");
+  const roles = all.filter((role) => matchesSearch({ texts: [nameOf(role)], phone: "" }, query));
 
   if (roles.length === 0) {
-    return <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("empty")}</p>;
+    return (
+      <p className="text-ink-muted p-6 text-[15px] font-semibold">
+        {all.length === 0 ? t("empty") : common("noMatch")}
+      </p>
+    );
   }
 
   return (
@@ -345,6 +352,7 @@ export function RolesScreen() {
   const can = useCan();
   const adding = creating && can("accounts", "add");
   const editingAllowed = can("accounts", "edit") ? editing : undefined;
+  const [query, setQuery] = useState("");
 
   return (
     <div className="flex flex-col gap-6">
@@ -366,8 +374,16 @@ export function RolesScreen() {
 
       <UsersTabs />
 
-      <TablePanel title={t("roles.listTitle")}>
-        <RolesTable roles={roles} />
+      <TablePanel
+        title={t("roles.listTitle")}
+        search={{
+          label: common("searchIn", { list: t("roles.listTitle") }),
+          placeholder: common("searchList"),
+          value: query,
+          onChange: setQuery,
+        }}
+      >
+        <RolesTable all={roles} query={query} />
       </TablePanel>
 
       <Drawer

@@ -12,6 +12,7 @@ afterAll(() => server.close());
 
 const apiOperation = {
   id: 5,
+  grinding_operation: 11,
   shipment_number: "SH-0004",
   customer_name: "Sidi",
   grinder_code: "P3-2",
@@ -29,7 +30,7 @@ const apiOperation = {
 };
 
 describe("getRefiningOperations", () => {
-  it("reads every page of a project's operations, newest first", async () => {
+  it("reads every page of the operations, newest first", async () => {
     const requests: URL[] = [];
     server.use(
       http.get(OPERATIONS_URL, ({ request }) => {
@@ -40,11 +41,10 @@ describe("getRefiningOperations", () => {
       }),
     );
 
-    const operations = await getRefiningOperations("3");
+    const operations = await getRefiningOperations();
 
     expect(operations.map((operation) => operation.id)).toEqual(["5", "6"]);
     expect(operations[0]?.gold).toBe(14.3);
-    expect(requests[0]?.searchParams.get("project")).toBe("3");
     expect(requests[0]?.searchParams.get("ordering")).toBe("-refining_date");
   });
 });

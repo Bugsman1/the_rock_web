@@ -138,6 +138,24 @@ function answerProject() {
     http.get(`${API}/shipments/`, () =>
       page([apiShipment(1, "pending"), apiShipment(2, "grinding"), apiShipment(3, "completed")]),
     ),
+    http.get(`${API}/grinding-operations/`, () =>
+      page([
+        {
+          id: 9,
+          shipment_number: "SH-2",
+          customer_name: "Client 2",
+          grinder_code: "P3-1",
+          project_name: "Zouérat 1",
+          bags_count: 1.5,
+          start_time: "2026-10-08T06:00:00Z",
+          end_time: null,
+          operator_name: "Ahmed",
+          grinding_cost: "22500",
+          notes: "",
+          ...stamps,
+        },
+      ]),
+    ),
   );
 }
 
@@ -176,12 +194,53 @@ function openProject(path: string) {
 }
 
 describe("ProjectStorageScreen", () => {
-  it("lists only the shipments whose grinding has not started", async () => {
+  it("finds a stored shipment by client, phone or number, keeping its place in line", async () => {
+    server.use(
+      http.get(`${API}/grinding-operations/`, () => page([])),
+      http.get(`${API}/projects/3/`, () =>
+        HttpResponse.json({
+          id: 3,
+          name: "Zouérat 1",
+          site: "zouerat",
+          status: "active",
+          ...stamps,
+        }),
+      ),
+      http.get(`${API}/shipments/`, () =>
+        page([
+          apiShipment(1, "pending"),
+          { ...apiShipment(2, "pending"), customer_phone: "+222 46 00 00 01" },
+        ]),
+      ),
+    );
+    const user = userEvent.setup();
+    openProject("/fr/shipments/projects/3");
+
+    const search = await screen.findByLabelText(
+      messages.common.searchIn.replace("{list}", messages.shipments.project.queueTitle),
+    );
+    await user.type(search, "46 00");
+
+    const [, row] = screen.getAllByRole("row");
+    expect(row).toHaveTextContent("2SH-2");
+    expect(screen.queryByText("SH-1")).toBeNull();
+
+    await user.clear(search);
+    await user.type(search, "personne");
+    expect(screen.getByText(messages.common.noMatch)).toBeVisible();
+  });
+
+  it("lists the shipments still to grind with their bags left, like the grinding queue", async () => {
     answerProject();
     openProject("/fr/shipments/projects/3");
 
     expect(await screen.findByText("SH-1")).toBeVisible();
-    expect(screen.queryByText("SH-2")).toBeNull();
+    const [, waiting, started] = screen.getAllByRole("row");
+    expect(waiting).toHaveTextContent("10 sur 10");
+    expect(waiting).toHaveTextContent(messages.shipments.statuses.pending);
+    expect(started).toHaveTextContent("SH-2");
+    expect(started).toHaveTextContent("8,5 sur 10");
+    expect(started).toHaveTextContent(messages.shipments.statuses.grinding);
     expect(screen.queryByText("SH-3")).toBeNull();
     expect(
       screen.getByRole("link", { name: `${messages.shipments.project.startMilling} SH-1` }),
@@ -210,13 +269,13 @@ describe("ProjectStorageScreen", () => {
     expect(dialog.getByLabelText(operationForm.shipment)).toHaveValue("SH-1");
 
     await user.selectOptions(dialog.getByLabelText(operationForm.machine), "1");
-    await user.type(dialog.getByLabelText(operationForm.bags), "4");
+    await user.type(dialog.getByLabelText(operationForm.bags), "2");
     await user.selectOptions(dialog.getByLabelText(operationForm.operator), "4");
     await user.click(dialog.getByRole("button", { name: operationForm.submit }));
 
     expect(await screen.findByRole("heading", { name: "grinding page" })).toBeVisible();
     expect(router.state.location.pathname).toBe("/fr/milling/projects/3");
-    expect(created).toMatchObject({ shipment: 1, grinder: 7, bags_count: 4, operator: 4 });
+    expect(created).toMatchObject({ shipment: 1, grinder: 7, bags_count: 2, operator: 4 });
     expect(shipmentChange).toEqual({ status: "grinding" });
   });
 });

@@ -170,6 +170,19 @@ describe("RolesScreen", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("finds a role by its name", async () => {
+    const user = userEvent.setup();
+    openAt("/fr/users/roles");
+
+    await user.type(
+      await screen.findByLabelText(messages.common.searchIn.replace("{list}", text.listTitle)),
+      "raff",
+    );
+
+    expect(screen.getByText("Raffineur")).toBeVisible();
+    expect(screen.queryByText(messages.roles.supervisor)).toBeNull();
+  });
+
   it("shows a view-only role the roles with no way to change them", async () => {
     openAt("/fr/users/roles?delete=5", {
       superuser: false,

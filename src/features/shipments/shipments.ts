@@ -1,8 +1,10 @@
 import { z } from "zod";
 import type { BackendFieldErrors, FieldErrors } from "@/lib/api/client";
 import { isIsoDate, isTimeValue } from "@/lib/datetime";
-import { toOldOuguiya } from "@/lib/format";
+import { toMoneyDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
+import { remainingBags } from "@/lib/grinding";
+import type { MillingOperation } from "@/lib/grinding";
 import { isValidPhone } from "@/lib/phone";
 import type { ProjectId } from "@/lib/projects";
 import { matchesSearch } from "@/lib/search";
@@ -16,7 +18,9 @@ type ClientBags = {
   bagCount: number;
 };
 
-const storedStatuses: readonly ShipmentStatusKey[] = ["pending"];
+const storedStatuses: readonly ShipmentStatusKey[] = ["pending", "grinding"];
+
+export type StoredShipment = ShipmentRecord & { remainingBags: number };
 
 const TOP_CLIENTS_LIMIT = 6;
 
@@ -26,29 +30,39 @@ export function isInStorage(record: ShipmentRecord): boolean {
 
 export function storedShipments(
   records: readonly ShipmentRecord[],
+  operations: readonly MillingOperation[],
   project?: ProjectId,
-): readonly ShipmentRecord[] {
-  return records.filter(
-    (record) => isInStorage(record) && (project === undefined || record.project === project),
-  );
+): readonly StoredShipment[] {
+  return records
+    .filter(
+      (record) => isInStorage(record) && (project === undefined || record.project === project),
+    )
+    .map((record) => ({
+      ...record,
+      remainingBags: remainingBags(
+        { shipmentNumber: record.shipmentNumber, bags: record.bagCount },
+        operations,
+      ),
+    }))
+    .filter((record) => record.remainingBags > 0);
 }
 
-export function shipmentsOfProject(
-  records: readonly ShipmentRecord[],
+export function shipmentsOfProject<Shipment extends ShipmentRecord>(
+  records: readonly Shipment[],
   project: ProjectId,
-): readonly ShipmentRecord[] {
+): readonly Shipment[] {
   return records.filter((record) => record.project === project);
 }
 
-export function bagCount(records: readonly ShipmentRecord[]): number {
-  return records.reduce((total, record) => total + record.bagCount, 0);
+export function bagCount(records: readonly StoredShipment[]): number {
+  return records.reduce((total, record) => total + record.remainingBags, 0);
 }
 
-export function clientBags(records: readonly ShipmentRecord[]): readonly ClientBags[] {
+export function clientBags(records: readonly StoredShipment[]): readonly ClientBags[] {
   const totals = new Map<string, number>();
 
   for (const record of records) {
-    totals.set(record.customerName, (totals.get(record.customerName) ?? 0) + record.bagCount);
+    totals.set(record.customerName, (totals.get(record.customerName) ?? 0) + record.remainingBags);
   }
 
   return [...totals].map(([name, bags]) => ({ name, bagCount: bags }));
@@ -61,7 +75,9 @@ export function topClientsByBags(
   return [...clients].sort((a, b) => b.bagCount - a.bagCount).slice(0, limit);
 }
 
-export function shipmentsByArrival(records: readonly ShipmentRecord[]): readonly ShipmentRecord[] {
+export function shipmentsByArrival<Shipment extends ShipmentRecord>(
+  records: readonly Shipment[],
+): readonly Shipment[] {
   return [...records].sort((a, b) => a.arrivedAt.localeCompare(b.arrivedAt));
 }
 
@@ -136,6 +152,10 @@ export function transportTotal({
   return bagsCost(bagCount, bagFare) + passengersCost(passengerCount, passengerFare);
 }
 
+export function remainingToPay(total: number, payment: number): number {
+  return Math.max(0, total - amountOrZero(payment));
+}
+
 const NOTES_MAX_LENGTH = 1000;
 
 type ValidationMessages = {
@@ -146,40 +166,54 @@ type ValidationMessages = {
   timeInvalid: string;
   amountInvalid: string;
   passengerCountInvalid: string;
+  paymentTooHigh: string;
 };
 
 export function createNewShipmentSchema(messages: ValidationMessages) {
-  return z.object({
-    customerName: z.string().trim().min(1, messages.required),
-    phone: z
-      .string()
-      .trim()
-      .min(1, { message: messages.required, abort: true })
-      .refine(isValidPhone, messages.phoneInvalid),
-    arrivalDate: z
-      .string()
-      .min(1, { message: messages.required, abort: true })
-      .refine(isIsoDate, messages.dateInvalid),
-    arrivalTime: z
-      .string()
-      .min(1, { message: messages.required, abort: true })
-      .refine(isTimeValue, messages.timeInvalid),
-    bagCount: z
-      .number({ error: messages.bagCountInvalid })
-      .int(messages.bagCountInvalid)
-      .min(1, messages.bagCountInvalid),
-    transportMethod: z.enum(transportMethodKeys),
-    source: z.string().trim().min(1, messages.required),
-    bagFare: z.number({ error: messages.amountInvalid }).min(0, messages.amountInvalid),
-    passengerCount: z
-      .number({ error: messages.passengerCountInvalid })
-      .int(messages.passengerCountInvalid)
-      .min(0, messages.passengerCountInvalid),
-    passengerFare: z.number({ error: messages.amountInvalid }).min(0, messages.amountInvalid),
-    mill: z.string().min(1, messages.required),
-    status: z.enum(shipmentStatusKeys),
-    notes: z.string().max(NOTES_MAX_LENGTH),
-  });
+  return z
+    .object({
+      customerName: z.string().trim().min(1, messages.required),
+      phone: z
+        .string()
+        .trim()
+        .min(1, { message: messages.required, abort: true })
+        .refine(isValidPhone, messages.phoneInvalid),
+      arrivalDate: z
+        .string()
+        .min(1, { message: messages.required, abort: true })
+        .refine(isIsoDate, messages.dateInvalid),
+      arrivalTime: z
+        .string()
+        .min(1, { message: messages.required, abort: true })
+        .refine(isTimeValue, messages.timeInvalid),
+      bagCount: z
+        .number({ error: messages.bagCountInvalid })
+        .int(messages.bagCountInvalid)
+        .min(1, messages.bagCountInvalid),
+      transportMethod: z.enum(transportMethodKeys),
+      source: z.string().trim().min(1, messages.required),
+      bagFare: z.number({ error: messages.amountInvalid }).min(0, messages.amountInvalid),
+      passengerCount: z
+        .number({ error: messages.passengerCountInvalid })
+        .int(messages.passengerCountInvalid)
+        .min(0, messages.passengerCountInvalid),
+      passengerFare: z.number({ error: messages.amountInvalid }).min(0, messages.amountInvalid),
+      currentPayment: z.union([z.nan(), z.number().min(0, messages.amountInvalid)], {
+        error: messages.amountInvalid,
+      }),
+      mill: z.string().min(1, messages.required),
+      status: z.enum(shipmentStatusKeys),
+      notes: z.string().max(NOTES_MAX_LENGTH),
+    })
+    .superRefine((values, context) => {
+      if (amountOrZero(values.currentPayment) > transportTotal(values)) {
+        context.addIssue({
+          code: "custom",
+          path: ["currentPayment"],
+          message: messages.paymentTooHigh,
+        });
+      }
+    });
 }
 
 export type NewShipmentValues = z.infer<ReturnType<typeof createNewShipmentSchema>>;
@@ -197,6 +231,7 @@ const shipmentFields: readonly ShipmentField[] = [
   "bagFare",
   "passengerCount",
   "passengerFare",
+  "currentPayment",
   "mill",
   "status",
   "notes",
@@ -211,6 +246,7 @@ const fieldOfApi: Readonly<Record<string, ShipmentField>> = {
   bag_transport_cost_per_bag: "bagFare",
   passengers_count: "passengerCount",
   passenger_transport_cost_per_person: "passengerFare",
+  current_payment: "currentPayment",
   project: "mill",
   status: "status",
   notes: "notes",
@@ -233,15 +269,22 @@ export function shipmentToApi(
     customer: Number(customerId),
     arrival_date: arrivedAt,
     bags_count: values.bagCount,
-    bag_transport_cost_per_bag: String(toOldOuguiya(values.bagFare)),
+    bag_transport_cost_per_bag: toMoneyDecimal(values.bagFare),
     passengers_count: values.passengerCount,
-    passenger_transport_cost_per_person: String(toOldOuguiya(values.passengerFare)),
+    passenger_transport_cost_per_person: toMoneyDecimal(values.passengerFare),
+    current_payment: toMoneyDecimal(amountOrZero(values.currentPayment)),
     transport_method: values.transportMethod,
     source: values.source.trim(),
     project: Number(values.mill),
     status: values.status,
     notes: values.notes.trim(),
   };
+}
+
+const ATTACHMENT_FILE_NAME = /filename="([^"]+)"/;
+
+export function invoiceFileName(contentDisposition: string | null): string | undefined {
+  return contentDisposition?.match(ATTACHMENT_FILE_NAME)?.[1];
 }
 
 export function shipmentErrorsFromApi(errors: BackendFieldErrors): FieldErrors<ShipmentField> {

@@ -159,7 +159,7 @@ describe("endOperation", () => {
     const result = await endOperation(
       operation,
       "1",
-      { endDate: "2026-10-08", endTime: "12:00", bagsMilled: 1, notes: "Sac abîmé" },
+      { endDate: "2026-10-08", endTime: "12:00", bagsMilled: 1, price: 1200.5, notes: "Sac abîmé" },
       "2026-10-08T12:00:00.000Z",
       "grinding",
     );
@@ -168,7 +168,7 @@ describe("endOperation", () => {
     expect(ended).toEqual({
       end_time: "2026-10-08T12:00:00.000Z",
       bags_count: 1,
-      grinding_cost: "15000",
+      grinding_cost: "1200.5",
       notes: "Sac abîmé",
     });
     expect(shipmentChange).toEqual({ status: "grinding" });
@@ -185,6 +185,48 @@ describe("milling screens", () => {
       "href",
       "/fr/milling?site=zouerat",
     );
+  });
+
+  it("shows the bags waiting, grinding and ground today, and the machines running", async () => {
+    openAt("/fr/milling");
+
+    const flow = within(await screen.findByRole("region", { name: text.flow.title }));
+    const stages = flow.getAllByRole("listitem").map((stage) => stage.textContent);
+
+    expect(stages).toEqual([
+      `${text.flow.waiting}11${text.flow.bags}`,
+      `${text.flow.milling}2${text.flow.bags}`,
+      `${text.flow.milledToday}0${text.flow.bags}`,
+    ]);
+    expect(flow.getByText(text.kpis.machinesRunning)).toBeVisible();
+    expect(flow.getByText("sur 3")).toBeVisible();
+  });
+
+  it("marks a backlog once 50 bags are waiting", async () => {
+    server.use(http.get(`${API}/shipments/`, () => page([shipment(4, "pending", 50)])));
+    openAt("/fr/milling");
+
+    const flow = within(await screen.findByRole("region", { name: text.flow.title }));
+
+    expect(flow.getByText(text.flow.backlog)).toBeVisible();
+  });
+
+  it("finds a waiting shipment by client or number", async () => {
+    const user = userEvent.setup();
+    openAt("/fr/milling/projects/3");
+
+    const search = await screen.findByLabelText(
+      messages.common.searchIn.replace("{list}", text.project.queueTitle),
+    );
+    await user.type(search, "client 4");
+
+    const queue = within(search.closest("section") ?? document.body);
+    expect(queue.getByText("SH-4")).toBeVisible();
+    expect(queue.queryByText("SH-2")).toBeNull();
+
+    await user.clear(search);
+    await user.type(search, "SH-99");
+    expect(queue.getByText(messages.common.noMatch)).toBeVisible();
   });
 
   it("filters the machines of a project by status", async () => {

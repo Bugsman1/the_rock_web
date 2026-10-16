@@ -36,7 +36,7 @@ export async function getResources(project?: ProjectId): Promise<readonly Resour
     ),
   );
 
-  return resources.map(resourceFromApi);
+  return resources.flatMap((resource) => resourceFromApi(resource) ?? []);
 }
 
 export async function getResource(id: string): Promise<Resource | undefined> {
@@ -51,30 +51,21 @@ export async function getResource(id: string): Promise<Resource | undefined> {
   return result.response.status === 404 ? undefined : resourceFromApi(unwrap(result));
 }
 
-export async function createResource(
-  values: ResourceValues,
-): Promise<SaveResult<keyof ResourceValues>> {
-  const { response, error } = await apiClient.POST("/api/v1/resources/", {
+type SavedResource =
+  { ok: true; id: string } | Extract<SaveResult<keyof ResourceValues>, { ok: false }>;
+
+export async function createResource(values: ResourceValues): Promise<SavedResource> {
+  const { data, response, error } = await apiClient.POST("/api/v1/resources/", {
     body: resourceToApi(values),
   });
 
-  return saveOutcome(response, error, resourceErrorsFromApi);
-}
-
-export async function renameResource(
-  id: string,
-  name: string,
-): Promise<SaveResult<keyof ResourceValues>> {
-  if (!isRecordId(id)) {
-    return saveFailed;
+  if (data !== undefined) {
+    return { ok: true, id: String(data.id) };
   }
 
-  const { response, error } = await apiClient.PATCH("/api/v1/resources/{id}/", {
-    params: { path: { id: Number(id) } },
-    body: { name },
-  });
+  const outcome = saveOutcome(response, error, resourceErrorsFromApi);
 
-  return saveOutcome(response, error, resourceErrorsFromApi);
+  return outcome.ok ? saveFailed : outcome;
 }
 
 export async function changeResourceQuantity(

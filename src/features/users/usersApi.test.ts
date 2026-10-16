@@ -70,7 +70,7 @@ describe("getUserPage", () => {
       }),
     );
 
-    const page = await getUserPage(2);
+    const page = await getUserPage(" Aicha ", 2);
 
     expect(page.items).toEqual([
       {
@@ -84,6 +84,7 @@ describe("getUserPage", () => {
     ]);
     expect(requested?.searchParams.get("is_active")).toBe("true");
     expect(requested?.searchParams.get("page")).toBe("2");
+    expect(requested?.searchParams.get("search")).toBe("Aicha");
   });
 });
 

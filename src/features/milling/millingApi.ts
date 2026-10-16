@@ -1,7 +1,8 @@
 import { apiClient, saveOutcome } from "@/lib/api/client";
 import type { BackendFieldErrors, FieldErrors, SaveResult } from "@/lib/api/client";
 import type { IsoTimestamp } from "@/lib/format";
-import { machinesFromGrinders, millingCost } from "@/lib/grinding";
+import { toMoneyDecimal } from "@/lib/format";
+import { machinesFromGrinders } from "@/lib/grinding";
 import type { MillingOperation } from "@/lib/grinding";
 import { getGrindingOperations } from "@/lib/grindingApi";
 import { isInService } from "@/lib/projects";
@@ -31,7 +32,21 @@ function endErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof EndMill
   return {
     ...(errors.end_time === undefined ? {} : { endTime: errors.end_time }),
     ...(errors.bags_count === undefined ? {} : { bagsMilled: errors.bags_count }),
+    ...(errors.grinding_cost === undefined ? {} : { price: errors.grinding_cost }),
   };
+}
+
+function mercuryErrorsFromApi(errors: BackendFieldErrors): FieldErrors<"mercury"> {
+  return errors.mercury_added === undefined ? {} : { mercury: errors.mercury_added };
+}
+
+export async function markMercuryAdded(operationId: string): Promise<SaveResult<"mercury">> {
+  const { response, error } = await apiClient.PATCH("/api/v1/grinding-operations/{id}/", {
+    params: { path: { id: Number(operationId) } },
+    body: { mercury_added: true },
+  });
+
+  return saveOutcome(response, error, mercuryErrorsFromApi);
 }
 
 export async function endOperation(
@@ -46,7 +61,7 @@ export async function endOperation(
     body: {
       end_time: endedAt,
       bags_count: values.bagsMilled,
-      grinding_cost: String(millingCost(values.bagsMilled)),
+      grinding_cost: toMoneyDecimal(values.price),
       notes: [operation.notes, values.notes].filter((note) => note !== "").join("\n"),
     },
   });

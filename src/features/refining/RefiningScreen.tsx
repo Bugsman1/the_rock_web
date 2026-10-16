@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
@@ -19,6 +20,7 @@ import type { MillingOperation } from "@/lib/grinding";
 import { findProject, grinderCode } from "@/lib/projects";
 import type { RefiningOperation } from "@/lib/refining";
 import { REFINING_HREF, startRefiningHref } from "@/lib/routes";
+import { matchesSearch } from "@/lib/search";
 import { getOperators } from "@/lib/users";
 import { isLossReasonKey, refiningQueue } from "./refining";
 import { getRefiningData } from "./refiningApi";
@@ -36,18 +38,39 @@ export async function refiningLoader({ request }: LoaderFunctionArgs) {
 }
 
 function RefiningQueueTable({
-  operations,
+  queue,
   projectName,
+  query,
 }: {
-  operations: readonly MillingOperation[];
+  queue: readonly MillingOperation[];
   projectName: (project: string) => string;
+  query: string;
 }) {
   const t = useTranslations("refining");
+  const common = useTranslations("common");
   const locale = useLocale();
   const canStart = useCan()("refining", "add");
+  const operations = queue.filter((operation) =>
+    matchesSearch(
+      {
+        texts: [
+          operation.shipmentNumber,
+          operation.client,
+          projectName(operation.project),
+          grinderCode(operation.project, operation.machine),
+        ],
+        phone: "",
+      },
+      query,
+    ),
+  );
 
   if (operations.length === 0) {
-    return <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("queueEmpty")}</p>;
+    return (
+      <p className="text-ink-muted p-6 text-[15px] font-semibold">
+        {queue.length === 0 ? t("queueEmpty") : common("noMatch")}
+      </p>
+    );
   }
 
   return (
@@ -122,14 +145,40 @@ function TextCell({ value }: { value: string }) {
   );
 }
 
-function RefiningOperationsTable({ operations }: { operations: readonly RefiningOperation[] }) {
+function RefiningOperationsTable({
+  refinings,
+  query,
+}: {
+  refinings: readonly RefiningOperation[];
+  query: string;
+}) {
   const t = useTranslations("refining");
+  const common = useTranslations("common");
   const locale = useLocale();
   const quantity = (value: number) => formatQuantity(value, locale);
   const number = `${tableCellClasses} text-ink text-end font-bold`;
+  const operations = refinings.filter((operation) =>
+    matchesSearch(
+      {
+        texts: [
+          operation.shipmentNumber,
+          operation.client,
+          operation.projectName,
+          operation.grinderCode,
+          operation.workerName,
+        ],
+        phone: "",
+      },
+      query,
+    ),
+  );
 
   if (operations.length === 0) {
-    return <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("operationsEmpty")}</p>;
+    return (
+      <p className="text-ink-muted p-6 text-[15px] font-semibold">
+        {refinings.length === 0 ? t("operationsEmpty") : common("noMatch")}
+      </p>
+    );
   }
 
   return (
@@ -146,7 +195,6 @@ function RefiningOperationsTable({ operations }: { operations: readonly Refining
             <th className={tableEndHeadClasses}>{t("fields.bags")}</th>
             <th className={tableEndHeadClasses}>{t("fields.weightBefore")}</th>
             <th className={tableEndHeadClasses}>{t("fields.weightAfter")}</th>
-            <th className={tableEndHeadClasses}>{t("fields.weightLoss")}</th>
             <th className={tableEndHeadClasses}>{t("fields.gold")}</th>
             <th className={tableEndHeadClasses}>{t("fields.goldWithMaterial")}</th>
             <th className={tableEndHeadClasses}>{t("fields.goldWithoutMaterial")}</th>
@@ -179,7 +227,6 @@ function RefiningOperationsTable({ operations }: { operations: readonly Refining
               <td className={number}>{formatCount(operation.bags, locale)}</td>
               <td className={number}>{quantity(operation.weightBefore)}</td>
               <td className={number}>{quantity(operation.weightAfter)}</td>
-              <td className={number}>{quantity(operation.weightLoss)}</td>
               <td className={`${tableCellClasses} text-brand-700 text-end font-bold`}>
                 {quantity(operation.gold)}
               </td>
@@ -211,18 +258,40 @@ export function RefiningScreen() {
   const refining = useCan()("refining", "add") ? selected : undefined;
   const projectName = (project: string) => findProject(data.projects, project)?.name ?? "—";
   const now = new Date();
+  const [queueQuery, setQueueQuery] = useState("");
+  const [operationsQuery, setOperationsQuery] = useState("");
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-ink text-[24px] font-bold">{t("title")}</h1>
 
-      <TablePanel title={t("queueTitle")}>
-        <RefiningQueueTable operations={queue} projectName={projectName} />
+      <TablePanel
+        title={t("queueTitle")}
+        search={{
+          label: common("searchIn", { list: t("queueTitle") }),
+          placeholder: common("searchList"),
+          value: queueQuery,
+          onChange: setQueueQuery,
+        }}
+      >
+        <RefiningQueueTable queue={queue} projectName={projectName} query={queueQuery} />
       </TablePanel>
 
-      <TablePanel title={t("operationsTitle")}>
+      <TablePanel
+        title={t("operationsTitle")}
+        search={
+          data.operations.ok
+            ? {
+                label: common("searchIn", { list: t("operationsTitle") }),
+                placeholder: common("searchList"),
+                value: operationsQuery,
+                onChange: setOperationsQuery,
+              }
+            : undefined
+        }
+      >
         {data.operations.ok ? (
-          <RefiningOperationsTable operations={refinings} />
+          <RefiningOperationsTable refinings={refinings} query={operationsQuery} />
         ) : (
           <PanelError
             message={errors(`${errorKind(data.operations.status)}.description`)}

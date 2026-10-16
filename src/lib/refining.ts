@@ -4,6 +4,7 @@ import type { IsoTimestamp } from "./format";
 
 export type RefiningOperation = {
   id: string;
+  grindingOperationId: string;
   shipmentNumber: string;
   client: string;
   grinderCode: string;
@@ -13,7 +14,6 @@ export type RefiningOperation = {
   refinedAt: IsoTimestamp;
   weightBefore: number;
   weightAfter: number;
-  weightLoss: number;
   gold: number;
   goldWithMaterial: number;
   goldWithoutMaterial: number;
@@ -27,6 +27,7 @@ export function refiningOperationFromApi(
 ): RefiningOperation {
   return {
     id: String(operation.id),
+    grindingOperationId: String(operation.grinding_operation),
     shipmentNumber: operation.shipment_number,
     client: operation.customer_name,
     grinderCode: operation.grinder_code,
@@ -36,11 +37,10 @@ export function refiningOperationFromApi(
     refinedAt: operation.refining_date ?? operation.created_at,
     weightBefore: fromDecimal(operation.weight_before),
     weightAfter: fromDecimal(operation.weight_after),
-    weightLoss: fromDecimal(operation.weight_loss),
     gold: fromDecimal(operation.gold_weight),
     goldWithMaterial: fromDecimal(operation.gold_weight_with_mercury ?? "0"),
     goldWithoutMaterial: fromDecimal(operation.gold_weight_without_mercury ?? "0"),
-    loss: fromDecimal(operation.loss ?? "0"),
+    loss: fromDecimal(operation.loss),
     lossReason: operation.loss_reason ?? "",
     notes: operation.notes ?? "",
   };

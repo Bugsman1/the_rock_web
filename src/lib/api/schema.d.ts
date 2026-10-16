@@ -503,7 +503,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Read-only: entries are written by the increase / decrease actions of a resource. */
+        /**
+         * @description Read-only: entries are written on creation (the initial quantity), by the increase /
+         *     decrease actions of a resource and by refining losses.
+         */
         get: operations["v1_resource_history_list"];
         put?: never;
         post?: never;
@@ -520,7 +523,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Read-only: entries are written by the increase / decrease actions of a resource. */
+        /**
+         * @description Read-only: entries are written on creation (the initial quantity), by the increase /
+         *     decrease actions of a resource and by refining losses.
+         */
         get: operations["v1_resource_history_retrieve"];
         put?: never;
         post?: never;
@@ -860,6 +866,26 @@ export interface paths {
         patch: operations["v1_shipments_partial_update"];
         trace?: never;
     };
+    "/api/v1/shipments/{id}/invoice/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The transport invoice of the shipment, as a PDF to download. The first download
+         *     gives the shipment its invoice number.
+         */
+        get: operations["v1_shipments_invoice_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/": {
         parameters: {
             query?: never;
@@ -951,11 +977,12 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
-         * @description * `increase` - Increase
+         * @description * `initial` - Initial quantity
+         *     * `increase` - Increase
          *     * `decrease` - Decrease
          * @enum {string}
          */
-        ChangeTypeEnum: "increase" | "decrease";
+        ChangeTypeEnum: "initial" | "increase" | "decrease";
         CustomTokenObtainPair: {
             email: $Write<string>;
             password: $Write<string>;
@@ -995,6 +1022,7 @@ export interface components {
             grinder: $Write<number>;
             grinder_code: $Read<string>;
             project_name: $Read<string>;
+            /** Format: double */
             bags_count: number;
             /**
              * Grinding start time
@@ -1008,6 +1036,10 @@ export interface components {
             end_time?: string | null;
             operator?: $Write<number>;
             operator_name: $Read<string>;
+            mercury_added?: $Write<boolean>;
+            /** Format: date-time */
+            mercury_added_at: $Read<string | null>;
+            mercury_added_by_name: $Read<string>;
             /** Format: decimal */
             grinding_cost?: string;
             notes?: string;
@@ -1258,6 +1290,7 @@ export interface components {
             grinder?: $Write<number>;
             grinder_code?: $Read<string>;
             project_name?: $Read<string>;
+            /** Format: double */
             bags_count?: number;
             /**
              * Grinding start time
@@ -1271,6 +1304,10 @@ export interface components {
             end_time?: string | null;
             operator?: $Write<number>;
             operator_name?: $Read<string>;
+            mercury_added?: $Write<boolean>;
+            /** Format: date-time */
+            mercury_added_at?: $Read<string | null>;
+            mercury_added_by_name?: $Read<string>;
             /** Format: decimal */
             grinding_cost?: string;
             notes?: string;
@@ -1299,14 +1336,15 @@ export interface components {
         };
         PatchedRefiningOperation: {
             id?: $Read<number>;
-            grinding_operation?: $Write<number>;
+            grinding_operation?: number;
             shipment_number?: $Read<string>;
             customer_name?: $Read<string>;
             grinder_code?: $Read<string>;
             project_name?: $Read<string>;
             worker?: $Write<number>;
             worker_name?: $Read<string>;
-            bags_count?: number;
+            /** Format: double */
+            bags_count?: $Read<number>;
             /** Format: date-time */
             refining_date?: string;
             /**
@@ -1337,7 +1375,7 @@ export interface components {
              */
             gold_weight_without_mercury?: string;
             /** Format: decimal */
-            loss?: string;
+            loss?: $Read<string>;
             /** Reason of loss */
             loss_reason?: string;
             notes?: string;
@@ -1396,6 +1434,12 @@ export interface components {
         PatchedShipment: {
             id?: $Read<number>;
             number?: $Read<string>;
+            invoice_number?: $Read<string | null>;
+            /**
+             * Invoice date
+             * Format: date-time
+             */
+            invoiced_at?: $Read<string | null>;
             customer?: $Write<number>;
             customer_name?: $Read<string>;
             customer_phone?: $Read<string>;
@@ -1407,6 +1451,8 @@ export interface components {
             passengers_count?: number;
             /** Format: decimal */
             passenger_transport_cost_per_person?: string;
+            /** Format: decimal */
+            current_payment?: string;
             transport_method?: components["schemas"]["TransportMethodEnum"];
             source?: string;
             project?: number;
@@ -1456,14 +1502,15 @@ export interface components {
         };
         RefiningOperation: {
             id: $Read<number>;
-            grinding_operation: $Write<number>;
+            grinding_operation: number;
             shipment_number: $Read<string>;
             customer_name: $Read<string>;
             grinder_code: $Read<string>;
             project_name: $Read<string>;
             worker?: $Write<number>;
             worker_name: $Read<string>;
-            bags_count: number;
+            /** Format: double */
+            bags_count: $Read<number>;
             /** Format: date-time */
             refining_date?: string;
             /**
@@ -1494,7 +1541,7 @@ export interface components {
              */
             gold_weight_without_mercury?: string;
             /** Format: decimal */
-            loss?: string;
+            loss: $Read<string>;
             /** Reason of loss */
             loss_reason?: string;
             notes?: string;
@@ -1591,6 +1638,12 @@ export interface components {
         Shipment: {
             id: $Read<number>;
             number: $Read<string>;
+            invoice_number: $Read<string | null>;
+            /**
+             * Invoice date
+             * Format: date-time
+             */
+            invoiced_at: $Read<string | null>;
             customer: $Write<number>;
             customer_name: $Read<string>;
             customer_phone: $Read<string>;
@@ -1602,6 +1655,8 @@ export interface components {
             passengers_count?: number;
             /** Format: decimal */
             passenger_transport_cost_per_person?: string;
+            /** Format: decimal */
+            current_payment?: string;
             transport_method: components["schemas"]["TransportMethodEnum"];
             source: string;
             project: number;
@@ -2557,10 +2612,11 @@ export interface operations {
         parameters: {
             query?: {
                 /**
-                 * @description * `increase` - Increase
+                 * @description * `initial` - Initial quantity
+                 *     * `increase` - Increase
                  *     * `decrease` - Decrease
                  */
-                change_type?: "decrease" | "increase";
+                change_type?: "decrease" | "increase" | "initial";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -3279,6 +3335,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Shipment"];
+                };
+            };
+        };
+    };
+    v1_shipments_invoice_retrieve: {
+        parameters: {
+            query?: {
+                format?: "json" | "pdf";
+                /** @description Language of the invoice (`ar` by default; the letterhead stays Arabic). */
+                lang?: "ar" | "fr";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this shipment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
                 };
             };
         };

@@ -1,7 +1,6 @@
 import ArrowLeftIcon from "@/icons/arrow-left.svg?react";
 import ArrowRightIcon from "@/icons/arrow-right.svg?react";
 import BellIcon from "@/icons/bell.svg?react";
-import BoxIcon from "@/icons/box.svg?react";
 import BuildingBankIcon from "@/icons/building-bank.svg?react";
 import CalculatorIcon from "@/icons/calculator.svg?react";
 import CalendarIcon from "@/icons/calendar.svg?react";
@@ -17,7 +16,6 @@ import FlagFrIcon from "@/icons/flag-fr.svg?react";
 import FlagMrIcon from "@/icons/flag-mr.svg?react";
 import FlameIcon from "@/icons/flame.svg?react";
 import HistoryIcon from "@/icons/history.svg?react";
-import HourglassIcon from "@/icons/hourglass.svg?react";
 import IdBadgeIcon from "@/icons/id-badge.svg?react";
 import LayoutDashboardIcon from "@/icons/layout-dashboard.svg?react";
 import LockPasswordIcon from "@/icons/lock-password.svg?react";
@@ -49,7 +47,6 @@ const glyphs = {
   "arrow-left": ArrowLeftIcon,
   "arrow-right": ArrowRightIcon,
   bell: BellIcon,
-  box: BoxIcon,
   "building-bank": BuildingBankIcon,
   calculator: CalculatorIcon,
   calendar: CalendarIcon,
@@ -65,7 +62,6 @@ const glyphs = {
   "flag-mr": FlagMrIcon,
   flame: FlameIcon,
   history: HistoryIcon,
-  hourglass: HourglassIcon,
   "id-badge": IdBadgeIcon,
   "layout-dashboard": LayoutDashboardIcon,
   "lock-password": LockPasswordIcon,

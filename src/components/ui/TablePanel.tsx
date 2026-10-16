@@ -1,4 +1,6 @@
+import { useId } from "react";
 import type { ReactNode } from "react";
+import { SearchField } from "./SearchField";
 
 const tableHeadBase = "text-ink-muted px-4 py-3 text-[13px] font-bold whitespace-nowrap";
 
@@ -11,10 +13,39 @@ export const tableCellClasses = "px-4 py-3 text-[14px] whitespace-nowrap";
 export const tableRowClasses =
   "border-line-subtle hover:bg-surface-hover h-14 border-b last:border-b-0";
 
-export function TablePanel({ title, children }: { title: string; children: ReactNode }) {
+type TableSearch = {
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+};
+
+type TablePanelProps = {
+  title: string;
+  search?: TableSearch;
+  children: ReactNode;
+};
+
+export function TablePanel({ title, search, children }: TablePanelProps) {
+  const searchId = useId();
+
   return (
     <section className="rounded-card shadow-subtle border-line bg-surface overflow-hidden border-[1.5px]">
-      <h2 className="border-line text-ink border-b-[1.5px] p-4 text-[16px] font-bold">{title}</h2>
+      <div className="border-line flex flex-wrap items-center justify-between gap-3 border-b-[1.5px] p-4">
+        <h2 className="text-ink text-[16px] font-bold">{title}</h2>
+        {search === undefined ? null : (
+          <div className="w-full sm:w-72">
+            <SearchField
+              id={searchId}
+              label={search.label}
+              placeholder={search.placeholder}
+              autoComplete="off"
+              value={search.value}
+              onChange={(event) => search.onChange(event.target.value)}
+            />
+          </div>
+        )}
+      </div>
 
       {children}
     </section>

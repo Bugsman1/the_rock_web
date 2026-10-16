@@ -54,7 +54,7 @@ export function customersHref(params: ListPageParams = {}): string {
   return listPageHref(CUSTOMERS_HREF, params);
 }
 
-export function usersHref(params: Omit<ListPageParams, "query"> = {}): string {
+export function usersHref(params: ListPageParams = {}): string {
   return listPageHref(USERS_HREF, params);
 }
 
@@ -135,15 +135,13 @@ export function startRefiningHref(grindingOperation: string): string {
   return `${REFINING_HREF}?${new URLSearchParams({ grinding: grindingOperation })}`;
 }
 
-export type NewResourceKind = "resource" | "material";
-
-export function inventoryProjectHref(project: string, create?: NewResourceKind): string {
+export function inventoryProjectHref(project: string, newResource = false): string {
   const base = `${INVENTORY_HREF}/projects/${project}`;
 
-  return create === undefined ? base : `${base}?${new URLSearchParams({ new: create })}`;
+  return newResource ? `${base}?new=resource` : base;
 }
 
-export const resourceActions = ["increase", "decrease", "edit"] as const;
+export const resourceActions = ["increase", "decrease"] as const;
 
 export type ResourceAction = (typeof resourceActions)[number];
 

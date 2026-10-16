@@ -1,7 +1,7 @@
 import { apiClient, saveOutcome, unwrap } from "./api/client";
 import type { BackendFieldErrors, FieldErrors, SaveResult } from "./api/client";
 import { fetchAllPages, MAX_PAGE_SIZE } from "./api/pagination";
-import { millingCost, operationFromApi } from "./grinding";
+import { operationFromApi } from "./grinding";
 import type { MillingOperation, NewOperationValues } from "./grinding";
 import type { IsoTimestamp } from "./format";
 import type { ProjectId } from "./projects";
@@ -57,7 +57,6 @@ export async function startOperation(
       bags_count: values.bags,
       start_time: startedAt,
       operator: Number(values.operatorId),
-      grinding_cost: String(millingCost(values.bags)),
       notes: values.notes,
     },
   });

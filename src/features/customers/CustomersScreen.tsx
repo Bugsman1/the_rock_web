@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
@@ -8,22 +7,19 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
 import { Pagination } from "@/components/ui/Pagination";
-import { SearchField } from "@/components/ui/SearchField";
+import { DelayedSearchField } from "@/components/ui/SearchField";
 import {
   TablePanel,
   tableCellClasses,
   tableHeadClasses,
   tableRowClasses,
 } from "@/components/ui/TablePanel";
-import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { parsePageNumber } from "@/lib/api/pagination";
 import type { Customer } from "@/lib/customers";
 import { getCustomer, getCustomerPage } from "@/lib/customersApi";
 import { formatCount, formatDate } from "@/lib/format";
 import { customersHref } from "@/lib/routes";
-
-const SEARCH_DELAY_MS = 350;
 
 export async function customersLoader({ request }: LoaderFunctionArgs) {
   const params = new URL(request.url).searchParams;
@@ -104,31 +100,22 @@ function CustomerTable({ customers, query, page }: CustomerTableProps) {
   );
 }
 
+function searchHref(query: string): string {
+  return customersHref({ query });
+}
+
 function CustomerSearch({ query }: { query: string }) {
   const t = useTranslations("customers");
   const common = useTranslations("common");
-  const replace = useReplace();
-  const [search, setSearch] = useState(query);
-
-  useEffect(() => {
-    if (search.trim() === query) {
-      return;
-    }
-
-    const timer = setTimeout(() => replace(customersHref({ query: search })), SEARCH_DELAY_MS);
-
-    return () => clearTimeout(timer);
-  }, [search, query, replace]);
 
   return (
     <div className="min-w-60 flex-1 md:mx-auto md:max-w-md">
-      <SearchField
+      <DelayedSearchField
         id="customer-search"
         label={common("search")}
         placeholder={t("searchPlaceholder")}
-        autoComplete="off"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
+        query={query}
+        hrefFor={searchHref}
       />
     </div>
   );

@@ -6,8 +6,7 @@ import {
   resourceFromApi,
   availableKinds,
   createResourceSchema,
-  kindOf,
-  resourceLabel,
+  kindNamed,
   quantityAfterChange,
   resourceChangeFromApi,
   resourceErrorsFromApi,
@@ -46,63 +45,59 @@ function issuesOf(result: {
 }
 
 describe("createResourceSchema", () => {
-  it("accepts a fixed type without a name, and another one with its name", () => {
-    const schema = createResourceSchema(messages);
-
+  it("accepts mercury, water or fuel with its initial quantity", () => {
     expect(
-      schema.safeParse({ project: "3", kind: "mercury", name: "", initialQuantity: 0 }).success,
+      createResourceSchema(messages).safeParse({
+        project: "3",
+        kind: "mercury",
+        initialQuantity: 0,
+      }).success,
     ).toBe(true);
-    expect(
-      schema.safeParse({ project: "3", kind: "other", name: " Chaux ", initialQuantity: 5 }).data,
-    ).toEqual({ project: "3", kind: "other", name: "Chaux", initialQuantity: 5 });
   });
 
-  it("requires the type, a name for another type and the quantity, never negative", () => {
+  it("requires the type and the quantity, never negative", () => {
     const schema = createResourceSchema(messages);
 
     expect(
-      issuesOf(schema.safeParse({ project: "3", kind: "", name: "", initialQuantity: Number.NaN })),
+      issuesOf(schema.safeParse({ project: "3", kind: "", initialQuantity: Number.NaN })),
     ).toEqual({ kind: "required", initialQuantity: "required" });
+    expect(issuesOf(schema.safeParse({ project: "3", kind: "other", initialQuantity: 1 }))).toEqual(
+      { kind: "required" },
+    );
     expect(
-      issuesOf(schema.safeParse({ project: "3", kind: "water", name: "", initialQuantity: -1 })),
+      issuesOf(schema.safeParse({ project: "3", kind: "water", initialQuantity: -1 })),
     ).toEqual({ initialQuantity: "invalid" });
-    expect(
-      issuesOf(schema.safeParse({ project: "3", kind: "other", name: " ", initialQuantity: 1 })),
-    ).toEqual({ name: "required" });
   });
 });
 
-describe("resource types", () => {
-  const resource = (name: string, isRefiningMaterial = false) => ({
-    id: name,
+describe("kindNamed", () => {
+  it("recognises mercury, water and fuel in English, French and Arabic", () => {
+    expect(kindNamed("MERCURY")).toBe("mercury");
+    expect(kindNamed("زئبق")).toBe("mercury");
+    expect(kindNamed("  الماء ")).toBe("water");
+    expect(kindNamed("الزِّئبق")).toBe("mercury");
+    expect(kindNamed("Mércure")).toBe("mercury");
+    expect(kindNamed("Gasoil")).toBe("fuel");
+    expect(kindNamed("Chaux")).toBeUndefined();
+    expect(kindNamed("Mercure 2")).toBeUndefined();
+  });
+});
+
+describe("availableKinds", () => {
+  const resource = (kind: "mercury" | "water" | "fuel") => ({
+    id: kind,
     project: "3",
     projectName: "Zouérat 1",
-    name,
+    kind,
     initialQuantity: 10,
     currentQuantity: 10,
-    isRefiningMaterial,
+    isRefiningMaterial: kind === "mercury",
   });
 
-  it("knows the mercury, water, fuel and every other resource", () => {
-    expect(kindOf(resource("Mercure", true))).toBe("mercury");
-    expect(kindOf(resource("water"))).toBe("water");
-    expect(kindOf(resource("fuel"))).toBe("fuel");
-    expect(kindOf(resource("Chaux"))).toBe("other");
-  });
-
-  it("offers only the types the project does not have yet, and always another one", () => {
-    expect(availableKinds([resource("mercury", true), resource("fuel")])).toEqual([
-      "water",
-      "other",
-    ]);
-    expect(availableKinds([])).toEqual(["mercury", "water", "fuel", "other"]);
-  });
-
-  it("names a fixed type in the reader's language and another by its own name", () => {
-    const label = (kind: string) => `label:${kind}`;
-
-    expect(resourceLabel(resource("mercury", true), label)).toBe("label:mercury");
-    expect(resourceLabel(resource("Chaux"), label)).toBe("Chaux");
+  it("offers only the types the project does not have yet", () => {
+    expect(availableKinds([resource("mercury"), resource("fuel")])).toEqual(["water"]);
+    expect(availableKinds([resource("mercury"), resource("water"), resource("fuel")])).toEqual([]);
+    expect(availableKinds([])).toEqual(["mercury", "water", "fuel"]);
   });
 });
 
@@ -136,20 +131,16 @@ describe("quantityAfterChange", () => {
 });
 
 describe("resourceToApi", () => {
-  it("saves a fixed type by its code and marks the mercury as the refining material", () => {
-    expect(resourceToApi({ project: "3", kind: "mercury", name: "", initialQuantity: 10 })).toEqual(
-      {
-        project: 3,
-        name: "mercury",
-        initial_quantity: "10.000",
-        is_refining_material: true,
-      },
-    );
-    expect(
-      resourceToApi({ project: "3", kind: "other", name: "Chaux", initialQuantity: 2 }),
-    ).toEqual({
+  it("saves the type by its code and marks the mercury as the refining material", () => {
+    expect(resourceToApi({ project: "3", kind: "mercury", initialQuantity: 10 })).toEqual({
       project: 3,
-      name: "Chaux",
+      name: "mercury",
+      initial_quantity: "10.000",
+      is_refining_material: true,
+    });
+    expect(resourceToApi({ project: "3", kind: "fuel", initialQuantity: 2 })).toEqual({
+      project: 3,
+      name: "fuel",
       initial_quantity: "2.000",
       is_refining_material: false,
     });
@@ -157,9 +148,9 @@ describe("resourceToApi", () => {
 });
 
 describe("resourceErrorsFromApi", () => {
-  it("puts the backend's errors on our fields", () => {
+  it("puts the backend's name errors on the type", () => {
     expect(resourceErrorsFromApi({ name: "Existe déjà.", initial_quantity: "Négative." })).toEqual({
-      name: "Existe déjà.",
+      kind: "Existe déjà.",
       initialQuantity: "Négative.",
     });
   });
@@ -185,37 +176,44 @@ describe("resourceChangeFromApi", () => {
 const stamps = { created_at: "2026-10-12T08:00:00Z", updated_at: "2026-10-12T08:00:00Z" };
 
 describe("resourceFromApi", () => {
-  it("reads the quantities as numbers", () => {
-    expect(
-      resourceFromApi({
-        id: 2,
-        project: 3,
-        project_name: "Zouérat 1",
-        name: "Mercure",
-        initial_quantity: "10.000",
-        current_quantity: "8.500",
-        ...stamps,
-      }),
-    ).toEqual({
+  const apiResource = {
+    id: 2,
+    project: 3,
+    project_name: "Zouérat 1",
+    name: "Water",
+    initial_quantity: "10.000",
+    current_quantity: "8.500",
+    ...stamps,
+  };
+
+  it("reads the type from the name and the quantities as numbers", () => {
+    expect(resourceFromApi(apiResource)).toEqual({
       id: "2",
       project: "3",
       projectName: "Zouérat 1",
-      name: "Mercure",
+      kind: "water",
       initialQuantity: 10,
       currentQuantity: 8.5,
       isRefiningMaterial: false,
     });
   });
+
+  it("takes the refining material as the mercury", () => {
+    expect(
+      resourceFromApi({ ...apiResource, name: "Mercury", is_refining_material: true }),
+    ).toMatchObject({ kind: "mercury", isRefiningMaterial: true });
+  });
+
+  it("leaves out a resource that is not mercury, water or fuel", () => {
+    expect(resourceFromApi({ ...apiResource, name: "Chaux" })).toBeUndefined();
+  });
 });
 
 describe("resourceChangeToApi", () => {
-  it("sends the quantity as a decimal and links the refining operation when given", () => {
-    expect(resourceChangeToApi({ quantity: 1.5, note: "lot 4", refiningOperationId: "5" })).toEqual(
-      { quantity: "1.500", note: "lot 4", refining_operation: 5 },
-    );
-    expect(resourceChangeToApi({ quantity: 2, note: "", refiningOperationId: "" })).toEqual({
-      quantity: "2.000",
-      note: "",
+  it("sends the quantity as a decimal and the note, never a refining operation", () => {
+    expect(resourceChangeToApi({ quantity: 1.5, note: "lot 4" })).toEqual({
+      quantity: "1.500",
+      note: "lot 4",
     });
   });
 });
@@ -223,7 +221,7 @@ describe("resourceChangeToApi", () => {
 describe("resourceChangeErrorsFromApi", () => {
   it("puts the backend's errors on our fields", () => {
     expect(
-      resourceChangeErrorsFromApi({ quantity: "Il ne reste que 1.", refining_operation: "Autre." }),
-    ).toEqual({ quantity: "Il ne reste que 1.", refiningOperationId: "Autre." });
+      resourceChangeErrorsFromApi({ quantity: "Il ne reste que 1.", note: "Trop long." }),
+    ).toEqual({ quantity: "Il ne reste que 1.", note: "Trop long." });
   });
 });

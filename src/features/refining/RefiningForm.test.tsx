@@ -30,6 +30,7 @@ const grinding: MillingOperation = {
   operatorName: "Ahmed",
   startedAt: "2026-10-12T06:00:00Z",
   estimatedEndAt: "2026-10-12T18:00:00Z",
+  cost: 60000,
   notes: "",
   endedAt: "2026-10-12T18:00:00Z",
   bagsMilled: 4,
@@ -63,34 +64,30 @@ function readOnly(label: string) {
 
 async function fillRequired(before: string, after: string, gold: string) {
   const user = userEvent.setup();
-  await user.type(screen.getByLabelText(fields.bags), "4");
   await user.selectOptions(screen.getByLabelText(fields.worker), "4");
   await user.type(screen.getByLabelText(fields.weightBefore), before);
   await user.type(screen.getByLabelText(fields.weightAfter), after);
   await user.type(screen.getByLabelText(fields.goldWithMaterial), gold);
   await user.type(screen.getByLabelText(fields.goldWithoutMaterial), gold);
-  await user.type(screen.getByLabelText(fields.loss), "0");
   await user.selectOptions(screen.getByLabelText(fields.lossReason), "arghawa");
   return user;
 }
 
 describe("RefiningForm", () => {
-  it("shows the grinding operation it refines and leaves the bags to type", () => {
+  it("shows the grinding it refines and refines exactly the bags ground", () => {
     renderForm();
 
     expect(readOnly(fields.shipment).getByText("SH-1052")).toBeVisible();
     expect(readOnly(fields.client).getByText("Mariem")).toBeVisible();
     expect(readOnly(fields.project).getByText("Zouérat 1")).toBeVisible();
     expect(readOnly(fields.machine).getByText("Machine 2")).toBeVisible();
-    expect(screen.getByLabelText(fields.bags)).toHaveValue(null);
-  });
-
-  it("shows the weight difference as the weights are entered", async () => {
-    renderForm();
-
-    await fillRequired("120.5", "118.25", "14.3");
-
-    expect(readOnly(fields.weightLoss).getByText("2,25")).toBeVisible();
+    expect(readOnly(fields.operator).getByText("Ahmed")).toBeVisible();
+    expect(readOnly(fields.bagsGround).getByText("4")).toBeVisible();
+    expect(readOnly(fields.groundFrom).getByText("12/10/2026 06:00")).toBeVisible();
+    expect(readOnly(fields.groundAt).getByText("12/10/2026 18:00")).toBeVisible();
+    expect(readOnly(fields.grindingPrice).getByText("60 000")).toBeVisible();
+    expect(screen.queryByRole("spinbutton", { name: fields.bags })).toBeNull();
+    expect(screen.queryByText(/Écart de poids/)).toBeNull();
   });
 
   it("records the refining of the grinding operation and closes", async () => {
@@ -107,31 +104,25 @@ describe("RefiningForm", () => {
     expect(api.createRefiningOperation).toHaveBeenCalledWith(
       expect.objectContaining({
         workerId: "4",
-        bags: 4,
         weightBefore: 120.5,
         weightAfter: 118.25,
         goldWithMaterial: 20,
         goldWithoutMaterial: 14.3,
-        loss: 0,
       }),
       { grindingOperationId: "5", refinedAt: expect.stringMatching(/^2026-10-12T/) },
     );
   });
 
-  it("asks nothing about the material and sends the loss for the backend to take from stock", async () => {
+  it("works out the loss from the weights, without asking it", async () => {
     renderForm();
-    const user = await fillRequired("1200", "1150", "14");
 
+    expect(readOnly(fields.loss).getByText("—")).toBeVisible();
+
+    await fillRequired("1200", "1150.5", "14");
+
+    expect(readOnly(fields.loss).getByText("49,5")).toBeVisible();
+    expect(screen.queryByRole("spinbutton", { name: fields.loss })).toBeNull();
     expect(screen.queryByText(/mercur/i)).toBeNull();
-
-    await user.clear(screen.getByLabelText(fields.loss));
-    await user.type(screen.getByLabelText(fields.loss), "90");
-    await user.click(screen.getByRole("button", { name: text.form.submit }));
-
-    expect(api.createRefiningOperation).toHaveBeenCalledWith(
-      expect.objectContaining({ loss: 90 }),
-      expect.anything(),
-    );
   });
 
   it("shows on the loss field when the stock cannot cover it", async () => {
@@ -141,10 +132,8 @@ describe("RefiningForm", () => {
       failed: false,
     });
     renderForm();
-    const user = await fillRequired("1200", "1150", "14");
+    const user = await fillRequired("1200", "1100", "14");
 
-    await user.clear(screen.getByLabelText(fields.loss));
-    await user.type(screen.getByLabelText(fields.loss), "90");
     await user.click(screen.getByRole("button", { name: text.form.submit }));
 
     expect(await screen.findByText("Only 50 of this resource is left.")).toBeVisible();
@@ -183,19 +172,7 @@ describe("RefiningForm", () => {
 
     await user.click(screen.getByRole("button", { name: text.form.submit }));
 
-    expect(await screen.findAllByText(messages.common.validation.required)).toHaveLength(8);
-    expect(api.createRefiningOperation).not.toHaveBeenCalled();
-  });
-
-  it("refuses more bags than were ground", async () => {
-    renderForm();
-    const user = await fillRequired("10", "9", "1");
-
-    await user.clear(screen.getByLabelText(fields.bags));
-    await user.type(screen.getByLabelText(fields.bags), "5");
-    await user.click(screen.getByRole("button", { name: text.form.submit }));
-
-    expect(await screen.findByText("Saisissez un nombre entier de 1 à 4")).toBeVisible();
+    expect(await screen.findAllByText(messages.common.validation.required)).toHaveLength(6);
     expect(api.createRefiningOperation).not.toHaveBeenCalled();
   });
 

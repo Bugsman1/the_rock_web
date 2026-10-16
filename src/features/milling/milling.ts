@@ -2,6 +2,7 @@ import { z } from "zod";
 import { combineDateAndTime, isIsoDate, isSameDay, isTimeValue } from "@/lib/datetime";
 import type { IsoTimestamp } from "@/lib/format";
 import {
+  isHalfBagCount,
   isRunning,
   machinesOfProject,
   machineStatus,
@@ -136,7 +137,7 @@ export function millingShipments(records: readonly ShipmentRecord[]): readonly M
   );
 }
 
-type MillingSummary = {
+export type MillingSummary = {
   machines: MachineCounts;
   bagsMilling: number;
   bagsWaiting: number;
@@ -170,6 +171,16 @@ export function projectSummary(
     bagsMilledToday: bagsMilledOn(operations, now),
     waitingShipments: queue.length,
   };
+}
+
+const BACKLOG_BAGS = 50;
+
+export function isBacklogged(bagsWaiting: number): boolean {
+  return bagsWaiting >= BACKLOG_BAGS;
+}
+
+export function runningShare(machines: MachineCounts): number {
+  return machines.total === 0 ? 0 : Math.round((machines.running / machines.total) * 100);
 }
 
 export function combineSummaries(summaries: readonly MillingSummary[]): MillingSummary {
@@ -210,6 +221,7 @@ export function createEndMillingSchema(
     timeInvalid: string;
     endBeforeStart: string;
     bagsMilledInvalid: string;
+    priceInvalid: string;
   },
   limits: { allocatedBags: number; startedAt: IsoTimestamp },
 ) {
@@ -225,9 +237,9 @@ export function createEndMillingSchema(
         .refine(isTimeValue, messages.timeInvalid),
       bagsMilled: z
         .number({ error: messages.required })
-        .int(messages.bagsMilledInvalid)
-        .min(1, messages.bagsMilledInvalid)
-        .max(limits.allocatedBags, messages.bagsMilledInvalid),
+        .refine(isHalfBagCount, messages.bagsMilledInvalid)
+        .refine((bags) => bags <= limits.allocatedBags, messages.bagsMilledInvalid),
+      price: z.number({ error: messages.required }).min(0, messages.priceInvalid),
       notes: z.string().trim().max(500),
     })
     .superRefine((values, context) => {

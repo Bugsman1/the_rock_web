@@ -1,5 +1,5 @@
 import { useTranslations } from "use-intl";
-import { Icon } from "@/components/ui/Icon";
+import logoUrl from "@/icons/logo_soukhour.svg";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -22,8 +22,8 @@ export function BrandPanel() {
       <PanelDecoration />
 
       <div className="relative flex items-center gap-3">
-        <span className="rounded-field bg-surface inline-flex size-11 items-center justify-center">
-          <Icon name="box" className="text-brand-700 size-6" />
+        <span className="rounded-field bg-surface inline-flex size-16 items-center justify-center">
+          <img src={logoUrl} alt="" className="size-13" />
         </span>
         <span className="text-[20px] font-bold">{common("appName")}</span>
       </div>

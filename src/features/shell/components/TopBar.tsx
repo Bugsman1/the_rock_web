@@ -1,8 +1,8 @@
 import { useTranslations } from "use-intl";
+import logoUrl from "@/icons/logo_soukhour.svg";
 import { Icon } from "@/components/ui/Icon";
 import { IconButton } from "@/components/ui/IconButton";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
-import { SearchField } from "@/components/ui/SearchField";
 import { roleLabel } from "@/lib/users";
 
 type UserBadgeProps = {
@@ -24,8 +24,6 @@ function UserBadge({ name, role }: UserBadgeProps) {
     </div>
   );
 }
-
-const SEARCH_ID = "global-search";
 
 type TopBarProps = {
   roleName: string;
@@ -51,9 +49,7 @@ export function TopBar({
   return (
     <header className="border-line bg-surface flex h-16 shrink-0 items-center gap-2 border-b-[1.5px] px-4 md:gap-4 md:px-6">
       <div className="flex flex-1 items-center gap-2">
-        <span className="rounded-field bg-brand-700 text-ink-inverted inline-flex size-10 items-center justify-center">
-          <Icon name="box" className="h-6 w-6" />
-        </span>
+        <img src={logoUrl} alt={common("companyName")} className="size-10 shrink-0" />
         <span className="md:hidden">
           <IconButton
             icon="menu"
@@ -70,14 +66,6 @@ export function TopBar({
             onClick={onToggleSidebar}
           />
         </span>
-      </div>
-
-      <div className="hidden w-100 max-w-full shrink md:block">
-        <SearchField
-          id={SEARCH_ID}
-          label={t("search.label")}
-          placeholder={t("search.placeholder")}
-        />
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-2">

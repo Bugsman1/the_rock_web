@@ -8,12 +8,16 @@ import { NewShipmentForm } from "./NewShipmentScreen";
 import type { Project } from "@/lib/projects";
 
 const replace = vi.fn();
-const { createShipmentMock, createCustomerMock } = vi.hoisted(() => ({
+const { createShipmentMock, createCustomerMock, getInvoiceMock } = vi.hoisted(() => ({
   createShipmentMock: vi.fn(),
   createCustomerMock: vi.fn(),
+  getInvoiceMock: vi.fn(),
 }));
 
-vi.mock("./shipmentsApi", () => ({ createShipment: createShipmentMock }));
+vi.mock("./shipmentsApi", () => ({
+  createShipment: createShipmentMock,
+  getInvoice: getInvoiceMock,
+}));
 vi.mock("@/lib/customersApi", () => ({
   createCustomer: createCustomerMock,
   updateCustomer: vi.fn(),
@@ -30,7 +34,8 @@ vi.mock("@/i18n/navigation", () => ({
 beforeEach(() => {
   replace.mockReset();
   createShipmentMock.mockReset();
-  createShipmentMock.mockResolvedValue({ ok: true });
+  createShipmentMock.mockResolvedValue({ ok: true, id: "52" });
+  getInvoiceMock.mockReset();
   createCustomerMock.mockReset();
   createCustomerMock.mockResolvedValue({ ok: true });
 });
@@ -79,6 +84,21 @@ async function typeNoTransportCost(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText(form.passengerFare), "0");
 }
 
+async function saveFilledShipment() {
+  const user = userEvent.setup();
+  renderForm();
+
+  await user.type(screen.getByLabelText(form.customerName), "أحمد");
+  await user.type(screen.getByLabelText(form.phone), "22334455");
+  await user.type(screen.getByLabelText(form.bagCount), "12");
+  await user.type(screen.getByLabelText(form.source), "الشامي");
+  await typeNoTransportCost(user);
+  await user.click(screen.getByRole("button", { name: form.submit }));
+  await screen.findByRole("dialog", { name: form.saved.title });
+
+  return user;
+}
+
 describe("NewShipmentForm", () => {
   it("blocks an empty submit and reports the missing fields", async () => {
     const user = userEvent.setup();
@@ -102,7 +122,7 @@ describe("NewShipmentForm", () => {
     expect(await screen.findByText(form.errors.bagCountInvalid)).toBeVisible();
   });
 
-  it("sends a filled shipment on and returns to the list", async () => {
+  it("sends a filled shipment on, then offers its invoice and the way back to the list", async () => {
     const user = userEvent.setup();
     renderForm();
 
@@ -130,6 +150,7 @@ describe("NewShipmentForm", () => {
           bagFare: 0,
           passengerCount: 0,
           passengerFare: 0,
+          currentPayment: Number.NaN,
           mill: "3",
           status: "pending",
           notes: "سبعة أكياس مبللة",
@@ -138,7 +159,75 @@ describe("NewShipmentForm", () => {
       );
     });
 
-    expect(replace).toHaveBeenCalledWith("/shipments");
+    const saved = within(await screen.findByRole("dialog", { name: form.saved.title }));
+    expect(saved.getByRole("button", { name: form.saved.download.ar })).toBeVisible();
+    expect(saved.getByRole("button", { name: form.saved.download.fr })).toBeVisible();
+    expect(saved.getByRole("link", { name: form.saved.back })).toHaveAttribute(
+      "href",
+      "/shipments",
+    );
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("downloads the shipment's invoice in the language chosen, named by its invoice number", async () => {
+    getInvoiceMock.mockResolvedValue({
+      file: new Blob(["%PDF"], { type: "application/pdf" }),
+      fileName: "FAC-2026-0007.pdf",
+    });
+    const createUrl = vi.fn(() => "blob:invoice");
+    const revokeUrl = vi.fn();
+    URL.createObjectURL = createUrl;
+    URL.revokeObjectURL = revokeUrl;
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+    const user = await saveFilledShipment();
+
+    await user.click(screen.getByRole("button", { name: form.saved.download.fr }));
+
+    await waitFor(() => {
+      expect(click).toHaveBeenCalled();
+    });
+    expect(click.mock.contexts[0]).toHaveProperty("download", "FAC-2026-0007.pdf");
+    expect(getInvoiceMock).toHaveBeenCalledWith("52", "fr");
+    expect(revokeUrl).toHaveBeenCalledWith("blob:invoice");
+    click.mockRestore();
+  });
+
+  it("says when the invoice could not be downloaded", async () => {
+    getInvoiceMock.mockResolvedValue(undefined);
+    const user = await saveFilledShipment();
+
+    await user.click(screen.getByRole("button", { name: form.saved.download.ar }));
+
+    expect(await screen.findByText(form.saved.failed)).toBeVisible();
+  });
+
+  it("works out what is left to pay and refuses a payment above the total", async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    const valueOf = (label: string) => screen.getByText(label).nextElementSibling;
+    await user.type(screen.getByLabelText(form.bagCount), "10");
+    await user.type(screen.getByLabelText(form.bagFare), "200");
+    await user.type(screen.getByLabelText(form.passengerCount), "0");
+    await user.type(screen.getByLabelText(form.passengerFare), "0");
+
+    expect(valueOf(form.remainingToPay)).toHaveTextContent("2,000");
+
+    await user.type(screen.getByLabelText(form.currentPayment), "500");
+
+    expect(valueOf(form.remainingToPay)).toHaveTextContent("1,500");
+
+    await user.clear(screen.getByLabelText(form.currentPayment));
+    await user.type(screen.getByLabelText(form.currentPayment), "2500");
+    await user.type(screen.getByLabelText(form.customerName), "أحمد");
+    await user.type(screen.getByLabelText(form.phone), "22334455");
+    await user.type(screen.getByLabelText(form.source), "الشامي");
+    await user.click(screen.getByRole("button", { name: form.submit }));
+
+    expect(await screen.findByText(form.errors.paymentTooHigh)).toBeVisible();
+    expect(createShipmentMock).not.toHaveBeenCalled();
   });
 
   it("shows the errors the server returns on their fields and stays on the form", async () => {
@@ -373,7 +462,7 @@ describe("NewShipmentForm", () => {
     renderForm();
 
     const valueOf = (label: string) => screen.getByText(label).nextElementSibling;
-    expect(valueOf(form.transportTotal)).toHaveTextContent("0.0");
+    expect(valueOf(form.transportTotal)).toHaveTextContent("0");
 
     await user.clear(screen.getByLabelText(form.bagCount));
     await user.type(screen.getByLabelText(form.bagCount), "10");
@@ -384,9 +473,9 @@ describe("NewShipmentForm", () => {
     await user.clear(screen.getByLabelText(form.passengerFare));
     await user.type(screen.getByLabelText(form.passengerFare), "300");
 
-    expect(valueOf(form.bagsTransportCost)).toHaveTextContent("2,000.0");
-    expect(valueOf(form.passengersTransportCost)).toHaveTextContent("600.0");
-    expect(valueOf(form.transportTotal)).toHaveTextContent("2,600.0");
+    expect(valueOf(form.bagsTransportCost)).toHaveTextContent("2,000");
+    expect(valueOf(form.passengersTransportCost)).toHaveTextContent("600");
+    expect(valueOf(form.transportTotal)).toHaveTextContent("2,600");
   });
 
   it("rejects a negative fare per bag", async () => {

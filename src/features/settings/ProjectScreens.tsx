@@ -47,6 +47,7 @@ import {
   updateProject,
 } from "@/lib/projectsApi";
 import { useReplace } from "@/i18n/navigation";
+import { matchesSearch } from "@/lib/search";
 import {
   deleteProjectHref,
   editProjectHref,
@@ -182,14 +183,40 @@ function DeleteProjectDrawer({ project, open }: { project: Project; open: boolea
   );
 }
 
-function GrinderTable({ project, grinders }: { project: ProjectId; grinders: readonly Grinder[] }) {
+function GrinderTable({
+  project,
+  all,
+  query,
+}: {
+  project: ProjectId;
+  all: readonly Grinder[];
+  query: string;
+}) {
   const t = useTranslations("settings.grinders");
+  const common = useTranslations("common");
   const statuses = useTranslations("activityStatuses");
   const locale = useLocale();
   const canEdit = useCan()("locations", "edit");
+  const grinders = all.filter((grinder) =>
+    matchesSearch(
+      {
+        texts: [
+          t("machine", { number: formatCount(grinder.number, locale) }),
+          String(grinder.number),
+          statuses(grinder.status),
+        ],
+        phone: "",
+      },
+      query,
+    ),
+  );
 
   if (grinders.length === 0) {
-    return <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("empty")}</p>;
+    return (
+      <p className="text-ink-muted p-6 text-[15px] font-semibold">
+        {all.length === 0 ? t("empty") : common("noMatch")}
+      </p>
+    );
   }
 
   return (
@@ -246,6 +273,7 @@ export function ProjectSettingsScreen() {
   const sites = useTranslations("sites");
   const statuses = useTranslations("activityStatuses");
   const can = useCan();
+  const [query, setQuery] = useState("");
 
   return (
     <PageLayout
@@ -285,8 +313,16 @@ export function ProjectSettingsScreen() {
         />
       </section>
 
-      <TablePanel title={t("grinders.title")}>
-        <GrinderTable project={project.id} grinders={grinders} />
+      <TablePanel
+        title={t("grinders.title")}
+        search={{
+          label: common("searchIn", { list: t("grinders.title") }),
+          placeholder: common("searchList"),
+          value: query,
+          onChange: setQuery,
+        }}
+      >
+        <GrinderTable project={project.id} all={grinders} query={query} />
       </TablePanel>
 
       <DeleteProjectDrawer project={project} open={deleting && can("locations", "delete")} />

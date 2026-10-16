@@ -4,57 +4,68 @@ import { fromDecimal, toDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import type { ProjectId } from "@/lib/projects";
 
-const NAME_MAX_LENGTH = 150;
 const NOTE_MAX_LENGTH = 500;
 const QUANTITY_PRECISION = 1000;
+
+export const resourceKinds = ["mercury", "water", "fuel"] as const;
+
+export type ResourceKind = (typeof resourceKinds)[number];
 
 export type Resource = {
   id: string;
   project: ProjectId;
   projectName: string;
-  name: string;
+  kind: ResourceKind;
   initialQuantity: number;
   currentQuantity: number;
   isRefiningMaterial: boolean;
 };
 
-export const fixedResourceKinds = ["mercury", "water", "fuel"] as const;
+const kindNames: Record<ResourceKind, readonly string[]> = {
+  mercury: ["mercury", "mercure", "الزئبق", "زئبق"],
+  water: ["water", "eau", "الماء", "ماء", "مياه"],
+  fuel: [
+    "fuel",
+    "essence",
+    "carburant",
+    "gasoil",
+    "الوقود",
+    "وقود",
+    "المازوت",
+    "مازوت",
+    "البنزين",
+    "بنزين",
+  ],
+};
 
-export type FixedResourceKind = (typeof fixedResourceKinds)[number];
+const TATWEEL = "ـ";
 
-export const resourceKinds = [...fixedResourceKinds, "other"] as const;
+function normalizeName(name: string): string {
+  return name
+    .trim()
+    .toLocaleLowerCase()
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .replaceAll(TATWEEL, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .join(" ");
+}
 
-export type ResourceKind = (typeof resourceKinds)[number];
+export function kindNamed(name: string): ResourceKind | undefined {
+  const normalized = normalizeName(name);
 
-function isFixedResourceKind(value: string): value is FixedResourceKind {
-  return fixedResourceKinds.some((kind) => kind === value);
+  return resourceKinds.find((kind) =>
+    kindNames[kind].some((spelling) => normalizeName(spelling) === normalized),
+  );
 }
 
 export function isResourceKind(value: string): value is ResourceKind {
   return resourceKinds.some((kind) => kind === value);
 }
 
-export function kindOf(resource: Pick<Resource, "name" | "isRefiningMaterial">): ResourceKind {
-  if (resource.isRefiningMaterial) {
-    return "mercury";
-  }
-
-  return isFixedResourceKind(resource.name) ? resource.name : "other";
-}
-
 export function availableKinds(resources: readonly Resource[]): readonly ResourceKind[] {
-  const taken = new Set(resources.map(kindOf));
-
-  return resourceKinds.filter((kind) => kind === "other" || !taken.has(kind));
-}
-
-export function resourceLabel(
-  resource: Pick<Resource, "name" | "isRefiningMaterial">,
-  kindLabel: (kind: FixedResourceKind) => string,
-): string {
-  const kind = kindOf(resource);
-
-  return kind === "other" ? resource.name : kindLabel(kind);
+  return resourceKinds.filter((kind) => !resources.some((resource) => resource.kind === kind));
 }
 
 export const resourceChangeTypes = ["increase", "decrease"] as const;
@@ -63,7 +74,7 @@ export type ResourceChangeType = (typeof resourceChangeTypes)[number];
 
 export type ResourceChange = {
   id: string;
-  type: ResourceChangeType;
+  type: ResourceChangeType | "initial";
   quantity: number;
   quantityBefore: number;
   quantityAfter: number;
@@ -75,18 +86,11 @@ export type ResourceChange = {
 };
 
 export function createResourceSchema(messages: { required: string; quantityInvalid: string }) {
-  return z
-    .object({
-      project: z.string().min(1, messages.required),
-      kind: z.string().refine((value): boolean => isResourceKind(value), messages.required),
-      name: z.string().trim().max(NAME_MAX_LENGTH),
-      initialQuantity: z.number({ error: messages.required }).min(0, messages.quantityInvalid),
-    })
-    .superRefine((values, context) => {
-      if (values.kind === "other" && values.name === "") {
-        context.addIssue({ code: "custom", path: ["name"], message: messages.required });
-      }
-    });
+  return z.object({
+    project: z.string().min(1, messages.required),
+    kind: z.string().refine((value): boolean => isResourceKind(value), messages.required),
+    initialQuantity: z.number({ error: messages.required }).min(0, messages.quantityInvalid),
+  });
 }
 
 export type ResourceValues = z.infer<ReturnType<typeof createResourceSchema>>;
@@ -98,7 +102,6 @@ export function createResourceChangeSchema(
   return z
     .object({
       quantity: z.number({ error: messages.required }).positive(messages.quantityInvalid),
-      refiningOperationId: z.string(),
       note: z.string().trim().max(NOTE_MAX_LENGTH),
     })
     .superRefine((values, context) => {
@@ -124,22 +127,27 @@ export function quantityAfterChange(
   return Math.round(after * QUANTITY_PRECISION) / QUANTITY_PRECISION;
 }
 
-export function resourceFromApi(resource: ApiSchema<"Resource">): Resource {
-  return {
-    id: String(resource.id),
-    project: String(resource.project),
-    projectName: resource.project_name,
-    name: resource.name,
-    initialQuantity: fromDecimal(resource.initial_quantity),
-    currentQuantity: fromDecimal(resource.current_quantity),
-    isRefiningMaterial: resource.is_refining_material ?? false,
-  };
+export function resourceFromApi(resource: ApiSchema<"Resource">): Resource | undefined {
+  const isRefiningMaterial = resource.is_refining_material ?? false;
+  const kind = isRefiningMaterial ? "mercury" : kindNamed(resource.name);
+
+  return kind === undefined
+    ? undefined
+    : {
+        id: String(resource.id),
+        project: String(resource.project),
+        projectName: resource.project_name,
+        kind,
+        initialQuantity: fromDecimal(resource.initial_quantity),
+        currentQuantity: fromDecimal(resource.current_quantity),
+        isRefiningMaterial,
+      };
 }
 
 export function resourceToApi(values: ResourceValues) {
   return {
     project: Number(values.project),
-    name: values.kind === "other" ? values.name : values.kind,
+    name: values.kind,
     initial_quantity: toDecimal(values.initialQuantity),
     is_refining_material: values.kind === "mercury",
   };
@@ -150,8 +158,8 @@ export function resourceErrorsFromApi(
 ): FieldErrors<keyof ResourceValues> {
   return {
     ...(errors.project === undefined ? {} : { project: errors.project }),
-    ...(errors.name === undefined ? {} : { name: errors.name }),
     ...(errors.initial_quantity === undefined ? {} : { initialQuantity: errors.initial_quantity }),
+    ...(errors.name === undefined ? {} : { kind: errors.name }),
     ...(errors.is_refining_material === undefined ? {} : { kind: errors.is_refining_material }),
   };
 }
@@ -175,9 +183,6 @@ export function resourceChangeToApi(values: ResourceChangeValues) {
   return {
     quantity: toDecimal(values.quantity),
     note: values.note,
-    ...(values.refiningOperationId === ""
-      ? {}
-      : { refining_operation: Number(values.refiningOperationId) }),
   };
 }
 
@@ -187,8 +192,5 @@ export function resourceChangeErrorsFromApi(
   return {
     ...(errors.quantity === undefined ? {} : { quantity: errors.quantity }),
     ...(errors.note === undefined ? {} : { note: errors.note }),
-    ...(errors.refining_operation === undefined
-      ? {}
-      : { refiningOperationId: errors.refining_operation }),
   };
 }

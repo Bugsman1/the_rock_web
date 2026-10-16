@@ -239,6 +239,22 @@ describe("projects", () => {
     );
   });
 
+  it("finds a machine of the project by its number", async () => {
+    answerProjects();
+    const user = userEvent.setup();
+    openAt("/fr/settings/projects/3");
+
+    await user.type(
+      await screen.findByLabelText(messages.common.searchIn.replace("{list}", text.grinders.title)),
+      "7",
+    );
+
+    const [, ...rows] = within(screen.getByRole("table")).getAllByRole("row");
+    expect(rows.map((row) => within(row).getAllByRole("cell")[0]?.textContent)).toEqual([
+      "Machine 7",
+    ]);
+  });
+
   it("deletes a project after asking, then goes back to the projects", async () => {
     answerProjects();
     let deleted = false;

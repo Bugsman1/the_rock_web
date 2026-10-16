@@ -7,11 +7,13 @@ import {
   byMachineStatus,
   combineSummaries,
   findMachine,
+  isBacklogged,
   millingQueue,
   millingShipments,
   operationHistory,
   projectsForSite,
   projectSummary,
+  runningShare,
   shipmentMillingStatus,
   shipmentStatusFor,
 } from "./milling";
@@ -28,6 +30,7 @@ function operation(overrides: Partial<MillingOperation>): MillingOperation {
     operatorName: "Aicha",
     startedAt: "2026-10-08T06:00:00.000Z",
     estimatedEndAt: "2026-10-08T12:00:00.000Z",
+    cost: 0,
     notes: "",
     ...overrides,
   };
@@ -213,5 +216,17 @@ describe("summary", () => {
 
     expect(projectsForSite(projects, "sfariyat").map((project) => project.id)).toEqual(["2"]);
     expect(projectsForSite(projects, "all")).toHaveLength(2);
+  });
+});
+
+describe("milling flow", () => {
+  it("calls the waiting bags a backlog from 50 bags", () => {
+    expect(isBacklogged(49)).toBe(false);
+    expect(isBacklogged(50)).toBe(true);
+  });
+
+  it("gives the share of machines running, as a whole percentage", () => {
+    expect(runningShare({ running: 1, idle: 1, maintenance: 1, total: 3 })).toBe(33);
+    expect(runningShare({ running: 0, idle: 0, maintenance: 0, total: 0 })).toBe(0);
   });
 });

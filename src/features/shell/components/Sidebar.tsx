@@ -30,42 +30,37 @@ function SidebarItem({
   onNavigate,
 }: SidebarItemProps) {
   return (
-    <div className="relative">
+    <Link
+      href={href}
+      aria-current={current ? "page" : undefined}
+      onClick={onNavigate}
+      className={cn(
+        "relative mx-2 flex min-h-11 items-center gap-3 rounded-lg text-[15px] font-semibold",
+        collapsed ? "justify-center px-0" : "px-2",
+        active
+          ? "bg-brand-50 text-brand-700"
+          : "text-ink-muted hover:bg-surface-hover hover:text-ink-label",
+      )}
+    >
       {active ? (
-        <span
-          aria-hidden
-          className="bg-brand-700 absolute inset-y-2 w-1 rounded-full ltr:start-0 rtl:end-0"
-        />
+        <span aria-hidden className="bg-brand-700 absolute inset-y-2 start-0 w-1 rounded-e-full" />
       ) : null}
 
-      <Link
-        href={href}
-        aria-current={current ? "page" : undefined}
-        onClick={onNavigate}
+      <span
         className={cn(
-          "mx-2 flex min-h-11 items-center gap-3 rounded-lg text-[15px] font-semibold",
-          collapsed ? "justify-center px-0" : "px-2",
-          active
-            ? "bg-brand-50 text-brand-700"
-            : "text-ink-muted hover:bg-surface-hover hover:text-ink-label",
+          "inline-flex size-9 shrink-0 items-center justify-center rounded-lg",
+          active && "bg-brand-100",
         )}
       >
-        <span
-          className={cn(
-            "inline-flex size-9 shrink-0 items-center justify-center rounded-lg",
-            active && "bg-brand-100",
-          )}
-        >
-          <Icon name={icon} />
-        </span>
+        <Icon name={icon} />
+      </span>
 
-        {collapsed ? (
-          <span className="sr-only">{label}</span>
-        ) : (
-          <span className="truncate">{label}</span>
-        )}
-      </Link>
-    </div>
+      {collapsed ? (
+        <span className="sr-only">{label}</span>
+      ) : (
+        <span className="truncate">{label}</span>
+      )}
+    </Link>
   );
 }
 

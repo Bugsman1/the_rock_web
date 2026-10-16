@@ -103,10 +103,9 @@ describe("refining routes", () => {
 });
 
 describe("inventory routes", () => {
-  it("opens a project's resources, its new resource form or its mercury set-up", () => {
+  it("opens a project's resources or its new resource form", () => {
     expect(inventoryProjectHref("3")).toBe("/inventory/projects/3");
-    expect(inventoryProjectHref("3", "resource")).toBe("/inventory/projects/3?new=resource");
-    expect(inventoryProjectHref("3", "material")).toBe("/inventory/projects/3?new=material");
+    expect(inventoryProjectHref("3", true)).toBe("/inventory/projects/3?new=resource");
   });
 
   it("opens a resource's page, a page of its history and its actions", () => {
@@ -115,8 +114,8 @@ describe("inventory routes", () => {
     expect(resourceHref("2", { action: "decrease" })).toBe(
       "/inventory/resources/2?action=decrease",
     );
-    expect(resourceHref("2", { page: 2, action: "edit" })).toBe(
-      "/inventory/resources/2?page=2&action=edit",
+    expect(resourceHref("2", { page: 2, action: "increase" })).toBe(
+      "/inventory/resources/2?page=2&action=increase",
     );
   });
 });

@@ -24,7 +24,10 @@
     "datePlaceholder": "dd/mm/yyyy",
     "timePlaceholder": "hh:mm",
     "openProject": "فتح المشروع",
-    "loading": "جارٍ التحميل"
+    "loading": "جارٍ التحميل",
+    "searchList": "ابحث في القائمة",
+    "noMatch": "لا توجد نتائج لهذا البحث.",
+    "searchIn": "ابحث في {list}"
   },
   "auth": {
     "login": {
@@ -62,10 +65,6 @@
     "notifications": "الإشعارات",
     "settings": "الإعدادات",
     "logout": "تسجيل الخروج",
-    "search": {
-      "label": "بحث",
-      "placeholder": "ابحث في النظام..."
-    },
     "nav": {
       "dashboard": "لوحة التحكم",
       "shipments": "الشحنات",
@@ -297,7 +296,8 @@
         "deleting": "جارٍ حذف الدور",
         "failed": "تعذر حذف الدور، حاول مرة أخرى بعد قليل"
       }
-    }
+    },
+    "searchPlaceholder": "ابحث بالاسم أو البريد أو الهاتف..."
   },
   "shipments": {
     "title": "الشحنات",
@@ -317,7 +317,8 @@
         "bagCountInvalid": "أدخل عدد أكياس صحيحًا لا يقل عن 1",
         "amountInvalid": "أدخل مبلغًا صحيحًا، 0 أو أكثر",
         "passengerCountInvalid": "أدخل عددًا صحيحًا للركاب، 0 أو أكثر",
-        "phoneTaken": "هذا الرقم مسجل للعميل {name}"
+        "phoneTaken": "هذا الرقم مسجل للعميل {name}",
+        "paymentTooHigh": "لا يمكن أن تتجاوز إجمالي النقل"
       },
       "mill": "المشروع",
       "status": "حالة الشحنة",
@@ -328,14 +329,27 @@
         "destination": "الوجهة",
         "transportCost": "تكاليف النقل"
       },
-      "bagFare": "سعر نقل الكيس الواحد (أوقية)",
+      "bagFare": "سعر نقل الكيس الواحد",
       "passengerCount": "عدد الركاب",
-      "passengerFare": "سعر نقل الراكب الواحد (أوقية)",
+      "passengerFare": "سعر نقل الراكب الواحد",
       "bagsTransportCost": "تكلفة نقل الأكياس",
       "passengersTransportCost": "تكلفة نقل الركاب",
       "transportTotal": "إجمالي تكلفة النقل",
-      "amountValue": "{amount} أوقية",
-      "sourcePlaceholder": "اكتب مصدر الشحنة"
+      "sourcePlaceholder": "اكتب مصدر الشحنة",
+      "currentPayment": "الدفعة الحالية",
+      "remainingToPay": "المتبقي للدفع",
+      "saved": {
+        "title": "تم حفظ الشحنة",
+        "body": "نزّل فاتورة النقل لهذه الشحنة بالعربية أو بالفرنسية.",
+        "download": {
+          "ar": "الفاتورة بالعربية (PDF)",
+          "fr": "الفاتورة بالفرنسية (PDF)"
+        },
+        "downloading": "جارٍ تنزيل الفاتورة",
+        "failed": "تعذر تنزيل الفاتورة، حاول مرة أخرى.",
+        "back": "العودة إلى الشحنات",
+        "fileName": "facture-expedition-{id}-{language}.pdf"
+      }
     },
     "totalBags": "إجمالي الأكياس في جميع المشاريع",
     "clientsLabel": "العملاء",
@@ -360,7 +374,10 @@
       "arrivedAt": "وقت الوصول",
       "empty": "لا توجد شحنات في هذا المشروع.",
       "action": "إجراء",
-      "startMilling": "بدء الطحن"
+      "startMilling": "بدء الطحن",
+      "remaining": "الأكياس المتبقية",
+      "remainingOf": "{remaining} من {total}",
+      "status": "الحالة"
     },
     "history": {
       "open": "السجل",
@@ -387,10 +404,7 @@
     "siteFilter": "التصفية حسب الموقع",
     "allSites": "الكل",
     "kpis": {
-      "machinesRunning": "الآلات العاملة",
-      "bagsMilling": "أكياس قيد الطحن",
-      "bagsWaiting": "أكياس في الانتظار",
-      "bagsMilledToday": "أكياس طُحنت اليوم"
+      "machinesRunning": "الآلات العاملة"
     },
     "statuses": {
       "running": "تعمل",
@@ -460,9 +474,10 @@
       "submit": "بدء الطحن",
       "saving": "جارٍ بدء الطحن",
       "errors": {
-        "bagsInvalid": "أدخل عددًا صحيحًا لا يقل عن 1",
+        "bagsInvalid": "أدخل الأكياس بأنصاف الأكياس: 0.5 أو 1 أو 1.5 أو 2",
         "bagsTooMany": "لا يمكن أن يتجاوز الأكياس المتبقية",
-        "machineUnavailable": "هذه الآلة لم تعد متاحة"
+        "machineUnavailable": "هذه الآلة لم تعد متاحة",
+        "bagsOverCapacity": "لا يمكن للآلة طحن أكثر من {max} كيس في المرة الواحدة"
       },
       "remaining": "المتبقي: {count}"
     },
@@ -510,16 +525,34 @@
       "endDate": "تاريخ الانتهاء",
       "endTime": "وقت الانتهاء",
       "bagsMilled": "الأكياس المطحونة فعليًا",
+      "price": "سعر الطحن",
       "notes": "ملاحظات",
-      "cost": "التكلفة",
-      "costValue": "{amount} أوقية",
-      "costRate": "{bags} كيس × {rate} أوقية",
       "submit": "إنهاء الطحن",
       "saving": "جارٍ حفظ إنهاء الطحن",
       "errors": {
         "endBeforeStart": "يجب أن يكون الانتهاء بعد البدء",
-        "bagsMilledInvalid": "أدخل عددًا بين 1 والأكياس المخصصة"
+        "bagsMilledInvalid": "أدخل عدد الأكياس بأنصاف الأكياس، من 0.5 إلى الأكياس المخصصة",
+        "priceInvalid": "أدخل سعرًا صحيحًا، 0 أو أكثر"
       }
+    },
+    "flow": {
+      "title": "سير الطحن",
+      "waiting": "في الانتظار",
+      "milling": "قيد الطحن",
+      "milledToday": "طُحنت اليوم",
+      "bags": "كيس",
+      "backlog": "تكدّس"
+    },
+    "mercury": {
+      "column": "الزئبق",
+      "pending": "لم يُضف الزئبق بعد",
+      "added": "أُضيف الزئبق",
+      "markHint": "اضغط هنا عند إضافة الزئبق إلى هذه الطحنة",
+      "confirm": "هل أُضيف الزئبق إلى هذه الطحنة؟ لا يمكن التراجع عن ذلك.",
+      "confirmYes": "نعم، أُضيف",
+      "saving": "جارٍ الحفظ",
+      "addedOn": "{date} · {name}",
+      "notYet": "لم يُضف بعد"
     }
   },
   "refining": {
@@ -546,22 +579,24 @@
       "worker": "المسؤول",
       "weightBefore": "الوزن قبل التصفية (غ)",
       "weightAfter": "الوزن بعد التصفية (غ)",
-      "weightLoss": "فرق الوزن (غ)",
       "gold": "الذهب المستخرج (غ)",
       "goldWithMaterial": "الذهب مع المادة (غ)",
       "goldWithoutMaterial": "الذهب بدون المادة (غ)",
-      "loss": "الفاقد (غ)",
-      "lossReason": "سبب الفاقد",
-      "notes": "ملاحظات"
+      "loss": "الخسارة (غ)",
+      "lossReason": "سبب الخسارة",
+      "notes": "ملاحظات",
+      "operator": "عامل الطحن",
+      "bagsGround": "الأكياس المطحونة للتصفية",
+      "groundFrom": "بداية الطحن",
+      "grindingPrice": "سعر الطحن"
     },
     "form": {
       "workerPlaceholder": "اختر المسؤول",
       "submit": "تسجيل التصفية",
       "saving": "جارٍ تسجيل التصفية",
-      "lossReasonPlaceholder": "اختر سبب الفاقد"
+      "lossReasonPlaceholder": "اختر سبب الخسارة"
     },
     "errors": {
-      "bagsInvalid": "أدخل عددًا صحيحًا من 1 إلى {max}",
       "weightInvalid": "أدخل وزنًا صحيحًا",
       "weightAfterTooHigh": "لا يمكن أن يتجاوز الوزن قبل التصفية",
       "goldTooHeavy": "لا يمكن أن يزن الذهب أكثر من المادة المصفّاة",
@@ -581,12 +616,12 @@
     "title": "المخزون",
     "count": "عدد الموارد: {count}",
     "new": "مورد جديد",
+    "empty": "لا توجد موارد في هذا المشروع بعد. أضف الزئبق أو الماء أو البنزين من «مورد جديد».",
     "increase": "زيادة",
     "decrease": "إنقاص",
-    "edit": "تعديل",
     "historyListTitle": "حركات الكمية",
-    "historyEmpty": "لا توجد حركات لهذا المورد بعد.",
     "changeTypes": {
+      "initial": "الكمية الأولية",
       "increase": "زيادة",
       "decrease": "إنقاص"
     },
@@ -599,9 +634,7 @@
       "quantity": "الكمية",
       "quantityBefore": "الكمية قبل",
       "quantityAfter": "الكمية بعد",
-      "refiningOperation": "عملية التصفية",
       "note": "ملاحظة",
-      "shipment": "الشحنة",
       "changedAt": "التاريخ",
       "changeType": "النوع",
       "changedBy": "بواسطة",
@@ -609,15 +642,10 @@
     },
     "form": {
       "newTitle": "مورد جديد",
-      "title": "تعديل المورد",
       "increaseTitle": "زيادة {name}",
       "decreaseTitle": "إنقاص {name}",
-      "quantityFixed": "لا تتغير الكمية إلا بالزيادة أو الإنقاص.",
       "create": "إضافة المورد",
-      "submit": "حفظ التعديلات",
       "saving": "جارٍ الحفظ",
-      "noRefiningOperation": "بدون عملية تصفية",
-      "refiningOperationOption": "{shipment} · {client} · {date}",
       "increaseSubmit": "تسجيل الزيادة",
       "decreaseSubmit": "تسجيل الإنقاص",
       "kindPlaceholder": "اختر النوع"
@@ -635,16 +663,13 @@
     "noProjects": "لا توجد مشاريع بعد. أضفها من الإعدادات.",
     "resourceCount": "الموارد",
     "material": {
-      "setUp": "إعداد الزئبق",
-      "missing": "لم يُعدّ زئبق هذا المشروع بعد. أدخل كميته الأولية ليُخصم منه فاقد التصفية تلقائيًا.",
       "hint": "يُخصم منه فاقد كل عملية تصفية تلقائيًا."
     },
     "open": "فتح",
     "kinds": {
       "mercury": "الزئبق",
       "water": "الماء",
-      "fuel": "البنزين",
-      "other": "أخرى"
+      "fuel": "البنزين"
     }
   },
   "errors": {

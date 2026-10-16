@@ -1,32 +1,32 @@
 import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useRevalidator } from "react-router";
-import { useLocale, useTranslations } from "use-intl";
+import { useTranslations } from "use-intl";
 import { Button } from "@/components/ui/Button";
 import { DateField } from "@/components/ui/DateField";
 import { Drawer, DrawerActions } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
+import { FieldError, FormError } from "@/components/ui/FieldError";
 import { Icon } from "@/components/ui/Icon";
-import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
+import { cn } from "@/lib/cn";
 import { combineDateAndTime } from "@/lib/datetime";
-import { formatCount, formatMoney } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
-import { COST_PER_BAG, millingCost } from "@/lib/grinding";
+import { BAG_STEP } from "@/lib/grinding";
 import type { MillingOperation } from "@/lib/grinding";
 import { startRefiningHref } from "@/lib/routes";
 import type { ShipmentStatusKey } from "@/lib/shipments";
 import { createEndMillingSchema } from "./milling";
 import type { EndMillingValues } from "./milling";
-import { endOperation } from "./millingApi";
+import { endOperation, markMercuryAdded } from "./millingApi";
 
 const endMillingFields: readonly (keyof EndMillingValues)[] = [
   "endDate",
   "endTime",
   "bagsMilled",
+  "price",
   "notes",
 ];
 
@@ -55,7 +55,6 @@ function EndMillingForm({
 }: EndMillingFormProps) {
   const t = useTranslations("milling.end");
   const common = useTranslations("common");
-  const locale = useLocale();
   const [failed, setFailed] = useState(false);
   const allocatedBags = operation.bags;
   const startedAt = operation.startedAt;
@@ -69,6 +68,7 @@ function EndMillingForm({
           timeInvalid: common("validation.timeInvalid"),
           endBeforeStart: t("errors.endBeforeStart"),
           bagsMilledInvalid: t("errors.bagsMilledInvalid"),
+          priceInvalid: t("errors.priceInvalid"),
         },
         { allocatedBags, startedAt },
       ),
@@ -82,13 +82,12 @@ function EndMillingForm({
       endDate: defaultDate,
       endTime: defaultTime,
       bagsMilled: Number.NaN,
+      price: Number.NaN,
       notes: "",
     },
   });
 
   const { errors } = formState;
-  const bagsMilled = useWatch({ control, name: "bagsMilled" });
-  const bags = Number.isFinite(bagsMilled) && bagsMilled > 0 ? bagsMilled : 0;
 
   async function onSubmit(values: EndMillingValues) {
     const endedAt = combineDateAndTime(values.endDate, values.endTime);
@@ -158,29 +157,27 @@ function EndMillingForm({
         <TextField
           id="end-bags"
           type="number"
-          min={1}
+          min={BAG_STEP}
           max={allocatedBags}
-          step={1}
-          inputMode="numeric"
+          step={BAG_STEP}
+          inputMode="decimal"
           label={t("bagsMilled")}
           required
           error={errors.bagsMilled?.message}
           {...register("bagsMilled", { valueAsNumber: true })}
         />
 
-        <div className="flex flex-col gap-1">
-          <ReadOnlyField
-            label={t("cost")}
-            value={t("costValue", { amount: formatMoney(millingCost(bags), locale) })}
-            emphasis
-          />
-          <p className="text-ink-muted text-[13px] font-semibold">
-            {t("costRate", {
-              bags: formatCount(bags, locale),
-              rate: formatMoney(COST_PER_BAG, locale),
-            })}
-          </p>
-        </div>
+        <TextField
+          id="end-price"
+          type="number"
+          min={0}
+          step="any"
+          inputMode="decimal"
+          label={t("price")}
+          required
+          error={errors.price?.message}
+          {...register("price", { valueAsNumber: true })}
+        />
 
         <div className="sm:col-span-2">
           <TextArea id="end-notes" label={t("notes")} rows={2} {...register("notes")} />
@@ -239,5 +236,94 @@ export function EndMillingAction({
         <EndMillingForm {...formProps} onCancel={() => setOpen(false)} onSaved={onSaved} />
       </Drawer>
     </>
+  );
+}
+
+const mercuryPillClasses =
+  "inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-2.5 py-1 text-[12px] font-bold";
+
+const mercuryPendingClasses = cn(
+  mercuryPillClasses,
+  "border-warning-300 bg-warning-50 text-warning-700",
+);
+
+const mercuryChoiceClasses =
+  "rounded-action inline-flex h-8 cursor-pointer items-center px-3 text-[13px] font-bold disabled:cursor-default";
+
+export function MercuryStatus({ operation }: { operation: MillingOperation }) {
+  const t = useTranslations("milling.mercury");
+  const common = useTranslations("common");
+  const canMark = useCan()("grinding", "edit");
+  const revalidator = useRevalidator();
+  const [confirming, setConfirming] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>();
+
+  async function confirm() {
+    setSaving(true);
+    setError(undefined);
+
+    const result = await markMercuryAdded(operation.id);
+
+    setSaving(false);
+
+    if (result.ok) {
+      setConfirming(false);
+      void revalidator.revalidate();
+      return;
+    }
+
+    setError(result.fieldErrors.mercury ?? common("saveFailed"));
+  }
+
+  if (operation.mercury !== undefined) {
+    return (
+      <span className={cn(mercuryPillClasses, "border-success-300 bg-success-50 text-success-700")}>
+        <Icon name="circle-check" className="h-4 w-4" />
+        {t("added")}
+      </span>
+    );
+  }
+
+  if (!canMark) {
+    return <span className={mercuryPendingClasses}>{t("pending")}</span>;
+  }
+
+  if (!confirming) {
+    return (
+      <button
+        type="button"
+        title={t("markHint")}
+        onClick={() => setConfirming(true)}
+        className={cn(mercuryPendingClasses, "hover:bg-warning-100 cursor-pointer")}
+      >
+        {t("pending")}
+      </button>
+    );
+  }
+
+  return (
+    <div role="group" aria-label={t("confirm")} className="flex flex-col items-start gap-2">
+      <p className="text-ink-label text-[13px] font-semibold">{t("confirm")}</p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => void confirm()}
+          className={cn(mercuryChoiceClasses, "bg-brand-700 text-ink-inverted hover:bg-brand-800")}
+        >
+          {saving ? t("saving") : t("confirmYes")}
+        </button>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => setConfirming(false)}
+          className={cn(mercuryChoiceClasses, "text-ink-label hover:bg-surface-hover")}
+        >
+          {common("cancel")}
+        </button>
+      </div>
+      <FieldError id={`mercury-error-${operation.id}`} message={error} />
+    </div>
   );
 }

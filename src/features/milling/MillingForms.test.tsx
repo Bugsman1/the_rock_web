@@ -8,11 +8,11 @@ import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
 import type { MillingOperation } from "@/lib/grinding";
-import { EndMillingAction } from "./MillingForms";
+import { EndMillingAction, MercuryStatus } from "./MillingForms";
 
 const allRights: Access = { ...noAccess, superuser: true };
 
-const api = vi.hoisted(() => ({ endOperation: vi.fn() }));
+const api = vi.hoisted(() => ({ endOperation: vi.fn(), markMercuryAdded: vi.fn() }));
 
 vi.mock("./millingApi", () => api);
 
@@ -21,6 +21,8 @@ const end = messages.milling.end;
 beforeEach(() => {
   api.endOperation.mockReset();
   api.endOperation.mockResolvedValue({ ok: true });
+  api.markMercuryAdded.mockReset();
+  api.markMercuryAdded.mockResolvedValue({ ok: true });
 });
 
 function inFrench(children: React.ReactNode, access: Access = allRights) {
@@ -41,6 +43,7 @@ const running: MillingOperation = {
   operatorName: "Ahmed",
   startedAt: "2026-10-08T06:00:00.000Z",
   estimatedEndAt: "2026-10-08T12:00:00.000Z",
+  cost: 0,
   notes: "",
 };
 
@@ -71,21 +74,26 @@ async function openEndMilling(access: Access = allRights) {
   inFrench(<RouterProvider router={router} />, access);
   await user.click(screen.getByRole("button", { name: "Terminer" }));
   await user.type(screen.getByLabelText(end.bagsMilled), "2");
+  await user.type(screen.getByLabelText(end.price), "3000");
 
   return { user, router };
 }
 
 describe("ending a milling operation", () => {
-  it("shows the cost for the bags milled, read-only", async () => {
+  it("asks the grinding price, with no price set in advance", async () => {
     const { user } = await openEndMilling();
 
-    expect(screen.getByText("2 sacs × 1 500,0 MRU")).toBeVisible();
+    const price = screen.getByLabelText(end.price);
+    await user.clear(price);
+    await user.click(screen.getByRole("button", { name: end.submit }));
 
-    const bags = screen.getByLabelText(end.bagsMilled);
-    await user.clear(bags);
-    await user.type(bags, "1");
+    expect(await screen.findByText(messages.common.validation.required)).toBeVisible();
 
-    expect(screen.getByText("1 500,0 MRU")).toBeVisible();
+    await user.type(price, "-5");
+    await user.click(screen.getByRole("button", { name: end.submit }));
+
+    expect(await screen.findByText(end.errors.priceInvalid)).toBeVisible();
+    expect(api.endOperation).not.toHaveBeenCalled();
   });
 
   it("rejects an end before the start", async () => {
@@ -121,7 +129,7 @@ describe("ending a milling operation", () => {
       expect(api.endOperation).toHaveBeenCalledWith(
         running,
         "52",
-        { endDate: "2026-10-08", endTime: "12:30", bagsMilled: 2, notes: "" },
+        { endDate: "2026-10-08", endTime: "12:30", bagsMilled: 2, price: 3000, notes: "" },
         "2026-10-08T12:30:00.000Z",
         "completed",
       );
@@ -148,5 +156,76 @@ describe("ending a milling operation", () => {
     });
     expect(api.endOperation).toHaveBeenCalled();
     expect(router.state.location.pathname).toBe("/");
+  });
+});
+
+const mercury = messages.milling.mercury;
+
+function showMercury(operation: MillingOperation, access: Access = allRights) {
+  const router = createMemoryRouter([
+    { path: "/", element: <MercuryStatus operation={operation} /> },
+  ]);
+
+  inFrench(<RouterProvider router={router} />, access);
+}
+
+describe("mercury status of a grinding", () => {
+  it("marks the mercury as added once the user confirms it", async () => {
+    const user = userEvent.setup();
+    showMercury(running);
+
+    await user.click(screen.getByRole("button", { name: mercury.pending }));
+    expect(screen.getByText(mercury.confirm)).toBeVisible();
+    expect(api.markMercuryAdded).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: mercury.confirmYes }));
+
+    expect(api.markMercuryAdded).toHaveBeenCalledWith("42");
+    await waitFor(() => {
+      expect(screen.queryByText(mercury.confirm)).toBeNull();
+    });
+  });
+
+  it("leaves it as it was when the user cancels", async () => {
+    const user = userEvent.setup();
+    showMercury(running);
+
+    await user.click(screen.getByRole("button", { name: mercury.pending }));
+    await user.click(screen.getByRole("button", { name: messages.common.cancel }));
+
+    expect(screen.getByRole("button", { name: mercury.pending })).toBeVisible();
+    expect(api.markMercuryAdded).not.toHaveBeenCalled();
+  });
+
+  it("shows why the backend refused it", async () => {
+    api.markMercuryAdded.mockResolvedValue({
+      ok: false,
+      fieldErrors: { mercury: "Le broyage est terminé." },
+      failed: false,
+    });
+    const user = userEvent.setup();
+    showMercury(running);
+
+    await user.click(screen.getByRole("button", { name: mercury.pending }));
+    await user.click(screen.getByRole("button", { name: mercury.confirmYes }));
+
+    expect(await screen.findByText("Le broyage est terminé.")).toBeVisible();
+  });
+
+  it("shows an added mercury with no way to take it back", () => {
+    showMercury({ ...running, mercury: { addedAt: "2026-10-08T07:00:00.000Z", byName: "Aicha" } });
+
+    expect(screen.getByText(mercury.added)).toBeVisible();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("shows a view-only role the status without a button", () => {
+    showMercury(running, {
+      superuser: false,
+      rights: rightsFromApi([{ module: "grinding", can_view: true }]),
+    });
+
+    expect(screen.getByText(mercury.pending)).toBeVisible();
+    expect(screen.queryByRole("button")).toBeNull();
   });
 });

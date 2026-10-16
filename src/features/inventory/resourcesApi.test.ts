@@ -7,7 +7,6 @@ import {
   getResource,
   getResourceHistory,
   getResources,
-  renameResource,
 } from "./resourcesApi";
 
 const API = `${window.location.origin}/api/v1`;
@@ -48,7 +47,7 @@ describe("getResource", () => {
   it("returns the resource", async () => {
     server.use(http.get(`${API}/resources/2/`, () => HttpResponse.json(mercury)));
 
-    expect((await getResource("2"))?.name).toBe("Mercure");
+    expect((await getResource("2"))?.kind).toBe("mercury");
   });
 
   it("returns nothing for an unknown or malformed id", async () => {
@@ -73,12 +72,9 @@ describe("createResource", () => {
       await createResource({
         project: "3",
         kind: "mercury",
-        name: "",
         initialQuantity: 10,
       }),
-    ).toEqual({
-      ok: true,
-    });
+    ).toEqual({ ok: true, id: "2" });
     expect(body).toEqual({
       project: 3,
       name: "mercury",
@@ -87,7 +83,7 @@ describe("createResource", () => {
     });
   });
 
-  it("shows a name already used in the project on the name field", async () => {
+  it("shows a type the project already has on the type field", async () => {
     server.use(
       http.post(`${API}/resources/`, () =>
         HttpResponse.json({ name: ["Existe déjà."] }, { status: 400 }),
@@ -98,36 +94,12 @@ describe("createResource", () => {
       await createResource({
         project: "3",
         kind: "mercury",
-        name: "",
         initialQuantity: 10,
       }),
     ).toEqual({
       ok: false,
-      fieldErrors: { name: "Existe déjà." },
+      fieldErrors: { kind: "Existe déjà." },
       failed: false,
-    });
-  });
-});
-
-describe("renameResource", () => {
-  it("sends only the new name", async () => {
-    let body: unknown;
-    server.use(
-      http.patch(`${API}/resources/2/`, async ({ request }) => {
-        body = await request.json();
-        return HttpResponse.json(mercury);
-      }),
-    );
-
-    expect(await renameResource("2", "Chaux vive")).toEqual({ ok: true });
-    expect(body).toEqual({ name: "Chaux vive" });
-  });
-
-  it("refuses an id that is not a number without calling the backend", async () => {
-    expect(await renameResource("../users", "Chaux")).toEqual({
-      ok: false,
-      fieldErrors: {},
-      failed: true,
     });
   });
 });
@@ -173,12 +145,15 @@ describe("getResourceHistory", () => {
 });
 
 describe("getResources", () => {
-  it("asks for the resources by name and maps them", async () => {
+  it("asks for the resources by name and keeps only mercury, water and fuel", async () => {
     let requested: URL | undefined;
     server.use(
       http.get(`${API}/resources/`, ({ request }) => {
         requested = new URL(request.url);
-        return HttpResponse.json({ count: 1, results: [mercury] });
+        return HttpResponse.json({
+          count: 2,
+          results: [{ ...mercury, id: 4, name: "Chaux" }, mercury],
+        });
       }),
     );
 
@@ -190,7 +165,7 @@ describe("getResources", () => {
         id: "2",
         project: "3",
         projectName: "Zouérat 1",
-        name: "Mercure",
+        kind: "mercury",
         initialQuantity: 10,
         currentQuantity: 8.5,
         isRefiningMaterial: false,
@@ -213,7 +188,6 @@ describe("changeResourceQuantity", () => {
       await changeResourceQuantity("2", "increase", {
         quantity: 2,
         note: "Achat",
-        refiningOperationId: "",
       }),
     ).toEqual({
       ok: true,
@@ -221,7 +195,7 @@ describe("changeResourceQuantity", () => {
     expect(body).toEqual({ quantity: "2.000", note: "Achat" });
   });
 
-  it("decreases a resource for a refining operation", async () => {
+  it("decreases a resource", async () => {
     let body: unknown;
     server.use(
       http.post(`${API}/resources/2/decrease/`, async ({ request }) => {
@@ -234,10 +208,9 @@ describe("changeResourceQuantity", () => {
       await changeResourceQuantity("2", "decrease", {
         quantity: 1.5,
         note: "",
-        refiningOperationId: "5",
       }),
     ).toEqual({ ok: true });
-    expect(body).toEqual({ quantity: "1.500", note: "", refining_operation: 5 });
+    expect(body).toEqual({ quantity: "1.500", note: "" });
   });
 
   it("shows the quantity left when a decrease is too large", async () => {
@@ -251,7 +224,6 @@ describe("changeResourceQuantity", () => {
       await changeResourceQuantity("2", "decrease", {
         quantity: 9,
         note: "",
-        refiningOperationId: "",
       }),
     ).toEqual({
       ok: false,

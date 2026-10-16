@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
@@ -7,6 +8,7 @@ import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
 import { PageLayout } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
+import { SearchField } from "@/components/ui/SearchField";
 import {
   PanelError,
   StatusBadge,
@@ -16,18 +18,18 @@ import {
   tableHeadClasses,
   tableRowClasses,
 } from "@/components/ui/TablePanel";
+import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { errorKind, notFound, tryLoad } from "@/lib/api/client";
 import { parsePageNumber } from "@/lib/api/pagination";
 import { formatCount, formatDateTime, formatQuantity } from "@/lib/format";
 import { isRecordId } from "@/lib/projects";
-import type { ProjectId } from "@/lib/projects";
 import { getProjects, requireProject } from "@/lib/projectsApi";
-import { getRefiningOperations } from "@/lib/refiningApi";
 import { INVENTORY_HREF, inventoryProjectHref, resourceActions, resourceHref } from "@/lib/routes";
-import type { NewResourceKind, ResourceAction } from "@/lib/routes";
+import { matchesSearch } from "@/lib/search";
+import type { ResourceAction } from "@/lib/routes";
 import { ResourceChangeForm, ResourceForm } from "./InventoryForms";
-import { kindOf, resourceLabel } from "./resources";
+import { availableKinds } from "./resources";
 import type { Resource, ResourceChange } from "./resources";
 import { getResource, getResourceHistory, getResources } from "./resourcesApi";
 
@@ -90,10 +92,7 @@ export function InventoryScreen() {
                     { label: t("resourceCount"), value: formatCount(own.length, locale) },
                     {
                       label: t("refiningMaterial"),
-                      value:
-                        material === undefined
-                          ? "—"
-                          : resourceLabel(material, (kind) => t(`kinds.${kind}`)),
+                      value: material === undefined ? "—" : t(`kinds.${material.kind}`),
                     },
                   ]}
                 />
@@ -106,10 +105,6 @@ export function InventoryScreen() {
   );
 }
 
-function newResourceKindOf(value: string | null): NewResourceKind | undefined {
-  return value === "resource" || value === "material" ? value : undefined;
-}
-
 export async function inventoryProjectLoader({ params, request }: LoaderFunctionArgs) {
   const project = await requireProject(params.project ?? "");
   const loaded = await tryLoad(() => getResources(project.id));
@@ -118,7 +113,7 @@ export async function inventoryProjectLoader({ params, request }: LoaderFunction
     project,
     resources: loaded.ok ? loaded.data : [],
     loadStatus: loaded.ok ? undefined : loaded.status,
-    create: newResourceKindOf(new URL(request.url).searchParams.get("new")),
+    creating: new URL(request.url).searchParams.get("new") === "resource",
   };
 }
 
@@ -128,7 +123,7 @@ function ResourceCard({ resource }: { resource: Resource }) {
 
   return (
     <LinkCard
-      title={resourceLabel(resource, (kind) => t(`kinds.${kind}`))}
+      title={t(`kinds.${resource.kind}`)}
       href={resourceHref(resource.id)}
       linkLabel={t("open")}
     >
@@ -154,33 +149,21 @@ function ResourceCard({ resource }: { resource: Resource }) {
   );
 }
 
-function MaterialSetUpCard({ project }: { project: ProjectId }) {
-  const t = useTranslations("inventory");
-  const canAdd = useCan()("inventory", "add");
-
-  return (
-    <section className="rounded-card border-line bg-surface flex flex-col items-start gap-4 border-[1.5px] p-6">
-      <h2 className="text-ink text-[20px] font-bold">{t("kinds.mercury")}</h2>
-      <p className="text-ink-muted text-[14px] font-semibold">{t("material.missing")}</p>
-      {canAdd ? (
-        <ButtonLink href={inventoryProjectHref(project, "material")} variant="secondary">
-          <Icon name="plus" />
-          {t("material.setUp")}
-        </ButtonLink>
-      ) : null}
-    </section>
-  );
-}
-
 export function InventoryProjectScreen() {
-  const { project, resources, loadStatus, create } = useLoaderData<typeof inventoryProjectLoader>();
+  const { project, resources, loadStatus, creating } =
+    useLoaderData<typeof inventoryProjectLoader>();
   const t = useTranslations("inventory");
   const common = useTranslations("common");
   const locale = useLocale();
   const { close } = useRouteDrawer(inventoryProjectHref(project.id));
-  const canAdd = useCan()("inventory", "add");
-  const material = resources.find((resource) => resource.isRefiningMaterial);
-  const others = resources.filter((resource) => !resource.isRefiningMaterial);
+  const replace = useReplace();
+  const canAdd = useCan()("inventory", "add") && availableKinds(resources).length > 0;
+  const [query, setQuery] = useState("");
+  const visible = resources.filter((resource) =>
+    matchesSearch({ texts: [t(`kinds.${resource.kind}`)], phone: "" }, query),
+  );
+  const material = visible.find((resource) => resource.isRefiningMaterial);
+  const others = visible.filter((resource) => !resource.isRefiningMaterial);
 
   return (
     <PageLayout
@@ -194,7 +177,7 @@ export function InventoryProjectScreen() {
       }
       action={
         canAdd ? (
-          <ButtonLink href={inventoryProjectHref(project.id, "resource")} variant="primary">
+          <ButtonLink href={inventoryProjectHref(project.id, true)} variant="primary">
             <Icon name="plus" />
             {t("new")}
           </ButtonLink>
@@ -202,16 +185,30 @@ export function InventoryProjectScreen() {
       }
     >
       {loadStatus === undefined ? (
-        <CardGrid>
-          {material === undefined ? (
-            <MaterialSetUpCard project={project.id} />
+        <>
+          <div className="sm:w-72">
+            <SearchField
+              id="resource-search"
+              label={common("searchIn", { list: t("title") })}
+              placeholder={common("searchList")}
+              autoComplete="off"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </div>
+          {visible.length > 0 ? (
+            <CardGrid>
+              {material === undefined ? null : <ResourceCard resource={material} />}
+              {others.map((resource) => (
+                <ResourceCard key={resource.id} resource={resource} />
+              ))}
+            </CardGrid>
           ) : (
-            <ResourceCard resource={material} />
+            <p className="rounded-card border-line bg-surface text-ink-muted border-[1.5px] p-6 text-[15px] font-semibold">
+              {resources.length === 0 ? t("empty") : common("noMatch")}
+            </p>
           )}
-          {others.map((resource) => (
-            <ResourceCard key={resource.id} resource={resource} />
-          ))}
-        </CardGrid>
+        </>
       ) : (
         <section className="rounded-card border-line bg-surface border-[1.5px]">
           <LoadError status={loadStatus} />
@@ -219,18 +216,16 @@ export function InventoryProjectScreen() {
       )}
 
       <Drawer
-        open={create !== undefined && canAdd}
-        title={create === "material" ? t("material.setUp") : t("form.newTitle")}
+        open={creating && canAdd}
+        title={t("form.newTitle")}
         closeLabel={common("close")}
         onClose={close}
       >
         <ResourceForm
-          key={create ?? "none"}
           project={project}
           existing={resources}
-          initialKind={create === "material" ? "mercury" : undefined}
           onCancel={close}
-          onSaved={close}
+          onSaved={(id) => replace(resourceHref(id))}
         />
       </Drawer>
     </PageLayout>
@@ -255,27 +250,13 @@ export async function resourceLoader({ params, request }: LoaderFunctionArgs) {
     getResource(resourceId),
     getResourceHistory(resourceId, page),
   ]);
-  const found = resource ?? notFound();
-  const refiningOperations =
-    action === "decrease" ? await tryLoad(() => getRefiningOperations(found.project)) : undefined;
-
-  return {
-    resource: found,
-    history,
-    page,
-    action,
-    refiningOperations: refiningOperations?.ok === true ? refiningOperations.data : [],
-  };
+  return { resource: resource ?? notFound(), history, page, action };
 }
 
 function HistoryTable({ changes }: { changes: readonly ResourceChange[] }) {
   const t = useTranslations("inventory");
   const locale = useLocale();
   const quantity = (value: number) => formatQuantity(value, locale);
-
-  if (changes.length === 0) {
-    return <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("historyEmpty")}</p>;
-  }
 
   return (
     <div className="overflow-x-auto">
@@ -287,7 +268,6 @@ function HistoryTable({ changes }: { changes: readonly ResourceChange[] }) {
             <th className={tableEndHeadClasses}>{t("fields.quantity")}</th>
             <th className={tableEndHeadClasses}>{t("fields.quantityBefore")}</th>
             <th className={tableEndHeadClasses}>{t("fields.quantityAfter")}</th>
-            <th className={tableHeadClasses}>{t("fields.shipment")}</th>
             <th className={tableHeadClasses}>{t("fields.note")}</th>
             <th className={tableHeadClasses}>{t("fields.changedBy")}</th>
           </tr>
@@ -299,13 +279,20 @@ function HistoryTable({ changes }: { changes: readonly ResourceChange[] }) {
                 {formatDateTime(change.at, locale)}
               </td>
               <td className={tableCellClasses}>
-                <StatusBadge
-                  label={
-                    change.fromRefining
-                      ? t(`refiningChangeTypes.${change.type}`)
-                      : t(`changeTypes.${change.type}`)
-                  }
-                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge
+                    label={
+                      change.type !== "initial" && change.fromRefining
+                        ? t(`refiningChangeTypes.${change.type}`)
+                        : t(`changeTypes.${change.type}`)
+                    }
+                  />
+                  {change.fromRefining && change.shipmentNumber !== undefined ? (
+                    <span dir="ltr" className="text-ink-muted text-[13px] font-semibold">
+                      {change.shipmentNumber}
+                    </span>
+                  ) : null}
+                </div>
               </td>
               <td className={`${tableCellClasses} text-ink text-end font-bold`}>
                 {quantity(change.quantity)}
@@ -315,9 +302,6 @@ function HistoryTable({ changes }: { changes: readonly ResourceChange[] }) {
               </td>
               <td className={`${tableCellClasses} text-brand-700 text-end font-bold`}>
                 {quantity(change.quantityAfter)}
-              </td>
-              <td className={`${tableCellClasses} text-ink font-semibold`}>
-                {change.shipmentNumber ?? "—"}
               </td>
               <td className={`${tableCellClasses} text-ink-muted max-w-60 font-semibold`}>
                 {change.note === "" ? (
@@ -340,19 +324,14 @@ function HistoryTable({ changes }: { changes: readonly ResourceChange[] }) {
 }
 
 export function ResourceScreen() {
-  const { resource, history, page, action, refiningOperations } =
-    useLoaderData<typeof resourceLoader>();
+  const { resource, history, page, action } = useLoaderData<typeof resourceLoader>();
   const t = useTranslations("inventory");
   const common = useTranslations("common");
   const locale = useLocale();
   const { close } = useRouteDrawer(resourceHref(resource.id, { page }));
-  const can = useCan();
-  const canChange = can("inventory", "add");
-  const canEdit = can("inventory", "edit") && kindOf(resource) === "other";
-  const allowedAction =
-    action === "edit" ? (canEdit ? action : undefined) : canChange ? action : undefined;
-  const { pageCount } = history;
-  const label = resourceLabel(resource, (kind) => t(`kinds.${kind}`));
+  const canChange = useCan()("inventory", "add");
+  const allowedAction = canChange ? action : undefined;
+  const label = t(`kinds.${resource.kind}`);
 
   return (
     <PageLayout
@@ -361,35 +340,24 @@ export function ResourceScreen() {
       title={label}
       description={resource.isRefiningMaterial ? t("material.hint") : undefined}
       action={
-        <>
-          {canChange ? (
-            <>
-              <ButtonLink
-                href={resourceHref(resource.id, { page, action: "increase" })}
-                variant="primary"
-              >
-                <Icon name="plus" />
-                {t("increase")}
-              </ButtonLink>
-              <ButtonLink
-                href={resourceHref(resource.id, { page, action: "decrease" })}
-                variant="secondary"
-              >
-                <Icon name="minus" />
-                {t("decrease")}
-              </ButtonLink>
-            </>
-          ) : null}
-          {canEdit ? (
+        canChange ? (
+          <>
             <ButtonLink
-              href={resourceHref(resource.id, { page, action: "edit" })}
+              href={resourceHref(resource.id, { page, action: "increase" })}
+              variant="primary"
+            >
+              <Icon name="plus" />
+              {t("increase")}
+            </ButtonLink>
+            <ButtonLink
+              href={resourceHref(resource.id, { page, action: "decrease" })}
               variant="secondary"
             >
-              <Icon name="pencil" />
-              {t("edit")}
+              <Icon name="minus" />
+              {t("decrease")}
             </ButtonLink>
-          ) : null}
-        </>
+          </>
+        ) : null
       }
     >
       <section className="rounded-card border-line bg-surface shadow-subtle border-[1.5px] p-6">
@@ -411,43 +379,33 @@ export function ResourceScreen() {
       <TablePanel title={t("historyListTitle")}>
         <HistoryTable changes={history.items} />
 
-        {pageCount > 1 ? (
+        {history.pageCount > 1 ? (
           <Pagination
             summary={common("pageOf", {
               page: formatCount(page, locale),
-              count: formatCount(pageCount, locale),
+              count: formatCount(history.pageCount, locale),
             })}
             previousLabel={common("previousPage")}
             nextLabel={common("nextPage")}
             previousHref={page > 1 ? resourceHref(resource.id, { page: page - 1 }) : undefined}
-            nextHref={page < pageCount ? resourceHref(resource.id, { page: page + 1 }) : undefined}
+            nextHref={
+              page < history.pageCount ? resourceHref(resource.id, { page: page + 1 }) : undefined
+            }
           />
         ) : null}
       </TablePanel>
 
       <Drawer
         open={allowedAction !== undefined}
-        title={
-          allowedAction === undefined || allowedAction === "edit"
-            ? t("form.title")
-            : t(`form.${allowedAction}Title`, { name: label })
-        }
+        title={allowedAction === undefined ? "" : t(`form.${allowedAction}Title`, { name: label })}
         closeLabel={common("close")}
         onClose={close}
       >
-        {allowedAction === "edit" ? (
-          <ResourceForm
-            project={{ id: resource.project, name: resource.projectName }}
-            resource={resource}
-            onCancel={close}
-            onSaved={close}
-          />
-        ) : allowedAction === undefined ? null : (
+        {allowedAction === undefined ? null : (
           <ResourceChangeForm
             key={allowedAction}
             resource={resource}
             type={allowedAction}
-            refiningOperations={refiningOperations}
             onCancel={close}
             onSaved={close}
           />

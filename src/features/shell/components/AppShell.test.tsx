@@ -69,6 +69,13 @@ describe("AppShell", () => {
     expect(screen.getByText(messages.roles.supervisor)).toBeInTheDocument();
   });
 
+  it("shows the company logo and no search of its own", () => {
+    renderShell();
+
+    expect(screen.getByRole("img", { name: messages.common.companyName })).toBeInTheDocument();
+    expect(screen.queryByRole("searchbox")).toBeNull();
+  });
+
   it("marks the current section and moves to another one", async () => {
     const user = userEvent.setup();
     renderShell();
