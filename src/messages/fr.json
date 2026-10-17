@@ -394,9 +394,20 @@
         "phone": "Téléphone",
         "arrivedAt": "Date d'arrivée",
         "bags": "Sacs",
-        "status": "Statut",
         "notes": "Notes"
       }
+    },
+    "payment": {
+      "column": "Statut du paiement",
+      "complete": "Complet",
+      "incomplete": "Incomplet"
+    },
+    "invoice": {
+      "column": "Facture",
+      "open": "Facture de l'expédition {number} (PDF)",
+      "languages": "Langue de la facture de l'expédition {number}",
+      "ar": "Arabe",
+      "fr": "Français"
     }
   },
   "milling": {

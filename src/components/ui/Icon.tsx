@@ -12,6 +12,7 @@ import CircleCheckIcon from "@/icons/circle-check.svg?react";
 import ClockIcon from "@/icons/clock.svg?react";
 import EyeIcon from "@/icons/eye.svg?react";
 import EyeOffIcon from "@/icons/eye-off.svg?react";
+import FileTypePdfIcon from "@/icons/file-type-pdf.svg?react";
 import FlagFrIcon from "@/icons/flag-fr.svg?react";
 import FlagMrIcon from "@/icons/flag-mr.svg?react";
 import FlameIcon from "@/icons/flame.svg?react";
@@ -58,6 +59,7 @@ const glyphs = {
   clock: ClockIcon,
   eye: EyeIcon,
   "eye-off": EyeOffIcon,
+  "file-type-pdf": FileTypePdfIcon,
   "flag-fr": FlagFrIcon,
   "flag-mr": FlagMrIcon,
   flame: FlameIcon,

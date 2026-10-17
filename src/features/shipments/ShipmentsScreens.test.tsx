@@ -26,6 +26,8 @@ function record(shipmentNumber: string, customerName: string, arrivedAt: string)
     status: "completed",
     source: "Chami",
     notes: "",
+    transportTotal: 0,
+    paid: 0,
   };
 }
 
@@ -81,6 +83,25 @@ describe("ShipmentHistory", () => {
 
     expect(screen.getByLabelText(messages.common.search)).toHaveValue("");
     expect(shownShipments()).toHaveLength(records.length);
+  });
+
+  it("shows whether each shipment is fully paid", () => {
+    render(
+      <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
+        <ShipmentHistory
+          records={[
+            { ...record("SH-1", "Ahmed", "2026-09-08T09:30:00Z"), transportTotal: 500, paid: 200 },
+            { ...record("SH-2", "Sidi", "2026-09-09T09:30:00Z"), transportTotal: 500, paid: 500 },
+          ]}
+        />
+      </IntlProvider>,
+    );
+
+    const [, paid, unpaid] = screen.getAllByRole("row");
+    expect(paid).toHaveTextContent("SH-2");
+    expect(paid).toHaveTextContent(messages.shipments.payment.complete);
+    expect(unpaid).toHaveTextContent("SH-1");
+    expect(unpaid).toHaveTextContent(messages.shipments.payment.incomplete);
   });
 
   it("says so when nothing matches", async () => {
@@ -242,9 +263,40 @@ describe("ProjectStorageScreen", () => {
     expect(started).toHaveTextContent("8,5 sur 10");
     expect(started).toHaveTextContent(messages.shipments.statuses.grinding);
     expect(screen.queryByText("SH-3")).toBeNull();
+    expect(waiting).toHaveTextContent(messages.shipments.payment.incomplete);
     expect(
       screen.getByRole("link", { name: `${messages.shipments.project.startMilling} SH-1` }),
     ).toHaveAttribute("href", "/fr/shipments/projects/3?grind=SH-1");
+  });
+
+  it("asks the invoice language from the PDF button and says so when the download fails", async () => {
+    answerProject();
+    let asked: string | null = null;
+    server.use(
+      http.get(`${API}/shipments/1/invoice/`, ({ request }) => {
+        asked = new URL(request.url).searchParams.get("lang");
+        return HttpResponse.json({ detail: "error" }, { status: 500 });
+      }),
+    );
+    const user = userEvent.setup();
+    openProject("/fr/shipments/projects/3");
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: messages.shipments.invoice.open.replace("{number}", "SH-1"),
+      }),
+    );
+    const languages = within(
+      screen.getByRole("group", {
+        name: messages.shipments.invoice.languages.replace("{number}", "SH-1"),
+      }),
+    );
+    await user.click(languages.getByRole("button", { name: messages.shipments.invoice.ar }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      messages.shipments.form.saved.failed,
+    );
+    expect(asked).toBe("ar");
   });
 
   it("starts grinding from the shipments page and goes to the grinding page", async () => {

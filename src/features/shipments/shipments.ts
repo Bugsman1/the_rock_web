@@ -156,6 +156,16 @@ export function remainingToPay(total: number, payment: number): number {
   return Math.max(0, total - amountOrZero(payment));
 }
 
+const MONEY_CENTS = 100;
+
+export function amountLeftToPay(record: ShipmentRecord): number {
+  return Math.round(remainingToPay(record.transportTotal, record.paid) * MONEY_CENTS) / MONEY_CENTS;
+}
+
+export function completedShipments(records: readonly ShipmentRecord[]): readonly ShipmentRecord[] {
+  return records.filter((record) => record.status === "completed");
+}
+
 const NOTES_MAX_LENGTH = 1000;
 
 type ValidationMessages = {

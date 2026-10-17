@@ -394,9 +394,20 @@
         "phone": "الهاتف",
         "arrivedAt": "تاريخ الوصول",
         "bags": "الأكياس",
-        "status": "الحالة",
         "notes": "ملاحظات"
       }
+    },
+    "payment": {
+      "column": "حالة الدفع",
+      "complete": "مكتمل",
+      "incomplete": "غير مكتمل"
+    },
+    "invoice": {
+      "column": "الفاتورة",
+      "open": "فاتورة الشحنة {number} (PDF)",
+      "languages": "لغة فاتورة الشحنة {number}",
+      "ar": "عربية",
+      "fr": "فرنسية"
     }
   },
   "milling": {

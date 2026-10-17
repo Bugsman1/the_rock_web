@@ -32,14 +32,6 @@ type ShipmentMillingStatus = "pending" | "partiallyMilled" | "milled";
 
 export type MachineCounts = Record<MachineStatus, number> & { total: number };
 
-export function byMachineStatus<T>(value: (status: MachineStatus) => T): Record<MachineStatus, T> {
-  return {
-    running: value("running"),
-    idle: value("idle"),
-    maintenance: value("maintenance"),
-  };
-}
-
 export function findMachine(
   machines: readonly Machine[],
   project: ProjectId,
@@ -177,10 +169,6 @@ const BACKLOG_BAGS = 50;
 
 export function isBacklogged(bagsWaiting: number): boolean {
   return bagsWaiting >= BACKLOG_BAGS;
-}
-
-export function runningShare(machines: MachineCounts): number {
-  return machines.total === 0 ? 0 : Math.round((machines.running / machines.total) * 100);
 }
 
 export function combineSummaries(summaries: readonly MillingSummary[]): MillingSummary {

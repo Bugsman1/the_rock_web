@@ -186,7 +186,7 @@ Others: `ActionLink`, `Button`, `buttonClasses` (primary, secondary, danger), `B
 | `customers` | `CustomersScreen.tsx`                                                                                                                                                                                                                                                                                                                                                                                               | Search after 350 ms, pagination, add / edit drawer                                                    |
 | `users`     | `users.ts` (user and role schemas, mapping, `roleToApi`), `usersApi.ts` (users, roles), `UsersScreen.tsx`, `RolesScreen.tsx`                                                                                                                                                                                                                                                                                        | Password optional when editing; project only for a project-scoped role; built-in role names read-only |
 | `settings`  | `SettingsScreens.tsx` (home with search, profile, language), `ProjectScreens.tsx` (projects, machines, forms)                                                                                                                                                                                                                                                                                                       | Machine number must be free in its project                                                            |
-| `shipments` | `shipments.ts` (storage = shipments `pending` or in `grinding` with bags left, `remainingBags`, history filter, transport cost, schema, mapping), `shipmentsApi.ts` (create: finds or creates the client by phone, returns the new id; `getInvoice`: the transport invoice PDF and its file name), `ShipmentsScreens.tsx` (overview, project list with the start-grinding drawer, history), `NewShipmentScreen.tsx` | Starting grinding goes to the project's grinding page                                                 |
+| `shipments` | `shipments.ts` (storage = shipments `pending` or in `grinding` with bags left, `remainingBags`, history filter, `completedShipments`, transport cost, `amountLeftToPay`, schema, mapping), `shipmentsApi.ts` (create: finds or creates the client by phone, returns the new id; `getInvoice`: the transport invoice PDF and its file name), `ShipmentsScreens.tsx` (overview, project list with the start-grinding drawer, history), `NewShipmentScreen.tsx` (with `useInvoiceDownload`) | Starting grinding goes to the project's grinding page                                                 |
 | `milling`   | `milling.ts` (queue, summaries, `shipmentStatusFor`, end schema), `millingApi.ts` (data, end, `markMercuryAdded`), `MillingScreens.tsx` (overview, project, machine), `MillingForms.tsx` (end, `MercuryStatus`)                                                                                                                                                                                                     | See below                                                                                             |
 
 | `refining` | `refining.ts` (`refiningQueue`, `refiningLoss`, schema, mapping, field errors), `refiningApi.ts` (`getRefiningData`, create), `RefiningScreen.tsx` (queue, operations table, drawer), `RefiningForm.tsx` | Every API field is in the form and the table |
@@ -200,11 +200,11 @@ and each machine's history, the Refining queue and refinings (each with its own 
 roles, a project's machines in Settings, and a project's resources in Inventory. Queue positions
 stay those of the full queue.
 
-**Grinding overview:** one flow card replaces the four figures: bags waiting → grinding → ground
-today (a numbered step is filled once its stage has bags; from 50 bags waiting, `isBacklogged`, a
-"backlog" pill replaces "bags"), and beside it (below on a phone) the machines running out of all
-with a bar (`runningShare`). The figures follow the site tab. The stages are not links yet (no bags
-list page).
+**Grinding overview:** four separate cards (`KpiTile`): bags waiting, bags grinding, bags ground
+today and machines running out of all. From 50 bags waiting (`isBacklogged`) the waiting card says
+"backlog" instead of "bags". The figures follow the site tab and are not links yet (no bags list
+page). Project cards show the machines running out of all, the bags grinding and the waiting
+shipments, with no per-status bar.
 
 **New shipment payment and invoice:** the transport cost section ends with "current payment"
 (`current_payment`, optional: empty is 0, never above the transport total) and "remaining to pay"
@@ -214,13 +214,21 @@ shipment its invoice number) and the way back to the shipments. The file is save
 the backend gives it, its invoice number (`invoiceFileName` reads `Content-Disposition`), and only
 without that header as `facture-expedition-<id>-<language>.pdf`.
 
+**Payment and invoice in the lists:** the project's Shipments list and its history have a payment
+status column ("complete" in green when `amountLeftToPay` is 0, otherwise "incomplete" in orange;
+`amountLeftToPay` = transport total less `current_payment`, rounded to the cent; the total is
+computed from the bags and passengers costs, as the backend does, because the API does not send it)
+and an invoice column: a PDF button that shows the language choice (Arabic, French) in place, then
+downloads (`useInvoiceDownload`, shared with the new-shipment panel), so the invoice can be
+downloaded at any time. The Shipments project page uses the full width.
+
 **Workflow:** a new shipment is `pending` and listed on its project's Shipments page with "start
 grinding", which opens the grinding form there and then goes to the project's Grinding page. Like
 the Grinding queue, that list (and the project cards' bag counts) holds the shipments still waiting
 (`pending`) or in `grinding` that have bags not on a machine, each with "bags left of total" and its
 status, until all its bags are on machines or ground. Each finished
 grinding operation then waits on the Refining page until it is refined. Shipments history lists
-every shipment.
+only the `completed` shipments (`completedShipments`), with no status column.
 
 **Grinding API (`/api/v1/grinding-operations/`):** responses carry no shipment, grinder, project or
 operator id; the project and machine come from `grinder_code` and the shipment from

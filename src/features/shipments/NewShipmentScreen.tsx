@@ -43,7 +43,7 @@ import {
 import type { NewShipmentValues } from "./shipments";
 import { createShipment, getInvoice } from "./shipmentsApi";
 
-function SavedShipment({ shipmentId }: { shipmentId: string }) {
+export function useInvoiceDownload(shipmentId: string) {
   const t = useTranslations("shipments.form.saved");
   const [downloading, setDownloading] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -68,6 +68,13 @@ function SavedShipment({ shipmentId }: { shipmentId: string }) {
     link.click();
     URL.revokeObjectURL(url);
   }
+
+  return { downloading, failed, download };
+}
+
+function SavedShipment({ shipmentId }: { shipmentId: string }) {
+  const t = useTranslations("shipments.form.saved");
+  const { downloading, failed, download } = useInvoiceDownload(shipmentId);
 
   return (
     <div className="flex flex-col gap-5">

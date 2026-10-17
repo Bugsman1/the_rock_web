@@ -191,14 +191,14 @@ describe("milling screens", () => {
     openAt("/fr/milling");
 
     const flow = within(await screen.findByRole("region", { name: text.flow.title }));
-    const stages = flow.getAllByRole("listitem").map((stage) => stage.textContent);
+    const cards = flow.getAllByRole("term").map((card) => card.parentElement?.textContent);
 
-    expect(stages).toEqual([
+    expect(cards).toEqual([
       `${text.flow.waiting}11${text.flow.bags}`,
       `${text.flow.milling}2${text.flow.bags}`,
       `${text.flow.milledToday}0${text.flow.bags}`,
+      `${text.kpis.machinesRunning}1sur 3`,
     ]);
-    expect(flow.getByText(text.kpis.machinesRunning)).toBeVisible();
     expect(flow.getByText("sur 3")).toBeVisible();
   });
 

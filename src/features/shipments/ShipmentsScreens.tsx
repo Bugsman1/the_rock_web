@@ -21,8 +21,10 @@ import {
   tableRowClasses,
 } from "@/components/ui/TablePanel";
 import { TextField } from "@/components/ui/TextField";
+import { locales } from "@/i18n/locales";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
+import { cn } from "@/lib/cn";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { formatCount, formatDateTime } from "@/lib/format";
 import { idleMachines, machinesFromGrinders } from "@/lib/grinding";
@@ -43,9 +45,11 @@ import { getShipments } from "@/lib/shipmentsApi";
 import { matchesSearch } from "@/lib/search";
 import { getOperators } from "@/lib/users";
 import {
+  amountLeftToPay,
   bagCount,
   bagShare,
   clientBags,
+  completedShipments,
   emptyHistoryFilter,
   filterShipments,
   isFilterActive,
@@ -55,6 +59,7 @@ import {
   topClientsByBags,
 } from "./shipments";
 import type { HistoryFilter, StoredShipment } from "./shipments";
+import { useInvoiceDownload } from "./NewShipmentScreen";
 
 export async function shipmentsLoader() {
   const [projects, shipments, operations] = await Promise.all([
@@ -209,7 +214,10 @@ function StorageHeader({ title, stats, backHref, action }: StorageHeaderProps) {
 export async function projectShipmentsLoader({ params }: LoaderFunctionArgs) {
   const project = await requireProject(params.project ?? "");
 
-  return { project, shipments: shipmentsOfProject(await getShipments(project.id), project.id) };
+  return {
+    project,
+    shipments: completedShipments(shipmentsOfProject(await getShipments(project.id), project.id)),
+  };
 }
 
 async function getGrindingChoices(project: string, operations: readonly MillingOperation[]) {
@@ -242,6 +250,88 @@ export async function projectStorageLoader({ params, request }: LoaderFunctionAr
   };
 }
 
+const pillClasses =
+  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] font-bold";
+
+function PaymentStatus({ shipment }: { shipment: ShipmentRecord }) {
+  const t = useTranslations("shipments.payment");
+
+  return amountLeftToPay(shipment) === 0 ? (
+    <span className={`${pillClasses} border-success-300 bg-success-50 text-success-700`}>
+      <Icon name="circle-check" className="h-4 w-4" />
+      {t("complete")}
+    </span>
+  ) : (
+    <span className={`${pillClasses} border-warning-300 bg-warning-50 text-warning-700`}>
+      {t("incomplete")}
+    </span>
+  );
+}
+
+const invoiceButtonClasses =
+  "rounded-action text-brand-700 hover:bg-surface-hover inline-flex h-9 cursor-pointer items-center justify-center text-[14px] font-bold";
+
+function InvoiceDownload({ shipment }: { shipment: ShipmentRecord }) {
+  const t = useTranslations("shipments.invoice");
+  const saved = useTranslations("shipments.form.saved");
+  const common = useTranslations("common");
+  const [choosing, setChoosing] = useState(false);
+  const { downloading, failed, download } = useInvoiceDownload(shipment.id);
+
+  if (downloading) {
+    return <span className="text-ink-muted text-[13px] font-semibold">{saved("downloading")}</span>;
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      {choosing ? (
+        <div
+          role="group"
+          aria-label={t("languages", { number: shipment.shipmentNumber })}
+          className="flex items-center gap-1"
+        >
+          {locales.map((language) => (
+            <button
+              key={language}
+              type="button"
+              onClick={() => {
+                setChoosing(false);
+                void download(language);
+              }}
+              className={`${invoiceButtonClasses} border-line border-[1.5px] px-2.5`}
+            >
+              {t(language)}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setChoosing(false)}
+            aria-label={common("close")}
+            className={`${invoiceButtonClasses} text-ink-muted size-9`}
+          >
+            <Icon name="x" className="h-4 w-4" />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setChoosing(true)}
+          aria-label={t("open", { number: shipment.shipmentNumber })}
+          title={t("open", { number: shipment.shipmentNumber })}
+          className={`${invoiceButtonClasses} text-danger-700 size-11`}
+        >
+          <Icon name="file-type-pdf" className="h-8 w-8" />
+        </button>
+      )}
+      {failed ? (
+        <p role="alert" className="text-danger-700 text-[12px] font-semibold">
+          {saved("failed")}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function ClientQueueTable({
   project,
   shipments,
@@ -253,6 +343,8 @@ function ClientQueueTable({
 }) {
   const t = useTranslations("shipments");
   const text = useTranslations("shipments.project");
+  const payment = useTranslations("shipments.payment");
+  const invoice = useTranslations("shipments.invoice");
   const common = useTranslations("common");
   const locale = useLocale();
   const canStart = useCan()("grinding", "add");
@@ -283,7 +375,9 @@ function ClientQueueTable({
             <th className={tableHeadClasses}>{text("client")}</th>
             <th className={tableHeadClasses}>{text("arrivedAt")}</th>
             <th className={tableEndHeadClasses}>{text("remaining")}</th>
-            <th className={tableHeadClasses}>{text("status")}</th>
+            <th className={cn(tableHeadClasses, "ps-10")}>{text("status")}</th>
+            <th className={tableHeadClasses}>{payment("column")}</th>
+            <th className={tableHeadClasses}>{invoice("column")}</th>
             {canStart ? (
               <th className={tableHeadClasses}>
                 <span className="sr-only">{text("action")}</span>
@@ -313,8 +407,14 @@ function ClientQueueTable({
                   total: formatCount(shipment.bagCount, locale),
                 })}
               </td>
-              <td className={tableCellClasses}>
+              <td className={cn(tableCellClasses, "ps-10")}>
                 <StatusBadge label={t(`statuses.${shipment.status}`)} />
+              </td>
+              <td className={tableCellClasses}>
+                <PaymentStatus shipment={shipment} />
+              </td>
+              <td className={tableCellClasses}>
+                <InvoiceDownload shipment={shipment} />
               </td>
               {canStart ? (
                 <td className={`${tableCellClasses} text-end`}>
@@ -392,7 +492,7 @@ export function ProjectStorageScreen() {
   const [query, setQuery] = useState("");
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       <StorageHeader
         title={project.name}
         backHref={SHIPMENTS_HREF}
@@ -431,8 +531,9 @@ export function ProjectStorageScreen() {
 
 export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[] }) {
   const t = useTranslations("shipments.history");
+  const payment = useTranslations("shipments.payment");
+  const invoice = useTranslations("shipments.invoice");
   const common = useTranslations("common");
-  const statuses = useTranslations("shipments.statuses");
   const locale = useLocale();
   const [filter, setFilter] = useState<HistoryFilter>(emptyHistoryFilter);
   const results = filterShipments(records, filter);
@@ -502,7 +603,8 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
                 <th className={tableHeadClasses}>{t("columns.phone")}</th>
                 <th className={tableHeadClasses}>{t("columns.arrivedAt")}</th>
                 <th className={tableEndHeadClasses}>{t("columns.bags")}</th>
-                <th className={tableHeadClasses}>{t("columns.status")}</th>
+                <th className={tableHeadClasses}>{payment("column")}</th>
+                <th className={tableHeadClasses}>{invoice("column")}</th>
                 <th className={tableHeadClasses}>{t("columns.notes")}</th>
               </tr>
             </thead>
@@ -525,7 +627,10 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
                     {formatCount(record.bagCount, locale)}
                   </td>
                   <td className={tableCellClasses}>
-                    <StatusBadge label={statuses(record.status)} />
+                    <PaymentStatus shipment={record} />
+                  </td>
+                  <td className={tableCellClasses}>
+                    <InvoiceDownload shipment={record} />
                   </td>
                   <td className={`${tableCellClasses} text-ink-muted max-w-64 font-semibold`}>
                     <p dir="auto" className="line-clamp-2 break-words" title={record.notes}>

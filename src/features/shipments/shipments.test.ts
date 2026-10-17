@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { MillingOperation } from "@/lib/grinding";
 import type { ShipmentRecord } from "@/lib/shipments";
 import {
+  amountLeftToPay,
+  completedShipments,
   bagCount,
   bagShare,
   bagsCost,
@@ -39,6 +41,8 @@ describe("storage", () => {
       status: "pending",
       source: "Chami",
       notes: "",
+      transportTotal: 0,
+      paid: 0,
       ...overrides,
     };
   }
@@ -219,6 +223,8 @@ describe("history", () => {
       status: "completed",
       source: "Chami",
       notes: "",
+      transportTotal: 0,
+      paid: 0,
     };
   }
 
@@ -456,5 +462,38 @@ describe("invoiceFileName", () => {
   it("gives nothing when the backend sends no file name", () => {
     expect(invoiceFileName(null)).toBeUndefined();
     expect(invoiceFileName("attachment")).toBeUndefined();
+  });
+});
+
+describe("payment and history", () => {
+  const base: ShipmentRecord = {
+    id: "1",
+    shipmentNumber: "SH-1",
+    customerName: "a",
+    phone: "+222 22 33 44 55",
+    arrivedAt: "2026-10-01T00:00:00Z",
+    bagCount: 10,
+    project: "3",
+    status: "completed",
+    source: "Chami",
+    notes: "",
+    transportTotal: 1000,
+    paid: 400,
+  };
+
+  it("gives what is left to pay on a shipment, rounded to the cent", () => {
+    expect(amountLeftToPay(base)).toBe(600);
+    expect(amountLeftToPay({ ...base, transportTotal: 0.3, paid: 0.1 + 0.2 })).toBe(0);
+    expect(amountLeftToPay({ ...base, paid: 1200 })).toBe(0);
+  });
+
+  it("keeps only the completed shipments", () => {
+    const records: ShipmentRecord[] = [
+      base,
+      { ...base, id: "2", status: "pending" },
+      { ...base, id: "3", status: "grinding" },
+    ];
+
+    expect(completedShipments(records).map((record) => record.id)).toEqual(["1"]);
   });
 });

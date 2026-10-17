@@ -5,11 +5,10 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { ButtonLink } from "@/components/ui/ButtonLink";
-import { CardGrid, DetailList, LinkCard, StatGrid } from "@/components/ui/Cards";
+import { CardGrid, DetailList, KpiTile, LinkCard, StatGrid } from "@/components/ui/Cards";
 import { NewOperationForm } from "@/components/grinding/NewOperationForm";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
-import type { IconName } from "@/components/ui/Icon";
 import { BackLink, PageTitle } from "@/components/ui/PageHeader";
 import {
   StatusBadge,
@@ -47,7 +46,6 @@ import {
 } from "@/lib/grinding";
 import type { MachineStatus, MillingOperation } from "@/lib/grinding";
 import {
-  byMachineStatus,
   combineSummaries,
   countMachines,
   findMachine,
@@ -56,18 +54,17 @@ import {
   operationHistory,
   projectsForSite,
   projectSummary,
-  runningShare,
   shipmentMillingStatus,
   shipmentStatusFor,
 } from "./milling";
-import type { MachineCounts, MachineStatusFilter, MillingSummary, SiteFilter } from "./milling";
+import type { MachineStatusFilter, MillingSummary, SiteFilter } from "./milling";
 import { getMillingData } from "./millingApi";
 import { EndMillingAction, MercuryStatus } from "./MillingForms";
 
-const machineStatusStyles: Record<MachineStatus, { icon: IconName; dot: string; text: string }> = {
-  running: { icon: "player-play", dot: "bg-success-700", text: "text-success-700" },
-  idle: { icon: "circle", dot: "bg-neutral-400", text: "text-ink-muted" },
-  maintenance: { icon: "tool", dot: "bg-warning-700", text: "text-warning-700" },
+const machineStatusDots: Record<MachineStatus, string> = {
+  running: "bg-success-700",
+  idle: "bg-neutral-400",
+  maintenance: "bg-warning-700",
 };
 
 function MachineStatusLabel({
@@ -86,149 +83,43 @@ function MachineStatusLabel({
         badge && "border-line bg-surface rounded-full border-[1.5px] px-3 py-1",
       )}
     >
-      <span
-        aria-hidden
-        className={cn("size-2 shrink-0 rounded-full", machineStatusStyles[status].dot)}
-      />
+      <span aria-hidden className={cn("size-2 shrink-0 rounded-full", machineStatusDots[status])} />
       {label}
     </span>
   );
 }
 
-function MachineStatusBar({ counts }: { counts: MachineCounts }) {
-  const t = useTranslations("milling");
-  const locale = useLocale();
-  const labels = byMachineStatus((status) => t(`statuses.${status}`));
-  const values = byMachineStatus((status) => formatCount(counts[status], locale));
-  const summary = machineStatuses
-    .map((status) => `${labels[status]} ${values[status]}`)
-    .join(" · ");
-
-  return (
-    <div className="flex flex-col gap-2.5">
-      <div role="img" aria-label={summary} className="flex h-2.5 w-full gap-0.5">
-        {machineStatuses.map((status) =>
-          counts[status] === 0 ? null : (
-            <span
-              key={status}
-              title={`${labels[status]} ${values[status]}`}
-              style={{ width: `${(counts[status] / Math.max(1, counts.total)) * 100}%` }}
-              className={cn("h-full rounded-full", machineStatusStyles[status].dot)}
-            />
-          ),
-        )}
-      </div>
-
-      <ul aria-hidden className="flex flex-wrap gap-x-4 gap-y-1">
-        {machineStatuses.map((status) => (
-          <li key={status} className="flex items-center gap-1.5 text-[13px]">
-            <Icon
-              name={machineStatusStyles[status].icon}
-              className={cn("h-4 w-4", machineStatusStyles[status].text)}
-            />
-            <span className="text-ink-muted font-semibold">{labels[status]}</span>
-            <span className="text-ink font-bold">{values[status]}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-const flowStages = ["waiting", "milling", "milledToday"] as const;
-
-type FlowStage = (typeof flowStages)[number];
-
-function FlowStageCaption({ backlog }: { backlog: boolean }) {
-  const t = useTranslations("milling");
-
-  return backlog ? (
-    <span className="bg-brand-700/10 text-brand-700 rounded-full px-2.5 py-0.5 text-[12px] font-bold">
-      {t("flow.backlog")}
-    </span>
-  ) : (
-    <span className="text-ink-muted text-[12px] font-semibold">{t("flow.bags")}</span>
-  );
-}
-
-function FlowStrip({ summary }: { summary: MillingSummary }) {
+function FlowCards({ summary }: { summary: MillingSummary }) {
   const t = useTranslations("milling");
   const locale = useLocale();
   const count = (value: number) => formatCount(value, locale);
-  const bags: Record<FlowStage, number> = {
-    waiting: summary.bagsWaiting,
-    milling: summary.bagsMilling,
-    milledToday: summary.bagsMilledToday,
-  };
-  const share = runningShare(summary.machines);
 
   return (
-    <section
-      aria-label={t("flow.title")}
-      className="rounded-card border-line bg-surface shadow-subtle flex flex-col border-[1.5px] lg:flex-row"
-    >
-      <div className="flex min-w-0 flex-1 flex-col gap-4 p-6">
-        <div aria-hidden className="relative grid grid-cols-3">
-          <span className="bg-line absolute inset-x-[16.667%] top-3 h-px" />
-          {flowStages.map((stage, index) => (
-            <span key={stage} className="relative flex justify-center">
-              <span
-                className={cn(
-                  "inline-flex size-6 items-center justify-center rounded-full text-[12px] font-bold",
-                  bags[stage] > 0
-                    ? "bg-brand-700 text-ink-inverted"
-                    : "border-line-strong bg-surface text-ink-faint border",
-                )}
-              >
-                {count(index + 1)}
-              </span>
-            </span>
-          ))}
-        </div>
-
-        <ol className="grid grid-cols-3">
-          {flowStages.map((stage, index) => (
-            <li
-              key={stage}
-              className={cn(
-                "flex flex-col items-center gap-1 px-2 text-center",
-                index > 0 && "border-line-subtle border-s",
-              )}
-            >
-              <span className="text-ink-muted text-[13px] font-semibold">{t(`flow.${stage}`)}</span>
-              <span className="text-brand-700 text-[28px] leading-tight font-bold">
-                {count(bags[stage])}
-              </span>
-              <FlowStageCaption backlog={stage === "waiting" && isBacklogged(bags[stage])} />
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      <div className="border-line flex items-center gap-4 border-t p-6 lg:w-72 lg:border-s lg:border-t-0">
-        <span className="bg-line-subtle text-brand-700 inline-flex size-11 shrink-0 items-center justify-center rounded-full">
-          <Icon name="player-play" />
-        </span>
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <span className="text-ink-muted text-[13px] font-semibold">
-            {t("kpis.machinesRunning")}
-          </span>
-          <p className="flex flex-wrap items-baseline gap-x-1.5">
-            <span className="text-brand-700 text-[28px] leading-tight font-bold">
-              {count(summary.machines.running)}
-            </span>
-            <span className="text-ink-muted text-[15px] font-semibold">
-              {t("outOf", { total: count(summary.machines.total) })}
-            </span>
-          </p>
-          <span aria-hidden className="bg-line-subtle block h-1 w-full rounded-full">
-            <span
-              style={{ width: `${share}%` }}
-              className="bg-brand-700 block h-full rounded-full"
-            />
-          </span>
-        </div>
-      </div>
+    <section aria-label={t("flow.title")} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <KpiTile
+        icon="clock"
+        label={t("flow.waiting")}
+        value={count(summary.bagsWaiting)}
+        detail={isBacklogged(summary.bagsWaiting) ? t("flow.backlog") : t("flow.bags")}
+      />
+      <KpiTile
+        icon="mill"
+        label={t("flow.milling")}
+        value={count(summary.bagsMilling)}
+        detail={t("flow.bags")}
+      />
+      <KpiTile
+        icon="circle-check"
+        label={t("flow.milledToday")}
+        value={count(summary.bagsMilledToday)}
+        detail={t("flow.bags")}
+      />
+      <KpiTile
+        icon="player-play"
+        label={t("kpis.machinesRunning")}
+        value={count(summary.machines.running)}
+        detail={t("outOf", { total: count(summary.machines.total) })}
+      />
     </section>
   );
 }
@@ -296,7 +187,7 @@ export function MillingScreen() {
         <SiteFilterNav current={site} sites={sites} />
       </div>
 
-      <FlowStrip summary={total} />
+      <FlowCards summary={total} />
 
       <CardGrid>
         {summaries.map(({ project, summary }) => (
@@ -306,20 +197,17 @@ export function MillingScreen() {
             href={millingProjectHref(project.id)}
             linkLabel={common("openProject")}
           >
-            <div className="flex flex-col gap-3">
-              <p className="flex flex-wrap items-baseline gap-x-2">
-                <span className="text-brand-700 text-[28px] leading-tight font-bold">
-                  {count(summary.machines.running)}
-                </span>
-                <span className="text-ink-muted text-[15px] font-semibold">
-                  {t("outOf", { total: count(summary.machines.total) })}
-                </span>
-                <span className="text-ink text-[15px] font-semibold">
-                  {t("project.machinesRunning")}
-                </span>
-              </p>
-              <MachineStatusBar counts={summary.machines} />
-            </div>
+            <p className="flex flex-wrap items-baseline gap-x-2">
+              <span className="text-brand-700 text-[28px] leading-tight font-bold">
+                {count(summary.machines.running)}
+              </span>
+              <span className="text-ink-muted text-[15px] font-semibold">
+                {t("outOf", { total: count(summary.machines.total) })}
+              </span>
+              <span className="text-ink text-[15px] font-semibold">
+                {t("project.machinesRunning")}
+              </span>
+            </p>
 
             <StatGrid
               divided

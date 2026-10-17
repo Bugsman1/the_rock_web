@@ -4,7 +4,6 @@ import type { Project } from "@/lib/projects";
 import type { ShipmentRecord } from "@/lib/shipments";
 import {
   bagsMilledOn,
-  byMachineStatus,
   combineSummaries,
   findMachine,
   isBacklogged,
@@ -13,7 +12,6 @@ import {
   operationHistory,
   projectsForSite,
   projectSummary,
-  runningShare,
   shipmentMillingStatus,
   shipmentStatusFor,
 } from "./milling";
@@ -47,14 +45,6 @@ const shipment: MillingShipment = {
 };
 
 describe("machines", () => {
-  it("builds one value per machine status", () => {
-    expect(byMachineStatus((status) => status.length)).toEqual({
-      running: 7,
-      idle: 4,
-      maintenance: 11,
-    });
-  });
-
   it("finds a machine of a project by number", () => {
     const machine: Machine = { grinderId: "g1", project: "4", number: 1, inMaintenance: false };
 
@@ -146,6 +136,8 @@ describe("shipments in grinding", () => {
       status: "grinding",
       source: "Chami",
       notes: "",
+      transportTotal: 0,
+      paid: 0,
     };
 
     expect(
@@ -223,10 +215,5 @@ describe("milling flow", () => {
   it("calls the waiting bags a backlog from 50 bags", () => {
     expect(isBacklogged(49)).toBe(false);
     expect(isBacklogged(50)).toBe(true);
-  });
-
-  it("gives the share of machines running, as a whole percentage", () => {
-    expect(runningShare({ running: 1, idle: 1, maintenance: 1, total: 3 })).toBe(33);
-    expect(runningShare({ running: 0, idle: 0, maintenance: 0, total: 0 })).toBe(0);
   });
 });
