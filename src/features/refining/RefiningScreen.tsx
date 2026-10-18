@@ -107,7 +107,7 @@ function RefiningQueueTable({
                 <span dir="ltr">{grinderCode(operation.project, operation.machine)}</span>
               </td>
               <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                {formatCount(operation.bagsMilled ?? operation.bags, locale)}
+                {formatCount(operation.bags, locale)}
               </td>
               <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
                 {operation.endedAt === undefined ? "—" : formatDateTime(operation.endedAt, locale)}

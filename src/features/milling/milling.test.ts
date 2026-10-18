@@ -28,7 +28,6 @@ function operation(overrides: Partial<MillingOperation>): MillingOperation {
     operatorName: "Aicha",
     startedAt: "2026-10-08T06:00:00.000Z",
     estimatedEndAt: "2026-10-08T12:00:00.000Z",
-    cost: 0,
     notes: "",
     ...overrides,
   };
@@ -80,8 +79,8 @@ describe("operations", () => {
   it("counts the bags finished on a given day", () => {
     const operations = [
       operation({ bags: 2 }),
-      operation({ bags: 2, endedAt: "2026-10-08T05:00:00.000Z", bagsMilled: 1 }),
-      operation({ bags: 2, endedAt: "2026-10-07T23:00:00.000Z", bagsMilled: 2 }),
+      operation({ bags: 1, endedAt: "2026-10-08T05:00:00.000Z" }),
+      operation({ bags: 2, endedAt: "2026-10-07T23:00:00.000Z" }),
     ];
 
     expect(bagsMilledOn(operations, "2026-10-08T15:00:00.000Z")).toBe(1);
@@ -91,9 +90,9 @@ describe("operations", () => {
 describe("shipments in grinding", () => {
   it("moves from partially ground to ground once every bag is done", () => {
     const first = operation({ id: "a", bags: 4 });
-    const firstEnded = { ...first, endedAt: "2026-10-08T18:00:00.000Z", bagsMilled: 4 };
+    const firstEnded = { ...first, endedAt: "2026-10-08T18:00:00.000Z" };
     const second = operation({ id: "b", machine: 2, bags: 2 });
-    const secondEnded = { ...second, endedAt: "2026-10-08T18:00:00.000Z", bagsMilled: 2 };
+    const secondEnded = { ...second, endedAt: "2026-10-08T18:00:00.000Z" };
 
     expect(shipmentMillingStatus(shipment, [])).toBe("pending");
     expect(shipmentMillingStatus(shipment, [first])).toBe("partiallyMilled");
@@ -102,10 +101,10 @@ describe("shipments in grinding", () => {
   });
 
   it("completes a shipment once all its bags are ground, otherwise keeps it in grinding", () => {
-    const ended = operation({ bags: 6, endedAt: "2026-10-08T12:00:00.000Z", bagsMilled: 6 });
+    const ended = operation({ bags: 6, endedAt: "2026-10-08T12:00:00.000Z" });
 
     expect(shipmentStatusFor(shipment, [ended])).toBe("completed");
-    expect(shipmentStatusFor(shipment, [{ ...ended, bagsMilled: 5 }])).toBe("grinding");
+    expect(shipmentStatusFor(shipment, [{ ...ended, bags: 5 }])).toBe("grinding");
     expect(shipmentStatusFor(shipment, [operation({ bags: 6 })])).toBe("grinding");
   });
 
@@ -113,9 +112,7 @@ describe("shipments in grinding", () => {
     const later = { ...shipment, shipmentNumber: "SH-2", arrivedAt: "2026-10-08T03:00:00.000Z" };
     const done = { ...shipment, shipmentNumber: "SH-3", bags: 2 };
     const elsewhere = { ...shipment, shipmentNumber: "SH-4", project: "4" };
-    const operations = [
-      operation({ shipmentNumber: "SH-3", endedAt: "2026-10-08T12:00:00.000Z", bagsMilled: 2 }),
-    ];
+    const operations = [operation({ shipmentNumber: "SH-3", endedAt: "2026-10-08T12:00:00.000Z" })];
 
     expect(
       millingQueue([later, done, elsewhere, shipment], operations, "3").map(
@@ -174,7 +171,6 @@ describe("summary", () => {
       shipmentNumber: "SH-2",
       bags: 3,
       endedAt: "2026-10-08T09:00:00.000Z",
-      bagsMilled: 3,
     }),
   ];
   const records = { machines, operations, shipments };

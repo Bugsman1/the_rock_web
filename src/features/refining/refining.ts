@@ -42,6 +42,10 @@ export function refiningLoss(weightBefore: number, weightAfter: number): number 
     : undefined;
 }
 
+export function hasLoss(weights: { weightBefore: number; weightAfter: number }): boolean {
+  return refiningLoss(weights.weightBefore, weights.weightAfter) !== 0;
+}
+
 export function createRefiningSchema(messages: {
   required: string;
   dateInvalid: string;
@@ -68,8 +72,13 @@ export function createRefiningSchema(messages: {
       weightAfter: weight(),
       goldWithMaterial: weight(),
       goldWithoutMaterial: weight(),
-      lossReason: z.string().refine((value): boolean => isLossReasonKey(value), messages.required),
+      lossReason: z.string(),
       notes: z.string().trim().max(TEXT_MAX_LENGTH),
+    })
+    .refine((values) => !hasLoss(values) || isLossReasonKey(values.lossReason), {
+      path: ["lossReason"],
+      message: messages.required,
+      when: () => true,
     })
     .superRefine((values, context) => {
       if (values.weightAfter > values.weightBefore) {
@@ -117,7 +126,7 @@ export function refiningToApi(values: RefiningValues, target: RefiningTarget) {
     gold_weight: toDecimal(values.goldWithoutMaterial),
     gold_weight_with_mercury: toDecimal(values.goldWithMaterial),
     gold_weight_without_mercury: toDecimal(values.goldWithoutMaterial),
-    loss_reason: values.lossReason,
+    loss_reason: hasLoss(values) ? values.lossReason : "",
     notes: values.notes,
   };
 }

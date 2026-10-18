@@ -117,6 +117,21 @@
         "phoneTaken": "Ce numéro appartient déjà à un autre client"
       },
       "newTitle": "Nouveau client"
+    },
+    "detail": {
+      "shipmentsTitle": "Expéditions reçues de ce client",
+      "noShipments": "Aucune expédition reçue de ce client pour le moment.",
+      "shipments": "Expéditions",
+      "bags": "Total des sacs",
+      "leftToPay": "Reste à payer",
+      "columns": {
+        "shipment": "N° d'expédition",
+        "arrivedAt": "Date d'arrivée",
+        "project": "Projet",
+        "bags": "Sacs",
+        "status": "Statut",
+        "payment": "Statut du paiement"
+      }
     }
   },
   "sites": {
@@ -314,14 +329,14 @@
       "submit": "Enregistrer l'expédition",
       "saving": "Enregistrement de l'expédition",
       "errors": {
-        "bagCountInvalid": "Saisissez un nombre de sacs valide, au moins 1",
+        "bagCountInvalid": "Saisissez des sacs entiers ou des demi-sacs : 0,5, 1, 1,5…",
         "amountInvalid": "Saisissez un montant valide, 0 ou plus",
         "passengerCountInvalid": "Saisissez un nombre de passagers valide, 0 ou plus",
         "phoneTaken": "Ce numéro appartient au client {name}",
-        "paymentTooHigh": "Ne peut pas dépasser le total du transport"
+        "paymentTooHigh": "Ne peut pas dépasser le total du transport",
+        "totalBelowPaid": "Le total du transport ne peut pas être inférieur au montant payé ({paid})."
       },
       "mill": "Projet",
-      "status": "Statut",
       "notes": "Notes",
       "sections": {
         "client": "Client",
@@ -349,7 +364,10 @@
         "failed": "La facture n'a pas pu être téléchargée, réessayez.",
         "back": "Retour aux expéditions",
         "fileName": "facture-expedition-{id}-{language}.pdf"
-      }
+      },
+      "paid": "Montant payé",
+      "saveChanges": "Enregistrer les modifications",
+      "changesSaved": "Modifications enregistrées."
     },
     "totalBags": "Total des sacs dans tous les projets",
     "clientsLabel": "Clients",
@@ -408,6 +426,38 @@
       "languages": "Langue de la facture de l'expédition {number}",
       "ar": "Arabe",
       "fr": "Français"
+    },
+    "detail": {
+      "title": "Expédition {number}",
+      "paymentsTitle": "Versements",
+      "detailsTitle": "Informations de l'expédition",
+      "columns": {
+        "number": "Versement",
+        "paidAt": "Date du paiement",
+        "amount": "Montant",
+        "notes": "Notes"
+      },
+      "installment": "Versement {n}",
+      "noPayments": "Aucun versement sur cette expédition pour le moment.",
+      "total": "Total du transport",
+      "paid": "Payé",
+      "left": "Reste à payer",
+      "addPayment": "Ajouter un versement"
+    },
+    "paymentForm": {
+      "title": "Nouveau versement",
+      "amount": "Montant",
+      "date": "Date du paiement",
+      "time": "Heure du paiement",
+      "notes": "Notes",
+      "submit": "Ajouter le versement",
+      "saving": "Enregistrement du versement",
+      "errors": {
+        "amountInvalid": "Saisissez un montant supérieur à 0.",
+        "amountTooHigh": "Le montant ne peut pas dépasser le reste à payer ({left})."
+      },
+      "leftNow": "Reste à payer actuellement",
+      "leftAfter": "Reste après ce versement"
     }
   },
   "milling": {
@@ -535,15 +585,11 @@
       "title": "Terminer le broyage",
       "endDate": "Date de fin",
       "endTime": "Heure de fin",
-      "bagsMilled": "Sacs réellement broyés",
-      "price": "Prix du broyage",
       "notes": "Notes",
       "submit": "Terminer le broyage",
       "saving": "Enregistrement de la fin du broyage",
       "errors": {
-        "endBeforeStart": "La fin doit être après le début",
-        "bagsMilledInvalid": "Saisissez un nombre de sacs par demi-sac, de 0,5 aux sacs affectés",
-        "priceInvalid": "Saisissez un prix valide, 0 ou plus"
+        "endBeforeStart": "La fin doit être après le début"
       }
     },
     "flow": {
@@ -598,8 +644,7 @@
       "notes": "Notes",
       "operator": "Opérateur du broyage",
       "bagsGround": "Sacs broyés à affiner",
-      "groundFrom": "Début du broyage",
-      "grindingPrice": "Prix du broyage"
+      "groundFrom": "Début du broyage"
     },
     "form": {
       "workerPlaceholder": "Choisir le responsable",

@@ -43,7 +43,6 @@ const running: MillingOperation = {
   operatorName: "Ahmed",
   startedAt: "2026-10-08T06:00:00.000Z",
   estimatedEndAt: "2026-10-08T12:00:00.000Z",
-  cost: 0,
   notes: "",
 };
 
@@ -73,29 +72,11 @@ async function openEndMilling(access: Access = allRights) {
 
   inFrench(<RouterProvider router={router} />, access);
   await user.click(screen.getByRole("button", { name: "Terminer" }));
-  await user.type(screen.getByLabelText(end.bagsMilled), "2");
-  await user.type(screen.getByLabelText(end.price), "3000");
 
   return { user, router };
 }
 
 describe("ending a milling operation", () => {
-  it("asks the grinding price, with no price set in advance", async () => {
-    const { user } = await openEndMilling();
-
-    const price = screen.getByLabelText(end.price);
-    await user.clear(price);
-    await user.click(screen.getByRole("button", { name: end.submit }));
-
-    expect(await screen.findByText(messages.common.validation.required)).toBeVisible();
-
-    await user.type(price, "-5");
-    await user.click(screen.getByRole("button", { name: end.submit }));
-
-    expect(await screen.findByText(end.errors.priceInvalid)).toBeVisible();
-    expect(api.endOperation).not.toHaveBeenCalled();
-  });
-
   it("rejects an end before the start", async () => {
     const { user } = await openEndMilling();
 
@@ -108,18 +89,6 @@ describe("ending a milling operation", () => {
     expect(api.endOperation).not.toHaveBeenCalled();
   });
 
-  it("rejects more bags than allocated", async () => {
-    const { user } = await openEndMilling();
-
-    const bags = screen.getByLabelText(end.bagsMilled);
-    await user.clear(bags);
-    await user.type(bags, "3");
-    await user.click(screen.getByRole("button", { name: end.submit }));
-
-    expect(await screen.findByText(end.errors.bagsMilledInvalid)).toBeVisible();
-    expect(api.endOperation).not.toHaveBeenCalled();
-  });
-
   it("ends the operation with the shipment's next status and opens its refining", async () => {
     const { user, router } = await openEndMilling();
 
@@ -129,7 +98,7 @@ describe("ending a milling operation", () => {
       expect(api.endOperation).toHaveBeenCalledWith(
         running,
         "52",
-        { endDate: "2026-10-08", endTime: "12:30", bagsMilled: 2, price: 3000, notes: "" },
+        { endDate: "2026-10-08", endTime: "12:30", notes: "" },
         "2026-10-08T12:30:00.000Z",
         "completed",
       );

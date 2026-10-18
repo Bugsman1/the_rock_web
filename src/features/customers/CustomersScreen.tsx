@@ -19,7 +19,8 @@ import { parsePageNumber } from "@/lib/api/pagination";
 import type { Customer } from "@/lib/customers";
 import { getCustomer, getCustomerPage } from "@/lib/customersApi";
 import { formatCount, formatDate } from "@/lib/format";
-import { customersHref } from "@/lib/routes";
+import { customerHref, customersHref } from "@/lib/routes";
+import { Link } from "@/i18n/navigation";
 
 export async function customersLoader({ request }: LoaderFunctionArgs) {
   const params = new URL(request.url).searchParams;
@@ -43,7 +44,9 @@ type CustomerTableProps = {
 function CustomerTable({ customers, query, page }: CustomerTableProps) {
   const t = useTranslations("customers");
   const locale = useLocale();
-  const canEdit = useCan()("customers", "edit");
+  const can = useCan();
+  const canEdit = can("customers", "edit");
+  const canOpen = can("shipments", "view");
 
   if (customers.length === 0) {
     return (
@@ -71,9 +74,19 @@ function CustomerTable({ customers, query, page }: CustomerTableProps) {
 
         <tbody>
           {customers.map((customer) => (
-            <tr key={customer.id} className={tableRowClasses}>
+            <tr key={customer.id} className={`${tableRowClasses} relative`}>
               <td className={`${tableCellClasses} text-ink font-bold`}>
-                <span dir="auto">{customer.name}</span>
+                {canOpen ? (
+                  <Link
+                    href={customerHref(customer.id)}
+                    dir="auto"
+                    className="after:absolute after:inset-0"
+                  >
+                    {customer.name}
+                  </Link>
+                ) : (
+                  <span dir="auto">{customer.name}</span>
+                )}
               </td>
               <td className={`${tableCellClasses} text-ink font-semibold`}>
                 <span dir="ltr">{customer.phone}</span>
@@ -82,7 +95,7 @@ function CustomerTable({ customers, query, page }: CustomerTableProps) {
                 {formatDate(customer.addedAt, locale)}
               </td>
               {canEdit ? (
-                <td className={`${tableCellClasses} text-end`}>
+                <td className={`${tableCellClasses} relative z-10 text-end`}>
                   <ActionLink
                     href={customersHref({ query, page, edit: customer.id })}
                     icon="pencil"

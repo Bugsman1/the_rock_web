@@ -1,7 +1,6 @@
 import { apiClient, saveOutcome } from "@/lib/api/client";
 import type { BackendFieldErrors, FieldErrors, SaveResult } from "@/lib/api/client";
 import type { IsoTimestamp } from "@/lib/format";
-import { toMoneyDecimal } from "@/lib/format";
 import { machinesFromGrinders } from "@/lib/grinding";
 import type { MillingOperation } from "@/lib/grinding";
 import { getGrindingOperations } from "@/lib/grindingApi";
@@ -31,8 +30,6 @@ export async function getMillingData() {
 function endErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof EndMillingValues> {
   return {
     ...(errors.end_time === undefined ? {} : { endTime: errors.end_time }),
-    ...(errors.bags_count === undefined ? {} : { bagsMilled: errors.bags_count }),
-    ...(errors.grinding_cost === undefined ? {} : { price: errors.grinding_cost }),
   };
 }
 
@@ -60,8 +57,6 @@ export async function endOperation(
     params: { path: { id: Number(operation.id) } },
     body: {
       end_time: endedAt,
-      bags_count: values.bagsMilled,
-      grinding_cost: toMoneyDecimal(values.price),
       notes: [operation.notes, values.notes].filter((note) => note !== "").join("\n"),
     },
   });

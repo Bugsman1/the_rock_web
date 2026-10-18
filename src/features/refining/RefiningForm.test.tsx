@@ -30,10 +30,8 @@ const grinding: MillingOperation = {
   operatorName: "Ahmed",
   startedAt: "2026-10-12T06:00:00Z",
   estimatedEndAt: "2026-10-12T18:00:00Z",
-  cost: 60000,
   notes: "",
   endedAt: "2026-10-12T18:00:00Z",
-  bagsMilled: 4,
 };
 
 function renderForm() {
@@ -85,7 +83,6 @@ describe("RefiningForm", () => {
     expect(readOnly(fields.bagsGround).getByText("4")).toBeVisible();
     expect(readOnly(fields.groundFrom).getByText("12/10/2026 06:00")).toBeVisible();
     expect(readOnly(fields.groundAt).getByText("12/10/2026 18:00")).toBeVisible();
-    expect(readOnly(fields.grindingPrice).getByText("60 000")).toBeVisible();
     expect(screen.queryByRole("spinbutton", { name: fields.bags })).toBeNull();
     expect(screen.queryByText(/Écart de poids/)).toBeNull();
   });
@@ -101,6 +98,8 @@ describe("RefiningForm", () => {
     await user.click(screen.getByRole("button", { name: text.form.submit }));
 
     expect(onSaved).toHaveBeenCalled();
+    expect(screen.getByRole("status", { name: text.form.saving })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: text.form.submit })).toBeNull();
     expect(api.createRefiningOperation).toHaveBeenCalledWith(
       expect.objectContaining({
         workerId: "4",
@@ -140,7 +139,7 @@ describe("RefiningForm", () => {
     expect(onSaved).not.toHaveBeenCalled();
   });
 
-  it("offers the seven loss reasons and sends the chosen one", async () => {
+  it("offers the loss reasons and sends the chosen one", async () => {
     renderForm();
 
     expect(
@@ -149,7 +148,6 @@ describe("RefiningForm", () => {
         .map((option) => option.textContent),
     ).toEqual([
       "Manque normal",
-      "Aucune perte",
       "Erreur de pesée",
       "Panne ou fuite de la machine",
       "Mélange avec la terre",
@@ -164,6 +162,23 @@ describe("RefiningForm", () => {
       expect.objectContaining({ lossReason: "arghawa" }),
       expect.anything(),
     );
+  });
+
+  it("hides the loss and its reason when nothing was lost", async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText(fields.weightBefore), "10");
+    await user.type(screen.getByLabelText(fields.weightAfter), "10");
+
+    expect(screen.queryByText(fields.loss)).toBeNull();
+    expect(screen.queryByLabelText(fields.lossReason)).toBeNull();
+
+    await user.clear(screen.getByLabelText(fields.weightAfter));
+    await user.type(screen.getByLabelText(fields.weightAfter), "9");
+
+    expect(screen.getByText(fields.loss)).toBeVisible();
+    expect(screen.getByLabelText(fields.lossReason)).toBeVisible();
   });
 
   it("flags every empty required field on submit", async () => {

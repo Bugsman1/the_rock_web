@@ -671,7 +671,7 @@ function MachineHistoryTable({
                   <span dir="auto">{operation.client}</span>
                 </td>
                 <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                  {count(operation.bagsMilled ?? operation.bags)}
+                  {count(operation.bags)}
                 </td>
                 <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
                   {formatDateTime(operation.startedAt, locale)}
@@ -721,16 +721,14 @@ export function MachineDetailScreen() {
   const shipment = data.shipments.find((item) => item.shipmentNumber === operation?.shipmentNumber);
   const [query, setQuery] = useState("");
 
-  function statusAfterEnd(bagsMilled: number, endedAt: IsoTimestamp) {
+  function statusAfterEnd(endedAt: IsoTimestamp) {
     if (operation === undefined || shipment === undefined) {
       return "grinding";
     }
 
     return shipmentStatusFor(
       shipment,
-      data.operations.map((item) =>
-        item.id === operation.id ? { ...item, endedAt, bagsMilled } : item,
-      ),
+      data.operations.map((item) => (item.id === operation.id ? { ...item, endedAt } : item)),
     );
   }
 
@@ -807,7 +805,7 @@ export function MachineDetailScreen() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-3">
         <BackLink href={millingProjectHref(project.id)} label={common("back")} />
         <div className="flex flex-wrap items-center gap-3">

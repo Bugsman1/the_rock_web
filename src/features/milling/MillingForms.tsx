@@ -8,13 +8,12 @@ import { DateField } from "@/components/ui/DateField";
 import { Drawer, DrawerActions } from "@/components/ui/Drawer";
 import { FieldError, FormError } from "@/components/ui/FieldError";
 import { Icon } from "@/components/ui/Icon";
-import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
+import { TextArea, TimeField } from "@/components/ui/TextField";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { cn } from "@/lib/cn";
 import { combineDateAndTime } from "@/lib/datetime";
 import type { IsoTimestamp } from "@/lib/format";
-import { BAG_STEP } from "@/lib/grinding";
 import type { MillingOperation } from "@/lib/grinding";
 import { startRefiningHref } from "@/lib/routes";
 import type { ShipmentStatusKey } from "@/lib/shipments";
@@ -22,13 +21,7 @@ import { createEndMillingSchema } from "./milling";
 import type { EndMillingValues } from "./milling";
 import { endOperation, markMercuryAdded } from "./millingApi";
 
-const endMillingFields: readonly (keyof EndMillingValues)[] = [
-  "endDate",
-  "endTime",
-  "bagsMilled",
-  "price",
-  "notes",
-];
+const endMillingFields: readonly (keyof EndMillingValues)[] = ["endDate", "endTime", "notes"];
 
 function isEndMillingField(value: string): value is keyof EndMillingValues {
   return endMillingFields.some((field) => field === value);
@@ -37,7 +30,7 @@ function isEndMillingField(value: string): value is keyof EndMillingValues {
 type EndMillingFormProps = {
   operation: MillingOperation;
   shipmentId: string;
-  statusAfterEnd: (bagsMilled: number, endedAt: IsoTimestamp) => ShipmentStatusKey;
+  statusAfterEnd: (endedAt: IsoTimestamp) => ShipmentStatusKey;
   defaultDate: string;
   defaultTime: string;
   onSaved: () => void;
@@ -56,7 +49,7 @@ function EndMillingForm({
   const t = useTranslations("milling.end");
   const common = useTranslations("common");
   const [failed, setFailed] = useState(false);
-  const allocatedBags = operation.bags;
+  const [saved, setSaved] = useState(false);
   const startedAt = operation.startedAt;
 
   const schema = useMemo(
@@ -67,12 +60,10 @@ function EndMillingForm({
           dateInvalid: common("validation.dateInvalid"),
           timeInvalid: common("validation.timeInvalid"),
           endBeforeStart: t("errors.endBeforeStart"),
-          bagsMilledInvalid: t("errors.bagsMilledInvalid"),
-          priceInvalid: t("errors.priceInvalid"),
         },
-        { allocatedBags, startedAt },
+        { startedAt },
       ),
-    [t, common, allocatedBags, startedAt],
+    [t, common, startedAt],
   );
 
   const { control, register, handleSubmit, formState, setError } = useForm<EndMillingValues>({
@@ -81,8 +72,6 @@ function EndMillingForm({
     defaultValues: {
       endDate: defaultDate,
       endTime: defaultTime,
-      bagsMilled: Number.NaN,
-      price: Number.NaN,
       notes: "",
     },
   });
@@ -103,10 +92,11 @@ function EndMillingForm({
       shipmentId,
       values,
       endedAt,
-      statusAfterEnd(values.bagsMilled, endedAt),
+      statusAfterEnd(endedAt),
     );
 
     if (result.ok) {
+      setSaved(true);
       onSaved();
       return;
     }
@@ -154,31 +144,6 @@ function EndMillingForm({
           )}
         />
 
-        <TextField
-          id="end-bags"
-          type="number"
-          min={BAG_STEP}
-          max={allocatedBags}
-          step={BAG_STEP}
-          inputMode="decimal"
-          label={t("bagsMilled")}
-          required
-          error={errors.bagsMilled?.message}
-          {...register("bagsMilled", { valueAsNumber: true })}
-        />
-
-        <TextField
-          id="end-price"
-          type="number"
-          min={0}
-          step="any"
-          inputMode="decimal"
-          label={t("price")}
-          required
-          error={errors.price?.message}
-          {...register("price", { valueAsNumber: true })}
-        />
-
         <div className="sm:col-span-2">
           <TextArea id="end-notes" label={t("notes")} rows={2} {...register("notes")} />
         </div>
@@ -187,7 +152,7 @@ function EndMillingForm({
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
-        submitting={formState.isSubmitting}
+        submitting={formState.isSubmitting || saved}
         submitIcon="circle-check"
         submitLabel={t("submit")}
         savingLabel={t("saving")}

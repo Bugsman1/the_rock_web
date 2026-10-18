@@ -1,11 +1,21 @@
-import { apiClient, saveFailed, saveOutcome } from "@/lib/api/client";
+import { apiClient, notFound, saveFailed, saveOutcome, unwrap } from "@/lib/api/client";
 import type { SaveResult } from "@/lib/api/client";
 import { customerToApi, matchCustomer } from "@/lib/customers";
 import { getCustomersWithPhone } from "@/lib/customersApi";
 import type { Locale } from "@/i18n/locales";
 import { combineDateAndTime } from "@/lib/datetime";
-import { invoiceFileName, shipmentErrorsFromApi, shipmentToApi } from "./shipments";
-import type { NewShipmentValues } from "./shipments";
+import type { IsoTimestamp } from "@/lib/format";
+import { isRecordId } from "@/lib/projects";
+import {
+  invoiceFileName,
+  newShipmentToApi,
+  paymentErrorsFromApi,
+  paymentToApi,
+  shipmentDetailFromApi,
+  shipmentErrorsFromApi,
+  shipmentToApi,
+} from "./shipments";
+import type { NewShipmentValues, PaymentValues, ShipmentDetail } from "./shipments";
 
 type SaveShipmentResult = SaveResult<keyof NewShipmentValues>;
 
@@ -53,7 +63,7 @@ export async function createShipment(
   }
 
   const { data, response, error } = await apiClient.POST("/api/v1/shipments/", {
-    body: shipmentToApi(values, { customerId: customer.id, arrivedAt }),
+    body: newShipmentToApi(values, { customerId: customer.id, arrivedAt }),
   });
 
   if (data !== undefined) {
@@ -63,6 +73,57 @@ export async function createShipment(
   const outcome = saveOutcome(response, error, shipmentErrorsFromApi);
 
   return outcome.ok ? saveFailed : outcome;
+}
+
+export async function updateShipment(
+  shipmentId: string,
+  values: NewShipmentValues,
+  phoneTaken: (owner: string) => string,
+): Promise<SaveShipmentResult> {
+  const arrivedAt = combineDateAndTime(values.arrivalDate, values.arrivalTime);
+
+  if (arrivedAt === undefined) {
+    return saveFailed;
+  }
+
+  const customer = await customerIdFor(values, phoneTaken);
+
+  if (!customer.ok) {
+    return customer;
+  }
+
+  const { response, error } = await apiClient.PATCH("/api/v1/shipments/{id}/", {
+    params: { path: { id: Number(shipmentId) } },
+    body: shipmentToApi(values, { customerId: customer.id, arrivedAt }),
+  });
+
+  return saveOutcome(response, error, shipmentErrorsFromApi);
+}
+
+export async function getShipment(shipmentId: string): Promise<ShipmentDetail> {
+  if (!isRecordId(shipmentId)) {
+    notFound();
+  }
+
+  return shipmentDetailFromApi(
+    unwrap(
+      await apiClient.GET("/api/v1/shipments/{id}/", {
+        params: { path: { id: Number(shipmentId) } },
+      }),
+    ),
+  );
+}
+
+export async function addPayment(
+  shipmentId: string,
+  values: PaymentValues,
+  paidAt: IsoTimestamp,
+): Promise<SaveResult<keyof PaymentValues>> {
+  const { response, error } = await apiClient.POST("/api/v1/shipment-payments/", {
+    body: paymentToApi(values, shipmentId, paidAt),
+  });
+
+  return saveOutcome(response, error, paymentErrorsFromApi);
 }
 
 type Invoice = {

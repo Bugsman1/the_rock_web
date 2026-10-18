@@ -137,7 +137,7 @@ describe("getMillingData", () => {
 });
 
 describe("endOperation", () => {
-  it("records the end and the bags milled, then sets the shipment's status", async () => {
+  it("records the end, then sets the shipment's status", async () => {
     let ended: unknown;
     let shipmentChange: unknown;
     server.use(
@@ -159,7 +159,7 @@ describe("endOperation", () => {
     const result = await endOperation(
       operation,
       "1",
-      { endDate: "2026-10-08", endTime: "12:00", bagsMilled: 1, price: 1200.5, notes: "Sac abîmé" },
+      { endDate: "2026-10-08", endTime: "12:00", notes: "Sac abîmé" },
       "2026-10-08T12:00:00.000Z",
       "grinding",
     );
@@ -167,8 +167,6 @@ describe("endOperation", () => {
     expect(result).toEqual({ ok: true });
     expect(ended).toEqual({
       end_time: "2026-10-08T12:00:00.000Z",
-      bags_count: 1,
-      grinding_cost: "1200.5",
       notes: "Sac abîmé",
     });
     expect(shipmentChange).toEqual({ status: "grinding" });

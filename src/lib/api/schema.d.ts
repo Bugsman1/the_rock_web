@@ -780,6 +780,62 @@ export interface paths {
         patch: operations["v1_roles_partial_update"];
         trace?: never;
     };
+    "/api/v1/shipment-payments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The payments (installments) of shipments. Each write recomputes the shipment's
+         *     current_payment, which may not exceed its transport total.
+         */
+        get: operations["v1_shipment_payments_list"];
+        put?: never;
+        /**
+         * @description The payments (installments) of shipments. Each write recomputes the shipment's
+         *     current_payment, which may not exceed its transport total.
+         */
+        post: operations["v1_shipment_payments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shipment-payments/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The payments (installments) of shipments. Each write recomputes the shipment's
+         *     current_payment, which may not exceed its transport total.
+         */
+        get: operations["v1_shipment_payments_retrieve"];
+        /**
+         * @description The payments (installments) of shipments. Each write recomputes the shipment's
+         *     current_payment, which may not exceed its transport total.
+         */
+        put: operations["v1_shipment_payments_update"];
+        post?: never;
+        /**
+         * @description The payments (installments) of shipments. Each write recomputes the shipment's
+         *     current_payment, which may not exceed its transport total.
+         */
+        delete: operations["v1_shipment_payments_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description The payments (installments) of shipments. Each write recomputes the shipment's
+         *     current_payment, which may not exceed its transport total.
+         */
+        patch: operations["v1_shipment_payments_partial_update"];
+        trace?: never;
+    };
     "/api/v1/shipments/": {
         parameters: {
             query?: never;
@@ -1240,6 +1296,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Shipment"][];
         };
+        PaginatedShipmentPaymentList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["ShipmentPayment"][];
+        };
         PaginatedUserList: {
             /** @example 123 */
             count: number;
@@ -1445,6 +1516,7 @@ export interface components {
             customer_phone?: $Read<string>;
             /** Format: date-time */
             arrival_date?: string;
+            /** Format: double */
             bags_count?: number;
             /** Format: decimal */
             bag_transport_cost_per_bag?: string;
@@ -1453,10 +1525,32 @@ export interface components {
             passenger_transport_cost_per_person?: string;
             /** Format: decimal */
             current_payment?: string;
+            payments?: $Read<components["schemas"]["ShipmentPaymentSummary"][]>;
             transport_method?: components["schemas"]["TransportMethodEnum"];
             source?: string;
             project?: number;
             status?: components["schemas"]["ShipmentStatusEnum"];
+            notes?: string;
+            created_by_name?: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        PatchedShipmentPayment: {
+            id?: $Read<number>;
+            shipment?: number;
+            shipment_number?: $Read<string>;
+            /** Format: decimal */
+            amount?: string;
+            /**
+             * Payment date
+             * Format: date-time
+             */
+            paid_at?: string;
             notes?: string;
             created_by_name?: $Read<string | null>;
             /**
@@ -1649,6 +1743,7 @@ export interface components {
             customer_phone: $Read<string>;
             /** Format: date-time */
             arrival_date: string;
+            /** Format: double */
             bags_count: number;
             /** Format: decimal */
             bag_transport_cost_per_bag: string;
@@ -1657,6 +1752,7 @@ export interface components {
             passenger_transport_cost_per_person?: string;
             /** Format: decimal */
             current_payment?: string;
+            payments: $Read<components["schemas"]["ShipmentPaymentSummary"][]>;
             transport_method: components["schemas"]["TransportMethodEnum"];
             source: string;
             project: number;
@@ -1670,6 +1766,39 @@ export interface components {
             created_at: $Read<string>;
             /** Format: date-time */
             updated_at: $Read<string>;
+        };
+        ShipmentPayment: {
+            id: $Read<number>;
+            shipment: number;
+            shipment_number: $Read<string>;
+            /** Format: decimal */
+            amount: string;
+            /**
+             * Payment date
+             * Format: date-time
+             */
+            paid_at?: string;
+            notes?: string;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /** @description A payment as listed on its shipment. */
+        ShipmentPaymentSummary: {
+            id: $Read<number>;
+            /** Format: decimal */
+            amount: $Read<string>;
+            /**
+             * Payment date
+             * Format: date-time
+             */
+            paid_at: $Read<string>;
+            notes: $Read<string>;
         };
         /**
          * @description * `pending` - Pending
@@ -3167,6 +3296,159 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Role"];
+                };
+            };
+        };
+    };
+    v1_shipment_payments_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+                shipment?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedShipmentPaymentList"];
+                };
+            };
+        };
+    };
+    v1_shipment_payments_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShipmentPayment"];
+                "application/x-www-form-urlencoded": components["schemas"]["ShipmentPayment"];
+                "multipart/form-data": components["schemas"]["ShipmentPayment"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentPayment"];
+                };
+            };
+        };
+    };
+    v1_shipment_payments_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this shipment payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentPayment"];
+                };
+            };
+        };
+    };
+    v1_shipment_payments_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this shipment payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShipmentPayment"];
+                "application/x-www-form-urlencoded": components["schemas"]["ShipmentPayment"];
+                "multipart/form-data": components["schemas"]["ShipmentPayment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentPayment"];
+                };
+            };
+        };
+    };
+    v1_shipment_payments_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this shipment payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_shipment_payments_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this shipment payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedShipmentPayment"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedShipmentPayment"];
+                "multipart/form-data": components["schemas"]["PatchedShipmentPayment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentPayment"];
                 };
             };
         };

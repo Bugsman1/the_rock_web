@@ -23,7 +23,6 @@ function operation(overrides: Partial<MillingOperation>): MillingOperation {
     operatorName: "Aicha",
     startedAt: "2026-10-08T06:00:00.000Z",
     estimatedEndAt: "2026-10-08T12:00:00.000Z",
-    cost: 0,
     notes: "",
     ...overrides,
   };
@@ -39,7 +38,7 @@ const machines: Machine[] = [
 describe("machines", () => {
   const operations = [
     operation({ id: "running" }),
-    operation({ id: "ended", machine: 2, endedAt: "2026-10-08T05:00:00.000Z", bagsMilled: 2 }),
+    operation({ id: "ended", machine: 2, endedAt: "2026-10-08T05:00:00.000Z" }),
   ];
 
   it("is running with an active operation, idle after it ends, maintenance when flagged", () => {
@@ -105,12 +104,6 @@ describe("remainingBags", () => {
     expect(remainingBags(shipment, [operation({}), operation({ machine: 2, bags: 3 })])).toBe(1);
   });
 
-  it("gives back bags that were allocated but not ground", () => {
-    expect(
-      remainingBags(shipment, [operation({ endedAt: "2026-10-08T12:00:00.000Z", bagsMilled: 1 })]),
-    ).toBe(5);
-  });
-
   it("ignores other shipments and never goes below zero", () => {
     expect(remainingBags(shipment, [operation({ shipmentNumber: "SH-2" })])).toBe(6);
     expect(remainingBags(shipment, [operation({ bags: 9 })])).toBe(0);
@@ -148,17 +141,15 @@ describe("operationFromApi", () => {
         operatorName: "Aicha",
         startedAt: "2026-10-08T06:00:00.000Z",
         estimatedEndAt: "2026-10-08T18:00:00.000Z",
-        cost: 60000,
         notes: "",
       },
     ]);
   });
 
-  it("counts every bag of an ended operation as ground", () => {
+  it("reads the end of an ended operation", () => {
     const [ended] = operationFromApi({ ...apiOperation, end_time: "2026-10-08T12:00:00.000Z" });
 
     expect(ended?.endedAt).toBe("2026-10-08T12:00:00.000Z");
-    expect(ended?.bagsMilled).toBe(4);
   });
 
   it("says when the mercury was added and by whom", () => {

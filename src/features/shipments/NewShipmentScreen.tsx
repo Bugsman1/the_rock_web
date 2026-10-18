@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { CustomerForm } from "@/components/customers/CustomerForm";
 import { Button } from "@/components/ui/Button";
@@ -23,25 +24,26 @@ import { useReplace } from "@/i18n/navigation";
 import { findCustomer } from "@/lib/customers";
 import type { Customer, CustomerValues } from "@/lib/customers";
 import { getCustomerChoices } from "@/lib/customersApi";
+import { BAG_STEP } from "@/lib/grinding";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { formatMoney } from "@/lib/format";
 import { isInService } from "@/lib/projects";
 import type { Project } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
 import { PHONE_PLACEHOLDER, sanitizePhone } from "@/lib/phone";
-import { SHIPMENTS_HREF } from "@/lib/routes";
-import { shipmentStatusKeys } from "@/lib/shipments";
+import { SHIPMENTS_HREF, shipmentsProjectHref } from "@/lib/routes";
 import {
   bagsCost,
   createNewShipmentSchema,
   isShipmentField,
   passengersCost,
   remainingToPay,
+  shipmentFormValues,
   transportMethodKeys,
   transportTotal,
 } from "./shipments";
-import type { NewShipmentValues } from "./shipments";
-import { createShipment, getInvoice } from "./shipmentsApi";
+import type { NewShipmentValues, ShipmentDetail } from "./shipments";
+import { createShipment, getInvoice, updateShipment } from "./shipmentsApi";
 
 export function useInvoiceDownload(shipmentId: string) {
   const t = useTranslations("shipments.form.saved");
@@ -72,7 +74,7 @@ export function useInvoiceDownload(shipmentId: string) {
   return { downloading, failed, download };
 }
 
-function SavedShipment({ shipmentId }: { shipmentId: string }) {
+function SavedShipment({ shipmentId, backHref }: { shipmentId: string; backHref: string }) {
   const t = useTranslations("shipments.form.saved");
   const { downloading, failed, download } = useInvoiceDownload(shipmentId);
 
@@ -100,22 +102,34 @@ function SavedShipment({ shipmentId }: { shipmentId: string }) {
                 {t(`download.${language}`)}
               </Button>
             ))}
+            <ButtonLink href={backHref} variant="secondary">
+              {t("back")}
+            </ButtonLink>
           </>
         )}
-
-        <ButtonLink href={SHIPMENTS_HREF} variant="secondary">
-          {t("back")}
-        </ButtonLink>
       </div>
     </div>
   );
 }
+
+type ShipmentFormMode =
+  | { kind: "create"; backHref: string }
+  | { kind: "edit"; shipmentId: string; paid: number; onSaved: () => void };
+
+type ShipmentFormProps = {
+  defaultValues: NewShipmentValues;
+  customers: readonly Customer[];
+  projects: readonly Project[];
+  mode: ShipmentFormMode;
+};
 
 type NewShipmentFormProps = {
   defaultArrivalDate: string;
   defaultArrivalTime: string;
   customers: readonly Customer[];
   projects: readonly Project[];
+  defaultProject: string | undefined;
+  backHref: string;
 };
 
 export function NewShipmentForm({
@@ -123,31 +137,87 @@ export function NewShipmentForm({
   defaultArrivalTime,
   customers,
   projects,
+  defaultProject,
+  backHref,
 }: NewShipmentFormProps) {
+  return (
+    <ShipmentForm
+      defaultValues={{
+        customerName: "",
+        phone: "",
+        arrivalDate: defaultArrivalDate,
+        arrivalTime: defaultArrivalTime,
+        bagCount: Number.NaN,
+        transportMethod: transportMethodKeys[0],
+        source: "",
+        bagFare: Number.NaN,
+        passengerCount: Number.NaN,
+        passengerFare: Number.NaN,
+        currentPayment: Number.NaN,
+        mill: defaultProject ?? projects[0]?.id ?? "",
+        notes: "",
+      }}
+      customers={customers}
+      projects={projects}
+      mode={{ kind: "create", backHref }}
+    />
+  );
+}
+
+type EditShipmentFormProps = {
+  shipment: ShipmentDetail;
+  customers: readonly Customer[];
+  projects: readonly Project[];
+  onSaved: () => void;
+};
+
+export function EditShipmentForm({
+  shipment,
+  customers,
+  projects,
+  onSaved,
+}: EditShipmentFormProps) {
+  return (
+    <ShipmentForm
+      defaultValues={shipmentFormValues(shipment)}
+      customers={customers}
+      projects={projects}
+      mode={{ kind: "edit", shipmentId: shipment.id, paid: shipment.paid, onSaved }}
+    />
+  );
+}
+
+function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentFormProps) {
   const t = useTranslations("shipments.form");
   const common = useTranslations("common");
   const clientLabels = useTranslations("customers");
   const transports = useTranslations("shipments.transportMethods");
-  const statuses = useTranslations("shipments.statuses");
   const replace = useReplace();
   const locale = useLocale();
   const [failed, setFailed] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState<string | undefined>(undefined);
+  const [addedCustomerName, setAddedCustomerName] = useState<string>();
   const [savedId, setSavedId] = useState<string>();
+  const [changesSaved, setChangesSaved] = useState(false);
+  const paid = mode.kind === "edit" ? mode.paid : 0;
 
   const schema = useMemo(
     () =>
-      createNewShipmentSchema({
-        required: common("validation.required"),
-        bagCountInvalid: t("errors.bagCountInvalid"),
-        phoneInvalid: common("validation.phoneInvalid"),
-        dateInvalid: common("validation.dateInvalid"),
-        timeInvalid: common("validation.timeInvalid"),
-        amountInvalid: t("errors.amountInvalid"),
-        passengerCountInvalid: t("errors.passengerCountInvalid"),
-        paymentTooHigh: t("errors.paymentTooHigh"),
-      }),
-    [t, common],
+      createNewShipmentSchema(
+        {
+          required: common("validation.required"),
+          bagCountInvalid: t("errors.bagCountInvalid"),
+          phoneInvalid: common("validation.phoneInvalid"),
+          dateInvalid: common("validation.dateInvalid"),
+          timeInvalid: common("validation.timeInvalid"),
+          amountInvalid: t("errors.amountInvalid"),
+          passengerCountInvalid: t("errors.passengerCountInvalid"),
+          paymentTooHigh: t("errors.paymentTooHigh"),
+          totalBelowPaid: t("errors.totalBelowPaid", { paid: formatMoney(paid, locale) }),
+        },
+        paid,
+      ),
+    [t, common, paid, locale],
   );
 
   const customerOptions = useMemo(
@@ -160,33 +230,27 @@ export function NewShipmentForm({
     [customers],
   );
 
-  const { control, register, handleSubmit, formState, getValues, setValue, setError } =
+  const { control, register, handleSubmit, formState, getValues, setValue, setError, reset } =
     useForm<NewShipmentValues>({
       mode: "onTouched",
       resolver: zodResolver(schema),
-      defaultValues: {
-        customerName: "",
-        phone: "",
-        arrivalDate: defaultArrivalDate,
-        arrivalTime: defaultArrivalTime,
-        bagCount: Number.NaN,
-        transportMethod: transportMethodKeys[0],
-        source: "",
-        bagFare: Number.NaN,
-        passengerCount: Number.NaN,
-        passengerFare: Number.NaN,
-        currentPayment: Number.NaN,
-        mill: projects[0]?.id ?? "",
-        status: shipmentStatusKeys[0],
-        notes: "",
-      },
+      defaultValues,
     });
 
   const { errors } = formState;
-  const [bagCount, bagFare, passengerCount, passengerFare, currentPayment] = useWatch({
-    control,
-    name: ["bagCount", "bagFare", "passengerCount", "passengerFare", "currentPayment"],
-  });
+  const [customerName, bagCount, bagFare, passengerCount, passengerFare, currentPayment] = useWatch(
+    {
+      control,
+      name: [
+        "customerName",
+        "bagCount",
+        "bagFare",
+        "passengerCount",
+        "passengerFare",
+        "currentPayment",
+      ],
+    },
+  );
   const total = transportTotal({ bagCount, bagFare, passengerCount, passengerFare });
 
   function money(amount: number) {
@@ -213,20 +277,41 @@ export function NewShipmentForm({
 
   function applyNewCustomer({ name, phone }: CustomerValues) {
     closeNewCustomer();
+    setAddedCustomerName(name);
     setValue("customerName", name, { shouldDirty: true, shouldValidate: true });
     setValue("phone", phone, { shouldDirty: true, shouldValidate: true });
   }
 
   async function onSubmit(values: NewShipmentValues) {
     setFailed(false);
+    setChangesSaved(false);
 
-    const result = await createShipment(values, (name) => t("errors.phoneTaken", { name }));
+    const phoneTaken = (name: string) => t("errors.phoneTaken", { name });
+
+    if (mode.kind === "edit") {
+      const result = await updateShipment(mode.shipmentId, values, phoneTaken);
+
+      if (result.ok) {
+        setChangesSaved(true);
+        mode.onSaved();
+        return;
+      }
+
+      showErrors(result);
+      return;
+    }
+
+    const result = await createShipment(values, phoneTaken);
 
     if (result.ok) {
       setSavedId(result.id);
       return;
     }
 
+    showErrors(result);
+  }
+
+  function showErrors(result: { fieldErrors: Partial<Record<string, string>>; failed: boolean }) {
     for (const [field, message] of Object.entries(result.fieldErrors)) {
       if (isShipmentField(field)) {
         setError(field, { message });
@@ -253,7 +338,7 @@ export function NewShipmentForm({
                 label={t("customerName")}
                 required
                 placeholder={clientLabels("searchPlaceholder")}
-                options={customerOptions}
+                options={customerName === addedCustomerName ? [] : customerOptions}
                 onSelect={(option) => fillCustomerPhone(option.value)}
                 createLabel={clientLabels("new")}
                 onCreate={startNewCustomer}
@@ -319,9 +404,9 @@ export function NewShipmentForm({
           <TextField
             id="bagCount"
             type="number"
-            min={1}
-            step={1}
-            inputMode="numeric"
+            min={BAG_STEP}
+            step={BAG_STEP}
+            inputMode="decimal"
             label={t("bagCount")}
             required
             error={errors.bagCount?.message}
@@ -397,20 +482,24 @@ export function NewShipmentForm({
 
           <ReadOnlyField label={t("transportTotal")} value={money(total)} emphasis />
 
-          <TextField
-            id="currentPayment"
-            type="number"
-            min={0}
-            step="any"
-            inputMode="decimal"
-            label={t("currentPayment")}
-            error={errors.currentPayment?.message}
-            {...register("currentPayment", { valueAsNumber: true })}
-          />
+          {mode.kind === "edit" ? (
+            <ReadOnlyField label={t("paid")} value={money(paid)} />
+          ) : (
+            <TextField
+              id="currentPayment"
+              type="number"
+              min={0}
+              step="any"
+              inputMode="decimal"
+              label={t("currentPayment")}
+              error={errors.currentPayment?.message}
+              {...register("currentPayment", { valueAsNumber: true })}
+            />
+          )}
 
           <ReadOnlyField
             label={t("remainingToPay")}
-            value={money(remainingToPay(total, currentPayment))}
+            value={money(remainingToPay(total, mode.kind === "edit" ? paid : currentPayment))}
             emphasis
           />
         </FormSection>
@@ -423,15 +512,6 @@ export function NewShipmentForm({
             options={projects.map((project) => ({ value: project.id, label: project.name }))}
             error={errors.mill?.message}
             {...register("mill")}
-          />
-
-          <Select
-            id="status"
-            label={t("status")}
-            required
-            options={shipmentStatusKeys.map((key) => ({ value: key, label: statuses(key) }))}
-            error={errors.status?.message}
-            {...register("status")}
           />
 
           <div className="sm:col-span-2 lg:col-span-3">
@@ -454,24 +534,47 @@ export function NewShipmentForm({
             </div>
           ) : (
             <Button variant="primary" type="submit" width="auto">
-              {t("submit")}
+              {mode.kind === "edit" ? t("saveChanges") : t("submit")}
             </Button>
           )}
 
-          <ButtonLink href={SHIPMENTS_HREF} variant="secondary">
-            {common("cancel")}
-          </ButtonLink>
+          {mode.kind === "edit" ? (
+            <Button
+              variant="secondary"
+              width="auto"
+              onClick={() => {
+                setChangesSaved(false);
+                reset(defaultValues);
+              }}
+            >
+              {common("cancel")}
+            </Button>
+          ) : (
+            <ButtonLink href={mode.backHref} variant="secondary">
+              {common("cancel")}
+            </ButtonLink>
+          )}
+
+          {changesSaved ? (
+            <p role="status" className="text-success-700 text-[14px] font-semibold">
+              {t("changesSaved")}
+            </p>
+          ) : null}
         </div>
       </form>
 
-      <Drawer
-        open={savedId !== undefined}
-        title={t("saved.title")}
-        closeLabel={common("close")}
-        onClose={() => replace(SHIPMENTS_HREF)}
-      >
-        {savedId === undefined ? null : <SavedShipment shipmentId={savedId} />}
-      </Drawer>
+      {mode.kind === "create" ? (
+        <Drawer
+          open={savedId !== undefined}
+          title={t("saved.title")}
+          closeLabel={common("close")}
+          onClose={() => replace(mode.backHref)}
+        >
+          {savedId === undefined ? null : (
+            <SavedShipment shipmentId={savedId} backHref={mode.backHref} />
+          )}
+        </Drawer>
+      ) : null}
 
       <Drawer
         open={newCustomerName !== undefined}
@@ -489,21 +592,28 @@ export function NewShipmentForm({
   );
 }
 
-export async function newShipmentLoader() {
+export async function newShipmentLoader({ request }: LoaderFunctionArgs) {
+  const requested = new URL(request.url).searchParams.get("project");
   const [customers, projects] = await Promise.all([getCustomerChoices(), getProjects()]);
+  const inService = projects.filter(isInService);
 
-  return { customers, projects: projects.filter(isInService) };
+  return {
+    customers,
+    projects: inService,
+    project: inService.find((project) => project.id === requested)?.id,
+  };
 }
 
 export function NewShipmentScreen() {
-  const { customers, projects } = useLoaderData<typeof newShipmentLoader>();
+  const { customers, projects, project } = useLoaderData<typeof newShipmentLoader>();
   const t = useTranslations("shipments.form");
   const common = useTranslations("common");
+  const backHref = project === undefined ? SHIPMENTS_HREF : shipmentsProjectHref(project);
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
       <div className="flex flex-col gap-3">
-        <BackLink href={SHIPMENTS_HREF} label={common("back")} />
+        <BackLink href={backHref} label={common("back")} />
 
         <PageTitle>{t("title")}</PageTitle>
       </div>
@@ -513,6 +623,8 @@ export function NewShipmentScreen() {
         defaultArrivalTime={nowAsTimeValue()}
         customers={customers}
         projects={projects}
+        defaultProject={project}
+        backHref={backHref}
       />
     </div>
   );

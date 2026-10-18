@@ -16,7 +16,12 @@ import { Icon } from "@/components/ui/Icon";
 import { PageSkeleton } from "@/components/ui/LoadingDots";
 import type { SkeletonShape } from "@/components/ui/LoadingDots";
 import { LoginScreen } from "@/features/auth";
-import { CustomersScreen, customersLoader } from "@/features/customers";
+import {
+  CustomerScreen,
+  customerLoader,
+  CustomersScreen,
+  customersLoader,
+} from "@/features/customers";
 import {
   InventoryProjectScreen,
   inventoryProjectLoader,
@@ -58,6 +63,8 @@ import {
   projectStorageLoader,
   ShipmentHistoryScreen,
   ShipmentsScreen,
+  shipmentLoader,
+  ShipmentScreen,
   shipmentsLoader,
 } from "@/features/shipments";
 import { RolesScreen, rolesLoader, UsersScreen, usersLoader } from "@/features/users";
@@ -101,6 +108,8 @@ const pageShapes: readonly (readonly [RegExp, SkeletonShape])[] = [
   [/^\/(shipments|milling)\/projects\/\d+(\/history)?$/, "table"],
   [/^\/settings\/(profile|projects\/\d+)$/, "detail"],
   [/^\/milling\/projects\/\d+\/machines\/\d+$/, "detail"],
+  [/^\/shipments\/\d+$/, "detail"],
+  [/^\/customers\/\d+$/, "table"],
 ];
 
 export function skeletonShapeFor(pathname: string): SkeletonShape {
@@ -202,10 +211,12 @@ function SignedInLayout() {
 
 const sectionRoutes: RouteObject[] = [
   { path: "customers", loader: customersLoader, element: <CustomersScreen /> },
+  { path: "customers/:customer", loader: customerLoader, element: <CustomerScreen /> },
   { path: "users", loader: usersLoader, element: <UsersScreen /> },
   { path: "users/roles", loader: rolesLoader, element: <RolesScreen /> },
   { path: "shipments", loader: shipmentsLoader, element: <ShipmentsScreen /> },
   { path: "shipments/new", loader: newShipmentLoader, element: <NewShipmentScreen /> },
+  { path: "shipments/:shipment", loader: shipmentLoader, element: <ShipmentScreen /> },
   {
     path: "shipments/projects/:project",
     loader: projectStorageLoader,

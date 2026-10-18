@@ -4,7 +4,11 @@ export const DASHBOARD_HREF = "/dashboard";
 
 export const SHIPMENTS_HREF = "/shipments";
 
-export const NEW_SHIPMENT_HREF = `${SHIPMENTS_HREF}/new`;
+export function newShipmentHref(project?: string): string {
+  const href = `${SHIPMENTS_HREF}/new`;
+
+  return project === undefined ? href : `${href}?${new URLSearchParams({ project })}`;
+}
 
 export const MILLING_HREF = "/milling";
 
@@ -54,6 +58,10 @@ export function customersHref(params: ListPageParams = {}): string {
   return listPageHref(CUSTOMERS_HREF, params);
 }
 
+export function customerHref(customer: string): string {
+  return `${CUSTOMERS_HREF}/${customer}`;
+}
+
 export function usersHref(params: ListPageParams = {}): string {
   return listPageHref(USERS_HREF, params);
 }
@@ -88,6 +96,10 @@ export function newGrinderHref(project: string): string {
 
 export function grinderHref(project: string, grinder: string): string {
   return `${settingsProjectHref(project)}/machines/${grinder}`;
+}
+
+export function shipmentHref(shipment: string): string {
+  return `${SHIPMENTS_HREF}/${shipment}`;
 }
 
 export function shipmentsProjectHref(project: string): string {

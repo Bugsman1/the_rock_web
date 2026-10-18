@@ -9,7 +9,13 @@ import { noAccess } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
 import type { ShipmentRecord } from "@/lib/shipments";
-import { ProjectStorageScreen, projectStorageLoader, ShipmentHistory } from "./ShipmentsScreens";
+import {
+  ProjectStorageScreen,
+  projectStorageLoader,
+  ShipmentHistory,
+  ShipmentsScreen,
+  shipmentsLoader,
+} from "./ShipmentsScreens";
 
 const allRights = { ...noAccess, superuser: true };
 
@@ -38,10 +44,15 @@ const records = [
   record("SH-1041", "Sidi", "2026-10-02T08:15:00Z"),
 ];
 
-function renderHistory() {
+function renderHistory(shown: readonly ShipmentRecord[] = records) {
+  const router = createMemoryRouter(
+    [{ path: "/fr/history", element: <ShipmentHistory records={shown} /> }],
+    { initialEntries: ["/fr/history"] },
+  );
+
   return render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <ShipmentHistory records={records} />
+      <RouterProvider router={router} />
     </IntlProvider>,
   );
 }
@@ -86,22 +97,25 @@ describe("ShipmentHistory", () => {
   });
 
   it("shows whether each shipment is fully paid", () => {
-    render(
-      <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-        <ShipmentHistory
-          records={[
-            { ...record("SH-1", "Ahmed", "2026-09-08T09:30:00Z"), transportTotal: 500, paid: 200 },
-            { ...record("SH-2", "Sidi", "2026-09-09T09:30:00Z"), transportTotal: 500, paid: 500 },
-          ]}
-        />
-      </IntlProvider>,
-    );
+    renderHistory([
+      { ...record("SH-1", "Ahmed", "2026-09-08T09:30:00Z"), transportTotal: 500, paid: 200 },
+      { ...record("SH-2", "Sidi", "2026-09-09T09:30:00Z"), transportTotal: 500, paid: 500 },
+    ]);
 
     const [, paid, unpaid] = screen.getAllByRole("row");
     expect(paid).toHaveTextContent("SH-2");
     expect(paid).toHaveTextContent(messages.shipments.payment.complete);
     expect(unpaid).toHaveTextContent("SH-1");
     expect(unpaid).toHaveTextContent(messages.shipments.payment.incomplete);
+  });
+
+  it("opens a shipment from its row", () => {
+    renderHistory();
+
+    expect(screen.getByRole("link", { name: "SH-1012" })).toHaveAttribute(
+      "href",
+      "/fr/shipments/SH-1012",
+    );
   });
 
   it("says so when nothing matches", async () => {
@@ -151,7 +165,16 @@ function apiShipment(id: number, status: string) {
   };
 }
 
+function apiProject(id: number, name: string) {
+  return { id, name, site: "zouerat", status: "active", ...stamps };
+}
+
+function answerProjectList(projects: readonly object[]) {
+  server.use(http.get(`${API}/projects/`, () => page(projects)));
+}
+
 function answerProject() {
+  answerProjectList([apiProject(3, "Zouérat 1"), apiProject(4, "Zouérat 2")]);
   server.use(
     http.get(`${API}/projects/3/`, () =>
       HttpResponse.json({ id: 3, name: "Zouérat 1", site: "zouerat", status: "active", ...stamps }),
@@ -216,6 +239,7 @@ function openProject(path: string) {
 
 describe("ProjectStorageScreen", () => {
   it("finds a stored shipment by client, phone or number, keeping its place in line", async () => {
+    answerProjectList([apiProject(3, "Zouérat 1"), apiProject(4, "Zouérat 2")]);
     server.use(
       http.get(`${API}/grinding-operations/`, () => page([])),
       http.get(`${API}/projects/3/`, () =>
@@ -263,6 +287,7 @@ describe("ProjectStorageScreen", () => {
     expect(started).toHaveTextContent("8,5 sur 10");
     expect(started).toHaveTextContent(messages.shipments.statuses.grinding);
     expect(screen.queryByText("SH-3")).toBeNull();
+    expect(screen.getByRole("link", { name: "SH-1" })).toHaveAttribute("href", "/fr/shipments/1");
     expect(waiting).toHaveTextContent(messages.shipments.payment.incomplete);
     expect(
       screen.getByRole("link", { name: `${messages.shipments.project.startMilling} SH-1` }),
@@ -299,6 +324,25 @@ describe("ProjectStorageScreen", () => {
     expect(asked).toBe("ar");
   });
 
+  it("adds a shipment to this project", async () => {
+    answerProject();
+    openProject("/fr/shipments/projects/3");
+
+    expect(await screen.findByRole("link", { name: messages.shipments.addNew })).toHaveAttribute(
+      "href",
+      "/fr/shipments/new?project=3",
+    );
+  });
+
+  it("has no way back to the projects for a user limited to one project", async () => {
+    answerProject();
+    answerProjectList([apiProject(3, "Zouérat 1")]);
+    openProject("/fr/shipments/projects/3");
+
+    expect(await screen.findByText("SH-1")).toBeVisible();
+    expect(screen.queryByRole("link", { name: messages.common.back })).toBeNull();
+  });
+
   it("starts grinding from the shipments page and goes to the grinding page", async () => {
     answerProject();
     answerGrindingChoices();
@@ -329,5 +373,33 @@ describe("ProjectStorageScreen", () => {
     expect(router.state.location.pathname).toBe("/fr/milling/projects/3");
     expect(created).toMatchObject({ shipment: 1, grinder: 7, bags_count: 2, operator: 4 });
     expect(shipmentChange).toEqual({ status: "grinding" });
+  });
+});
+
+describe("ShipmentsScreen", () => {
+  it("opens the only project of a user limited to one project", async () => {
+    answerProjectList([apiProject(3, "Zouérat 1")]);
+    server.use(
+      http.get(`${API}/shipments/`, () => page([])),
+      http.get(`${API}/grinding-operations/`, () => page([])),
+    );
+    const router = createMemoryRouter(
+      [
+        { path: "/:locale/shipments", loader: shipmentsLoader, element: <ShipmentsScreen /> },
+        { path: "/:locale/shipments/projects/:project", element: <h1>project page</h1> },
+      ],
+      { initialEntries: ["/fr/shipments"] },
+    );
+
+    render(
+      <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
+        <AccessContext value={allRights}>
+          <RouterProvider router={router} />
+        </AccessContext>
+      </IntlProvider>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "project page" })).toBeVisible();
+    expect(router.state.location.pathname).toBe("/fr/shipments/projects/3");
   });
 });

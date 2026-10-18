@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { useLoaderData } from "react-router";
+import { redirect, useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { ActionLink } from "@/components/ui/ActionLink";
@@ -8,6 +8,7 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { CardGrid, KpiTile, LinkCard, StatGrid } from "@/components/ui/Cards";
 import type { Stat } from "@/components/ui/Cards";
 import { NewOperationForm } from "@/components/grinding/NewOperationForm";
+import { PaymentStatus } from "@/components/shipments/PaymentStatus";
 import { DateField } from "@/components/ui/DateField";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
@@ -21,8 +22,8 @@ import {
   tableRowClasses,
 } from "@/components/ui/TablePanel";
 import { TextField } from "@/components/ui/TextField";
-import { locales } from "@/i18n/locales";
-import { useReplace } from "@/i18n/navigation";
+import { defaultLocale, isLocale, locales } from "@/i18n/locales";
+import { Link, localizedHref, useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { cn } from "@/lib/cn";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
@@ -34,8 +35,9 @@ import { isInService } from "@/lib/projects";
 import { getGrinders, getProjects, requireProject } from "@/lib/projectsApi";
 import {
   millingProjectHref,
-  NEW_SHIPMENT_HREF,
+  newShipmentHref,
   SHIPMENTS_HREF,
+  shipmentHref,
   shipmentsHistoryHref,
   shipmentsProjectHref,
   startGrindingHref,
@@ -45,7 +47,6 @@ import { getShipments } from "@/lib/shipmentsApi";
 import { matchesSearch } from "@/lib/search";
 import { getOperators } from "@/lib/users";
 import {
-  amountLeftToPay,
   bagCount,
   bagShare,
   clientBags,
@@ -61,14 +62,21 @@ import {
 import type { HistoryFilter, StoredShipment } from "./shipments";
 import { useInvoiceDownload } from "./NewShipmentScreen";
 
-export async function shipmentsLoader() {
+export async function shipmentsLoader({ params }: LoaderFunctionArgs) {
   const [projects, shipments, operations] = await Promise.all([
     getProjects(),
     getShipments(),
     getGrindingOperations(),
   ]);
+  const inService = projects.filter(isInService);
+  const [onlyProject] = inService;
 
-  return { projects: projects.filter(isInService), stored: storedShipments(shipments, operations) };
+  if (inService.length === 1 && onlyProject !== undefined) {
+    const locale = isLocale(params.locale) ? params.locale : defaultLocale;
+    throw redirect(localizedHref(locale, shipmentsProjectHref(onlyProject.id)));
+  }
+
+  return { projects: inService, stored: storedShipments(shipments, operations) };
 }
 
 type PanelClient = {
@@ -144,7 +152,7 @@ export function ShipmentsScreen() {
 
         <div className="flex flex-1 items-center justify-end">
           {canAdd ? (
-            <ButtonLink href={NEW_SHIPMENT_HREF} variant="primary">
+            <ButtonLink href={newShipmentHref()} variant="primary">
               <Icon name="plus" />
               {t("addNew")}
             </ButtonLink>
@@ -184,7 +192,7 @@ export function ShipmentsScreen() {
 type StorageHeaderProps = {
   title: string;
   stats: readonly Stat[];
-  backHref: string;
+  backHref: string | undefined;
   action: ReactNode;
 };
 
@@ -193,7 +201,7 @@ function StorageHeader({ title, stats, backHref, action }: StorageHeaderProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <BackLink href={backHref} label={common("back")} />
+      {backHref === undefined ? null : <BackLink href={backHref} label={common("back")} />}
 
       <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
         <PageTitle>{title}</PageTitle>
@@ -216,7 +224,9 @@ export async function projectShipmentsLoader({ params }: LoaderFunctionArgs) {
 
   return {
     project,
-    shipments: completedShipments(shipmentsOfProject(await getShipments(project.id), project.id)),
+    shipments: completedShipments(
+      shipmentsOfProject(await getShipments({ project: project.id }), project.id),
+    ),
   };
 }
 
@@ -234,9 +244,10 @@ type GrindingChoices = Awaited<ReturnType<typeof getGrindingChoices>> & { shipme
 export async function projectStorageLoader({ params, request }: LoaderFunctionArgs) {
   const project = await requireProject(params.project ?? "");
   const grind = new URL(request.url).searchParams.get("grind");
-  const [shipments, operations] = await Promise.all([
-    getShipments(project.id),
+  const [shipments, operations, projects] = await Promise.all([
+    getShipments({ project: project.id }),
     getGrindingOperations(project.id),
+    getProjects(),
   ]);
   const grinding = grind === null ? undefined : await getGrindingChoices(project.id, operations);
 
@@ -247,31 +258,14 @@ export async function projectStorageLoader({ params, request }: LoaderFunctionAr
     project,
     shipments: shipmentsByArrival(storedShipments(shipments, operations, project.id)),
     grinding: choices,
+    onlyProject: projects.filter(isInService).length === 1,
   };
-}
-
-const pillClasses =
-  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] font-bold";
-
-function PaymentStatus({ shipment }: { shipment: ShipmentRecord }) {
-  const t = useTranslations("shipments.payment");
-
-  return amountLeftToPay(shipment) === 0 ? (
-    <span className={`${pillClasses} border-success-300 bg-success-50 text-success-700`}>
-      <Icon name="circle-check" className="h-4 w-4" />
-      {t("complete")}
-    </span>
-  ) : (
-    <span className={`${pillClasses} border-warning-300 bg-warning-50 text-warning-700`}>
-      {t("incomplete")}
-    </span>
-  );
 }
 
 const invoiceButtonClasses =
   "rounded-action text-brand-700 hover:bg-surface-hover inline-flex h-9 cursor-pointer items-center justify-center text-[14px] font-bold";
 
-function InvoiceDownload({ shipment }: { shipment: ShipmentRecord }) {
+export function InvoiceDownload({ shipment }: { shipment: ShipmentRecord }) {
   const t = useTranslations("shipments.invoice");
   const saved = useTranslations("shipments.form.saved");
   const common = useTranslations("common");
@@ -388,12 +382,14 @@ function ClientQueueTable({
 
         <tbody>
           {rows.map(({ shipment, position }) => (
-            <tr key={shipment.shipmentNumber} className={tableRowClasses}>
+            <tr key={shipment.shipmentNumber} className={`${tableRowClasses} relative`}>
               <td className={`${tableCellClasses} text-brand-700 font-bold`}>
                 {formatCount(position, locale)}
               </td>
               <td className={`${tableCellClasses} text-ink font-bold`}>
-                {shipment.shipmentNumber}
+                <Link href={shipmentHref(shipment.id)} className="after:absolute after:inset-0">
+                  {shipment.shipmentNumber}
+                </Link>
               </td>
               <td className={`${tableCellClasses} text-ink font-bold`}>
                 <span dir="auto">{shipment.customerName}</span>
@@ -413,11 +409,11 @@ function ClientQueueTable({
               <td className={tableCellClasses}>
                 <PaymentStatus shipment={shipment} />
               </td>
-              <td className={tableCellClasses}>
+              <td className={`${tableCellClasses} relative z-10`}>
                 <InvoiceDownload shipment={shipment} />
               </td>
               {canStart ? (
-                <td className={`${tableCellClasses} text-end`}>
+                <td className={`${tableCellClasses} relative z-10 text-end`}>
                   <ActionLink
                     href={startGrindingHref(project, shipment.shipmentNumber)}
                     icon="player-play"
@@ -483,11 +479,13 @@ function StartGrindingDrawer({
 }
 
 export function ProjectStorageScreen() {
-  const { project, shipments, grinding } = useLoaderData<typeof projectStorageLoader>();
+  const { project, shipments, grinding, onlyProject } =
+    useLoaderData<typeof projectStorageLoader>();
   const t = useTranslations("shipments");
   const history = useTranslations("shipments.history");
   const common = useTranslations("common");
   const locale = useLocale();
+  const canAdd = useCan()("shipments", "add");
   const canStart = useCan()("grinding", "add");
   const [query, setQuery] = useState("");
 
@@ -495,12 +493,20 @@ export function ProjectStorageScreen() {
     <div className="flex w-full flex-col gap-6">
       <StorageHeader
         title={project.name}
-        backHref={SHIPMENTS_HREF}
+        backHref={onlyProject ? undefined : SHIPMENTS_HREF}
         action={
-          <ButtonLink href={shipmentsHistoryHref(project.id)} variant="secondary">
-            <Icon name="history" />
-            {history("open")}
-          </ButtonLink>
+          <div className="flex flex-wrap gap-3">
+            <ButtonLink href={shipmentsHistoryHref(project.id)} variant="secondary">
+              <Icon name="history" />
+              {history("open")}
+            </ButtonLink>
+            {canAdd ? (
+              <ButtonLink href={newShipmentHref(project.id)} variant="primary">
+                <Icon name="plus" />
+                {t("addNew")}
+              </ButtonLink>
+            ) : null}
+          </div>
         }
         stats={[
           { label: t("clientsLabel"), value: formatCount(clientBags(shipments).length, locale) },
@@ -610,9 +616,11 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
             </thead>
             <tbody>
               {results.map((record) => (
-                <tr key={record.id} className={tableRowClasses}>
+                <tr key={record.id} className={`${tableRowClasses} relative`}>
                   <td className={`${tableCellClasses} text-ink font-bold`}>
-                    {record.shipmentNumber}
+                    <Link href={shipmentHref(record.id)} className="after:absolute after:inset-0">
+                      {record.shipmentNumber}
+                    </Link>
                   </td>
                   <td className={`${tableCellClasses} text-ink font-bold`}>
                     <span dir="auto">{record.customerName}</span>
@@ -629,7 +637,7 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
                   <td className={tableCellClasses}>
                     <PaymentStatus shipment={record} />
                   </td>
-                  <td className={tableCellClasses}>
+                  <td className={`${tableCellClasses} relative z-10`}>
                     <InvoiceDownload shipment={record} />
                   </td>
                   <td className={`${tableCellClasses} text-ink-muted max-w-64 font-semibold`}>

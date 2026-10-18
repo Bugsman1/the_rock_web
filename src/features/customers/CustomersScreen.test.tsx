@@ -72,6 +72,7 @@ describe("CustomersScreen", () => {
 
     expect(await shownNames()).toEqual(["Ahmed", "Fatima"]);
     expect(screen.getByText("Clients : 52")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Ahmed" })).toHaveAttribute("href", "/fr/customers/1");
     expect(screen.getByRole("link", { name: "Modifier Fatima" })).toHaveAttribute(
       "href",
       "/fr/customers?q=a&page=2&edit=2",
@@ -88,6 +89,7 @@ describe("CustomersScreen", () => {
     expect(await shownNames()).toEqual(["Ahmed", "Fatima"]);
     expect(screen.queryByRole("link", { name: messages.customers.new })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Modifier Fatima" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Fatima" })).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 

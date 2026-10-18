@@ -13,6 +13,9 @@ import {
   resourceHref,
   settingsProjectHref,
   shipmentsHistoryHref,
+  newShipmentHref,
+  customerHref,
+  shipmentHref,
   shipmentsProjectHref,
   startGrindingHref,
   startRefiningHref,
@@ -66,6 +69,10 @@ describe("usersHref", () => {
 describe("shipments routes", () => {
   it("builds the project and history pages", () => {
     expect(shipmentsProjectHref("3")).toBe("/shipments/projects/3");
+    expect(newShipmentHref()).toBe("/shipments/new");
+    expect(newShipmentHref("3")).toBe("/shipments/new?project=3");
+    expect(shipmentHref("52")).toBe("/shipments/52");
+    expect(customerHref("7")).toBe("/customers/7");
     expect(shipmentsHistoryHref("3")).toBe("/shipments/projects/3/history");
   });
 });

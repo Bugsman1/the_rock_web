@@ -234,6 +234,8 @@ describe("routes", () => {
 describe("skeletonShapeFor", () => {
   it("draws forms, tables, details and cards like the page that is coming", () => {
     expect(skeletonShapeFor("/ar/shipments/new")).toBe("form");
+    expect(skeletonShapeFor("/ar/shipments/52")).toBe("detail");
+    expect(skeletonShapeFor("/ar/customers/7")).toBe("table");
     expect(skeletonShapeFor("/fr/settings/projects/3/machines/9")).toBe("form");
     expect(skeletonShapeFor("/ar/settings/projects/new")).toBe("form");
     expect(skeletonShapeFor("/ar/customers")).toBe("table");

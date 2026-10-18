@@ -65,7 +65,7 @@ const projects: readonly Project[] = [
   { id: "3", name: "Sfariyat 1", site: "sfariyat", status: "maintenance" },
 ];
 
-function renderForm() {
+function renderForm(defaultProject?: string) {
   return render(
     <IntlProvider locale="ar" messages={messages} timeZone="Africa/Nouakchott">
       <NewShipmentForm
@@ -73,6 +73,10 @@ function renderForm() {
         defaultArrivalTime="08:30"
         customers={customers}
         projects={projects}
+        defaultProject={defaultProject}
+        backHref={
+          defaultProject === undefined ? "/shipments" : `/shipments/projects/${defaultProject}`
+        }
       />
     </IntlProvider>,
   );
@@ -84,9 +88,9 @@ async function typeNoTransportCost(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText(form.passengerFare), "0");
 }
 
-async function saveFilledShipment() {
+async function saveFilledShipment(defaultProject?: string) {
   const user = userEvent.setup();
-  renderForm();
+  renderForm(defaultProject);
 
   await user.type(screen.getByLabelText(form.customerName), "أحمد");
   await user.type(screen.getByLabelText(form.phone), "22334455");
@@ -110,16 +114,24 @@ describe("NewShipmentForm", () => {
     expect(createShipmentMock).not.toHaveBeenCalled();
   });
 
-  it("rejects a bag count below one", async () => {
+  it("takes whole or half bags only", async () => {
     const user = userEvent.setup();
     renderForm();
 
     const bagCount = screen.getByLabelText(form.bagCount);
-    await user.clear(bagCount);
     await user.type(bagCount, "0");
     await user.click(screen.getByRole("button", { name: form.submit }));
-
     expect(await screen.findByText(form.errors.bagCountInvalid)).toBeVisible();
+
+    await user.clear(bagCount);
+    await user.type(bagCount, "2.3");
+    await user.click(screen.getByRole("button", { name: form.submit }));
+    expect(await screen.findByText(form.errors.bagCountInvalid)).toBeVisible();
+
+    await user.clear(bagCount);
+    await user.type(bagCount, "2.5");
+    await user.tab();
+    expect(screen.queryByText(form.errors.bagCountInvalid)).toBeNull();
   });
 
   it("sends a filled shipment on, then offers its invoice and the way back to the list", async () => {
@@ -152,7 +164,6 @@ describe("NewShipmentForm", () => {
           passengerFare: 0,
           currentPayment: Number.NaN,
           mill: "3",
-          status: "pending",
           notes: "سبعة أكياس مبللة",
         },
         expect.any(Function),
@@ -192,6 +203,29 @@ describe("NewShipmentForm", () => {
     expect(getInvoiceMock).toHaveBeenCalledWith("52", "fr");
     expect(revokeUrl).toHaveBeenCalledWith("blob:invoice");
     click.mockRestore();
+  });
+
+  it("hides the way back while the invoice is downloading", async () => {
+    getInvoiceMock.mockReturnValue(new Promise(() => undefined));
+    const user = await saveFilledShipment();
+
+    await user.click(screen.getByRole("button", { name: form.saved.download.ar }));
+
+    expect(await screen.findByRole("status", { name: form.saved.downloading })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: form.saved.back })).toBeNull();
+  });
+
+  it("starts on the project it was opened from and leads back to it", async () => {
+    await saveFilledShipment("3");
+
+    expect(screen.getByRole("link", { name: form.saved.back })).toHaveAttribute(
+      "href",
+      "/shipments/projects/3",
+    );
+    expect(createShipmentMock).toHaveBeenCalledWith(
+      expect.objectContaining({ mill: "3" }),
+      expect.any(Function),
+    );
   });
 
   it("says when the invoice could not be downloaded", async () => {
@@ -397,6 +431,16 @@ describe("NewShipmentForm", () => {
     expect(
       screen.queryByRole("dialog", { name: messages.customers.form.newTitle }),
     ).not.toBeInTheDocument();
+
+    await user.click(screen.getByLabelText(form.customerName));
+    expect(
+      within(screen.getByRole("listbox"))
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual([messages.customers.new]);
+
+    await user.clear(screen.getByLabelText(form.customerName));
+    expect(screen.getByRole("option", { name: /سيدي ولد إبراهيم/ })).toBeVisible();
   });
 
   it("keeps the new client form open with the reason when the client cannot be added", async () => {
@@ -444,16 +488,14 @@ describe("NewShipmentForm", () => {
     }
   });
 
-  it("offers only the user's projects and every shipment status", () => {
+  it("offers only the user's projects and asks no shipment status", () => {
     renderForm();
 
     expect(screen.getByLabelText(form.mill)).toHaveValue("2");
-    expect(screen.getByLabelText(form.status)).toHaveValue("pending");
-
     expect(screen.getByRole("option", { name: "Zouérat 2" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Sfariyat 1" })).toBeInTheDocument();
     for (const label of Object.values(messages.shipments.statuses)) {
-      expect(screen.getByRole("option", { name: label })).toBeInTheDocument();
+      expect(screen.queryByRole("option", { name: label })).toBeNull();
     }
   });
 

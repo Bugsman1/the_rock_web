@@ -4,7 +4,14 @@ import type { ProjectId } from "./projects";
 import { shipmentFromApi } from "./shipments";
 import type { ShipmentRecord, ShipmentStatusKey } from "./shipments";
 
-export async function getShipments(project?: ProjectId): Promise<readonly ShipmentRecord[]> {
+type ShipmentFilter = {
+  project?: ProjectId;
+  customer?: string;
+};
+
+export async function getShipments(
+  filter: ShipmentFilter = {},
+): Promise<readonly ShipmentRecord[]> {
   const shipments = await fetchAllPages(async (page) =>
     unwrap(
       await apiClient.GET("/api/v1/shipments/", {
@@ -13,7 +20,8 @@ export async function getShipments(project?: ProjectId): Promise<readonly Shipme
             ordering: "-arrival_date",
             page,
             page_size: MAX_PAGE_SIZE,
-            ...(project === undefined ? {} : { project: Number(project) }),
+            ...(filter.project === undefined ? {} : { project: Number(filter.project) }),
+            ...(filter.customer === undefined ? {} : { customer: Number(filter.customer) }),
           },
         },
       }),

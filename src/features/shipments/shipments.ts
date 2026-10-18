@@ -1,14 +1,14 @@
 import { z } from "zod";
-import type { BackendFieldErrors, FieldErrors } from "@/lib/api/client";
-import { isIsoDate, isTimeValue } from "@/lib/datetime";
-import { toMoneyDecimal } from "@/lib/format";
+import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/client";
+import { isIsoDate, isTimeValue, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
+import { fromDecimal, toMoneyDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
-import { remainingBags } from "@/lib/grinding";
+import { isHalfBagCount, remainingBags } from "@/lib/grinding";
 import type { MillingOperation } from "@/lib/grinding";
 import { isValidPhone } from "@/lib/phone";
 import type { ProjectId } from "@/lib/projects";
 import { matchesSearch } from "@/lib/search";
-import { shipmentStatusKeys } from "@/lib/shipments";
+import { shipmentFromApi } from "@/lib/shipments";
 import type { ShipmentRecord, ShipmentStatusKey } from "@/lib/shipments";
 
 export const transportMethodKeys = ["truck", "hilux", "other"] as const;
@@ -158,8 +158,10 @@ export function remainingToPay(total: number, payment: number): number {
 
 const MONEY_CENTS = 100;
 
-export function amountLeftToPay(record: ShipmentRecord): number {
-  return Math.round(remainingToPay(record.transportTotal, record.paid) * MONEY_CENTS) / MONEY_CENTS;
+export function amountLeftAfter(amountLeft: number, payment: number): number | undefined {
+  return Number.isFinite(payment) && payment > 0 && payment <= amountLeft
+    ? Math.round((amountLeft - payment) * MONEY_CENTS) / MONEY_CENTS
+    : undefined;
 }
 
 export function completedShipments(records: readonly ShipmentRecord[]): readonly ShipmentRecord[] {
@@ -177,9 +179,10 @@ type ValidationMessages = {
   amountInvalid: string;
   passengerCountInvalid: string;
   paymentTooHigh: string;
+  totalBelowPaid: string;
 };
 
-export function createNewShipmentSchema(messages: ValidationMessages) {
+export function createNewShipmentSchema(messages: ValidationMessages, alreadyPaid = 0) {
   return z
     .object({
       customerName: z.string().trim().min(1, messages.required),
@@ -198,8 +201,7 @@ export function createNewShipmentSchema(messages: ValidationMessages) {
         .refine(isTimeValue, messages.timeInvalid),
       bagCount: z
         .number({ error: messages.bagCountInvalid })
-        .int(messages.bagCountInvalid)
-        .min(1, messages.bagCountInvalid),
+        .refine(isHalfBagCount, messages.bagCountInvalid),
       transportMethod: z.enum(transportMethodKeys),
       source: z.string().trim().min(1, messages.required),
       bagFare: z.number({ error: messages.amountInvalid }).min(0, messages.amountInvalid),
@@ -212,7 +214,6 @@ export function createNewShipmentSchema(messages: ValidationMessages) {
         error: messages.amountInvalid,
       }),
       mill: z.string().min(1, messages.required),
-      status: z.enum(shipmentStatusKeys),
       notes: z.string().max(NOTES_MAX_LENGTH),
     })
     .superRefine((values, context) => {
@@ -222,6 +223,10 @@ export function createNewShipmentSchema(messages: ValidationMessages) {
           path: ["currentPayment"],
           message: messages.paymentTooHigh,
         });
+      }
+
+      if (alreadyPaid > transportTotal(values)) {
+        context.addIssue({ code: "custom", path: ["bagFare"], message: messages.totalBelowPaid });
       }
     });
 }
@@ -243,7 +248,6 @@ const shipmentFields: readonly ShipmentField[] = [
   "passengerFare",
   "currentPayment",
   "mill",
-  "status",
   "notes",
 ];
 
@@ -258,7 +262,6 @@ const fieldOfApi: Readonly<Record<string, ShipmentField>> = {
   passenger_transport_cost_per_person: "passengerFare",
   current_payment: "currentPayment",
   project: "mill",
-  status: "status",
   notes: "notes",
 };
 
@@ -282,12 +285,116 @@ export function shipmentToApi(
     bag_transport_cost_per_bag: toMoneyDecimal(values.bagFare),
     passengers_count: values.passengerCount,
     passenger_transport_cost_per_person: toMoneyDecimal(values.passengerFare),
-    current_payment: toMoneyDecimal(amountOrZero(values.currentPayment)),
     transport_method: values.transportMethod,
     source: values.source.trim(),
     project: Number(values.mill),
-    status: values.status,
     notes: values.notes.trim(),
+  };
+}
+
+export function newShipmentToApi(values: NewShipmentValues, target: ShipmentTarget) {
+  return {
+    ...shipmentToApi(values, target),
+    current_payment: toMoneyDecimal(amountOrZero(values.currentPayment)),
+  };
+}
+
+export type ShipmentPayment = {
+  id: string;
+  amount: number;
+  paidAt: IsoTimestamp;
+  notes: string;
+};
+
+export type ShipmentDetail = ShipmentRecord & {
+  transportMethod: (typeof transportMethodKeys)[number];
+  bagFare: number;
+  passengerCount: number;
+  passengerFare: number;
+  payments: readonly ShipmentPayment[];
+};
+
+export function shipmentDetailFromApi(shipment: ApiSchema<"Shipment">): ShipmentDetail {
+  return {
+    ...shipmentFromApi(shipment),
+    transportMethod: shipment.transport_method,
+    bagFare: fromDecimal(shipment.bag_transport_cost_per_bag),
+    passengerCount: shipment.passengers_count ?? 0,
+    passengerFare: fromDecimal(shipment.passenger_transport_cost_per_person ?? "0"),
+    payments: (shipment.payments ?? []).map((payment) => ({
+      id: String(payment.id),
+      amount: fromDecimal(payment.amount),
+      paidAt: payment.paid_at,
+      notes: payment.notes,
+    })),
+  };
+}
+
+export function shipmentFormValues(shipment: ShipmentDetail): NewShipmentValues {
+  const arrivedAt = new Date(shipment.arrivedAt);
+
+  return {
+    customerName: shipment.customerName,
+    phone: shipment.phone,
+    arrivalDate: todayAsInputValue(arrivedAt),
+    arrivalTime: nowAsTimeValue(arrivedAt),
+    bagCount: shipment.bagCount,
+    transportMethod: shipment.transportMethod,
+    source: shipment.source,
+    bagFare: shipment.bagFare,
+    passengerCount: shipment.passengerCount,
+    passengerFare: shipment.passengerFare,
+    currentPayment: Number.NaN,
+    mill: shipment.project,
+    notes: shipment.notes,
+  };
+}
+
+export function createPaymentSchema(
+  messages: {
+    required: string;
+    dateInvalid: string;
+    timeInvalid: string;
+    amountInvalid: string;
+    amountTooHigh: string;
+  },
+  amountLeft: number,
+) {
+  return z.object({
+    amount: z
+      .number({ error: messages.amountInvalid })
+      .positive(messages.amountInvalid)
+      .max(amountLeft, messages.amountTooHigh),
+    date: z
+      .string()
+      .min(1, { message: messages.required, abort: true })
+      .refine(isIsoDate, messages.dateInvalid),
+    time: z
+      .string()
+      .min(1, { message: messages.required, abort: true })
+      .refine(isTimeValue, messages.timeInvalid),
+    notes: z.string().trim().max(NOTES_MAX_LENGTH),
+  });
+}
+
+export type PaymentValues = z.infer<ReturnType<typeof createPaymentSchema>>;
+
+export function paymentToApi(values: PaymentValues, shipmentId: string, paidAt: IsoTimestamp) {
+  return {
+    shipment: Number(shipmentId),
+    amount: toMoneyDecimal(values.amount),
+    paid_at: paidAt,
+    notes: values.notes,
+  };
+}
+
+export function paymentErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof PaymentValues> {
+  const amount = errors.amount ?? errors.shipment;
+
+  return {
+    ...(amount === undefined ? {} : { amount }),
+    ...(errors.paid_at === undefined ? {} : { date: errors.paid_at }),
+    ...(errors.notes === undefined ? {} : { notes: errors.notes }),
   };
 }
 

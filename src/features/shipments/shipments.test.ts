@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import type { ApiSchema } from "@/lib/api/client";
 import type { MillingOperation } from "@/lib/grinding";
+import { amountLeftToPay } from "@/lib/shipments";
 import type { ShipmentRecord } from "@/lib/shipments";
 import {
-  amountLeftToPay,
+  amountLeftAfter,
   completedShipments,
   bagCount,
   bagShare,
@@ -17,6 +19,12 @@ import {
   passengersCost,
   shipmentErrorsFromApi,
   shipmentToApi,
+  newShipmentToApi,
+  shipmentDetailFromApi,
+  shipmentFormValues,
+  createPaymentSchema,
+  paymentToApi,
+  paymentErrorsFromApi,
   shipmentsByArrival,
   shipmentsOfProject,
   storedShipments,
@@ -106,7 +114,6 @@ describe("storage", () => {
     operatorName: "Aicha",
     startedAt: "2026-10-08T06:00:00.000Z",
     estimatedEndAt: "2026-10-08T12:00:00.000Z",
-    cost: 0,
     notes: "",
   };
 
@@ -371,14 +378,13 @@ describe("backend form", () => {
     passengerFare: 50.5,
     currentPayment: 1000.5,
     mill: "3",
-    status: "pending",
     notes: " Sacs mouillés ",
   };
 
   describe("shipmentToApi", () => {
-    it("sends the fares as typed, the ids as numbers and trimmed texts", () => {
+    it("sends the fares as typed, the ids as numbers and trimmed texts, and no status", () => {
       expect(
-        shipmentToApi(values, { customerId: "7", arrivedAt: "2026-10-10T08:30:00.000Z" }),
+        newShipmentToApi(values, { customerId: "7", arrivedAt: "2026-10-10T08:30:00.000Z" }),
       ).toEqual({
         customer: 7,
         arrival_date: "2026-10-10T08:30:00.000Z",
@@ -390,9 +396,14 @@ describe("backend form", () => {
         transport_method: "hilux",
         source: "Chami",
         project: 3,
-        status: "pending",
         notes: "Sacs mouillés",
       });
+    });
+
+    it("sends no payment when an existing shipment is edited", () => {
+      expect(
+        shipmentToApi(values, { customerId: "7", arrivedAt: "2026-10-10T08:30:00.000Z" }),
+      ).not.toHaveProperty("current_payment");
     });
   });
 
@@ -406,16 +417,29 @@ describe("backend form", () => {
       amountInvalid: "amount",
       passengerCountInvalid: "passengers",
       paymentTooHigh: "too high",
+      totalBelowPaid: "below paid",
     });
     const issues = (currentPayment: number) =>
       (schema.safeParse({ ...values, phone: "46109325", currentPayment }).error?.issues ?? []).map(
         (issue) => [issue.path.join("."), issue.message],
       );
 
+    it("takes whole or half bags, never another fraction", () => {
+      const bagIssues = (bagCount: number) =>
+        (
+          schema.safeParse({ ...values, bagCount, currentPayment: Number.NaN }).error?.issues ?? []
+        ).map((issue) => issue.message);
+
+      expect(bagIssues(12.5)).toEqual([]);
+      expect(bagIssues(0.5)).toEqual([]);
+      expect(bagIssues(12.3)).toEqual(["bags"]);
+      expect(bagIssues(0)).toEqual(["bags"]);
+    });
+
     it("may stay empty and is sent as zero", () => {
       expect(issues(Number.NaN)).toEqual([]);
       expect(
-        shipmentToApi(
+        newShipmentToApi(
           { ...values, currentPayment: Number.NaN },
           { customerId: "7", arrivedAt: "2026-10-10T08:30:00.000Z" },
         ).current_payment,
@@ -426,6 +450,31 @@ describe("backend form", () => {
       expect(issues(-1)).toEqual([["currentPayment", "amount"]]);
       expect(issues(3302)).toEqual([["currentPayment", "too high"]]);
       expect(issues(3301)).toEqual([]);
+    });
+
+    it("keeps the transport total at or above what was already paid", () => {
+      const editSchema = createNewShipmentSchema(
+        {
+          required: "required",
+          bagCountInvalid: "bags",
+          phoneInvalid: "phone",
+          dateInvalid: "date",
+          timeInvalid: "time",
+          amountInvalid: "amount",
+          passengerCountInvalid: "passengers",
+          paymentTooHigh: "too high",
+          totalBelowPaid: "below paid",
+        },
+        3000,
+      );
+      const edited = { ...values, currentPayment: Number.NaN };
+
+      expect(editSchema.safeParse(edited).success).toBe(true);
+      expect(
+        editSchema
+          .safeParse({ ...edited, bagCount: 10 })
+          .error?.issues.map((issue) => [issue.path.join("."), issue.message]),
+      ).toEqual([["bagFare", "below paid"]]);
     });
 
     it("leaves the rest of the transport total to pay", () => {
@@ -495,5 +544,117 @@ describe("payment and history", () => {
     ];
 
     expect(completedShipments(records).map((record) => record.id)).toEqual(["1"]);
+  });
+});
+
+describe("shipment payments", () => {
+  const apiShipment: ApiSchema<"Shipment"> = {
+    id: 52,
+    number: "SHP-00052",
+    invoice_number: null,
+    invoiced_at: null,
+    customer_name: "Sidi",
+    customer_phone: "+222 46 10 93 25",
+    arrival_date: "2026-10-10T08:30:00Z",
+    bags_count: 10,
+    bag_transport_cost_per_bag: "300.00",
+    passengers_count: 1,
+    passenger_transport_cost_per_person: "200.00",
+    current_payment: "2200.00",
+    payments: [
+      { id: 1, amount: "1000.00", paid_at: "2026-10-10T08:30:00Z", notes: "" },
+      { id: 2, amount: "1200.00", paid_at: "2026-10-12T10:00:00Z", notes: "Deuxième" },
+    ],
+    transport_method: "truck",
+    source: "Chami",
+    project: 3,
+    status: "pending",
+    notes: "",
+    created_by_name: "med",
+    created_at: "2026-10-10T08:30:00Z",
+    updated_at: "2026-10-12T10:00:00Z",
+  };
+
+  it("reads a shipment with its fares and its payments, oldest first", () => {
+    const detail = shipmentDetailFromApi(apiShipment);
+
+    expect(detail).toMatchObject({
+      id: "52",
+      transportTotal: 3200,
+      paid: 2200,
+      bagFare: 300,
+      passengerCount: 1,
+      passengerFare: 200,
+      transportMethod: "truck",
+    });
+    expect(detail.payments).toEqual([
+      { id: "1", amount: 1000, paidAt: "2026-10-10T08:30:00Z", notes: "" },
+      { id: "2", amount: 1200, paidAt: "2026-10-12T10:00:00Z", notes: "Deuxième" },
+    ]);
+    expect(amountLeftToPay(detail)).toBe(1000);
+  });
+
+  it("fills the edit form from the shipment, with no payment to type", () => {
+    expect(shipmentFormValues(shipmentDetailFromApi(apiShipment))).toMatchObject({
+      customerName: "Sidi",
+      arrivalDate: "2026-10-10",
+      arrivalTime: "08:30",
+      bagCount: 10,
+      bagFare: 300,
+      mill: "3",
+      currentPayment: Number.NaN,
+    });
+  });
+
+  const paymentSchema = createPaymentSchema(
+    {
+      required: "required",
+      dateInvalid: "date",
+      timeInvalid: "time",
+      amountInvalid: "amount",
+      amountTooHigh: "too high",
+    },
+    1000,
+  );
+  const payment = { amount: 1000, date: "2026-10-13", time: "09:00", notes: "" };
+
+  it("gives what will be left after a payment, only for a payment that fits", () => {
+    expect(amountLeftAfter(2200, 1200)).toBe(1000);
+    expect(amountLeftAfter(2200, 2200)).toBe(0);
+    expect(amountLeftAfter(0.3, 0.1)).toBe(0.2);
+    expect(amountLeftAfter(2200, 2500)).toBeUndefined();
+    expect(amountLeftAfter(2200, Number.NaN)).toBeUndefined();
+  });
+
+  it("takes a payment above zero and up to what is left to pay", () => {
+    expect(paymentSchema.safeParse(payment).success).toBe(true);
+    expect(paymentSchema.safeParse({ ...payment, amount: 0 }).error?.issues[0]?.message).toBe(
+      "amount",
+    );
+    expect(paymentSchema.safeParse({ ...payment, amount: 1000.5 }).error?.issues[0]?.message).toBe(
+      "too high",
+    );
+  });
+
+  it("sends a payment with its shipment and its date, and reads the backend's refusals", () => {
+    expect(
+      paymentToApi(
+        { ...payment, amount: 1200.5, notes: "Reste" },
+        "52",
+        "2026-10-13T09:00:00.000Z",
+      ),
+    ).toEqual({
+      shipment: 52,
+      amount: "1200.5",
+      paid_at: "2026-10-13T09:00:00.000Z",
+      notes: "Reste",
+    });
+    expect(paymentErrorsFromApi({ shipment: "Entièrement payée." })).toEqual({
+      amount: "Entièrement payée.",
+    });
+    expect(paymentErrorsFromApi({ amount: "Trop élevé.", paid_at: "Date invalide." })).toEqual({
+      amount: "Trop élevé.",
+      date: "Date invalide.",
+    });
   });
 });

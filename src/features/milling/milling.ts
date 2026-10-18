@@ -2,7 +2,6 @@ import { z } from "zod";
 import { combineDateAndTime, isIsoDate, isSameDay, isTimeValue } from "@/lib/datetime";
 import type { IsoTimestamp } from "@/lib/format";
 import {
-  isHalfBagCount,
   isRunning,
   machinesOfProject,
   machineStatus,
@@ -60,7 +59,7 @@ export function operationHistory(
 export function bagsMilledOn(operations: readonly MillingOperation[], day: IsoTimestamp): number {
   return operations
     .filter((operation) => operation.endedAt !== undefined && isSameDay(operation.endedAt, day))
-    .reduce((total, operation) => total + (operation.bagsMilled ?? 0), 0);
+    .reduce((total, operation) => total + operation.bags, 0);
 }
 
 export function countMachines(
@@ -208,10 +207,8 @@ export function createEndMillingSchema(
     dateInvalid: string;
     timeInvalid: string;
     endBeforeStart: string;
-    bagsMilledInvalid: string;
-    priceInvalid: string;
   },
-  limits: { allocatedBags: number; startedAt: IsoTimestamp },
+  limits: { startedAt: IsoTimestamp },
 ) {
   return z
     .object({
@@ -223,11 +220,6 @@ export function createEndMillingSchema(
         .string()
         .min(1, { message: messages.required, abort: true })
         .refine(isTimeValue, messages.timeInvalid),
-      bagsMilled: z
-        .number({ error: messages.required })
-        .refine(isHalfBagCount, messages.bagsMilledInvalid)
-        .refine((bags) => bags <= limits.allocatedBags, messages.bagsMilledInvalid),
-      price: z.number({ error: messages.required }).min(0, messages.priceInvalid),
       notes: z.string().trim().max(500),
     })
     .superRefine((values, context) => {

@@ -69,6 +69,7 @@ export function NewOperationForm({
   const locale = useLocale();
   const count = (value: number) => formatCount(value, locale);
   const [failed, setFailed] = useState(false);
+  const [saved, setSaved] = useState(false);
   const findMachineNumber = (machine: number) =>
     idleMachines.find((item) => item.number === machine);
 
@@ -169,6 +170,7 @@ export function NewOperationForm({
     });
 
     if (result.ok) {
+      setSaved(true);
       onSaved();
       return;
     }
@@ -337,7 +339,7 @@ export function NewOperationForm({
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
-        submitting={formState.isSubmitting}
+        submitting={formState.isSubmitting || saved}
         submitIcon="player-play"
         submitLabel={t("submit")}
         savingLabel={t("saving")}

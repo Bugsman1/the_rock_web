@@ -117,6 +117,21 @@
         "phoneTaken": "هذا الرقم مسجل لعميل آخر"
       },
       "newTitle": "عميل جديد"
+    },
+    "detail": {
+      "shipmentsTitle": "الشحنات المستلمة من هذا العميل",
+      "noShipments": "لم تصل من هذا العميل أي شحنة بعد.",
+      "shipments": "عدد الشحنات",
+      "bags": "مجموع الأكياس",
+      "leftToPay": "الباقي للدفع",
+      "columns": {
+        "shipment": "رقم الشحنة",
+        "arrivedAt": "تاريخ الوصول",
+        "project": "المشروع",
+        "bags": "الأكياس",
+        "status": "الحالة",
+        "payment": "حالة الدفع"
+      }
     }
   },
   "sites": {
@@ -314,14 +329,14 @@
       "submit": "حفظ الشحنة",
       "saving": "جارٍ حفظ الشحنة",
       "errors": {
-        "bagCountInvalid": "أدخل عدد أكياس صحيحًا لا يقل عن 1",
+        "bagCountInvalid": "أدخل عدد أكياس كاملة أو بنصف كيس: 0.5 أو 1 أو 1.5 …",
         "amountInvalid": "أدخل مبلغًا صحيحًا، 0 أو أكثر",
         "passengerCountInvalid": "أدخل عددًا صحيحًا للركاب، 0 أو أكثر",
         "phoneTaken": "هذا الرقم مسجل للعميل {name}",
-        "paymentTooHigh": "لا يمكن أن تتجاوز إجمالي النقل"
+        "paymentTooHigh": "لا يمكن أن تتجاوز إجمالي النقل",
+        "totalBelowPaid": "لا يمكن أن يقل إجمالي النقل عن المبلغ المدفوع ({paid})."
       },
       "mill": "المشروع",
-      "status": "حالة الشحنة",
       "notes": "ملاحظات",
       "sections": {
         "client": "العميل",
@@ -349,7 +364,10 @@
         "failed": "تعذر تنزيل الفاتورة، حاول مرة أخرى.",
         "back": "العودة إلى الشحنات",
         "fileName": "facture-expedition-{id}-{language}.pdf"
-      }
+      },
+      "paid": "المدفوع",
+      "saveChanges": "حفظ التعديلات",
+      "changesSaved": "تم حفظ التعديلات."
     },
     "totalBags": "إجمالي الأكياس في جميع المشاريع",
     "clientsLabel": "العملاء",
@@ -408,6 +426,38 @@
       "languages": "لغة فاتورة الشحنة {number}",
       "ar": "عربية",
       "fr": "فرنسية"
+    },
+    "detail": {
+      "title": "الشحنة {number}",
+      "paymentsTitle": "الدفعات",
+      "detailsTitle": "معلومات الشحنة",
+      "columns": {
+        "number": "الدفعة",
+        "paidAt": "تاريخ الدفع",
+        "amount": "المبلغ",
+        "notes": "ملاحظات"
+      },
+      "installment": "الدفعة {n}",
+      "noPayments": "لا توجد دفعات على هذه الشحنة بعد.",
+      "total": "إجمالي النقل",
+      "paid": "المدفوع",
+      "left": "الباقي",
+      "addPayment": "إضافة دفعة"
+    },
+    "paymentForm": {
+      "title": "دفعة جديدة",
+      "amount": "المبلغ",
+      "date": "تاريخ الدفع",
+      "time": "وقت الدفع",
+      "notes": "ملاحظات",
+      "submit": "إضافة الدفعة",
+      "saving": "جارٍ حفظ الدفعة",
+      "errors": {
+        "amountInvalid": "أدخل مبلغًا أكبر من 0.",
+        "amountTooHigh": "لا يمكن أن يتجاوز المبلغ الباقي ({left})."
+      },
+      "leftNow": "الباقي حاليًا",
+      "leftAfter": "الباقي بعد هذه الدفعة"
     }
   },
   "milling": {
@@ -535,15 +585,11 @@
       "title": "إنهاء الطحن",
       "endDate": "تاريخ الانتهاء",
       "endTime": "وقت الانتهاء",
-      "bagsMilled": "الأكياس المطحونة فعليًا",
-      "price": "سعر الطحن",
       "notes": "ملاحظات",
       "submit": "إنهاء الطحن",
       "saving": "جارٍ حفظ إنهاء الطحن",
       "errors": {
-        "endBeforeStart": "يجب أن يكون الانتهاء بعد البدء",
-        "bagsMilledInvalid": "أدخل عدد الأكياس بأنصاف الأكياس، من 0.5 إلى الأكياس المخصصة",
-        "priceInvalid": "أدخل سعرًا صحيحًا، 0 أو أكثر"
+        "endBeforeStart": "يجب أن يكون الانتهاء بعد البدء"
       }
     },
     "flow": {
@@ -598,8 +644,7 @@
       "notes": "ملاحظات",
       "operator": "عامل الطحن",
       "bagsGround": "الأكياس المطحونة للتصفية",
-      "groundFrom": "بداية الطحن",
-      "grindingPrice": "سعر الطحن"
+      "groundFrom": "بداية الطحن"
     },
     "form": {
       "workerPlaceholder": "اختر المسؤول",

@@ -1,7 +1,6 @@
 import { z } from "zod";
 import type { ApiSchema } from "./api/client";
 import { addHours, isIsoDate, isTimeValue } from "./datetime";
-import { fromDecimal } from "./format";
 import type { IsoTimestamp } from "./format";
 import { isInService, parseGrinderCode } from "./projects";
 import type { Grinder, ProjectId } from "./projects";
@@ -28,9 +27,7 @@ export type MillingOperation = {
   startedAt: IsoTimestamp;
   estimatedEndAt: IsoTimestamp;
   notes: string;
-  cost: number;
   endedAt?: IsoTimestamp;
-  bagsMilled?: number;
   mercury?: MercuryAdded;
 };
 
@@ -125,16 +122,12 @@ export function operationsOfShipment(
   return operations.filter((operation) => operation.shipmentNumber === shipmentNumber);
 }
 
-function bagsConsumed(operation: MillingOperation): number {
-  return isRunning(operation) ? operation.bags : (operation.bagsMilled ?? operation.bags);
-}
-
 export function remainingBags(
   shipment: { shipmentNumber: string; bags: number },
   operations: readonly MillingOperation[],
 ): number {
   const consumed = operationsOfShipment(shipment.shipmentNumber, operations).reduce(
-    (total, operation) => total + bagsConsumed(operation),
+    (total, operation) => total + operation.bags,
     0,
   );
 
@@ -165,8 +158,7 @@ export function operationFromApi(
       startedAt: operation.start_time,
       estimatedEndAt: estimatedEnd(operation.start_time, operation.bags_count),
       notes: operation.notes ?? "",
-      cost: fromDecimal(operation.grinding_cost ?? "0"),
-      ...(endedAt === undefined ? {} : { endedAt, bagsMilled: operation.bags_count }),
+      ...(endedAt === undefined ? {} : { endedAt }),
       ...(mercuryAddedAt === undefined
         ? {}
         : { mercury: { addedAt: mercuryAddedAt, byName: operation.mercury_added_by_name } }),

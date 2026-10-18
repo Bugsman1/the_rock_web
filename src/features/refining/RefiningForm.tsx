@@ -9,7 +9,7 @@ import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
 import { combineDateAndTime } from "@/lib/datetime";
-import { formatCount, formatDateTime, formatMoney, formatQuantity } from "@/lib/format";
+import { formatCount, formatDateTime, formatQuantity } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
 import type { Operator } from "@/lib/users";
 import { createRefiningSchema, lossReasonKeys, refiningLoss } from "./refining";
@@ -57,8 +57,8 @@ export function RefiningForm({
   const common = useTranslations("common");
   const locale = useLocale();
   const [failed, setFailed] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [lossError, setLossError] = useState<string>();
-  const bags = operation.bagsMilled ?? operation.bags;
 
   const schema = useMemo(
     () =>
@@ -114,6 +114,7 @@ export function RefiningForm({
     });
 
     if (result.ok) {
+      setSaved(true);
       onSaved();
       return;
     }
@@ -156,7 +157,7 @@ export function RefiningForm({
           value={t("machineNumber", { number: formatCount(operation.machine, locale) })}
         />
         <ReadOnlyField label={t("fields.operator")} value={operation.operatorName} />
-        <ReadOnlyField label={t("fields.bagsGround")} value={formatCount(bags, locale)} />
+        <ReadOnlyField label={t("fields.bagsGround")} value={formatCount(operation.bags, locale)} />
         <ReadOnlyField
           label={t("fields.groundFrom")}
           value={formatDateTime(operation.startedAt, locale)}
@@ -164,10 +165,6 @@ export function RefiningForm({
         <ReadOnlyField
           label={t("fields.groundAt")}
           value={operation.endedAt === undefined ? "—" : formatDateTime(operation.endedAt, locale)}
-        />
-        <ReadOnlyField
-          label={t("fields.grindingPrice")}
-          value={formatMoney(operation.cost, locale)}
         />
 
         <Select
@@ -216,24 +213,32 @@ export function RefiningForm({
 
         {weightField("goldWithMaterial", t("fields.goldWithMaterial"), true)}
         {weightField("goldWithoutMaterial", t("fields.goldWithoutMaterial"), true)}
-        <div className="flex flex-col gap-1.5">
-          <ReadOnlyField
-            label={t("fields.loss")}
-            value={loss === undefined ? "—" : formatQuantity(loss, locale)}
-            emphasis={loss !== undefined}
-          />
+        {loss === 0 ? (
           <FieldError id="refining-loss-error" message={lossError} />
-        </div>
+        ) : (
+          <>
+            <div className="flex flex-col gap-1.5">
+              <ReadOnlyField
+                label={t("fields.loss")}
+                value={loss === undefined ? "—" : formatQuantity(loss, locale)}
+                emphasis={loss !== undefined}
+              />
+              <FieldError id="refining-loss-error" message={lossError} />
+            </div>
 
-        <Select
-          id="refining-loss-reason"
-          label={t("fields.lossReason")}
-          required
-          placeholder={t("form.lossReasonPlaceholder")}
-          options={lossReasonKeys.map((key) => ({ value: key, label: t(`lossReasons.${key}`) }))}
-          error={errors.lossReason?.message}
-          {...register("lossReason")}
-        />
+            <Select
+              id="refining-loss-reason"
+              label={t("fields.lossReason")}
+              required
+              placeholder={t("form.lossReasonPlaceholder")}
+              options={lossReasonKeys
+                .filter((key) => key !== "noLoss")
+                .map((key) => ({ value: key, label: t(`lossReasons.${key}`) }))}
+              error={errors.lossReason?.message}
+              {...register("lossReason")}
+            />
+          </>
+        )}
 
         <div className="sm:col-span-2">
           <TextArea
@@ -249,7 +254,7 @@ export function RefiningForm({
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
-        submitting={formState.isSubmitting}
+        submitting={formState.isSubmitting || saved}
         submitIcon="flame"
         submitLabel={t("form.submit")}
         savingLabel={t("form.saving")}

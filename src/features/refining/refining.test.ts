@@ -43,10 +43,8 @@ function grinding(overrides: Partial<MillingOperation>): MillingOperation {
     operatorName: "Aicha",
     startedAt: "2026-10-12T06:00:00Z",
     estimatedEndAt: "2026-10-12T18:00:00Z",
-    cost: 0,
     notes: "",
     endedAt: "2026-10-12T18:00:00Z",
-    bagsMilled: 4,
     ...overrides,
   };
 }
@@ -84,7 +82,7 @@ function errorsOf(input: RefiningValues) {
 describe("refiningQueue", () => {
   it("keeps the finished grinding operations not yet refined, oldest first", () => {
     const operations = [
-      grinding({ id: "running", endedAt: undefined, bagsMilled: undefined }),
+      grinding({ id: "running", endedAt: undefined }),
       grinding({ id: "late", endedAt: "2026-10-12T20:00:00Z" }),
       grinding({ id: "refined", shipmentNumber: "SH-7" }),
       grinding({ id: "early", shipmentNumber: "SH-8", endedAt: "2026-10-12T10:00:00Z" }),
@@ -129,6 +127,11 @@ describe("createRefiningSchema", () => {
     });
   });
 
+  it("asks the loss reason only when there is a loss", () => {
+    expect(errorsOf({ ...values, lossReason: "" })).toEqual({ lossReason: "required" });
+    expect(errorsOf({ ...values, weightAfter: 120.5, lossReason: "" })).toEqual({});
+  });
+
   it("refuses more weight after than before and more gold than material, all in grams", () => {
     expect(
       errorsOf({ ...values, weightBefore: 1, weightAfter: 2, goldWithoutMaterial: 2 }),
@@ -165,6 +168,15 @@ describe("refiningToApi", () => {
       loss_reason: "normalShortage",
       notes: "",
     });
+  });
+
+  it("sends no loss reason when nothing was lost", () => {
+    expect(
+      refiningToApi(
+        { ...values, weightAfter: 120.5 },
+        { grindingOperationId: "5", refinedAt: "2026-10-12T09:30:00.000Z" },
+      ).loss_reason,
+    ).toBe("");
   });
 });
 

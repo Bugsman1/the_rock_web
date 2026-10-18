@@ -3,9 +3,7 @@ import { fromDecimal } from "./format";
 import type { IsoTimestamp } from "./format";
 import type { ProjectId } from "./projects";
 
-export const shipmentStatusKeys = ["pending", "grinding", "completed"] as const;
-
-export type ShipmentStatusKey = (typeof shipmentStatusKeys)[number];
+export type ShipmentStatusKey = ApiSchema<"ShipmentStatusEnum">;
 
 export type ShipmentRecord = {
   id: string;
@@ -21,6 +19,12 @@ export type ShipmentRecord = {
   transportTotal: number;
   paid: number;
 };
+
+const MONEY_CENTS = 100;
+
+export function amountLeftToPay(record: ShipmentRecord): number {
+  return Math.round(Math.max(0, record.transportTotal - record.paid) * MONEY_CENTS) / MONEY_CENTS;
+}
 
 export function shipmentFromApi(shipment: ApiSchema<"Shipment">): ShipmentRecord {
   return {
