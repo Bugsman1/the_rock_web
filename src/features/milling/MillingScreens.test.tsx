@@ -288,5 +288,6 @@ describe("milling screens", () => {
     expect(within(running ?? section).getByText(text.machine.history.running)).toBeVisible();
     expect(within(ended ?? section).getByText("SH-3")).toBeVisible();
     expect(within(ended ?? section).getByText("6 h 0 min")).toBeVisible();
+    expect(within(ended ?? section).getByText(text.machine.history.done)).toBeVisible();
   });
 });

@@ -1,7 +1,8 @@
 import ArrowLeftIcon from "@/icons/arrow-left.svg?react";
 import ArrowRightIcon from "@/icons/arrow-right.svg?react";
-import BellIcon from "@/icons/bell.svg?react";
-import BuildingBankIcon from "@/icons/building-bank.svg?react";
+import BackspaceIcon from "@/icons/backspace.svg?react";
+import BellIcon from "@/icons/bell-simple.svg?react";
+import BuildingBankIcon from "@/icons/bank.svg?react";
 import CalculatorIcon from "@/icons/calculator.svg?react";
 import CalendarIcon from "@/icons/calendar.svg?react";
 import ChartBarIcon from "@/icons/chart-bar.svg?react";
@@ -21,7 +22,7 @@ import IdBadgeIcon from "@/icons/id-badge.svg?react";
 import LayoutDashboardIcon from "@/icons/layout-dashboard.svg?react";
 import LockPasswordIcon from "@/icons/lock-password.svg?react";
 import LogoutIcon from "@/icons/logout.svg?react";
-import MenuIcon from "@/icons/menu.svg?react";
+import MenuIcon from "@/icons/list.svg?react";
 import MillIcon from "@/icons/mill.svg?react";
 import MinusIcon from "@/icons/minus.svg?react";
 import PackagesIcon from "@/icons/packages.svg?react";
@@ -30,23 +31,25 @@ import PlayerPlayIcon from "@/icons/player-play.svg?react";
 import PlusIcon from "@/icons/plus.svg?react";
 import ReceiptIcon from "@/icons/receipt.svg?react";
 import RefreshIcon from "@/icons/refresh.svg?react";
-import SearchIcon from "@/icons/search.svg?react";
+import SearchIcon from "@/icons/magnifying-glass.svg?react";
 import SettingsIcon from "@/icons/settings.svg?react";
 import ShieldLockIcon from "@/icons/shield-lock.svg?react";
-import ShoppingBagIcon from "@/icons/shopping-bag.svg?react";
+import ShoppingBagIcon from "@/icons/bag-simple.svg?react";
 import ToolIcon from "@/icons/tool.svg?react";
 import TrashIcon from "@/icons/trash.svg?react";
 import TruckDeliveryIcon from "@/icons/truck-delivery.svg?react";
 import UserIcon from "@/icons/user.svg?react";
 import UsersIcon from "@/icons/users.svg?react";
+import UsersFourIcon from "@/icons/users-four.svg?react";
 import WarehouseIcon from "@/icons/warehouse.svg?react";
-import WorldIcon from "@/icons/world.svg?react";
+import WorldIcon from "@/icons/globe.svg?react";
 import XIcon from "@/icons/x.svg?react";
 import { cn } from "@/lib/cn";
 
 const glyphs = {
   "arrow-left": ArrowLeftIcon,
   "arrow-right": ArrowRightIcon,
+  backspace: BackspaceIcon,
   bell: BellIcon,
   "building-bank": BuildingBankIcon,
   calculator: CalculatorIcon,
@@ -86,6 +89,7 @@ const glyphs = {
   "truck-delivery": TruckDeliveryIcon,
   user: UserIcon,
   users: UsersIcon,
+  "users-four": UsersFourIcon,
   warehouse: WarehouseIcon,
   world: WorldIcon,
   x: XIcon,
@@ -93,7 +97,12 @@ const glyphs = {
 
 export type IconName = keyof typeof glyphs;
 
-const directionalGlyphs: ReadonlySet<IconName> = new Set(["arrow-left", "arrow-right", "logout"]);
+const directionalGlyphs: ReadonlySet<IconName> = new Set([
+  "arrow-left",
+  "arrow-right",
+  "backspace",
+  "logout",
+]);
 
 type IconProps = {
   name: IconName;

@@ -5,7 +5,7 @@ import { useLoaderData, useRevalidator } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { Button } from "@/components/ui/Button";
-import { PaymentStatus } from "@/components/shipments/PaymentStatus";
+import { PaymentStatus } from "@/components/shipments/ShipmentBadges";
 import { DetailList } from "@/components/ui/Cards";
 import { DateField } from "@/components/ui/DateField";
 import { Drawer, DrawerActions } from "@/components/ui/Drawer";
@@ -15,6 +15,7 @@ import { PageLayout } from "@/components/ui/PageHeader";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import {
   TablePanel,
+  TableTotalRow,
   tableCellClasses,
   tableEndHeadClasses,
   tableHeadClasses,
@@ -210,6 +211,7 @@ function PaymentForm({ shipmentId, amountLeft, onSaved, onCancel }: PaymentFormP
 
 function PaymentsPanel({ shipment, onAdd }: { shipment: ShipmentDetail; onAdd: () => void }) {
   const t = useTranslations("shipments.detail");
+  const common = useTranslations("common");
   const locale = useLocale();
   const canAdd = useCan()("shipments", "add");
   const amountLeft = amountLeftToPay(shipment);
@@ -271,6 +273,15 @@ function PaymentsPanel({ shipment, onAdd }: { shipment: ShipmentDetail; onAdd: (
                 </tr>
               ))}
             </tbody>
+            <TableTotalRow
+              label={common("total")}
+              value={formatMoney(
+                shipment.payments.reduce((total, payment) => total + payment.amount, 0),
+                locale,
+              )}
+              columnsBefore={2}
+              columnsAfter={1}
+            />
           </table>
         </div>
       )}
@@ -313,6 +324,7 @@ export function ShipmentScreen() {
   const payment = useTranslations("shipments.paymentForm");
   const common = useTranslations("common");
   const canEdit = useCan()("shipments", "edit");
+  const locale = useLocale();
   const revalidator = useRevalidator();
   const [adding, setAdding] = useState(false);
   const projectName = findProject(projects, shipment.project)?.name ?? "—";
@@ -323,6 +335,10 @@ export function ShipmentScreen() {
       backLabel={common("back")}
       title={t("title", { number: shipment.shipmentNumber })}
       description={`${shipment.customerName} · ${projectName}`}
+      stats={[
+        { label: t("bags"), value: formatCount(shipment.bagCount, locale) },
+        { label: t("arrivedAt"), value: formatDateTime(shipment.arrivedAt, locale) },
+      ]}
       action={<InvoiceDownload shipment={shipment} />}
     >
       <PaymentsPanel shipment={shipment} onAdd={() => setAdding(true)} />

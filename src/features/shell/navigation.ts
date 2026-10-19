@@ -56,7 +56,7 @@ const navGroups: readonly NavGroup[] = [
   {
     key: "accounts",
     items: [
-      { key: "customers", href: CUSTOMERS_HREF, icon: "users" },
+      { key: "customers", href: CUSTOMERS_HREF, icon: "users-four" },
       { key: "settlement", href: "/settlement", icon: "receipt" },
       { key: "accounting", href: "/accounting", icon: "calculator" },
       { key: "treasury", href: "/treasury", icon: "building-bank" },

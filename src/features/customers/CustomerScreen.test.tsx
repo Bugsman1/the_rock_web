@@ -116,6 +116,8 @@ describe("CustomerScreen", () => {
     expect(await screen.findByText(detail.shipments)).toBeVisible();
     expect(screen.getByText(detail.shipments).nextElementSibling).toHaveTextContent("2");
     expect(screen.getByText(detail.bags).nextElementSibling).toHaveTextContent("21");
+    const [, , totals] = within(screen.getByRole("table")).getAllByRole("rowgroup");
+    expect(totals).toHaveTextContent(`${messages.common.total}21`);
     expect(screen.getByText(detail.leftToPay).nextElementSibling).toHaveTextContent(/1\s050/);
   });
 

@@ -62,11 +62,22 @@ function desktopMenuButton() {
 }
 
 describe("AppShell", () => {
-  it("shows who is signed in and their role", () => {
+  it("shows only the account icon, which opens the name, role, profile and logout", async () => {
+    const user = userEvent.setup();
     renderShell(supervisor, "supervisor");
+
+    expect(screen.queryByText("Sidi")).toBeNull();
+    await user.click(
+      screen.getByRole("button", { name: messages.shell.userMenu.replace("{name}", "Sidi") }),
+    );
 
     expect(screen.getByText("Sidi")).toBeInTheDocument();
     expect(screen.getByText(messages.roles.supervisor)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: messages.shell.profile })).toHaveAttribute(
+      "href",
+      "/fr/settings/profile",
+    );
+    expect(screen.getAllByRole("button", { name: messages.shell.logout })).toHaveLength(2);
   });
 
   it("shows the company logo and no search of its own", () => {
@@ -91,9 +102,13 @@ describe("AppShell", () => {
     expect(shipments).not.toHaveAttribute("aria-current");
   });
 
-  it("shows a custom role by its name", () => {
+  it("shows a custom role by its name", async () => {
+    const user = userEvent.setup();
     renderShell(supervisor, "Contrôleur");
 
+    await user.click(
+      screen.getByRole("button", { name: messages.shell.userMenu.replace("{name}", "Sidi") }),
+    );
     expect(screen.getByText("Contrôleur")).toBeInTheDocument();
   });
 

@@ -23,11 +23,32 @@ export function PageTitle({ children }: { children: ReactNode }) {
   );
 }
 
+export type PageStat = {
+  label: string;
+  value: string;
+};
+
+export function PageStats({ stats }: { stats: readonly PageStat[] }) {
+  return (
+    <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+      {stats.map((stat) => (
+        <div key={stat.label} className="flex items-baseline gap-2">
+          <dt className="text-ink-muted text-[14px] font-semibold">{stat.label}</dt>
+          <dd className="text-ink text-[18px] font-bold">
+            <bdi>{stat.value}</bdi>
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 type PageLayoutProps = {
-  backHref: string;
+  backHref?: string;
   backLabel: string;
   title: string;
   description?: string;
+  stats?: readonly PageStat[];
   action?: ReactNode;
   children: ReactNode;
 };
@@ -37,20 +58,22 @@ export function PageLayout({
   backLabel,
   title,
   description,
+  stats,
   action,
   children,
 }: PageLayoutProps) {
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <BackLink href={backHref} label={backLabel} />
+        {backHref === undefined ? null : <BackLink href={backHref} label={backLabel} />}
 
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             <PageTitle>{title}</PageTitle>
             {description === undefined ? null : (
               <p className="text-ink-muted text-[15px] font-semibold">{description}</p>
             )}
+            {stats === undefined ? null : <PageStats stats={stats} />}
           </div>
           {action === undefined ? null : <div className="flex flex-wrap gap-3">{action}</div>}
         </div>

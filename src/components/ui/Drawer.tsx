@@ -6,6 +6,7 @@ import type { IconName } from "./Icon";
 import { IconButton } from "./IconButton";
 import { LoadingDots } from "./LoadingDots";
 import { useReplace } from "@/i18n/navigation";
+import { cn } from "@/lib/cn";
 
 type DrawerProps = {
   open: boolean;
@@ -59,7 +60,12 @@ export function Drawer({ open, title, closeLabel, onClose, children }: DrawerPro
           <h2 id={titleId} className="text-ink text-[20px] font-bold">
             {title}
           </h2>
-          <IconButton icon="x" label={closeLabel} onClick={onClose} />
+          <IconButton
+            icon="backspace"
+            label={closeLabel}
+            iconClassName="h-7 w-7"
+            onClick={onClose}
+          />
         </header>
 
         <div className="flex-1 p-6">{open ? children : null}</div>
@@ -75,6 +81,7 @@ type DrawerActionsProps = {
   savingLabel: string;
   cancelLabel: string;
   onCancel: () => void;
+  sticky?: boolean;
 };
 
 export function DrawerActions({
@@ -84,9 +91,15 @@ export function DrawerActions({
   savingLabel,
   cancelLabel,
   onCancel,
+  sticky = true,
 }: DrawerActionsProps) {
   return (
-    <div className="border-line bg-surface sticky bottom-0 -mx-6 -mb-6 flex flex-wrap items-center gap-3 border-t-[1.5px] px-6 py-4">
+    <div
+      className={cn(
+        "border-line bg-surface -mx-6 -mb-6 flex flex-wrap items-center gap-3 border-t-[1.5px] px-6 py-4",
+        sticky && "sticky bottom-0",
+      )}
+    >
       {submitting ? (
         <div className="w-50">
           <LoadingDots label={savingLabel} />

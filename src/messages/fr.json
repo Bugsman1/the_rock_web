@@ -27,7 +27,8 @@
     "loading": "Chargement",
     "searchList": "Rechercher dans la liste",
     "noMatch": "Aucun résultat pour cette recherche.",
-    "searchIn": "Rechercher dans {list}"
+    "searchIn": "Rechercher dans {list}",
+    "total": "Total"
   },
   "auth": {
     "login": {
@@ -86,7 +87,9 @@
       "accounts": "Comptes",
       "resources": "Ressources",
       "management": "Gestion"
-    }
+    },
+    "profile": "Mon profil",
+    "userMenu": "Compte de {name}"
   },
   "roles": {
     "manager": "Directeur",
@@ -442,7 +445,9 @@
       "total": "Total du transport",
       "paid": "Payé",
       "left": "Reste à payer",
-      "addPayment": "Ajouter un versement"
+      "addPayment": "Ajouter un versement",
+      "bags": "Sacs",
+      "arrivedAt": "Arrivée"
     },
     "paymentForm": {
       "title": "Nouveau versement",
@@ -572,7 +577,9 @@
         "duration": "Durée",
         "operator": "Opérateur",
         "title": "Tous les broyages de cette machine",
-        "running": "En cours"
+        "running": "En cours",
+        "status": "Statut",
+        "done": "Terminé"
       },
       "maintenance": {
         "status": "Statut",

@@ -8,7 +8,12 @@ import { modules } from "@/lib/access";
 import type { Module } from "@/lib/access";
 import { saveSession } from "@/lib/api/session";
 import messages from "@/messages/ar.json";
+
 import { routes, skeletonShapeFor } from "./router";
+
+function account(name: string) {
+  return messages.shell.userMenu.replace("{name}", name);
+}
 
 const ME_URL = `${window.location.origin}/api/v1/auth/me/`;
 const server = setupServer();
@@ -64,7 +69,10 @@ describe("routes", () => {
     answerMe("Sidi Mohamed");
     const router = openAt("/ar/dashboard");
 
-    expect(await screen.findByText("Sidi Mohamed")).toBeInTheDocument();
+    await userEvent
+      .setup()
+      .click(await screen.findByRole("button", { name: account("Sidi Mohamed") }));
+    expect(screen.getByRole("button", { name: account("Sidi Mohamed") })).toBeInTheDocument();
     expect(screen.getByText(messages.roles.manager)).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/ar/dashboard");
   });
@@ -82,7 +90,7 @@ describe("routes", () => {
     );
     const router = openAt("/ar/dashboard");
 
-    expect(await screen.findByText("Amadou")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: account("Amadou") })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/ar/shipments");
   });
 
@@ -91,7 +99,9 @@ describe("routes", () => {
     answerMe("Sidi Mohamed");
     const router = openAt("/ar/login");
 
-    expect(await screen.findByText("Sidi Mohamed")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: account("Sidi Mohamed") }),
+    ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/ar/dashboard");
   });
 
@@ -114,7 +124,7 @@ describe("routes", () => {
     expect(
       await screen.findByRole("heading", { name: messages.errors.notFound.title }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Sidi Mohamed")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: account("Sidi Mohamed") })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: messages.errors.home })).toHaveAttribute(
       "href",
       "/ar/dashboard",

@@ -20,6 +20,15 @@ type SidebarItemProps = {
   onNavigate: () => void;
 };
 
+export function useLogOut(): () => void {
+  const replace = useReplace();
+
+  return () => {
+    clearSession();
+    replace(LOGIN_HREF);
+  };
+}
+
 function SidebarItem({
   href,
   icon,
@@ -35,11 +44,9 @@ function SidebarItem({
       aria-current={current ? "page" : undefined}
       onClick={onNavigate}
       className={cn(
-        "relative mx-2 flex min-h-11 items-center gap-3 rounded-lg text-[15px] font-semibold",
+        "relative mx-2 flex min-h-9 items-center gap-2.5 rounded-lg text-[14px] font-semibold",
         collapsed ? "justify-center px-0" : "px-2",
-        active
-          ? "bg-brand-50 text-brand-700"
-          : "text-ink-muted hover:bg-surface-hover hover:text-ink-label",
+        active ? "bg-brand-50 text-brand-700" : "text-ink hover:bg-surface-hover",
       )}
     >
       {active ? (
@@ -48,7 +55,7 @@ function SidebarItem({
 
       <span
         className={cn(
-          "inline-flex size-9 shrink-0 items-center justify-center rounded-lg",
+          "inline-flex size-8 shrink-0 items-center justify-center rounded-lg",
           active && "bg-brand-100",
         )}
       >
@@ -81,7 +88,7 @@ export function Sidebar({
   const nav = useTranslations("shell.nav");
   const groups = useTranslations("shell.navGroups");
   const pathname = usePathname();
-  const replace = useReplace();
+  const logOut = useLogOut();
   const [navigation, setNavigation] = useState<{ from: string; to: string } | null>(null);
 
   const collapsed = desktopCollapsed && !mobileOpen;
@@ -109,17 +116,17 @@ export function Sidebar({
         collapsed ? "md:w-16" : "md:w-72",
       )}
     >
-      <nav aria-label={t("navigation")} className="scrollbar-on-hover flex-1 overflow-y-auto py-4">
-        <ul className="flex flex-col gap-4">
+      <nav aria-label={t("navigation")} className="scrollbar-on-hover flex-1 overflow-y-auto py-3">
+        <ul className="flex flex-col gap-2.5">
           {navGroupsFor(access).map((group) => (
             <li key={group.key ?? "primary"}>
               {group.key === null || collapsed ? null : (
-                <p className="text-ink-label px-4 pt-1 pb-1.5 text-[13px] font-bold tracking-wide">
+                <p className="text-ink-muted px-4 pt-0.5 pb-1 text-[12px] font-bold tracking-wide">
                   {groups(group.key)}
                 </p>
               )}
 
-              <ul className="flex flex-col gap-0.5">
+              <ul className="flex flex-col">
                 {group.items.map((item) => (
                   <li key={item.key}>
                     <SidebarItem
@@ -137,7 +144,7 @@ export function Sidebar({
         </ul>
       </nav>
 
-      <div className="border-line-subtle flex flex-col gap-0.5 border-t-[1.5px] py-3">
+      <div className="border-line-subtle flex flex-col border-t-[1.5px] py-2">
         {canOpen(access, SETTINGS_HREF) ? (
           <SidebarItem
             href={SETTINGS_HREF}
@@ -151,16 +158,13 @@ export function Sidebar({
         <div className="mx-2">
           <button
             type="button"
-            onClick={() => {
-              clearSession();
-              replace(LOGIN_HREF);
-            }}
+            onClick={logOut}
             className={cn(
-              "text-danger-700 hover:bg-danger-50 flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-lg text-[15px] font-semibold",
+              "text-danger-700 hover:bg-danger-50 flex min-h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg text-[14px] font-semibold",
               collapsed ? "justify-center px-0" : "px-2",
             )}
           >
-            <span className="inline-flex size-9 shrink-0 items-center justify-center">
+            <span className="inline-flex size-8 shrink-0 items-center justify-center">
               <Icon name="logout" />
             </span>
             {collapsed ? <span className="sr-only">{t("logout")}</span> : t("logout")}

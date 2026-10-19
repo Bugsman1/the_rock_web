@@ -1,12 +1,11 @@
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
-import { PaymentStatus } from "@/components/shipments/PaymentStatus";
-import { DetailList } from "@/components/ui/Cards";
+import { PaymentStatus, ShipmentStatusBadge } from "@/components/shipments/ShipmentBadges";
 import { PageLayout } from "@/components/ui/PageHeader";
 import {
-  StatusBadge,
   TablePanel,
+  TableTotalRow,
   tableCellClasses,
   tableEndHeadClasses,
   tableHeadClasses,
@@ -46,7 +45,7 @@ function CustomerShipmentsTable({
   projectName: (project: string) => string;
 }) {
   const t = useTranslations("customers.detail");
-  const statuses = useTranslations("shipments.statuses");
+  const common = useTranslations("common");
   const locale = useLocale();
 
   if (shipments.length === 0) {
@@ -84,7 +83,7 @@ function CustomerShipmentsTable({
                 {formatCount(shipment.bagCount, locale)}
               </td>
               <td className={tableCellClasses}>
-                <StatusBadge label={statuses(shipment.status)} />
+                <ShipmentStatusBadge status={shipment.status} />
               </td>
               <td className={tableCellClasses}>
                 <PaymentStatus shipment={shipment} />
@@ -92,6 +91,15 @@ function CustomerShipmentsTable({
             </tr>
           ))}
         </tbody>
+        <TableTotalRow
+          label={common("total")}
+          value={formatCount(
+            shipments.reduce((total, shipment) => total + shipment.bagCount, 0),
+            locale,
+          )}
+          columnsBefore={3}
+          columnsAfter={2}
+        />
       </table>
     </div>
   );
@@ -111,17 +119,12 @@ export function CustomerScreen() {
       backLabel={common("back")}
       title={customer.name}
       description={customer.phone}
+      stats={[
+        { label: t("shipments"), value: formatCount(shipments.length, locale) },
+        { label: t("bags"), value: formatCount(bags, locale) },
+        { label: t("leftToPay"), value: formatMoney(leftToPay, locale) },
+      ]}
     >
-      <section className="rounded-card border-line bg-surface border-[1.5px] p-6">
-        <DetailList
-          items={[
-            { label: t("shipments"), value: formatCount(shipments.length, locale) },
-            { label: t("bags"), value: formatCount(bags, locale) },
-            { label: t("leftToPay"), value: formatMoney(leftToPay, locale) },
-          ]}
-        />
-      </section>
-
       <TablePanel title={t("shipmentsTitle")}>
         <CustomerShipmentsTable
           shipments={shipments}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
+import { PageTitle } from "@/components/ui/PageHeader";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import {
@@ -263,7 +264,7 @@ export function RefiningScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-ink text-[24px] font-bold">{t("title")}</h1>
+      <PageTitle>{t("title")}</PageTitle>
 
       <TablePanel
         title={t("queueTitle")}

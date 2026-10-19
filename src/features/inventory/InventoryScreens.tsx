@@ -6,7 +6,7 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { CardGrid, DetailList, LinkCard, StatGrid } from "@/components/ui/Cards";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
-import { PageLayout } from "@/components/ui/PageHeader";
+import { PageLayout, PageTitle } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
 import { SearchField } from "@/components/ui/SearchField";
 import {
@@ -62,7 +62,7 @@ export function InventoryScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-ink text-[24px] font-bold">{t("title")}</h1>
+      <PageTitle>{t("title")}</PageTitle>
 
       {loadStatus === undefined ? null : (
         <section className="rounded-card border-line bg-surface border-[1.5px]">

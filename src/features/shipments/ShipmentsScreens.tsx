@@ -1,5 +1,4 @@
 import { useState } from "react";
-import type { ReactNode } from "react";
 import { redirect, useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
@@ -8,14 +7,14 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { CardGrid, KpiTile, LinkCard, StatGrid } from "@/components/ui/Cards";
 import type { Stat } from "@/components/ui/Cards";
 import { NewOperationForm } from "@/components/grinding/NewOperationForm";
-import { PaymentStatus } from "@/components/shipments/PaymentStatus";
+import { PaymentStatus, ShipmentStatusBadge } from "@/components/shipments/ShipmentBadges";
 import { DateField } from "@/components/ui/DateField";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
-import { BackLink, PageTitle } from "@/components/ui/PageHeader";
+import { BackLink, PageLayout, PageTitle } from "@/components/ui/PageHeader";
 import {
-  StatusBadge,
   TablePanel,
+  TableTotalRow,
   tableCellClasses,
   tableEndHeadClasses,
   tableHeadClasses,
@@ -139,7 +138,7 @@ export function ShipmentsScreen() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex flex-1 items-center">
-          <h1 className="text-ink text-[24px] font-bold">{t("title")}</h1>
+          <PageTitle>{t("title")}</PageTitle>
         </div>
 
         <div className="order-last w-full sm:order-none sm:w-auto">
@@ -185,36 +184,6 @@ export function ShipmentsScreen() {
           );
         })}
       </CardGrid>
-    </div>
-  );
-}
-
-type StorageHeaderProps = {
-  title: string;
-  stats: readonly Stat[];
-  backHref: string | undefined;
-  action: ReactNode;
-};
-
-function StorageHeader({ title, stats, backHref, action }: StorageHeaderProps) {
-  const common = useTranslations("common");
-
-  return (
-    <div className="flex flex-col gap-4">
-      {backHref === undefined ? null : <BackLink href={backHref} label={common("back")} />}
-
-      <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
-        <PageTitle>{title}</PageTitle>
-
-        {stats.map((stat) => (
-          <p key={stat.label} className="text-ink flex items-baseline gap-2 text-[16px] font-bold">
-            {stat.label}
-            <span className="text-brand-700 text-[20px]">{stat.value}</span>
-          </p>
-        ))}
-
-        <div className="ms-auto">{action}</div>
-      </div>
     </div>
   );
 }
@@ -335,7 +304,6 @@ function ClientQueueTable({
   shipments: readonly StoredShipment[];
   query: string;
 }) {
-  const t = useTranslations("shipments");
   const text = useTranslations("shipments.project");
   const payment = useTranslations("shipments.payment");
   const invoice = useTranslations("shipments.invoice");
@@ -404,7 +372,7 @@ function ClientQueueTable({
                 })}
               </td>
               <td className={cn(tableCellClasses, "ps-10")}>
-                <StatusBadge label={t(`statuses.${shipment.status}`)} />
+                <ShipmentStatusBadge status={shipment.status} />
               </td>
               <td className={tableCellClasses}>
                 <PaymentStatus shipment={shipment} />
@@ -490,30 +458,29 @@ export function ProjectStorageScreen() {
   const [query, setQuery] = useState("");
 
   return (
-    <div className="flex w-full flex-col gap-6">
-      <StorageHeader
-        title={project.name}
-        backHref={onlyProject ? undefined : SHIPMENTS_HREF}
-        action={
-          <div className="flex flex-wrap gap-3">
-            <ButtonLink href={shipmentsHistoryHref(project.id)} variant="secondary">
-              <Icon name="history" />
-              {history("open")}
+    <PageLayout
+      title={project.name}
+      backLabel={common("back")}
+      {...(onlyProject ? {} : { backHref: SHIPMENTS_HREF })}
+      action={
+        <div className="flex flex-wrap gap-3">
+          <ButtonLink href={shipmentsHistoryHref(project.id)} variant="secondary">
+            <Icon name="history" />
+            {history("open")}
+          </ButtonLink>
+          {canAdd ? (
+            <ButtonLink href={newShipmentHref(project.id)} variant="primary">
+              <Icon name="plus" />
+              {t("addNew")}
             </ButtonLink>
-            {canAdd ? (
-              <ButtonLink href={newShipmentHref(project.id)} variant="primary">
-                <Icon name="plus" />
-                {t("addNew")}
-              </ButtonLink>
-            ) : null}
-          </div>
-        }
-        stats={[
-          { label: t("clientsLabel"), value: formatCount(clientBags(shipments).length, locale) },
-          { label: t("bagsLabel"), value: formatCount(bagCount(shipments), locale) },
-        ]}
-      />
-
+          ) : null}
+        </div>
+      }
+      stats={[
+        { label: t("clientsLabel"), value: formatCount(clientBags(shipments).length, locale) },
+        { label: t("bagsLabel"), value: formatCount(bagCount(shipments), locale) },
+      ]}
+    >
       <TablePanel
         title={t("project.queueTitle")}
         search={{
@@ -531,7 +498,7 @@ export function ProjectStorageScreen() {
         shipments={shipments}
         grinding={canStart ? grinding : undefined}
       />
-    </div>
+    </PageLayout>
   );
 }
 
@@ -648,6 +615,15 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
                 </tr>
               ))}
             </tbody>
+            <TableTotalRow
+              label={common("total")}
+              value={formatCount(
+                results.reduce((total, record) => total + record.bagCount, 0),
+                locale,
+              )}
+              columnsBefore={4}
+              columnsAfter={3}
+            />
           </table>
         </div>
       )}

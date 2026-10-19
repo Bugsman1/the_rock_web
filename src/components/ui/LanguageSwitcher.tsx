@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useLocale } from "use-intl";
 import { Icon } from "./Icon";
+import { useDismiss } from "./useDismiss";
 import { Link, usePathname } from "@/i18n/navigation";
 import { languageName } from "@/i18n/languageName";
 import { locales } from "@/i18n/locales";
@@ -13,30 +14,9 @@ export function LanguageSwitcher({ label }: { label: string }) {
   const current = useLocale();
   const [open, setOpen] = useState(false);
   const container = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
 
-  useEffect(() => {
-    if (!open) return;
-
-    function closeOnOutside(event: PointerEvent) {
-      const target = event.target;
-
-      if (target instanceof Node && container.current?.contains(target) !== true) {
-        setOpen(false);
-      }
-    }
-
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
-    }
-
-    document.addEventListener("pointerdown", closeOnOutside);
-    document.addEventListener("keydown", closeOnEscape);
-
-    return () => {
-      document.removeEventListener("pointerdown", closeOnOutside);
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [open]);
+  useDismiss(open, container, close);
 
   return (
     <div className="flex justify-center">
@@ -47,10 +27,10 @@ export function LanguageSwitcher({ label }: { label: string }) {
           aria-expanded={open}
           aria-controls={MENU_ID}
           onClick={() => setOpen((previous) => !previous)}
-          className="rounded-field border-line bg-surface text-ink-label hover:bg-surface-hover inline-flex h-11 cursor-pointer items-center gap-2.5 border-[1.5px] px-3 text-[14px] font-medium"
+          className="rounded-field border-line bg-surface text-ink hover:bg-surface-hover inline-flex h-11 cursor-pointer items-center gap-2.5 border-[1.5px] px-3 text-[14px] font-medium"
         >
           <span className="sr-only">{label}</span>
-          <Icon name="world" className="text-ink-faint h-5 w-5" />
+          <Icon name="world" className="h-5 w-5" />
           <span className="hidden sm:inline">{languageName(current)}</span>
           <Icon name="chevron-down" className="text-ink-faint h-4 w-4" />
         </button>

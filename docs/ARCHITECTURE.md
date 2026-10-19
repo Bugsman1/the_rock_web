@@ -49,7 +49,7 @@ the_rock_web/
 │  │  ├─ auth/  shell/  customers/  users/  settings/  shipments/  milling/  refining/  inventory/
 │  ├─ components/ui/           ← shared, domain-free UI kit
 │  ├─ components/customers/    ← client form (Clients and New shipment)
-│  ├─ components/shipments/    ← `PaymentStatus` badge (Shipments and Clients)
+│  ├─ components/shipments/    ← `ShipmentBadges.tsx`: `PaymentStatus`, `ShipmentStatusBadge` (Shipments and Clients)
 │  ├─ components/grinding/     ← start-grinding form (Shipments and Milling)
 │  ├─ lib/                     ← shared domain logic, formatting and API calls
 │  └─ icons/                   ← raw SVG files (24×24, stroke, currentColor; flags in colour), and the
@@ -208,6 +208,29 @@ today and machines running out of all. From 50 bags waiting (`isBacklogged`) the
 "backlog" instead of "bags". The figures follow the site tab and are not links yet (no bags list
 page). Project cards show the machines running out of all, the bags grinding and the waiting
 shipments, with no per-status bar.
+
+**Status colours:** `StatusBadge` takes a `tone`: green (`success`) for done, blue (`active`) for
+in progress, orange (`warning`) for waiting, grey (`neutral`) otherwise. Shipments: pending orange,
+grinding blue, completed green. Grinding queue: waiting orange, partly ground blue, ground green.
+A machine's grinding history has a status column: "grinding" blue, "finished" green. Sidebar items
+are `text-ink` (the darkest text); the active one stays brand blue.
+
+**Top bar:** logo with the company name (wide screens), sidebar toggle; then language, notifications
+and the account button, all black and the same size. The account button shows only the user icon;
+it opens a menu with the name and role, "my profile" (`/settings/profile`) and log out
+(`useLogOut`, shared with the sidebar). Menus close on an outside click or Escape (`useDismiss`).
+Drawers close with the `backspace` icon (28px).
+
+**Page headers and tables:** every page title is `PageTitle`; `PageLayout` takes optional
+`stats` (a line of key numbers under the title, `PageStats`) and an optional back link. Used on a
+project's Shipments page, a client and a shipment. Table headers are grey (`bg-surface-page`), rows
+are 48px, numbers end-aligned, and `TableTotalRow` adds a total under the bags or amount column
+(shipments history, a client's shipments, a shipment's payments, a machine's grindings). Every form,
+in a drawer or on a page, ends with `DrawerActions` (save, then cancel): stuck to the bottom in a
+drawer, in place at the end of the page form (new and edit shipment, `sticky={false}`).
+
+**Icons:** `src/icons` mixes Tabler (stroke) and Phosphor (fill) icons; every file uses
+`currentColor` so it follows the text colour. Clients use `users-four`.
 
 **One client (`/customers/<id>`):** for a role that can view shipments, a client's name in the
 Clients list opens their page (the whole row is a link; "edit" stays separate): name and phone, the

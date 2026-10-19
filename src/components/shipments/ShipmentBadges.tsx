@@ -1,7 +1,9 @@
 import { useTranslations } from "use-intl";
 import { Icon } from "@/components/ui/Icon";
+import { StatusBadge } from "@/components/ui/TablePanel";
+import type { StatusTone } from "@/components/ui/TablePanel";
 import { amountLeftToPay } from "@/lib/shipments";
-import type { ShipmentRecord } from "@/lib/shipments";
+import type { ShipmentRecord, ShipmentStatusKey } from "@/lib/shipments";
 
 const pillClasses =
   "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] font-bold";
@@ -19,4 +21,16 @@ export function PaymentStatus({ shipment }: { shipment: ShipmentRecord }) {
       {t("incomplete")}
     </span>
   );
+}
+
+const statusTones: Record<ShipmentStatusKey, StatusTone> = {
+  pending: "warning",
+  grinding: "active",
+  completed: "success",
+};
+
+export function ShipmentStatusBadge({ status }: { status: ShipmentStatusKey }) {
+  const t = useTranslations("shipments.statuses");
+
+  return <StatusBadge label={t(status)} tone={statusTones[status]} />;
 }

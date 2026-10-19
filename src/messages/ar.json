@@ -27,7 +27,8 @@
     "loading": "جارٍ التحميل",
     "searchList": "ابحث في القائمة",
     "noMatch": "لا توجد نتائج لهذا البحث.",
-    "searchIn": "ابحث في {list}"
+    "searchIn": "ابحث في {list}",
+    "total": "المجموع"
   },
   "auth": {
     "login": {
@@ -86,7 +87,9 @@
       "accounts": "الحسابات",
       "resources": "الموارد",
       "management": "الإدارة"
-    }
+    },
+    "profile": "الملف الشخصي",
+    "userMenu": "حساب {name}"
   },
   "roles": {
     "manager": "مدير",
@@ -442,7 +445,9 @@
       "total": "إجمالي النقل",
       "paid": "المدفوع",
       "left": "الباقي",
-      "addPayment": "إضافة دفعة"
+      "addPayment": "إضافة دفعة",
+      "bags": "الأكياس",
+      "arrivedAt": "تاريخ الوصول"
     },
     "paymentForm": {
       "title": "دفعة جديدة",
@@ -572,7 +577,9 @@
         "duration": "المدة",
         "operator": "المشغّل",
         "title": "كل عمليات الطحن على هذه الآلة",
-        "running": "قيد الطحن"
+        "running": "قيد الطحن",
+        "status": "الحالة",
+        "done": "منتهية"
       },
       "maintenance": {
         "status": "الحالة",

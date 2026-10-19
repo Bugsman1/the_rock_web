@@ -10,7 +10,7 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Combobox } from "@/components/ui/Combobox";
 import { FormSection } from "@/components/ui/Cards";
 import { DateField } from "@/components/ui/DateField";
-import { Drawer } from "@/components/ui/Drawer";
+import { Drawer, DrawerActions } from "@/components/ui/Drawer";
 import { FormError } from "@/components/ui/FieldError";
 import { Icon } from "@/components/ui/Icon";
 import { LoadingDots } from "@/components/ui/LoadingDots";
@@ -527,40 +527,29 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
 
         {failed ? <FormError message={common("saveFailed")} /> : null}
 
-        <div className="flex flex-wrap items-center gap-3 pt-1">
-          {formState.isSubmitting ? (
-            <div className="w-50">
-              <LoadingDots label={t("saving")} />
-            </div>
-          ) : (
-            <Button variant="primary" type="submit" width="auto">
-              {mode.kind === "edit" ? t("saveChanges") : t("submit")}
-            </Button>
-          )}
+        {changesSaved ? (
+          <p role="status" className="text-success-700 text-[14px] font-semibold">
+            {t("changesSaved")}
+          </p>
+        ) : null}
 
-          {mode.kind === "edit" ? (
-            <Button
-              variant="secondary"
-              width="auto"
-              onClick={() => {
-                setChangesSaved(false);
-                reset(defaultValues);
-              }}
-            >
-              {common("cancel")}
-            </Button>
-          ) : (
-            <ButtonLink href={mode.backHref} variant="secondary">
-              {common("cancel")}
-            </ButtonLink>
-          )}
+        <DrawerActions
+          submitting={formState.isSubmitting}
+          submitIcon={mode.kind === "edit" ? "circle-check" : "plus"}
+          submitLabel={mode.kind === "edit" ? t("saveChanges") : t("submit")}
+          savingLabel={t("saving")}
+          cancelLabel={common("cancel")}
+          sticky={false}
+          onCancel={() => {
+            if (mode.kind === "edit") {
+              setChangesSaved(false);
+              reset(defaultValues);
+              return;
+            }
 
-          {changesSaved ? (
-            <p role="status" className="text-success-700 text-[14px] font-semibold">
-              {t("changesSaved")}
-            </p>
-          ) : null}
-        </div>
+            replace(mode.backHref);
+          }}
+        />
       </form>
 
       {mode.kind === "create" ? (

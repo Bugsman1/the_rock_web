@@ -13,11 +13,13 @@ import { BackLink, PageTitle } from "@/components/ui/PageHeader";
 import {
   StatusBadge,
   TablePanel,
+  TableTotalRow,
   tableCellClasses,
   tableEndHeadClasses,
   tableHeadClasses,
   tableRowClasses,
 } from "@/components/ui/TablePanel";
+import type { StatusTone } from "@/components/ui/TablePanel";
 import { Tabs } from "@/components/ui/Tabs";
 import { Link } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
@@ -183,7 +185,7 @@ export function MillingScreen() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-ink text-[24px] font-bold">{t("title")}</h1>
+        <PageTitle>{t("title")}</PageTitle>
         <SiteFilterNav current={site} sites={sites} />
       </div>
 
@@ -403,12 +405,19 @@ type QueueRow = {
   shipmentNumber: string;
   client: string;
   remaining: string;
-  status: string;
+  status: ReturnType<typeof shipmentMillingStatus>;
   startHref: string;
+};
+
+const queueStatusTones: Record<QueueRow["status"], StatusTone> = {
+  pending: "warning",
+  partiallyMilled: "active",
+  milled: "success",
 };
 
 function MillingQueueTable({ queue, query }: { queue: readonly QueueRow[]; query: string }) {
   const t = useTranslations("milling.project");
+  const statuses = useTranslations("milling.shipmentStatuses");
   const common = useTranslations("common");
   const locale = useLocale();
   const canStart = useCan()("grinding", "add");
@@ -457,7 +466,7 @@ function MillingQueueTable({ queue, query }: { queue: readonly QueueRow[]; query
                 </td>
                 <td className={`${tableCellClasses} text-ink font-bold`}>{row.remaining}</td>
                 <td className={tableCellClasses}>
-                  <StatusBadge label={row.status} />
+                  <StatusBadge label={statuses(row.status)} tone={queueStatusTones[row.status]} />
                 </td>
                 {canStart ? (
                   <td className={`${tableCellClasses} text-end`}>
@@ -554,7 +563,7 @@ export function MillingProjectScreen() {
               remaining: count(remainingBags(shipment, data.operations)),
               total: count(shipment.bags),
             }),
-            status: t(`shipmentStatuses.${shipmentMillingStatus(shipment, data.operations)}`),
+            status: shipmentMillingStatus(shipment, data.operations),
             startHref: newMillingOperationHref(project.id, {
               shipmentNumber: shipment.shipmentNumber,
             }),
@@ -649,6 +658,7 @@ function MachineHistoryTable({
             <th className={tableHeadClasses}>{t("history.client")}</th>
             <th className={tableEndHeadClasses}>{t("history.bags")}</th>
             <th className={tableHeadClasses}>{t("history.start")}</th>
+            <th className={tableHeadClasses}>{t("history.status")}</th>
             <th className={tableHeadClasses}>{t("history.end")}</th>
             <th className={tableHeadClasses}>{t("history.duration")}</th>
             <th className={tableHeadClasses}>{t("history.operator")}</th>
@@ -676,12 +686,17 @@ function MachineHistoryTable({
                 <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
                   {formatDateTime(operation.startedAt, locale)}
                 </td>
-                <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
+                <td className={tableCellClasses}>
                   {operation.endedAt === undefined ? (
-                    <StatusBadge label={t("history.running")} />
+                    <StatusBadge label={t("history.running")} tone="active" />
                   ) : (
-                    formatDateTime(operation.endedAt, locale)
+                    <StatusBadge label={t("history.done")} tone="success" />
                   )}
+                </td>
+                <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
+                  {operation.endedAt === undefined
+                    ? "—"
+                    : formatDateTime(operation.endedAt, locale)}
                 </td>
                 <td className={`${tableCellClasses} text-ink font-semibold`}>
                   {duration === undefined
@@ -703,6 +718,12 @@ function MachineHistoryTable({
             );
           })}
         </tbody>
+        <TableTotalRow
+          label={common("total")}
+          value={count(operations.reduce((total, operation) => total + operation.bags, 0))}
+          columnsBefore={2}
+          columnsAfter={6}
+        />
       </table>
     </div>
   );

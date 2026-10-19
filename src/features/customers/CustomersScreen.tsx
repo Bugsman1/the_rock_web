@@ -1,6 +1,7 @@
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
+import { PageTitle } from "@/components/ui/PageHeader";
 import { CustomerForm } from "@/components/customers/CustomerForm";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { ButtonLink } from "@/components/ui/ButtonLink";
@@ -149,7 +150,7 @@ export function CustomersScreen() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex flex-wrap items-baseline gap-4">
-          <h1 className="text-ink text-[24px] font-bold">{t("title")}</h1>
+          <PageTitle>{t("title")}</PageTitle>
           <p className="text-ink-muted text-[15px] font-semibold">
             {t("count", { count: formatCount(customers.total, locale) })}
           </p>

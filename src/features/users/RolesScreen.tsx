@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
+import { PageTitle } from "@/components/ui/PageHeader";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { Button } from "@/components/ui/Button";
 import { ButtonLink } from "@/components/ui/ButtonLink";
@@ -358,7 +359,7 @@ export function RolesScreen() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-baseline gap-4">
-          <h1 className="text-ink text-[24px] font-bold">{t("title")}</h1>
+          <PageTitle>{t("title")}</PageTitle>
           <p className="text-ink-muted text-[15px] font-semibold">
             {t("roles.count", { count: formatCount(roles.length, locale) })}
           </p>

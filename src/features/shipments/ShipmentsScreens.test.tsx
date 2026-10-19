@@ -58,7 +58,8 @@ function renderHistory(shown: readonly ShipmentRecord[] = records) {
 }
 
 function shownShipments() {
-  const [, ...rows] = within(screen.getByRole("table")).getAllByRole("row");
+  const [body] = within(screen.getByRole("table")).getAllByRole("rowgroup").slice(1);
+  const rows = body === undefined ? [] : within(body).getAllByRole("row");
 
   return rows.map((row) => within(row).getAllByRole("cell")[0]?.textContent);
 }
