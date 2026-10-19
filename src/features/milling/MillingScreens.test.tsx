@@ -137,16 +137,11 @@ describe("getMillingData", () => {
 });
 
 describe("endOperation", () => {
-  it("records the end, then sets the shipment's status", async () => {
+  it("records the end and leaves the shipment's status to the backend", async () => {
     let ended: unknown;
-    let shipmentChange: unknown;
     server.use(
       http.patch(`${API}/grinding-operations/5/`, async ({ request }) => {
         ended = await request.json();
-        return HttpResponse.json({});
-      }),
-      http.patch(`${API}/shipments/1/`, async ({ request }) => {
-        shipmentChange = await request.json();
         return HttpResponse.json({});
       }),
     );
@@ -158,10 +153,8 @@ describe("endOperation", () => {
 
     const result = await endOperation(
       operation,
-      "1",
       { endDate: "2026-10-08", endTime: "12:00", notes: "Sac abîmé" },
       "2026-10-08T12:00:00.000Z",
-      "grinding",
     );
 
     expect(result).toEqual({ ok: true });
@@ -169,7 +162,6 @@ describe("endOperation", () => {
       end_time: "2026-10-08T12:00:00.000Z",
       notes: "Sac abîmé",
     });
-    expect(shipmentChange).toEqual({ status: "grinding" });
   });
 });
 

@@ -166,7 +166,6 @@ export function NewOperationForm({
       shipmentId: target.id,
       grinderId: machine.grinderId,
       startedAt,
-      shipmentPending: target.pending,
     });
 
     if (result.ok) {

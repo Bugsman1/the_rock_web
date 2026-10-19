@@ -2,7 +2,7 @@ import { apiClient, unwrap } from "./api/client";
 import { fetchAllPages, MAX_PAGE_SIZE } from "./api/pagination";
 import type { ProjectId } from "./projects";
 import { shipmentFromApi } from "./shipments";
-import type { ShipmentRecord, ShipmentStatusKey } from "./shipments";
+import type { ShipmentRecord } from "./shipments";
 
 type ShipmentFilter = {
   project?: ProjectId;
@@ -29,14 +29,4 @@ export async function getShipments(
   );
 
   return shipments.map(shipmentFromApi);
-}
-
-export async function setShipmentStatus(
-  shipmentId: string,
-  status: ShipmentStatusKey,
-): Promise<void> {
-  await apiClient.PATCH("/api/v1/shipments/{id}/", {
-    params: { path: { id: Number(shipmentId) } },
-    body: { status },
-  });
 }

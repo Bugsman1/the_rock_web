@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useLoaderData } from "react-router";
@@ -10,12 +10,15 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Combobox } from "@/components/ui/Combobox";
 import { FormSection } from "@/components/ui/Cards";
 import { DateField } from "@/components/ui/DateField";
-import { Drawer, DrawerActions } from "@/components/ui/Drawer";
+import { buttonClasses } from "@/components/ui/buttonClasses";
+import { Drawer, DrawerActions, useModalDialog } from "@/components/ui/Drawer";
 import { FormError } from "@/components/ui/FieldError";
 import { Icon } from "@/components/ui/Icon";
+import { IconButton } from "@/components/ui/IconButton";
 import { LoadingDots } from "@/components/ui/LoadingDots";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
+import { useToast } from "@/components/ui/Toast";
 import { PageTitle, BackLink } from "@/components/ui/PageHeader";
 import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
 import { locales } from "@/i18n/locales";
@@ -45,38 +48,117 @@ import {
 import type { NewShipmentValues, ShipmentDetail } from "./shipments";
 import { createShipment, getInvoice, updateShipment } from "./shipmentsApi";
 
-export function useInvoiceDownload(shipmentId: string) {
-  const t = useTranslations("shipments.form.saved");
-  const [downloading, setDownloading] = useState(false);
-  const [failed, setFailed] = useState(false);
+type InvoicePreview = {
+  url: string;
+  fileName: string;
+};
 
-  async function download(language: Locale) {
-    setDownloading(true);
+export function useInvoicePreview(shipmentId: string) {
+  const t = useTranslations("shipments.form.saved");
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [preview, setPreview] = useState<InvoicePreview>();
+
+  async function open(language: Locale) {
+    setLoading(true);
     setFailed(false);
 
     const invoice = await getInvoice(shipmentId, language);
 
-    setDownloading(false);
+    setLoading(false);
 
     if (invoice === undefined) {
       setFailed(true);
       return;
     }
 
-    const url = URL.createObjectURL(invoice.file);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = invoice.fileName ?? t("fileName", { id: shipmentId, language });
-    link.click();
-    URL.revokeObjectURL(url);
+    setPreview({
+      url: URL.createObjectURL(invoice.file),
+      fileName: invoice.fileName ?? t("fileName", { id: shipmentId, language }),
+    });
   }
 
-  return { downloading, failed, download };
+  function close() {
+    if (preview !== undefined) {
+      URL.revokeObjectURL(preview.url);
+    }
+
+    setPreview(undefined);
+  }
+
+  return { loading, failed, preview, open, close };
+}
+
+export function InvoicePreviewDialog({
+  preview,
+  onClose,
+}: {
+  preview: InvoicePreview | undefined;
+  onClose: () => void;
+}) {
+  const t = useTranslations("shipments.invoice");
+  const common = useTranslations("common");
+  const dialogRef = useModalDialog(preview !== undefined);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const titleId = useId();
+
+  return (
+    <dialog
+      ref={dialogRef}
+      aria-labelledby={titleId}
+      onClose={() => {
+        if (preview !== undefined) {
+          onClose();
+        }
+      }}
+      className="bg-surface text-ink shadow-card rounded-card m-auto h-[90dvh] w-[calc(100%-2rem)] max-w-5xl overflow-hidden p-0 backdrop:bg-neutral-900/40"
+    >
+      {preview === undefined ? null : (
+        <div className="flex h-full flex-col">
+          <header className="border-line flex flex-wrap items-center justify-between gap-3 border-b-[1.5px] px-5 py-3">
+            <h2 id={titleId} className="text-ink text-[18px] font-bold">
+              {t("previewTitle")}
+            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="primary"
+                width="auto"
+                onClick={() => frameRef.current?.contentWindow?.print()}
+              >
+                <Icon name="printer" />
+                {t("print")}
+              </Button>
+              <a
+                href={preview.url}
+                download={preview.fileName}
+                className={buttonClasses("secondary", "auto")}
+              >
+                <Icon name="download" />
+                {t("download")}
+              </a>
+              <IconButton
+                icon="backspace"
+                label={common("close")}
+                iconClassName="h-7 w-7"
+                onClick={onClose}
+              />
+            </div>
+          </header>
+          <iframe
+            ref={frameRef}
+            title={t("previewTitle")}
+            src={preview.url}
+            className="w-full flex-1 border-0"
+          />
+        </div>
+      )}
+    </dialog>
+  );
 }
 
 function SavedShipment({ shipmentId, backHref }: { shipmentId: string; backHref: string }) {
   const t = useTranslations("shipments.form.saved");
-  const { downloading, failed, download } = useInvoiceDownload(shipmentId);
+  const { loading, failed, preview, open, close } = useInvoicePreview(shipmentId);
 
   return (
     <div className="flex flex-col gap-5">
@@ -85,7 +167,7 @@ function SavedShipment({ shipmentId, backHref }: { shipmentId: string; backHref:
       {failed ? <FormError message={t("failed")} /> : null}
 
       <div className="flex flex-wrap items-center gap-3">
-        {downloading ? (
+        {loading ? (
           <div className="w-50">
             <LoadingDots label={t("downloading")} />
           </div>
@@ -96,7 +178,7 @@ function SavedShipment({ shipmentId, backHref }: { shipmentId: string; backHref:
                 key={language}
                 variant="primary"
                 width="auto"
-                onClick={() => void download(language)}
+                onClick={() => void open(language)}
               >
                 <Icon name="receipt" />
                 {t(`download.${language}`)}
@@ -108,6 +190,8 @@ function SavedShipment({ shipmentId, backHref }: { shipmentId: string; backHref:
           </>
         )}
       </div>
+
+      <InvoicePreviewDialog preview={preview} onClose={close} />
     </div>
   );
 }
@@ -154,6 +238,8 @@ export function NewShipmentForm({
         passengerCount: Number.NaN,
         passengerFare: Number.NaN,
         currentPayment: Number.NaN,
+        debt: Number.NaN,
+        debtNotes: "",
         mill: defaultProject ?? projects[0]?.id ?? "",
         notes: "",
       }}
@@ -198,7 +284,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
   const [newCustomerName, setNewCustomerName] = useState<string | undefined>(undefined);
   const [addedCustomerName, setAddedCustomerName] = useState<string>();
   const [savedId, setSavedId] = useState<string>();
-  const [changesSaved, setChangesSaved] = useState(false);
+  const toast = useToast();
   const paid = mode.kind === "edit" ? mode.paid : 0;
 
   const schema = useMemo(
@@ -284,7 +370,6 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
 
   async function onSubmit(values: NewShipmentValues) {
     setFailed(false);
-    setChangesSaved(false);
 
     const phoneTaken = (name: string) => t("errors.phoneTaken", { name });
 
@@ -292,7 +377,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
       const result = await updateShipment(mode.shipmentId, values, phoneTaken);
 
       if (result.ok) {
-        setChangesSaved(true);
+        toast(t("changesSaved"));
         mode.onSaved();
         return;
       }
@@ -304,6 +389,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
     const result = await createShipment(values, phoneTaken);
 
     if (result.ok) {
+      toast(t("saved.title"));
       setSavedId(result.id);
       return;
     }
@@ -453,7 +539,6 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
             step={1}
             inputMode="numeric"
             label={t("passengerCount")}
-            required
             error={errors.passengerCount?.message}
             {...register("passengerCount", { valueAsNumber: true })}
           />
@@ -465,7 +550,6 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
             step="any"
             inputMode="decimal"
             label={t("passengerFare")}
-            required
             error={errors.passengerFare?.message}
             {...register("passengerFare", { valueAsNumber: true })}
           />
@@ -502,6 +586,27 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
             value={money(remainingToPay(total, mode.kind === "edit" ? paid : currentPayment))}
             emphasis
           />
+
+          <TextField
+            id="debt"
+            type="number"
+            min={0}
+            step="any"
+            inputMode="decimal"
+            label={t("debt")}
+            error={errors.debt?.message}
+            {...register("debt", { valueAsNumber: true })}
+          />
+
+          <div className="md:col-span-2">
+            <TextArea
+              id="debtNotes"
+              label={t("debtNotes")}
+              rows={2}
+              error={errors.debtNotes?.message}
+              {...register("debtNotes")}
+            />
+          </div>
         </FormSection>
 
         <FormSection title={t("sections.destination")}>
@@ -527,12 +632,6 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
 
         {failed ? <FormError message={common("saveFailed")} /> : null}
 
-        {changesSaved ? (
-          <p role="status" className="text-success-700 text-[14px] font-semibold">
-            {t("changesSaved")}
-          </p>
-        ) : null}
-
         <DrawerActions
           submitting={formState.isSubmitting}
           submitIcon={mode.kind === "edit" ? "circle-check" : "plus"}
@@ -542,7 +641,6 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
           sticky={false}
           onCancel={() => {
             if (mode.kind === "edit") {
-              setChangesSaved(false);
               reset(defaultValues);
               return;
             }

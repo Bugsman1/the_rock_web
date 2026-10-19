@@ -42,7 +42,6 @@ export type OperationShipment = {
   client: string;
   bags: number;
   remainingBags: number;
-  pending: boolean;
 };
 
 export const CAPACITY_BAGS = 2;

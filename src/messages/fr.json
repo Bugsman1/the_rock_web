@@ -134,7 +134,8 @@
         "bags": "Sacs",
         "status": "Statut",
         "payment": "Statut du paiement"
-      }
+      },
+      "debt": "Dettes du client au total"
     }
   },
   "sites": {
@@ -363,14 +364,16 @@
           "ar": "Facture en arabe (PDF)",
           "fr": "Facture en français (PDF)"
         },
-        "downloading": "Téléchargement de la facture",
+        "downloading": "Chargement de la facture",
         "failed": "La facture n'a pas pu être téléchargée, réessayez.",
         "back": "Retour aux expéditions",
         "fileName": "facture-expedition-{id}-{language}.pdf"
       },
       "paid": "Montant payé",
       "saveChanges": "Enregistrer les modifications",
-      "changesSaved": "Modifications enregistrées."
+      "changesSaved": "Modifications enregistrées.",
+      "debt": "Dette",
+      "debtNotes": "Motif de la dette"
     },
     "totalBags": "Total des sacs dans tous les projets",
     "clientsLabel": "Clients",
@@ -384,6 +387,7 @@
     "statuses": {
       "pending": "En attente",
       "grinding": "Broyage en cours",
+      "refining": "En affinage",
       "completed": "Terminée"
     },
     "noClients": "Aucun client pour le moment.",
@@ -428,7 +432,10 @@
       "open": "Facture de l'expédition {number} (PDF)",
       "languages": "Langue de la facture de l'expédition {number}",
       "ar": "Arabe",
-      "fr": "Français"
+      "fr": "Français",
+      "previewTitle": "Aperçu de la facture",
+      "print": "Imprimer",
+      "download": "Télécharger"
     },
     "detail": {
       "title": "Expédition {number}",
@@ -447,7 +454,12 @@
       "left": "Reste à payer",
       "addPayment": "Ajouter un versement",
       "bags": "Sacs",
-      "arrivedAt": "Arrivée"
+      "arrivedAt": "Arrivée",
+      "debt": "Dette du client sur cette expédition",
+      "client": "Client",
+      "project": "Projet",
+      "shipmentStatus": "Statut de l'expédition",
+      "paymentStatus": "Statut du paiement"
     },
     "paymentForm": {
       "title": "Nouveau versement",
@@ -463,6 +475,9 @@
       },
       "leftNow": "Reste à payer actuellement",
       "leftAfter": "Reste après ce versement"
+    },
+    "debt": {
+      "badge": "Dette {amount}"
     }
   },
   "milling": {
@@ -673,6 +688,13 @@
       "mixedWithSoil": "Mélange avec la terre",
       "arghawa": "Arghawa",
       "workerNegligence": "Négligence d'un ouvrier"
+    },
+    "overview": {
+      "title": "Résumé de l'affinage",
+      "waiting": "En attente d'affinage",
+      "waitingBags": "{bags} sacs",
+      "refinedToday": "Affinés aujourd'hui",
+      "refined": "Opérations d'affinage"
     }
   },
   "inventory": {

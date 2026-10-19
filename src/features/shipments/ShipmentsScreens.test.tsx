@@ -30,10 +30,12 @@ function record(shipmentNumber: string, customerName: string, arrivedAt: string)
     bagCount: 10,
     project: "zouerate1",
     status: "completed",
+    stage: "completed",
     source: "Chami",
     notes: "",
     transportTotal: 0,
     paid: 0,
+    debt: 0,
   };
 }
 
@@ -97,13 +99,20 @@ describe("ShipmentHistory", () => {
     expect(shownShipments()).toHaveLength(records.length);
   });
 
-  it("shows whether each shipment is fully paid", () => {
+  it("shows whether each shipment is fully paid and its debt in red", () => {
     renderHistory([
       { ...record("SH-1", "Ahmed", "2026-09-08T09:30:00Z"), transportTotal: 500, paid: 200 },
-      { ...record("SH-2", "Sidi", "2026-09-09T09:30:00Z"), transportTotal: 500, paid: 500 },
+      {
+        ...record("SH-2", "Sidi", "2026-09-09T09:30:00Z"),
+        transportTotal: 500,
+        paid: 500,
+        debt: 300,
+      },
     ]);
 
     const [, paid, unpaid] = screen.getAllByRole("row");
+    expect(paid).toHaveTextContent(/Dette 300/);
+    expect(unpaid).not.toHaveTextContent(/Dette/);
     expect(paid).toHaveTextContent("SH-2");
     expect(paid).toHaveTextContent(messages.shipments.payment.complete);
     expect(unpaid).toHaveTextContent("SH-1");
@@ -344,19 +353,58 @@ describe("ProjectStorageScreen", () => {
     expect(screen.queryByRole("link", { name: messages.common.back })).toBeNull();
   });
 
+  it("keeps a fully ground shipment in the list as refining, with no grinding to start", async () => {
+    answerProjectList([apiProject(3, "Zouérat 1"), apiProject(4, "Zouérat 2")]);
+    server.use(
+      http.get(`${API}/projects/3/`, () =>
+        HttpResponse.json({
+          id: 3,
+          name: "Zouérat 1",
+          site: "zouerat",
+          status: "active",
+          ...stamps,
+        }),
+      ),
+      http.get(`${API}/shipments/`, () =>
+        page([{ ...apiShipment(4, "grinding"), ground_bags: 10, is_ground: true }]),
+      ),
+      http.get(`${API}/grinding-operations/`, () =>
+        page([
+          {
+            id: 11,
+            shipment_number: "SH-4",
+            customer_name: "Client 4",
+            grinder_code: "P3-1",
+            project_name: "Zouérat 1",
+            bags_count: 10,
+            start_time: "2026-10-04T06:00:00Z",
+            end_time: "2026-10-04T18:00:00Z",
+            operator_name: "Ahmed",
+            notes: "",
+            ...stamps,
+          },
+        ]),
+      ),
+    );
+    openProject("/fr/shipments/projects/3");
+
+    expect(await screen.findByText("SH-4")).toBeVisible();
+    const [, refining] = screen.getAllByRole("row");
+    expect(refining).toHaveTextContent(messages.shipments.statuses.refining);
+    expect(refining).toHaveTextContent("0 sur 10");
+    expect(
+      screen.queryByRole("link", { name: `${messages.shipments.project.startMilling} SH-4` }),
+    ).toBeNull();
+  });
+
   it("starts grinding from the shipments page and goes to the grinding page", async () => {
     answerProject();
     answerGrindingChoices();
     let created: unknown;
-    let shipmentChange: unknown;
     server.use(
       http.post(`${API}/grinding-operations/`, async ({ request }) => {
         created = await request.json();
         return HttpResponse.json({}, { status: 201 });
-      }),
-      http.patch(`${API}/shipments/1/`, async ({ request }) => {
-        shipmentChange = await request.json();
-        return HttpResponse.json({});
       }),
     );
     const router = openProject("/fr/shipments/projects/3?grind=SH-1");
@@ -373,7 +421,6 @@ describe("ProjectStorageScreen", () => {
     expect(await screen.findByRole("heading", { name: "grinding page" })).toBeVisible();
     expect(router.state.location.pathname).toBe("/fr/milling/projects/3");
     expect(created).toMatchObject({ shipment: 1, grinder: 7, bags_count: 2, operator: 4 });
-    expect(shipmentChange).toEqual({ status: "grinding" });
   });
 });
 

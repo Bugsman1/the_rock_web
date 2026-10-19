@@ -26,7 +26,6 @@ const shipments: OperationShipment[] = [
     client: "Mariem",
     bags: 14,
     remainingBags: 10,
-    pending: true,
   },
   {
     id: "53",
@@ -34,7 +33,6 @@ const shipments: OperationShipment[] = [
     client: "Abderrahmane",
     bags: 6,
     remainingBags: 1,
-    pending: false,
   },
 ];
 
@@ -182,7 +180,6 @@ describe("NewOperationForm", () => {
           shipmentId: "52",
           grinderId: "g7",
           startedAt: "2026-10-08T08:00:00.000Z",
-          shipmentPending: true,
         },
       );
     });

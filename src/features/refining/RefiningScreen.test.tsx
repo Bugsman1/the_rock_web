@@ -9,7 +9,12 @@ import { noAccess, rightsFromApi } from "@/lib/access";
 import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
-import { RefiningScreen, refiningLoader } from "./RefiningScreen";
+import {
+  RefiningProjectScreen,
+  refiningProjectLoader,
+  RefiningScreen,
+  refiningLoader,
+} from "./RefiningScreen";
 
 const allRights: Access = { ...noAccess, superuser: true };
 
@@ -70,6 +75,9 @@ beforeEach(() => {
     http.get(`${API}/projects/`, () =>
       page([{ id: 3, name: "Zouérat 1", site: "zouerat", status: "active", ...stamps }]),
     ),
+    http.get(`${API}/projects/3/`, () =>
+      HttpResponse.json({ id: 3, name: "Zouérat 1", site: "zouerat", status: "active", ...stamps }),
+    ),
     http.get(`${API}/grinding-operations/`, () =>
       page([
         grinding(1, "SH-1", "P3-1", null),
@@ -103,7 +111,14 @@ afterAll(() => server.close());
 
 function openAt(path: string, access: Access = allRights) {
   const router = createMemoryRouter(
-    [{ path: "/fr/refining", loader: refiningLoader, element: <RefiningScreen /> }],
+    [
+      { path: "/fr/refining", loader: refiningLoader, element: <RefiningScreen /> },
+      {
+        path: "/fr/refining/projects/:project",
+        loader: refiningProjectLoader,
+        element: <RefiningProjectScreen />,
+      },
+    ],
     { initialEntries: [path] },
   );
 
@@ -127,8 +142,24 @@ function panel(title: string) {
 }
 
 describe("RefiningScreen", () => {
-  it("lists the finished grinding operations that still wait for refining", async () => {
+  it("sums what waits for refining and what was refined, then a card per project, with no loss", async () => {
     openAt("/fr/refining");
+
+    const summary = within(await screen.findByRole("region", { name: text.overview.title }));
+    expect(summary.getByText(text.overview.waiting).nextElementSibling).toHaveTextContent(
+      /^1\s*4 sacs$/,
+    );
+    expect(summary.getByText(text.overview.refined).nextElementSibling).toHaveTextContent("1");
+    expect(summary.getByText(text.overview.refinedToday).nextElementSibling).toHaveTextContent("0");
+    expect(screen.getByRole("link", { name: messages.common.openProject })).toHaveAttribute(
+      "href",
+      "/fr/refining/projects/3",
+    );
+    expect(screen.queryByText(/perte/i)).toBeNull();
+  });
+
+  it("lists the finished grinding operations that still wait for refining", async () => {
+    openAt("/fr/refining/projects/3");
 
     await screen.findByRole("heading", { name: text.queueTitle });
     const queue = panel(text.queueTitle);
@@ -138,11 +169,11 @@ describe("RefiningScreen", () => {
     expect(queue.queryByText("SH-3")).toBeNull();
     expect(
       queue.getByRole("link", { name: "Démarrer l'affinage de l'expédition SH-2" }),
-    ).toHaveAttribute("href", "/fr/refining?grinding=2");
+    ).toHaveAttribute("href", "/fr/refining/projects/3?grinding=2");
   });
 
   it("shows every column of the refining operations", async () => {
-    openAt("/fr/refining");
+    openAt("/fr/refining/projects/3");
 
     await screen.findByRole("heading", { name: text.operationsTitle });
     const operations = panel(text.operationsTitle);
@@ -151,7 +182,6 @@ describe("RefiningScreen", () => {
       text.fields.refinedAt,
       text.fields.shipment,
       text.fields.client,
-      text.fields.project,
       text.fields.machine,
       text.fields.worker,
       text.fields.bags,
@@ -178,7 +208,6 @@ describe("RefiningScreen", () => {
       "07/10/2026 09:30",
       "SH-3",
       "Client SH-3",
-      "Zouérat 1",
       "P3-2",
       "Aicha",
       "4",
@@ -194,7 +223,7 @@ describe("RefiningScreen", () => {
   });
 
   it("opens the form on the chosen grinding operation with the project's workers", async () => {
-    openAt("/fr/refining?grinding=2");
+    openAt("/fr/refining/projects/3?grinding=2");
 
     const dialog = within(await screen.findByRole("dialog", { name: text.new }));
 
@@ -212,7 +241,7 @@ describe("RefiningScreen", () => {
       superuser: false,
       rights: rightsFromApi([{ module: "refining", can_view: true }]),
     };
-    openAt("/fr/refining?grinding=2", viewer);
+    openAt("/fr/refining/projects/3?grinding=2", viewer);
 
     await screen.findByRole("heading", { name: text.queueTitle });
 
@@ -224,7 +253,7 @@ describe("RefiningScreen", () => {
 
   it("searches the queue and the refinings separately", async () => {
     const user = userEvent.setup();
-    openAt("/fr/refining");
+    openAt("/fr/refining/projects/3");
 
     await user.type(
       await screen.findByLabelText(
@@ -249,7 +278,7 @@ describe("RefiningScreen", () => {
     server.use(
       http.get(`${API}/refining-operations/`, () => new HttpResponse(null, { status: 403 })),
     );
-    openAt("/fr/refining");
+    openAt("/fr/refining/projects/3");
 
     await screen.findByRole("heading", { name: text.queueTitle });
 

@@ -57,7 +57,6 @@ import {
   projectsForSite,
   projectSummary,
   shipmentMillingStatus,
-  shipmentStatusFor,
 } from "./milling";
 import type { MachineStatusFilter, MillingSummary, SiteFilter } from "./milling";
 import { getMillingData } from "./millingApi";
@@ -586,7 +585,6 @@ export function MillingProjectScreen() {
             client: shipment.client,
             bags: shipment.bags,
             remainingBags: remainingBags(shipment, data.operations),
-            pending: !shipment.started,
           }))}
           idleMachines={idleMachines(machines, data.operations)}
           operators={operators}
@@ -739,19 +737,7 @@ export function MachineDetailScreen() {
   const count = (value: number) => formatCount(value, locale);
   const status = machineStatus(machine, data.operations);
   const operation = activeOperationOf(data.operations, project.id, machine.number);
-  const shipment = data.shipments.find((item) => item.shipmentNumber === operation?.shipmentNumber);
   const [query, setQuery] = useState("");
-
-  function statusAfterEnd(endedAt: IsoTimestamp) {
-    if (operation === undefined || shipment === undefined) {
-      return "grinding";
-    }
-
-    return shipmentStatusFor(
-      shipment,
-      data.operations.map((item) => (item.id === operation.id ? { ...item, endedAt } : item)),
-    );
-  }
 
   let currentPanel: ReactNode;
 
@@ -788,15 +774,13 @@ export function MachineDetailScreen() {
         <div>
           <MercuryStatus operation={operation} />
         </div>
-        {shipment === undefined || !can("grinding", "edit") ? null : (
+        {!can("grinding", "edit") ? null : (
           <div>
             <EndMillingAction
               label={t("machine.endMilling")}
               title={t("end.title")}
               closeLabel={common("close")}
               operation={operation}
-              shipmentId={shipment.id}
-              statusAfterEnd={statusAfterEnd}
               defaultDate={todayAsInputValue(now)}
               defaultTime={nowAsTimeValue(now)}
             />

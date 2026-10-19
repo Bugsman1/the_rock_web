@@ -249,7 +249,8 @@ describe("skeletonShapeFor", () => {
     expect(skeletonShapeFor("/fr/settings/projects/3/machines/9")).toBe("form");
     expect(skeletonShapeFor("/ar/settings/projects/new")).toBe("form");
     expect(skeletonShapeFor("/ar/customers")).toBe("table");
-    expect(skeletonShapeFor("/ar/refining")).toBe("table");
+    expect(skeletonShapeFor("/ar/refining")).toBe("cards");
+    expect(skeletonShapeFor("/ar/refining/projects/3")).toBe("table");
     expect(skeletonShapeFor("/fr/inventory")).toBe("cards");
     expect(skeletonShapeFor("/fr/inventory/projects/3")).toBe("table");
     expect(skeletonShapeFor("/fr/inventory/resources/2")).toBe("table");

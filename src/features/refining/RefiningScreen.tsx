@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
-import { PageTitle } from "@/components/ui/PageHeader";
+import { CardGrid, KpiTile, LinkCard, StatGrid } from "@/components/ui/Cards";
+import { PageLayout, PageTitle } from "@/components/ui/PageHeader";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import {
@@ -18,33 +19,59 @@ import { errorKind } from "@/lib/api/client";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { formatCount, formatDateTime, formatQuantity } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
-import { findProject, grinderCode } from "@/lib/projects";
+import { grinderCode, isInService } from "@/lib/projects";
+import { requireProject } from "@/lib/projectsApi";
 import type { RefiningOperation } from "@/lib/refining";
-import { REFINING_HREF, startRefiningHref } from "@/lib/routes";
+import { REFINING_HREF, refiningProjectHref, startRefiningHref } from "@/lib/routes";
 import { matchesSearch } from "@/lib/search";
 import { getOperators } from "@/lib/users";
-import { isLossReasonKey, refiningQueue } from "./refining";
+import {
+  isLossReasonKey,
+  queueOfProject,
+  refiningQueue,
+  refiningsOfProject,
+  refiningSummary,
+} from "./refining";
 import { getRefiningData } from "./refiningApi";
 import { RefiningForm } from "./RefiningForm";
 
-export async function refiningLoader({ request }: LoaderFunctionArgs) {
-  const grinding = new URL(request.url).searchParams.get("grinding");
+export async function refiningLoader() {
   const data = await getRefiningData();
   const refinings = data.operations.ok ? data.operations.data : [];
-  const queue = refiningQueue(data.grindings, refinings);
-  const selected = queue.find((operation) => operation.id === grinding);
-  const workers = selected === undefined ? [] : await getOperators(selected.project, "refining");
 
-  return { data, queue, refinings, selected, workers };
+  return {
+    projects: data.projects.filter(isInService),
+    queue: refiningQueue(data.grindings, refinings),
+    refinings,
+  };
+}
+
+export async function refiningProjectLoader({ params, request }: LoaderFunctionArgs) {
+  const grinding = new URL(request.url).searchParams.get("grinding");
+  const [project, data] = await Promise.all([
+    requireProject(params.project ?? ""),
+    getRefiningData(),
+  ]);
+  const refinings = data.operations.ok ? data.operations.data : [];
+  const queue = queueOfProject(refiningQueue(data.grindings, refinings), project.id);
+  const selected = queue.find((operation) => operation.id === grinding);
+  const workers = selected === undefined ? [] : await getOperators(project.id, "refining");
+
+  return {
+    project,
+    operations: data.operations,
+    queue,
+    refinings: refiningsOfProject(refinings, project.id),
+    selected,
+    workers,
+  };
 }
 
 function RefiningQueueTable({
   queue,
-  projectName,
   query,
 }: {
   queue: readonly MillingOperation[];
-  projectName: (project: string) => string;
   query: string;
 }) {
   const t = useTranslations("refining");
@@ -57,7 +84,6 @@ function RefiningQueueTable({
         texts: [
           operation.shipmentNumber,
           operation.client,
-          projectName(operation.project),
           grinderCode(operation.project, operation.machine),
         ],
         phone: "",
@@ -81,7 +107,6 @@ function RefiningQueueTable({
           <tr className="border-line border-b-[1.5px]">
             <th className={tableHeadClasses}>{t("fields.shipment")}</th>
             <th className={tableHeadClasses}>{t("fields.client")}</th>
-            <th className={tableHeadClasses}>{t("fields.project")}</th>
             <th className={tableHeadClasses}>{t("fields.machine")}</th>
             <th className={tableEndHeadClasses}>{t("fields.bags")}</th>
             <th className={tableHeadClasses}>{t("fields.groundAt")}</th>
@@ -101,9 +126,6 @@ function RefiningQueueTable({
               <td className={`${tableCellClasses} text-ink font-bold`}>
                 <span dir="auto">{operation.client}</span>
               </td>
-              <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                <span dir="auto">{projectName(operation.project)}</span>
-              </td>
               <td className={`${tableCellClasses} text-ink font-semibold`}>
                 <span dir="ltr">{grinderCode(operation.project, operation.machine)}</span>
               </td>
@@ -116,7 +138,7 @@ function RefiningQueueTable({
               {canStart ? (
                 <td className={`${tableCellClasses} text-end`}>
                   <ActionLink
-                    href={startRefiningHref(operation.id)}
+                    href={startRefiningHref(operation.project, operation.id)}
                     icon="flame"
                     ariaLabel={t("startLabel", { number: operation.shipmentNumber })}
                   >
@@ -164,7 +186,6 @@ function RefiningOperationsTable({
         texts: [
           operation.shipmentNumber,
           operation.client,
-          operation.projectName,
           operation.grinderCode,
           operation.workerName,
         ],
@@ -190,7 +211,6 @@ function RefiningOperationsTable({
             <th className={tableHeadClasses}>{t("fields.refinedAt")}</th>
             <th className={tableHeadClasses}>{t("fields.shipment")}</th>
             <th className={tableHeadClasses}>{t("fields.client")}</th>
-            <th className={tableHeadClasses}>{t("fields.project")}</th>
             <th className={tableHeadClasses}>{t("fields.machine")}</th>
             <th className={tableHeadClasses}>{t("fields.worker")}</th>
             <th className={tableEndHeadClasses}>{t("fields.bags")}</th>
@@ -215,9 +235,6 @@ function RefiningOperationsTable({
               </td>
               <td className={`${tableCellClasses} text-ink font-bold`}>
                 <span dir="auto">{operation.client}</span>
-              </td>
-              <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                <span dir="auto">{operation.projectName}</span>
               </td>
               <td className={`${tableCellClasses} text-ink font-semibold`}>
                 <span dir="ltr">{operation.grinderCode}</span>
@@ -251,21 +268,81 @@ function RefiningOperationsTable({
 }
 
 export function RefiningScreen() {
-  const { data, queue, refinings, selected, workers } = useLoaderData<typeof refiningLoader>();
+  const { projects, queue, refinings } = useLoaderData<typeof refiningLoader>();
   const t = useTranslations("refining");
-  const errors = useTranslations("errors");
   const common = useTranslations("common");
-  const { close } = useRouteDrawer(REFINING_HREF);
-  const refining = useCan()("refining", "add") ? selected : undefined;
-  const projectName = (project: string) => findProject(data.projects, project)?.name ?? "—";
-  const now = new Date();
-  const [queueQuery, setQueueQuery] = useState("");
-  const [operationsQuery, setOperationsQuery] = useState("");
+  const locale = useLocale();
+  const now = new Date().toISOString();
+  const count = (value: number) => formatCount(value, locale);
+  const total = refiningSummary(queue, refinings, now);
 
   return (
     <div className="flex flex-col gap-6">
       <PageTitle>{t("title")}</PageTitle>
 
+      <section aria-label={t("overview.title")} className="grid gap-4 sm:grid-cols-3">
+        <KpiTile
+          icon="clock"
+          label={t("overview.waiting")}
+          value={count(total.waiting)}
+          detail={t("overview.waitingBags", { bags: count(total.waitingBags) })}
+        />
+        <KpiTile
+          icon="flame"
+          label={t("overview.refinedToday")}
+          value={count(total.refinedToday)}
+        />
+        <KpiTile icon="circle-check" label={t("overview.refined")} value={count(total.refined)} />
+      </section>
+
+      <CardGrid>
+        {projects.map((project) => {
+          const summary = refiningSummary(
+            queueOfProject(queue, project.id),
+            refiningsOfProject(refinings, project.id),
+            now,
+          );
+
+          return (
+            <LinkCard
+              key={project.id}
+              title={common("projectTitle", { name: project.name })}
+              href={refiningProjectHref(project.id)}
+              linkLabel={common("openProject")}
+            >
+              <StatGrid
+                stats={[
+                  { label: t("overview.waiting"), value: count(summary.waiting) },
+                  { label: t("overview.refined"), value: count(summary.refined) },
+                  { label: t("overview.refinedToday"), value: count(summary.refinedToday) },
+                ]}
+              />
+            </LinkCard>
+          );
+        })}
+      </CardGrid>
+    </div>
+  );
+}
+
+export function RefiningProjectScreen() {
+  const { project, operations, queue, refinings, selected, workers } =
+    useLoaderData<typeof refiningProjectLoader>();
+  const t = useTranslations("refining");
+  const errors = useTranslations("errors");
+  const common = useTranslations("common");
+  const { close } = useRouteDrawer(refiningProjectHref(project.id));
+  const refining = useCan()("refining", "add") ? selected : undefined;
+  const now = new Date();
+  const [queueQuery, setQueueQuery] = useState("");
+  const [operationsQuery, setOperationsQuery] = useState("");
+
+  return (
+    <PageLayout
+      backHref={REFINING_HREF}
+      backLabel={common("back")}
+      title={common("projectTitle", { name: project.name })}
+    >
       <TablePanel
         title={t("queueTitle")}
         search={{
@@ -275,13 +352,13 @@ export function RefiningScreen() {
           onChange: setQueueQuery,
         }}
       >
-        <RefiningQueueTable queue={queue} projectName={projectName} query={queueQuery} />
+        <RefiningQueueTable queue={queue} query={queueQuery} />
       </TablePanel>
 
       <TablePanel
         title={t("operationsTitle")}
         search={
-          data.operations.ok
+          operations.ok
             ? {
                 label: common("searchIn", { list: t("operationsTitle") }),
                 placeholder: common("searchList"),
@@ -291,12 +368,12 @@ export function RefiningScreen() {
             : undefined
         }
       >
-        {data.operations.ok ? (
+        {operations.ok ? (
           <RefiningOperationsTable refinings={refinings} query={operationsQuery} />
         ) : (
           <PanelError
-            message={errors(`${errorKind(data.operations.status)}.description`)}
-            code={errors("status", { status: String(data.operations.status) })}
+            message={errors(`${errorKind(operations.status)}.description`)}
+            code={errors("status", { status: String(operations.status) })}
           />
         )}
       </TablePanel>
@@ -311,7 +388,7 @@ export function RefiningScreen() {
           <RefiningForm
             key={refining.id}
             operation={refining}
-            projectName={projectName(refining.project)}
+            projectName={project.name}
             workers={workers}
             defaultDate={todayAsInputValue(now)}
             defaultTime={nowAsTimeValue(now)}
@@ -320,6 +397,6 @@ export function RefiningScreen() {
           />
         )}
       </Drawer>
-    </div>
+    </PageLayout>
   );
 }

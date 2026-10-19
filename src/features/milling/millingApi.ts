@@ -6,8 +6,7 @@ import type { MillingOperation } from "@/lib/grinding";
 import { getGrindingOperations } from "@/lib/grindingApi";
 import { isInService } from "@/lib/projects";
 import { getGrinders, getProjects } from "@/lib/projectsApi";
-import type { ShipmentStatusKey } from "@/lib/shipments";
-import { getShipments, setShipmentStatus } from "@/lib/shipmentsApi";
+import { getShipments } from "@/lib/shipmentsApi";
 import { millingShipments } from "./milling";
 import type { EndMillingValues } from "./milling";
 
@@ -48,10 +47,8 @@ export async function markMercuryAdded(operationId: string): Promise<SaveResult<
 
 export async function endOperation(
   operation: MillingOperation,
-  shipmentId: string,
   values: EndMillingValues,
   endedAt: IsoTimestamp,
-  shipmentStatus: ShipmentStatusKey,
 ): Promise<SaveResult<keyof EndMillingValues>> {
   const { response, error } = await apiClient.PATCH("/api/v1/grinding-operations/{id}/", {
     params: { path: { id: Number(operation.id) } },
@@ -61,11 +58,5 @@ export async function endOperation(
     },
   });
 
-  const outcome = saveOutcome(response, error, endErrorsFromApi);
-
-  if (outcome.ok) {
-    await setShipmentStatus(shipmentId, shipmentStatus);
-  }
-
-  return outcome;
+  return saveOutcome(response, error, endErrorsFromApi);
 }

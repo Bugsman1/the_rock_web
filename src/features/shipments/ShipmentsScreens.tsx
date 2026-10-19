@@ -7,7 +7,11 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { CardGrid, KpiTile, LinkCard, StatGrid } from "@/components/ui/Cards";
 import type { Stat } from "@/components/ui/Cards";
 import { NewOperationForm } from "@/components/grinding/NewOperationForm";
-import { PaymentStatus, ShipmentStatusBadge } from "@/components/shipments/ShipmentBadges";
+import {
+  DebtBadge,
+  PaymentStatus,
+  ShipmentStatusBadge,
+} from "@/components/shipments/ShipmentBadges";
 import { DateField } from "@/components/ui/DateField";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
@@ -55,11 +59,12 @@ import {
   isFilterActive,
   shipmentsByArrival,
   shipmentsOfProject,
+  openShipments,
   storedShipments,
   topClientsByBags,
 } from "./shipments";
 import type { HistoryFilter, StoredShipment } from "./shipments";
-import { useInvoiceDownload } from "./NewShipmentScreen";
+import { InvoicePreviewDialog, useInvoicePreview } from "./NewShipmentScreen";
 
 export async function shipmentsLoader({ params }: LoaderFunctionArgs) {
   const [projects, shipments, operations] = await Promise.all([
@@ -225,7 +230,7 @@ export async function projectStorageLoader({ params, request }: LoaderFunctionAr
 
   return {
     project,
-    shipments: shipmentsByArrival(storedShipments(shipments, operations, project.id)),
+    shipments: shipmentsByArrival(openShipments(shipments, operations, project.id)),
     grinding: choices,
     onlyProject: projects.filter(isInService).length === 1,
   };
@@ -239,9 +244,9 @@ export function InvoiceDownload({ shipment }: { shipment: ShipmentRecord }) {
   const saved = useTranslations("shipments.form.saved");
   const common = useTranslations("common");
   const [choosing, setChoosing] = useState(false);
-  const { downloading, failed, download } = useInvoiceDownload(shipment.id);
+  const { loading, failed, preview, open, close } = useInvoicePreview(shipment.id);
 
-  if (downloading) {
+  if (loading) {
     return <span className="text-ink-muted text-[13px] font-semibold">{saved("downloading")}</span>;
   }
 
@@ -259,7 +264,7 @@ export function InvoiceDownload({ shipment }: { shipment: ShipmentRecord }) {
               type="button"
               onClick={() => {
                 setChoosing(false);
-                void download(language);
+                void open(language);
               }}
               className={`${invoiceButtonClasses} border-line border-[1.5px] px-2.5`}
             >
@@ -291,6 +296,7 @@ export function InvoiceDownload({ shipment }: { shipment: ShipmentRecord }) {
           {saved("failed")}
         </p>
       ) : null}
+      <InvoicePreviewDialog preview={preview} onClose={close} />
     </div>
   );
 }
@@ -372,23 +378,28 @@ function ClientQueueTable({
                 })}
               </td>
               <td className={cn(tableCellClasses, "ps-10")}>
-                <ShipmentStatusBadge status={shipment.status} />
+                <ShipmentStatusBadge status={shipment.stage} />
               </td>
               <td className={tableCellClasses}>
-                <PaymentStatus shipment={shipment} />
+                <div className="flex flex-col items-start gap-1">
+                  <PaymentStatus shipment={shipment} />
+                  <DebtBadge amount={shipment.debt} />
+                </div>
               </td>
               <td className={`${tableCellClasses} relative z-10`}>
                 <InvoiceDownload shipment={shipment} />
               </td>
               {canStart ? (
                 <td className={`${tableCellClasses} relative z-10 text-end`}>
-                  <ActionLink
-                    href={startGrindingHref(project, shipment.shipmentNumber)}
-                    icon="player-play"
-                    ariaLabel={`${text("startMilling")} ${shipment.shipmentNumber}`}
-                  >
-                    {text("startMilling")}
-                  </ActionLink>
+                  {shipment.remainingBags > 0 ? (
+                    <ActionLink
+                      href={startGrindingHref(project, shipment.shipmentNumber)}
+                      icon="player-play"
+                      ariaLabel={`${text("startMilling")} ${shipment.shipmentNumber}`}
+                    >
+                      {text("startMilling")}
+                    </ActionLink>
+                  ) : null}
                 </td>
               ) : null}
             </tr>
@@ -431,7 +442,6 @@ function StartGrindingDrawer({
             client: shipment.customerName,
             bags: shipment.bagCount,
             remainingBags: shipment.remainingBags,
-            pending: shipment.status === "pending",
           }))}
           idleMachines={grinding.idle}
           operators={grinding.operators}
@@ -457,6 +467,8 @@ export function ProjectStorageScreen() {
   const canStart = useCan()("grinding", "add");
   const [query, setQuery] = useState("");
 
+  const inStorage = shipments.filter((shipment) => shipment.remainingBags > 0);
+
   return (
     <PageLayout
       title={project.name}
@@ -477,8 +489,8 @@ export function ProjectStorageScreen() {
         </div>
       }
       stats={[
-        { label: t("clientsLabel"), value: formatCount(clientBags(shipments).length, locale) },
-        { label: t("bagsLabel"), value: formatCount(bagCount(shipments), locale) },
+        { label: t("clientsLabel"), value: formatCount(clientBags(inStorage).length, locale) },
+        { label: t("bagsLabel"), value: formatCount(bagCount(inStorage), locale) },
       ]}
     >
       <TablePanel
@@ -495,7 +507,7 @@ export function ProjectStorageScreen() {
 
       <StartGrindingDrawer
         project={project}
-        shipments={shipments}
+        shipments={inStorage}
         grinding={canStart ? grinding : undefined}
       />
     </PageLayout>
@@ -602,7 +614,10 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
                     {formatCount(record.bagCount, locale)}
                   </td>
                   <td className={tableCellClasses}>
-                    <PaymentStatus shipment={record} />
+                    <div className="flex flex-col items-start gap-1">
+                      <PaymentStatus shipment={record} />
+                      <DebtBadge amount={record.debt} />
+                    </div>
                   </td>
                   <td className={`${tableCellClasses} relative z-10`}>
                     <InvoiceDownload shipment={record} />

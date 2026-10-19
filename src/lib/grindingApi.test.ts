@@ -51,15 +51,10 @@ describe("getGrindingOperations", () => {
 describe("startOperation", () => {
   it("creates the operation with its cost and moves a waiting shipment to grinding", async () => {
     let created: unknown;
-    let shipmentChange: unknown;
     server.use(
       http.post(`${API}/grinding-operations/`, async ({ request }) => {
         created = await request.json();
         return HttpResponse.json({}, { status: 201 });
-      }),
-      http.patch(`${API}/shipments/2/`, async ({ request }) => {
-        shipmentChange = await request.json();
-        return HttpResponse.json({});
       }),
     );
 
@@ -77,7 +72,6 @@ describe("startOperation", () => {
         shipmentId: "2",
         grinderId: "8",
         startedAt: "2026-10-08T08:00:00.000Z",
-        shipmentPending: true,
       },
     );
 
@@ -90,32 +84,5 @@ describe("startOperation", () => {
       operator: 4,
       notes: "",
     });
-    expect(shipmentChange).toEqual({ status: "grinding" });
-  });
-
-  it("leaves the shipment's status alone when it is already in grinding", async () => {
-    server.use(
-      http.post(`${API}/grinding-operations/`, () => HttpResponse.json({}, { status: 201 })),
-    );
-
-    const result = await startOperation(
-      {
-        shipmentNumber: "SH-2",
-        machine: "2",
-        bags: 1,
-        startDate: "2026-10-08",
-        startTime: "08:00",
-        operatorId: "4",
-        notes: "",
-      },
-      {
-        shipmentId: "2",
-        grinderId: "8",
-        startedAt: "2026-10-08T08:00:00.000Z",
-        shipmentPending: false,
-      },
-    );
-
-    expect(result).toEqual({ ok: true });
   });
 });

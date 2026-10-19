@@ -922,6 +922,26 @@ export interface paths {
         patch: operations["v1_shipments_partial_update"];
         trace?: never;
     };
+    "/api/v1/shipments/{id}/gold/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The gold extracted from the shipment without mercury (g): the sum over the active
+         *     refinings of its active grinding operations.
+         */
+        get: operations["v1_shipments_gold_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/shipments/{id}/invoice/": {
         parameters: {
             query?: never;
@@ -1060,7 +1080,7 @@ export interface components {
             id: $Read<number>;
             project: number;
             code: string;
-            status?: components["schemas"]["StatusF64Enum"];
+            status?: components["schemas"]["StatusEnum"];
             is_active: $Read<boolean>;
             /**
              * أنشئت في
@@ -1343,7 +1363,7 @@ export interface components {
             id?: $Read<number>;
             project?: number;
             code?: string;
-            status?: components["schemas"]["StatusF64Enum"];
+            status?: components["schemas"]["StatusEnum"];
             is_active?: $Read<boolean>;
             /**
              * أنشئت في
@@ -1395,7 +1415,7 @@ export interface components {
             site?: components["schemas"]["SiteEnum"];
             /** الاسم */
             name?: string;
-            status?: components["schemas"]["StatusF64Enum"];
+            status?: components["schemas"]["StatusEnum"];
             is_active?: $Read<boolean>;
             /**
              * أنشئت في
@@ -1526,10 +1546,19 @@ export interface components {
             /** Format: decimal */
             current_payment?: string;
             payments?: $Read<components["schemas"]["ShipmentPaymentSummary"][]>;
+            /** Format: decimal */
+            debt?: string;
+            debt_notes?: string;
             transport_method?: components["schemas"]["TransportMethodEnum"];
             source?: string;
             project?: number;
-            status?: components["schemas"]["ShipmentStatusEnum"];
+            status?: $Read<string>;
+            /** Format: double */
+            ground_bags?: $Read<number>;
+            /** Format: double */
+            refined_bags?: $Read<number>;
+            is_ground?: $Read<boolean>;
+            is_refined?: $Read<boolean>;
             notes?: string;
             created_by_name?: $Read<string | null>;
             /**
@@ -1584,7 +1613,7 @@ export interface components {
             site: components["schemas"]["SiteEnum"];
             /** الاسم */
             name: string;
-            status?: components["schemas"]["StatusF64Enum"];
+            status?: components["schemas"]["StatusEnum"];
             is_active: $Read<boolean>;
             /**
              * أنشئت في
@@ -1753,10 +1782,19 @@ export interface components {
             /** Format: decimal */
             current_payment?: string;
             payments: $Read<components["schemas"]["ShipmentPaymentSummary"][]>;
+            /** Format: decimal */
+            debt?: string;
+            debt_notes?: string;
             transport_method: components["schemas"]["TransportMethodEnum"];
             source: string;
             project: number;
-            status?: components["schemas"]["ShipmentStatusEnum"];
+            status: $Read<string>;
+            /** Format: double */
+            ground_bags: $Read<number>;
+            /** Format: double */
+            refined_bags: $Read<number>;
+            is_ground: $Read<boolean>;
+            is_refined: $Read<boolean>;
             notes?: string;
             created_by_name: $Read<string | null>;
             /**
@@ -1766,6 +1804,14 @@ export interface components {
             created_at: $Read<string>;
             /** Format: date-time */
             updated_at: $Read<string>;
+        };
+        /** @description The gold of a shipment: the sum over the active refinings of its grinding operations. */
+        ShipmentGold: {
+            shipment: number;
+            shipment_number: string;
+            refining_operations: number;
+            /** Format: decimal */
+            gold_weight_without_mercury: string;
         };
         ShipmentPayment: {
             id: $Read<number>;
@@ -1801,13 +1847,6 @@ export interface components {
             notes: $Read<string>;
         };
         /**
-         * @description * `pending` - Pending
-         *     * `grinding` - In Grinding
-         *     * `completed` - Completed
-         * @enum {string}
-         */
-        ShipmentStatusEnum: "pending" | "grinding" | "completed";
-        /**
          * @description * `zouerat` - Zouérat
          *     * `sfariyat` - Sfariyat
          * @enum {string}
@@ -1819,7 +1858,7 @@ export interface components {
          *     * `maintenance` - Maintenance
          * @enum {string}
          */
-        StatusF64Enum: "active" | "inactive" | "maintenance";
+        StatusEnum: "active" | "inactive" | "maintenance";
         TokenRefresh: {
             access: $Read<string>;
             refresh: string;
@@ -3617,6 +3656,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Shipment"];
+                };
+            };
+        };
+    };
+    v1_shipments_gold_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this shipment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentGold"];
                 };
             };
         };

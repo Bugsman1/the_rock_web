@@ -32,6 +32,7 @@ describe("refiningOperationFromApi", () => {
       shipmentNumber: "SH-0004",
       client: "Sidi",
       grinderCode: "P3-2",
+      project: "3",
       projectName: "Zouérat 1",
       workerName: "Aicha",
       bags: 4,

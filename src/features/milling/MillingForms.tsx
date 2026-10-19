@@ -13,10 +13,8 @@ import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { cn } from "@/lib/cn";
 import { combineDateAndTime } from "@/lib/datetime";
-import type { IsoTimestamp } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
 import { startRefiningHref } from "@/lib/routes";
-import type { ShipmentStatusKey } from "@/lib/shipments";
 import { createEndMillingSchema } from "./milling";
 import type { EndMillingValues } from "./milling";
 import { endOperation, markMercuryAdded } from "./millingApi";
@@ -29,8 +27,6 @@ function isEndMillingField(value: string): value is keyof EndMillingValues {
 
 type EndMillingFormProps = {
   operation: MillingOperation;
-  shipmentId: string;
-  statusAfterEnd: (endedAt: IsoTimestamp) => ShipmentStatusKey;
   defaultDate: string;
   defaultTime: string;
   onSaved: () => void;
@@ -39,8 +35,6 @@ type EndMillingFormProps = {
 
 function EndMillingForm({
   operation,
-  shipmentId,
-  statusAfterEnd,
   defaultDate,
   defaultTime,
   onSaved,
@@ -87,13 +81,7 @@ function EndMillingForm({
       return;
     }
 
-    const result = await endOperation(
-      operation,
-      shipmentId,
-      values,
-      endedAt,
-      statusAfterEnd(endedAt),
-    );
+    const result = await endOperation(operation, values, endedAt);
 
     if (result.ok) {
       setSaved(true);
@@ -182,7 +170,7 @@ export function EndMillingAction({
 
   function onSaved() {
     if (canRefine) {
-      replace(startRefiningHref(formProps.operation.id));
+      replace(startRefiningHref(formProps.operation.project, formProps.operation.id));
       return;
     }
 

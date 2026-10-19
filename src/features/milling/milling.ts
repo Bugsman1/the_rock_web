@@ -90,13 +90,6 @@ export function shipmentMillingStatus(
     : "partiallyMilled";
 }
 
-export function shipmentStatusFor(
-  shipment: MillingShipment,
-  operations: readonly MillingOperation[],
-): ShipmentStatusKey {
-  return shipmentMillingStatus(shipment, operations) === "milled" ? "completed" : "grinding";
-}
-
 export function millingQueue(
   shipments: readonly MillingShipment[],
   operations: readonly MillingOperation[],

@@ -57,14 +57,12 @@ async function openEndMilling(access: Access = allRights) {
             title={end.title}
             closeLabel={messages.common.close}
             operation={running}
-            shipmentId="52"
-            statusAfterEnd={() => "completed"}
             defaultDate="2026-10-08"
             defaultTime="12:30"
           />
         ),
       },
-      { path: "/fr/refining", element: <h1>refining page</h1> },
+      { path: "/fr/refining/projects/:project", element: <h1>refining page</h1> },
     ],
     { initialEntries: ["/"] },
   );
@@ -97,15 +95,13 @@ describe("ending a milling operation", () => {
     await waitFor(() => {
       expect(api.endOperation).toHaveBeenCalledWith(
         running,
-        "52",
         { endDate: "2026-10-08", endTime: "12:30", notes: "" },
         "2026-10-08T12:30:00.000Z",
-        "completed",
       );
     });
     expect(await screen.findByRole("heading", { name: "refining page" })).toBeVisible();
     expect(`${router.state.location.pathname}${router.state.location.search}`).toBe(
-      "/fr/refining?grinding=42",
+      "/fr/refining/projects/3?grinding=42",
     );
   });
 

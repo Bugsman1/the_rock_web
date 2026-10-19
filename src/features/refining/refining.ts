@@ -1,9 +1,10 @@
 import { z } from "zod";
 import type { BackendFieldErrors, FieldErrors } from "@/lib/api/client";
-import { isIsoDate, isTimeValue } from "@/lib/datetime";
+import { isIsoDate, isSameDay, isTimeValue } from "@/lib/datetime";
 import { toDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
+import type { ProjectId } from "@/lib/projects";
 import type { RefiningOperation } from "@/lib/refining";
 
 const TEXT_MAX_LENGTH = 500;
@@ -18,6 +19,40 @@ export function refiningQueue(
   return grindings
     .filter((grinding) => grinding.endedAt !== undefined && !refined.has(grinding.id))
     .sort((a, b) => (a.endedAt ?? "").localeCompare(b.endedAt ?? ""));
+}
+
+export type RefiningSummary = {
+  waiting: number;
+  waitingBags: number;
+  refined: number;
+  refinedToday: number;
+};
+
+export function refiningSummary(
+  queue: readonly MillingOperation[],
+  refinings: readonly RefiningOperation[],
+  now: IsoTimestamp,
+): RefiningSummary {
+  return {
+    waiting: queue.length,
+    waitingBags: queue.reduce((total, grinding) => total + grinding.bags, 0),
+    refined: refinings.length,
+    refinedToday: refinings.filter((refining) => isSameDay(refining.refinedAt, now)).length,
+  };
+}
+
+export function queueOfProject(
+  queue: readonly MillingOperation[],
+  project: ProjectId,
+): readonly MillingOperation[] {
+  return queue.filter((grinding) => grinding.project === project);
+}
+
+export function refiningsOfProject(
+  refinings: readonly RefiningOperation[],
+  project: ProjectId,
+): readonly RefiningOperation[] {
+  return refinings.filter((refining) => refining.project === project);
 }
 
 export const lossReasonKeys = [

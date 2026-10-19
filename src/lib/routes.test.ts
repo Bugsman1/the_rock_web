@@ -18,6 +18,7 @@ import {
   shipmentHref,
   shipmentsProjectHref,
   startGrindingHref,
+  refiningProjectHref,
   startRefiningHref,
   usersHref,
 } from "./routes";
@@ -105,7 +106,8 @@ describe("start grinding route", () => {
 
 describe("refining routes", () => {
   it("opens the refining drawer of a finished grinding operation", () => {
-    expect(startRefiningHref("5")).toBe("/refining?grinding=5");
+    expect(refiningProjectHref("3")).toBe("/refining/projects/3");
+    expect(startRefiningHref("3", "5")).toBe("/refining/projects/3?grinding=5");
   });
 });
 

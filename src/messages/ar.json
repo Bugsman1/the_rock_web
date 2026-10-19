@@ -134,7 +134,8 @@
         "bags": "الأكياس",
         "status": "الحالة",
         "payment": "حالة الدفع"
-      }
+      },
+      "debt": "مجموع ديون العميل"
     }
   },
   "sites": {
@@ -363,14 +364,16 @@
           "ar": "الفاتورة بالعربية (PDF)",
           "fr": "الفاتورة بالفرنسية (PDF)"
         },
-        "downloading": "جارٍ تنزيل الفاتورة",
+        "downloading": "جارٍ تحميل الفاتورة",
         "failed": "تعذر تنزيل الفاتورة، حاول مرة أخرى.",
         "back": "العودة إلى الشحنات",
         "fileName": "facture-expedition-{id}-{language}.pdf"
       },
       "paid": "المدفوع",
       "saveChanges": "حفظ التعديلات",
-      "changesSaved": "تم حفظ التعديلات."
+      "changesSaved": "تم حفظ التعديلات.",
+      "debt": "الدين",
+      "debtNotes": "سبب الدين"
     },
     "totalBags": "إجمالي الأكياس في جميع المشاريع",
     "clientsLabel": "العملاء",
@@ -384,6 +387,7 @@
     "statuses": {
       "pending": "في الانتظار",
       "grinding": "قيد الطحن",
+      "refining": "قيد التصفية",
       "completed": "مكتملة"
     },
     "noClients": "لا يوجد عملاء حاليًا.",
@@ -428,7 +432,10 @@
       "open": "فاتورة الشحنة {number} (PDF)",
       "languages": "لغة فاتورة الشحنة {number}",
       "ar": "عربية",
-      "fr": "فرنسية"
+      "fr": "فرنسية",
+      "previewTitle": "معاينة الفاتورة",
+      "print": "طباعة",
+      "download": "تنزيل"
     },
     "detail": {
       "title": "الشحنة {number}",
@@ -447,7 +454,12 @@
       "left": "الباقي",
       "addPayment": "إضافة دفعة",
       "bags": "الأكياس",
-      "arrivedAt": "تاريخ الوصول"
+      "arrivedAt": "تاريخ الوصول",
+      "debt": "دين على العميل في هذه الشحنة",
+      "client": "العميل",
+      "project": "المشروع",
+      "shipmentStatus": "حالة الشحنة",
+      "paymentStatus": "حالة الدفع"
     },
     "paymentForm": {
       "title": "دفعة جديدة",
@@ -463,6 +475,9 @@
       },
       "leftNow": "الباقي حاليًا",
       "leftAfter": "الباقي بعد هذه الدفعة"
+    },
+    "debt": {
+      "badge": "دين {amount}"
     }
   },
   "milling": {
@@ -673,6 +688,13 @@
       "mixedWithSoil": "اختلاط مع التراب",
       "arghawa": "ارقاوة",
       "workerNegligence": "إهمال عامل"
+    },
+    "overview": {
+      "title": "ملخص التصفية",
+      "waiting": "في انتظار التصفية",
+      "waitingBags": "{bags} كيس",
+      "refinedToday": "صُفّيت اليوم",
+      "refined": "عمليات التصفية"
     }
   },
   "inventory": {

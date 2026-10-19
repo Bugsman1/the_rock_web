@@ -9,6 +9,7 @@ import { noAccess } from "@/lib/access";
 import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
+import { ToastProvider } from "@/components/ui/Toast";
 import { ShipmentScreen, shipmentLoader } from "./ShipmentScreen";
 
 const API = `${window.location.origin}/api/v1`;
@@ -48,6 +49,8 @@ function apiShipment(payments: readonly { id: number; amount: string; paid_at: s
     passengers_count: 1,
     passenger_transport_cost_per_person: "200.00",
     current_payment: String(paid),
+    debt: "350.00",
+    debt_notes: "Avance sur le prochain voyage",
     payments: payments.map((payment) => ({ ...payment, notes: "" })),
     transport_method: "truck",
     source: "Chami",
@@ -75,17 +78,24 @@ const firstPayment = { id: 1, amount: "1000.00", paid_at: "2026-10-10T08:30:00Z"
 
 function openShipment(access: Access = allRights) {
   const router = createMemoryRouter(
-    [{ path: "/fr/shipments/:shipment", loader: shipmentLoader, element: <ShipmentScreen /> }],
+    [
+      { path: "/fr/shipments/:shipment", loader: shipmentLoader, element: <ShipmentScreen /> },
+      { path: "/fr/shipments/projects/:project", element: <h1>project shipments</h1> },
+    ],
     { initialEntries: ["/fr/shipments/52"] },
   );
 
   render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
       <AccessContext value={access}>
-        <RouterProvider router={router} />
+        <ToastProvider anchor={{ current: null }}>
+          <RouterProvider router={router} />
+        </ToastProvider>
       </AccessContext>
     </IntlProvider>,
   );
+
+  return router;
 }
 
 describe("ShipmentScreen", () => {
@@ -96,6 +106,16 @@ describe("ShipmentScreen", () => {
     expect(
       await screen.findByRole("heading", { name: detail.title.replace("{number}", "SHP-00052") }),
     ).toBeVisible();
+    expect(screen.getByText(detail.shipmentStatus).nextElementSibling).toHaveTextContent(
+      messages.shipments.statuses.pending,
+    );
+    expect(screen.getByText(detail.paymentStatus).nextElementSibling).toHaveTextContent(
+      messages.shipments.payment.incomplete,
+    );
+    const debt = screen.getByRole("note");
+    expect(debt).toHaveTextContent(detail.debt);
+    expect(debt).toHaveTextContent("350");
+    expect(debt).toHaveTextContent("Avance sur le prochain voyage");
     const payments = within(screen.getByRole("table"));
     const [, row] = payments.getAllByRole("row");
     expect(row).toHaveTextContent(detail.installment.replace("{n}", "1"));
@@ -165,7 +185,7 @@ describe("ShipmentScreen", () => {
     expect(screen.queryByRole("button", { name: detail.addPayment })).toBeNull();
   });
 
-  it("saves the edited shipment without touching its payments", async () => {
+  it("saves the edited shipment without touching its payments, then goes back to the list", async () => {
     answer([firstPayment]);
     let sent: unknown;
     server.use(
@@ -183,8 +203,11 @@ describe("ShipmentScreen", () => {
     await user.type(bags, "12");
     await user.click(screen.getByRole("button", { name: messages.shipments.form.saveChanges }));
 
-    expect(await screen.findByText(messages.shipments.form.changesSaved)).toBeVisible();
-    expect(sent).toMatchObject({ customer: 7, bags_count: 12, project: 3 });
+    expect(await screen.findByRole("heading", { name: "project shipments" })).toBeVisible();
+    expect(screen.getByRole("status", { hidden: true })).toHaveTextContent(
+      messages.shipments.form.changesSaved,
+    );
+    expect(sent).toMatchObject({ customer: 7, bags_count: 12, project: 3, debt: "350" });
     expect(sent).not.toHaveProperty("current_payment");
   });
 

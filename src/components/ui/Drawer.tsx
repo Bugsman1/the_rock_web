@@ -16,9 +16,8 @@ type DrawerProps = {
   children: ReactNode;
 };
 
-export function Drawer({ open, title, closeLabel, onClose, children }: DrawerProps) {
+export function useModalDialog(open: boolean) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -43,6 +42,13 @@ export function Drawer({ open, title, closeLabel, onClose, children }: DrawerPro
       }
     }
   }, [open]);
+
+  return dialogRef;
+}
+
+export function Drawer({ open, title, closeLabel, onClose, children }: DrawerProps) {
+  const dialogRef = useModalDialog(open);
+  const titleId = useId();
 
   return (
     <dialog

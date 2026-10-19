@@ -33,6 +33,7 @@ function apiShipment(id: number, status: string, paid: string) {
     passengers_count: 0,
     passenger_transport_cost_per_person: "0.00",
     current_payment: paid,
+    debt: id === 1 ? "250.00" : "0.00",
     payments: [],
     transport_method: "truck",
     source: "Chami",
@@ -116,6 +117,8 @@ describe("CustomerScreen", () => {
     expect(await screen.findByText(detail.shipments)).toBeVisible();
     expect(screen.getByText(detail.shipments).nextElementSibling).toHaveTextContent("2");
     expect(screen.getByText(detail.bags).nextElementSibling).toHaveTextContent("21");
+    expect(screen.getByRole("note")).toHaveTextContent(detail.debt);
+    expect(screen.getByRole("note")).toHaveTextContent("250");
     const [, , totals] = within(screen.getByRole("table")).getAllByRole("rowgroup");
     expect(totals).toHaveTextContent(`${messages.common.total}21`);
     expect(screen.getByText(detail.leftToPay).nextElementSibling).toHaveTextContent(/1\s050/);

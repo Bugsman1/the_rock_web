@@ -13,7 +13,6 @@ import {
   projectsForSite,
   projectSummary,
   shipmentMillingStatus,
-  shipmentStatusFor,
 } from "./milling";
 import type { MillingShipment } from "./milling";
 
@@ -100,14 +99,6 @@ describe("shipments in grinding", () => {
     expect(shipmentMillingStatus(shipment, [firstEnded, secondEnded])).toBe("milled");
   });
 
-  it("completes a shipment once all its bags are ground, otherwise keeps it in grinding", () => {
-    const ended = operation({ bags: 6, endedAt: "2026-10-08T12:00:00.000Z" });
-
-    expect(shipmentStatusFor(shipment, [ended])).toBe("completed");
-    expect(shipmentStatusFor(shipment, [{ ...ended, bags: 5 }])).toBe("grinding");
-    expect(shipmentStatusFor(shipment, [operation({ bags: 6 })])).toBe("grinding");
-  });
-
   it("queues this project's shipments with bags left, earliest arrival first", () => {
     const later = { ...shipment, shipmentNumber: "SH-2", arrivedAt: "2026-10-08T03:00:00.000Z" };
     const done = { ...shipment, shipmentNumber: "SH-3", bags: 2 };
@@ -131,10 +122,12 @@ describe("shipments in grinding", () => {
       bagCount: 16,
       project: "3",
       status: "grinding",
+      stage: "grinding",
       source: "Chami",
       notes: "",
       transportTotal: 0,
       paid: 0,
+      debt: 0,
     };
 
     expect(

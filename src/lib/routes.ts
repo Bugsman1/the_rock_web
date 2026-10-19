@@ -143,8 +143,12 @@ export function newMillingOperationHref(
   return `${millingProjectHref(project)}?${query.toString()}`;
 }
 
-export function startRefiningHref(grindingOperation: string): string {
-  return `${REFINING_HREF}?${new URLSearchParams({ grinding: grindingOperation })}`;
+export function refiningProjectHref(project: string): string {
+  return `${REFINING_HREF}/projects/${project}`;
+}
+
+export function startRefiningHref(project: string, grindingOperation: string): string {
+  return `${refiningProjectHref(project)}?${new URLSearchParams({ grinding: grindingOperation })}`;
 }
 
 export function inventoryProjectHref(project: string, newResource = false): string {

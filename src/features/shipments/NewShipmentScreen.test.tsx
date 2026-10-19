@@ -163,6 +163,8 @@ describe("NewShipmentForm", () => {
           passengerCount: 0,
           passengerFare: 0,
           currentPayment: Number.NaN,
+          debt: Number.NaN,
+          debtNotes: "",
           mill: "3",
           notes: "سبعة أكياس مبللة",
         },
@@ -180,29 +182,40 @@ describe("NewShipmentForm", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it("downloads the shipment's invoice in the language chosen, named by its invoice number", async () => {
+  it("previews the invoice in the language chosen, to print or download under its number", async () => {
     getInvoiceMock.mockResolvedValue({
       file: new Blob(["%PDF"], { type: "application/pdf" }),
       fileName: "FAC-2026-0007.pdf",
     });
-    const createUrl = vi.fn(() => "blob:invoice");
     const revokeUrl = vi.fn();
-    URL.createObjectURL = createUrl;
+    URL.createObjectURL = vi.fn(() => "blob:invoice");
     URL.revokeObjectURL = revokeUrl;
-    const click = vi
-      .spyOn(HTMLAnchorElement.prototype, "click")
-      .mockImplementation(() => undefined);
     const user = await saveFilledShipment();
 
     await user.click(screen.getByRole("button", { name: form.saved.download.fr }));
 
-    await waitFor(() => {
-      expect(click).toHaveBeenCalled();
-    });
-    expect(click.mock.contexts[0]).toHaveProperty("download", "FAC-2026-0007.pdf");
+    const preview = within(
+      await screen.findByRole("dialog", { name: messages.shipments.invoice.previewTitle }),
+    );
     expect(getInvoiceMock).toHaveBeenCalledWith("52", "fr");
+    expect(preview.getByTitle(messages.shipments.invoice.previewTitle)).toHaveAttribute(
+      "src",
+      "blob:invoice",
+    );
+    expect(
+      preview.getByRole("link", { name: messages.shipments.invoice.download }),
+    ).toHaveAttribute("download", "FAC-2026-0007.pdf");
+
+    const frame = preview.getByTitle(messages.shipments.invoice.previewTitle);
+    const print = vi.fn();
+    if (frame instanceof HTMLIFrameElement && frame.contentWindow !== null) {
+      frame.contentWindow.print = print;
+    }
+    await user.click(preview.getByRole("button", { name: messages.shipments.invoice.print }));
+    expect(print).toHaveBeenCalled();
+
+    await user.click(preview.getByRole("button", { name: messages.common.close }));
     expect(revokeUrl).toHaveBeenCalledWith("blob:invoice");
-    click.mockRestore();
   });
 
   it("hides the way back while the invoice is downloading", async () => {

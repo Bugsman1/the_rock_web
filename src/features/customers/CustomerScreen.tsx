@@ -1,7 +1,12 @@
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
-import { PaymentStatus, ShipmentStatusBadge } from "@/components/shipments/ShipmentBadges";
+import {
+  DebtBadge,
+  DebtNotice,
+  PaymentStatus,
+  ShipmentStatusBadge,
+} from "@/components/shipments/ShipmentBadges";
 import { PageLayout } from "@/components/ui/PageHeader";
 import {
   TablePanel,
@@ -83,10 +88,13 @@ function CustomerShipmentsTable({
                 {formatCount(shipment.bagCount, locale)}
               </td>
               <td className={tableCellClasses}>
-                <ShipmentStatusBadge status={shipment.status} />
+                <ShipmentStatusBadge status={shipment.stage} />
               </td>
               <td className={tableCellClasses}>
-                <PaymentStatus shipment={shipment} />
+                <div className="flex flex-col items-start gap-1">
+                  <PaymentStatus shipment={shipment} />
+                  <DebtBadge amount={shipment.debt} />
+                </div>
               </td>
             </tr>
           ))}
@@ -112,6 +120,7 @@ export function CustomerScreen() {
   const locale = useLocale();
   const bags = shipments.reduce((total, shipment) => total + shipment.bagCount, 0);
   const leftToPay = shipments.reduce((total, shipment) => total + amountLeftToPay(shipment), 0);
+  const debt = shipments.reduce((total, shipment) => total + shipment.debt, 0);
 
   return (
     <PageLayout
@@ -125,6 +134,8 @@ export function CustomerScreen() {
         { label: t("leftToPay"), value: formatMoney(leftToPay, locale) },
       ]}
     >
+      <DebtNotice label={t("debt")} amount={debt} />
+
       <TablePanel title={t("shipmentsTitle")}>
         <CustomerShipmentsTable
           shipments={shipments}

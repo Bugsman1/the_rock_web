@@ -1,6 +1,8 @@
 import type { ApiSchema } from "./api/client";
 import { fromDecimal } from "./format";
 import type { IsoTimestamp } from "./format";
+import { parseGrinderCode } from "./projects";
+import type { ProjectId } from "./projects";
 
 export type RefiningOperation = {
   id: string;
@@ -8,6 +10,7 @@ export type RefiningOperation = {
   shipmentNumber: string;
   client: string;
   grinderCode: string;
+  project: ProjectId | undefined;
   projectName: string;
   workerName: string;
   bags: number;
@@ -31,6 +34,7 @@ export function refiningOperationFromApi(
     shipmentNumber: operation.shipment_number,
     client: operation.customer_name,
     grinderCode: operation.grinder_code,
+    project: parseGrinderCode(operation.grinder_code)?.project,
     projectName: operation.project_name,
     workerName: operation.worker_name,
     bags: operation.bags_count,

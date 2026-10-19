@@ -1,17 +1,22 @@
 import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useLoaderData, useRevalidator } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { Button } from "@/components/ui/Button";
-import { PaymentStatus } from "@/components/shipments/ShipmentBadges";
+import {
+  DebtNotice,
+  PaymentStatus,
+  ShipmentStatusBadge,
+} from "@/components/shipments/ShipmentBadges";
 import { DetailList } from "@/components/ui/Cards";
 import { DateField } from "@/components/ui/DateField";
 import { Drawer, DrawerActions } from "@/components/ui/Drawer";
 import { FormError } from "@/components/ui/FieldError";
 import { Icon } from "@/components/ui/Icon";
-import { PageLayout } from "@/components/ui/PageHeader";
+import { BackLink, PageTitle } from "@/components/ui/PageHeader";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import {
   TablePanel,
@@ -22,6 +27,7 @@ import {
   tableRowClasses,
 } from "@/components/ui/TablePanel";
 import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
+import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { getCustomerChoices } from "@/lib/customersApi";
 import { combineDateAndTime, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
@@ -230,7 +236,6 @@ function PaymentsPanel({ shipment, onAdd }: { shipment: ShipmentDetail; onAdd: (
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <PaymentStatus shipment={shipment} />
           {canAdd && amountLeft > 0 ? (
             <Button variant="primary" width="auto" onClick={onAdd}>
               <Icon name="plus" />
@@ -318,29 +323,88 @@ function ShipmentDetails({
   );
 }
 
+function HeaderFact({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <dt className="text-ink-muted text-[13px] font-semibold">{label}</dt>
+      <dd className="text-ink text-start text-[15px] font-bold break-words">{children}</dd>
+    </div>
+  );
+}
+
+function ShipmentHeader({
+  shipment,
+  projectName,
+}: {
+  shipment: ShipmentDetail;
+  projectName: string;
+}) {
+  const t = useTranslations("shipments.detail");
+  const locale = useLocale();
+
+  return (
+    <section className="rounded-card border-line bg-surface flex flex-col border-[1.5px]">
+      <div className="border-line flex flex-wrap items-center justify-between gap-4 border-b p-5">
+        <div className="flex flex-col gap-3">
+          <PageTitle>{t("title", { number: shipment.shipmentNumber })}</PageTitle>
+          <dl className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <div className="flex items-center gap-2">
+              <dt className="text-ink-muted text-[13px] font-semibold">{t("shipmentStatus")}</dt>
+              <dd>
+                <ShipmentStatusBadge status={shipment.stage} />
+              </dd>
+            </div>
+            <div className="flex items-center gap-2">
+              <dt className="text-ink-muted text-[13px] font-semibold">{t("paymentStatus")}</dt>
+              <dd>
+                <PaymentStatus shipment={shipment} />
+              </dd>
+            </div>
+          </dl>
+        </div>
+        <InvoiceDownload shipment={shipment} />
+      </div>
+
+      <dl className="grid gap-x-6 gap-y-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
+        <HeaderFact label={t("client")}>
+          <span className="block text-start">
+            <bdi>{shipment.customerName}</bdi>
+          </span>
+          <span className="text-ink-muted block text-start text-[13px] font-semibold">
+            <bdi dir="ltr">{shipment.phone}</bdi>
+          </span>
+        </HeaderFact>
+        <HeaderFact label={t("project")}>{projectName}</HeaderFact>
+        <HeaderFact label={t("arrivedAt")}>{formatDateTime(shipment.arrivedAt, locale)}</HeaderFact>
+        <HeaderFact label={t("bags")}>{formatCount(shipment.bagCount, locale)}</HeaderFact>
+      </dl>
+
+      {shipment.debt > 0 ? (
+        <div className="px-5 pb-5">
+          <DebtNotice label={t("debt")} amount={shipment.debt} note={shipment.debtNotes} />
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export function ShipmentScreen() {
   const { shipment, customers, projects } = useLoaderData<typeof shipmentLoader>();
   const t = useTranslations("shipments.detail");
   const payment = useTranslations("shipments.paymentForm");
   const common = useTranslations("common");
   const canEdit = useCan()("shipments", "edit");
-  const locale = useLocale();
   const revalidator = useRevalidator();
+  const replace = useReplace();
   const [adding, setAdding] = useState(false);
   const projectName = findProject(projects, shipment.project)?.name ?? "—";
 
   return (
-    <PageLayout
-      backHref={shipmentsProjectHref(shipment.project)}
-      backLabel={common("back")}
-      title={t("title", { number: shipment.shipmentNumber })}
-      description={`${shipment.customerName} · ${projectName}`}
-      stats={[
-        { label: t("bags"), value: formatCount(shipment.bagCount, locale) },
-        { label: t("arrivedAt"), value: formatDateTime(shipment.arrivedAt, locale) },
-      ]}
-      action={<InvoiceDownload shipment={shipment} />}
-    >
+    <div className="flex w-full flex-col gap-6">
+      <BackLink href={shipmentsProjectHref(shipment.project)} label={common("back")} />
+
+      <ShipmentHeader shipment={shipment} projectName={projectName} />
+
       <PaymentsPanel shipment={shipment} onAdd={() => setAdding(true)} />
 
       <div className="flex flex-col gap-3">
@@ -350,7 +414,7 @@ export function ShipmentScreen() {
             shipment={shipment}
             customers={customers}
             projects={projects}
-            onSaved={() => void revalidator.revalidate()}
+            onSaved={() => replace(shipmentsProjectHref(shipment.project))}
           />
         ) : (
           <ShipmentDetails shipment={shipment} projectName={projectName} />
@@ -373,6 +437,6 @@ export function ShipmentScreen() {
           }}
         />
       </Drawer>
-    </PageLayout>
+    </div>
   );
 }

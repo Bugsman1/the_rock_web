@@ -38,7 +38,12 @@ import {
   MillingScreen,
   millingLoader,
 } from "@/features/milling";
-import { RefiningScreen, refiningLoader } from "@/features/refining";
+import {
+  RefiningProjectScreen,
+  refiningProjectLoader,
+  RefiningScreen,
+  refiningLoader,
+} from "@/features/refining";
 import {
   GrinderFormScreen,
   grinderFormLoader,
@@ -103,7 +108,8 @@ async function loadSignedInUser({ params }: { params: Params }) {
 const pageShapes: readonly (readonly [RegExp, SkeletonShape])[] = [
   [/^\/shipments\/new$/, "form"],
   [/^\/settings\/projects\/(new|\d+\/edit|\d+\/machines\/(new|\d+))$/, "form"],
-  [/^\/(customers|users|users\/roles|refining)$/, "table"],
+  [/^\/(customers|users|users\/roles)$/, "table"],
+  [/^\/refining\/projects\/\d+$/, "table"],
   [/^\/inventory\/(projects|resources)\/\d+$/, "table"],
   [/^\/(shipments|milling)\/projects\/\d+(\/history)?$/, "table"],
   [/^\/settings\/(profile|projects\/\d+)$/, "detail"],
@@ -239,6 +245,11 @@ const sectionRoutes: RouteObject[] = [
     element: <MachineDetailScreen />,
   },
   { path: "refining", loader: refiningLoader, element: <RefiningScreen /> },
+  {
+    path: "refining/projects/:project",
+    loader: refiningProjectLoader,
+    element: <RefiningProjectScreen />,
+  },
   { path: "inventory", loader: inventoryLoader, element: <InventoryScreen /> },
   {
     path: "inventory/projects/:project",

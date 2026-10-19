@@ -3,8 +3,11 @@ import type { MillingOperation } from "@/lib/grinding";
 import type { RefiningOperation } from "@/lib/refining";
 import {
   createRefiningSchema,
+  queueOfProject,
   refiningErrorsFromApi,
   refiningQueue,
+  refiningsOfProject,
+  refiningSummary,
   refiningToApi,
   refiningLoss,
 } from "./refining";
@@ -56,6 +59,7 @@ function refining(grindingOperationId: string): RefiningOperation {
     shipmentNumber: "SH-4",
     client: "Sidi",
     grinderCode: "P3-2",
+    project: "3",
     projectName: "Zouérat 1",
     workerName: "Aicha",
     bags: 4,
@@ -78,6 +82,30 @@ function errorsOf(input: RefiningValues) {
     ? {}
     : Object.fromEntries(result.error.issues.map((issue) => [issue.path.join("."), issue.message]));
 }
+
+describe("refining summary", () => {
+  const queue = [grinding({ id: "a", bags: 1.5 }), grinding({ id: "b", bags: 2, project: "4" })];
+  const refinings = [
+    { ...refining("x"), refinedAt: "2026-10-13T09:00:00Z" },
+    { ...refining("y"), refinedAt: "2026-10-12T09:00:00Z", project: "4" },
+  ];
+
+  it("counts what waits, its bags, all refinings and those of today", () => {
+    expect(refiningSummary(queue, refinings, "2026-10-13T15:00:00Z")).toEqual({
+      waiting: 2,
+      waitingBags: 3.5,
+      refined: 2,
+      refinedToday: 1,
+    });
+  });
+
+  it("keeps one project's waiting grindings and refinings", () => {
+    expect(queueOfProject(queue, "4").map((item) => item.id)).toEqual(["b"]);
+    expect(refiningsOfProject(refinings, "3").map((item) => item.grindingOperationId)).toEqual([
+      "x",
+    ]);
+  });
+});
 
 describe("refiningQueue", () => {
   it("keeps the finished grinding operations not yet refined, oldest first", () => {

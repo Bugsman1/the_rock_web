@@ -80,7 +80,8 @@ All declared in `src/app/router.tsx` (`routes`). Under `/:locale/` (`ar` or `fr`
 | `customers/:customer` (`customerHref`) | `CustomerScreen` (`customerLoader`): the client's shipments |
 | `users` (`?q=&page=&new=1&edit=`)                                        | `UsersScreen` (`usersLoader`): search by name, email or phone on the server                          |
 | `users/roles` (`?new=1&edit=&delete=`)                                   | `RolesScreen` (`rolesLoader`): roles, their sections and rights; delete only when no user has it     |
-| `refining` (`?grinding=`)                                                | `RefiningScreen` (`refiningLoader`)                                                                  |
+| `refining` | `RefiningScreen` (`refiningLoader`): figures and project cards |
+| `refining/projects/:project` (`?grinding=`, `refiningProjectHref`, `startRefiningHref`) | `RefiningProjectScreen` (`refiningProjectLoader`) |
 | `inventory`                                                              | `InventoryScreen` (`inventoryLoader`): one card per project                                          |
 | `inventory/projects/:project` (`?new=resource`)                          | `InventoryProjectScreen` (`inventoryProjectLoader`): the project's resources as cards, Mercury first |
 | `inventory/resources/:resource` (`?page=`, `?action=increase\|decrease`) | `ResourceScreen` (`resourceLoader`): quantities, actions and history                                 |
@@ -173,7 +174,7 @@ Others: `ActionLink`, `Button`, `buttonClasses` (primary, secondary, danger), `B
 | `phone.ts`, `search.ts`, `jwt.ts`, `cn.ts`, `profile.ts` | Phone rules, text/phone search, token reading, class merging, display name and profile (`/auth/me/` has no project)                                                                                                                             |
 | `customers.ts` / `customersApi.ts`                       | Client type, schema, matching by phone, backend mapping / list, get, choices, create, update                                                                                                                                                    |
 | `projects.ts` / `projectsApi.ts`                         | Projects and machines (grinder code `P<project>-<n>`, `grinderCode`, `parseGrinderCode`), schemas, mapping / load and save                                                                                                                      |
-| `shipments.ts` / `shipmentsApi.ts`                       | Shipment record (client name and phone come with the shipment) / `amountLeftToPay` / `getShipments({ project?, customer? })`, `setShipmentStatus`                                                                                                                                  |
+| `shipments.ts` / `shipmentsApi.ts`                       | Shipment record (client name and phone come with the shipment; `status` checked against pending, grinding, completed; `stage` from `stageOf`) / `amountLeftToPay` / `getShipments({ project?, customer? })`                                                                                                                                  |
 | `grinding.ts` / `grindingApi.ts`                         | Grinding operations shared by Shipments, Milling and Refining: machines, machine status, `remainingBags`, `operationFromApi` (project and machine read from `grinder_code`), start schema / `getGrindingOperations(project?)`, `startOperation` |
 | `refining.ts` / `refiningApi.ts`                         | Refining operation type and mapping / `getRefiningOperations(project?)` (shared by Refining and Inventory)                                                                                                                                      |
 | `users.ts`                                               | User and role types, `roleFromApi`, `roleLabel`, `getRoles`, `getOperators` (`/operators/`: users whose role views the module, on the project when scoped)                                                                                      |
@@ -189,10 +190,10 @@ Others: `ActionLink`, `Button`, `buttonClasses` (primary, secondary, danger), `B
 | `customers` | `CustomersScreen.tsx`, `CustomerScreen.tsx` (one client and every shipment received from them)                                                                                                                                                                                                                                                                                                                                                                                               | Search after 350 ms, pagination, add / edit drawer                                                    |
 | `users`     | `users.ts` (user and role schemas, mapping, `roleToApi`), `usersApi.ts` (users, roles), `UsersScreen.tsx`, `RolesScreen.tsx`                                                                                                                                                                                                                                                                                        | Password optional when editing; project only for a project-scoped role; built-in role names read-only |
 | `settings`  | `SettingsScreens.tsx` (home with search, profile, language), `ProjectScreens.tsx` (projects, machines, forms)                                                                                                                                                                                                                                                                                                       | Machine number must be free in its project                                                            |
-| `shipments` | `shipments.ts` (storage = shipments `pending` or in `grinding` with bags left, `remainingBags`, history filter, `completedShipments`, transport cost, schema, mapping), `shipmentsApi.ts` (create: finds or creates the client by phone, returns the new id; `getInvoice`: the transport invoice PDF and its file name), `ShipmentsScreens.tsx` (overview, project list with the start-grinding drawer, history), `NewShipmentScreen.tsx` (`ShipmentForm` in create or edit mode: `NewShipmentForm`, `EditShipmentForm`; `useInvoiceDownload`), `ShipmentScreen.tsx` (one shipment: payments, add payment, invoice, edit) | Starting grinding goes to the project's grinding page                                                 |
-| `milling`   | `milling.ts` (queue, summaries, `shipmentStatusFor`, end schema), `millingApi.ts` (data, end, `markMercuryAdded`), `MillingScreens.tsx` (overview, project, machine), `MillingForms.tsx` (end, `MercuryStatus`)                                                                                                                                                                                                     | See below                                                                                             |
+| `shipments` | `shipments.ts` (storage = shipments `pending` or in `grinding` with bags left, `remainingBags`, history filter, `completedShipments`, transport cost, schema, mapping), `shipmentsApi.ts` (create: finds or creates the client by phone, returns the new id; `getInvoice`: the transport invoice PDF and its file name), `ShipmentsScreens.tsx` (overview, project list with the start-grinding drawer, history), `NewShipmentScreen.tsx` (`ShipmentForm` in create or edit mode: `NewShipmentForm`, `EditShipmentForm`; `useInvoicePreview`, `InvoicePreviewDialog`), `ShipmentScreen.tsx` (one shipment: payments, add payment, invoice, edit) | Starting grinding goes to the project's grinding page                                                 |
+| `milling`   | `milling.ts` (queue, summaries, end schema), `millingApi.ts` (data, end, `markMercuryAdded`), `MillingScreens.tsx` (overview, project, machine), `MillingForms.tsx` (end, `MercuryStatus`)                                                                                                                                                                                                     | See below                                                                                             |
 
-| `refining` | `refining.ts` (`refiningQueue`, `refiningLoss`, schema, mapping, field errors), `refiningApi.ts` (`getRefiningData`, create), `RefiningScreen.tsx` (queue, operations table, drawer), `RefiningForm.tsx` | Every API field is in the form and the table |
+| `refining` | `refining.ts` (`refiningQueue`, `refiningSummary`, `queueOfProject`, `refiningsOfProject`, `refiningLoss`, schema, mapping, field errors), `refiningApi.ts` (`getRefiningData`, create), `RefiningScreen.tsx` (overview with figures and project cards; project page with queue, operations table, drawer), `RefiningForm.tsx` | Every API field is in the form and the table |
 | `inventory` | `resources.ts` (types, kinds mercury / water / fuel with `kindNamed`, `availableKinds`, schemas, `quantityAfterChange`, mapping, field errors), `resourcesApi.ts` (list, get, create, increase / decrease, history page), `InventoryScreens.tsx` (projects, project cards, resource page), `InventoryForms.tsx` (resource, quantity change) | Inventory module. A project holds only mercury, water and fuel, each once: a new resource picks one of the types it does not have yet (saved as that code, shown translated), and "new resource" disappears once it has all three; mercury is the refining material. A saved resource's type is read from its name (`kindNamed`: the backend's English, French and Arabic spellings, ignoring case, accents, Arabic diacritics and tatweel); any other resource on the server is left out of the app (`resourceFromApi` gives nothing, its page is not found). Resources are never renamed. Once added, its page opens |
 
 **Search inside each section:** every list has its own search, the app-wide search in the top bar
@@ -210,8 +211,8 @@ page). Project cards show the machines running out of all, the bags grinding and
 shipments, with no per-status bar.
 
 **Status colours:** `StatusBadge` takes a `tone`: green (`success`) for done, blue (`active`) for
-in progress, orange (`warning`) for waiting, grey (`neutral`) otherwise. Shipments: pending orange,
-grinding blue, completed green. Grinding queue: waiting orange, partly ground blue, ground green.
+in progress, orange (`warning`) for waiting, grey (`neutral`) otherwise. Shipments: pending grey,
+grinding orange, refining blue, completed green. Grinding queue: waiting orange, partly ground blue, ground green.
 A machine's grinding history has a status column: "grinding" blue, "finished" green. Sidebar items
 are `text-ink` (the darkest text); the active one stays brand blue.
 
@@ -237,6 +238,24 @@ Clients list opens their page (the whole row is a link; "edit" stays separate): 
 number of shipments, their bags and what is left to pay on them, and every shipment received from
 the client, newest first (`GET /shipments/?customer=<id>`: number, arrival, project, bags, status,
 payment status), each opening its shipment page.
+
+**Invoice preview:** every invoice button (a project's list and history, the shipment page header,
+the panel after saving a new shipment) first asks Arabic or French, then loads the PDF
+(`useInvoicePreview`) and shows it in a large centered window (`InvoicePreviewDialog`, an `iframe`
+on the file) with "print" (the browser's print of that PDF), "download" (saved under its invoice
+number) and close (frees the file). `useModalDialog` (from `Drawer.tsx`) opens and closes it.
+
+**Saved message (`components/ui/Toast.tsx`):** `AppShell` wraps the app in `ToastProvider`, anchored
+on the page area; `useToast()(message)` shows a green box with a check for 1.5 seconds, at the top
+of the page area and centered on it (so it stays centered beside an open sidebar), in the top layer
+(`popover`) so an open drawer cannot cover it. Saving a new shipment shows "shipment saved" (the
+invoice drawer still opens); saving changes to a shipment shows "changes saved" and goes back to the
+project's Shipments page.
+
+**Shipment page header:** one card: the shipment number, then "shipment status" and "payment
+status" each with its label and badge, and the PDF button; then client (with the phone), project,
+arrival and bags; then, when there is debt, the red debt box. Text inside each fact is isolated
+(`bdi`) so a Latin name stays aligned with its label in Arabic.
 
 **One shipment (`/shipments/<id>`):** a shipment's number in the project list and in the history
 opens its page (the whole row is a link; the PDF and start-grinding buttons stay separate). The page
@@ -274,14 +293,30 @@ status column ("complete" in green when `amountLeftToPay` is 0, otherwise "incom
 `amountLeftToPay` = transport total less `current_payment`, rounded to the cent; the total is
 computed from the bags and passengers costs, as the backend does, because the API does not send it)
 and an invoice column: a PDF button that shows the language choice (Arabic, French) in place, then
-downloads (`useInvoiceDownload`, shared with the new-shipment panel), so the invoice can be
+opens the invoice preview (`useInvoicePreview`, shared with the new-shipment panel), so the invoice can be
 downloaded at any time. The Shipments project page uses the full width.
 
-**Workflow:** the new-shipment form has no status field; the backend saves a new shipment as `pending` and listed on its project's Shipments page with "start
-grinding", which opens the grinding form there and then goes to the project's Grinding page. Like
-the Grinding queue, that list (and the project cards' bag counts) holds the shipments still waiting
-(`pending`) or in `grinding` that have bags not on a machine, each with "bags left of total" and its
-status, until all its bags are on machines or ground. A user who sees only one project in service
+**Debt and passengers:** the shipment form (new and edit) has an optional "debt" (`debt`, 0 or
+more, empty is 0): what the client owes on the shipment apart from the transport, and an optional
+"debt reason" (`debt_notes`) shown inside the red debt box. It does not touch the
+payments or the payment status and is not on the invoice. It shows in red: a red "debt" badge under
+the payment status in the project list, the history and a client's shipments (`DebtBadge`), and a
+large red box in the shipment page header and, for the client's total, on the client page
+(`DebtNotice`, only when there is debt). Passengers are optional too: an empty count or fare is sent as 0.
+
+**Shipment status (backend `9e976ac`):** the backend sets it by itself and the app never writes it:
+`pending` until the first grinding, `grinding` while some bags are not refined, `completed` once all
+its bags are refined (recomputed on every grinding or refining write). The app shows four stages
+(`stageOf`): pending, grinding, refining (status `grinding` and `is_ground`: every bag ground, not all
+refined yet) and completed. Shipments also carry `ground_bags`, `refined_bags`, `is_ground` and
+`is_refined`, and `bags_count` cannot go below the bags already in grinding (400 on the bags).
+
+**Workflow:** the new-shipment form has no status field; a new shipment is `pending` and listed on
+its project's Shipments page with "start grinding", which opens the grinding form there and then
+goes to the project's Grinding page. That list (`openShipments`) holds every shipment of the project
+not yet completed, oldest arrival first, each with "bags left of total" and its stage; "start
+grinding" shows only while bags are left. The project cards and the page's counts use only the
+shipments with bags left (`storedShipments`). A user who sees only one project in service
 (a project-scoped role: `/projects/` returns only theirs) goes straight from Shipments to that
 project's page (`shipmentsLoader` redirects), which then has no back link. Each finished
 grinding operation then waits on the Refining page until it is refined. Shipments history lists
@@ -290,12 +325,10 @@ only the `completed` shipments (`completedShipments`), with no status column.
 **Grinding API (`/api/v1/grinding-operations/`):** responses carry no shipment, grinder, project or
 operator id; the project and machine come from `grinder_code` and the shipment from
 `shipment_number`. An operation has shipment, grinder, bags, start time and operator. There is no
-grinding cost any more: the app never sends or shows `grinding_cost` (the backend defaults it to 0). Starting one moves a `pending` shipment to
-`grinding`. Ending one is always done by the user ("finish grinding", no automatic end at the
+grinding cost any more: the app never sends or shows `grinding_cost` (the backend defaults it to 0). Ending one is always done by the user ("finish grinding", no automatic end at the
 estimated time): the form asks only the end date, time and notes, and sends `end_time` and the
-notes; every allocated bag counts as ground (no "bags actually ground" field). It then sets
-the shipment to `completed` once all its bags are ground, otherwise `grinding`, and opens the refining
-form of that operation. A machine's page lists every grinding on it, running ones first.
+notes; every allocated bag counts as ground (no "bags actually ground" field). It then opens the
+refining form of that operation. A machine's page lists every grinding on it, running ones first.
 **Mercury:** every grinding must be mercured once (`mercury_added_at`, `mercury_added_by_name`).
 A running grinding shows "mercury not added yet" (orange) in the project's machine list and on the
 machine page; a role that can edit grinding clicks it, confirms, and the app sends
@@ -305,6 +338,14 @@ backend makes this final: it cannot be undone and is refused on a finished grind
 users whose role can view grinding (refining for the refining worker), on the project when the role is project-scoped. Estimated end: 2 bags per 6 hours.
 A shipment arrives in whole or half bags (12, 12.5: `isHalfBagCount`, step 0.5 in the form). A machine takes 0.5, 1, 1.5 or 2 bags: the form says so as soon as more than 2 is typed (`isHalfBagCount`),
 and the refining takes exactly the bags of the grinding. The backend stores shipment, grinding and refining bags in half bags and refuses more than 2 per grinding.
+
+**Refining pages:** `/refining` shows three figures (grindings waiting for refining with their
+bags, refined today, all refinings: `refiningSummary`) and a card per project in service with the
+same figures, opening `/refining/projects/<id>`. Nothing about the loss is shown there (admin only).
+The project page has the waiting grindings and the refinings of that project only (`queueOfProject`,
+`refiningsOfProject`; a refining's project is read from its `grinder_code`), without a project
+column, and the refining drawer (`startRefiningHref(project, grinding)`, also opened after finishing a
+grinding).
 
 **Refining (`/api/v1/refining-operations/`):** a refining belongs to one grinding operation
 (`grinding_operation`, also returned in responses). The form first shows the grinding read-only (shipment, client,
@@ -371,8 +412,9 @@ name: only the app limits a project to those three.
 ## 9. Known gaps / next steps
 
 - Dashboard and the accounting sections are empty pages.
-- `schema.d.ts` was generated from the live server's `/api/schema/` (2026-10-18), which runs
-  GitHub `main` `f2aa17d` (shipment payments, half bags on shipments).
+- `schema.d.ts` was generated from the live server's `/api/schema/` (2026-10-19), which runs
+  GitHub `main` `9e976ac` (shipment payments, half bags, debt and debt notes, automatic status and
+  bag progress, shipment gold).
 - The notifications bell does nothing yet.
 - The production bundle is one file over 500 KB; split by route.
 - `/forgot-password` link has no page (same as in `the_rock`).

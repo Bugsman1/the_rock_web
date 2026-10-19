@@ -28,7 +28,7 @@ export function isInStorage(record: ShipmentRecord): boolean {
   return storedStatuses.includes(record.status);
 }
 
-export function storedShipments(
+export function openShipments(
   records: readonly ShipmentRecord[],
   operations: readonly MillingOperation[],
   project?: ProjectId,
@@ -43,8 +43,15 @@ export function storedShipments(
         { shipmentNumber: record.shipmentNumber, bags: record.bagCount },
         operations,
       ),
-    }))
-    .filter((record) => record.remainingBags > 0);
+    }));
+}
+
+export function storedShipments(
+  records: readonly ShipmentRecord[],
+  operations: readonly MillingOperation[],
+  project?: ProjectId,
+): readonly StoredShipment[] {
+  return openShipments(records, operations, project).filter((record) => record.remainingBags > 0);
 }
 
 export function shipmentsOfProject<Shipment extends ShipmentRecord>(
@@ -205,14 +212,23 @@ export function createNewShipmentSchema(messages: ValidationMessages, alreadyPai
       transportMethod: z.enum(transportMethodKeys),
       source: z.string().trim().min(1, messages.required),
       bagFare: z.number({ error: messages.amountInvalid }).min(0, messages.amountInvalid),
-      passengerCount: z
-        .number({ error: messages.passengerCountInvalid })
-        .int(messages.passengerCountInvalid)
-        .min(0, messages.passengerCountInvalid),
-      passengerFare: z.number({ error: messages.amountInvalid }).min(0, messages.amountInvalid),
+      passengerCount: z.union(
+        [
+          z.nan(),
+          z.number().int(messages.passengerCountInvalid).min(0, messages.passengerCountInvalid),
+        ],
+        { error: messages.passengerCountInvalid },
+      ),
+      passengerFare: z.union([z.nan(), z.number().min(0, messages.amountInvalid)], {
+        error: messages.amountInvalid,
+      }),
       currentPayment: z.union([z.nan(), z.number().min(0, messages.amountInvalid)], {
         error: messages.amountInvalid,
       }),
+      debt: z.union([z.nan(), z.number().min(0, messages.amountInvalid)], {
+        error: messages.amountInvalid,
+      }),
+      debtNotes: z.string().max(NOTES_MAX_LENGTH),
       mill: z.string().min(1, messages.required),
       notes: z.string().max(NOTES_MAX_LENGTH),
     })
@@ -247,6 +263,8 @@ const shipmentFields: readonly ShipmentField[] = [
   "passengerCount",
   "passengerFare",
   "currentPayment",
+  "debt",
+  "debtNotes",
   "mill",
   "notes",
 ];
@@ -261,6 +279,8 @@ const fieldOfApi: Readonly<Record<string, ShipmentField>> = {
   passengers_count: "passengerCount",
   passenger_transport_cost_per_person: "passengerFare",
   current_payment: "currentPayment",
+  debt: "debt",
+  debt_notes: "debtNotes",
   project: "mill",
   notes: "notes",
 };
@@ -283,11 +303,13 @@ export function shipmentToApi(
     arrival_date: arrivedAt,
     bags_count: values.bagCount,
     bag_transport_cost_per_bag: toMoneyDecimal(values.bagFare),
-    passengers_count: values.passengerCount,
-    passenger_transport_cost_per_person: toMoneyDecimal(values.passengerFare),
+    passengers_count: amountOrZero(values.passengerCount),
+    passenger_transport_cost_per_person: toMoneyDecimal(amountOrZero(values.passengerFare)),
     transport_method: values.transportMethod,
     source: values.source.trim(),
     project: Number(values.mill),
+    debt: toMoneyDecimal(amountOrZero(values.debt)),
+    debt_notes: values.debtNotes.trim(),
     notes: values.notes.trim(),
   };
 }
@@ -311,6 +333,7 @@ export type ShipmentDetail = ShipmentRecord & {
   bagFare: number;
   passengerCount: number;
   passengerFare: number;
+  debtNotes: string;
   payments: readonly ShipmentPayment[];
 };
 
@@ -321,6 +344,7 @@ export function shipmentDetailFromApi(shipment: ApiSchema<"Shipment">): Shipment
     bagFare: fromDecimal(shipment.bag_transport_cost_per_bag),
     passengerCount: shipment.passengers_count ?? 0,
     passengerFare: fromDecimal(shipment.passenger_transport_cost_per_person ?? "0"),
+    debtNotes: shipment.debt_notes ?? "",
     payments: (shipment.payments ?? []).map((payment) => ({
       id: String(payment.id),
       amount: fromDecimal(payment.amount),
@@ -345,6 +369,8 @@ export function shipmentFormValues(shipment: ShipmentDetail): NewShipmentValues 
     passengerCount: shipment.passengerCount,
     passengerFare: shipment.passengerFare,
     currentPayment: Number.NaN,
+    debt: shipment.debt,
+    debtNotes: shipment.debtNotes,
     mill: shipment.project,
     notes: shipment.notes,
   };

@@ -5,7 +5,6 @@ import { operationFromApi } from "./grinding";
 import type { MillingOperation, NewOperationValues } from "./grinding";
 import type { IsoTimestamp } from "./format";
 import type { ProjectId } from "./projects";
-import { setShipmentStatus } from "./shipmentsApi";
 
 export async function getGrindingOperations(
   project?: ProjectId,
@@ -43,12 +42,11 @@ type OperationTarget = {
   shipmentId: string;
   grinderId: string;
   startedAt: IsoTimestamp;
-  shipmentPending: boolean;
 };
 
 export async function startOperation(
   values: NewOperationValues,
-  { shipmentId, grinderId, startedAt, shipmentPending }: OperationTarget,
+  { shipmentId, grinderId, startedAt }: OperationTarget,
 ): Promise<SaveResult<keyof NewOperationValues>> {
   const { response, error } = await apiClient.POST("/api/v1/grinding-operations/", {
     body: {
@@ -61,11 +59,5 @@ export async function startOperation(
     },
   });
 
-  const outcome = saveOutcome(response, error, newOperationErrorsFromApi);
-
-  if (outcome.ok && shipmentPending) {
-    await setShipmentStatus(shipmentId, "grinding");
-  }
-
-  return outcome;
+  return saveOutcome(response, error, newOperationErrorsFromApi);
 }

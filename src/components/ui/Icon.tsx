@@ -1,3 +1,4 @@
+import AlertTriangleIcon from "@/icons/alert-triangle.svg?react";
 import ArrowLeftIcon from "@/icons/arrow-left.svg?react";
 import ArrowRightIcon from "@/icons/arrow-right.svg?react";
 import BackspaceIcon from "@/icons/backspace.svg?react";
@@ -10,6 +11,7 @@ import CheckIcon from "@/icons/check.svg?react";
 import ChevronDownIcon from "@/icons/chevron-down.svg?react";
 import CircleIcon from "@/icons/circle.svg?react";
 import CircleCheckIcon from "@/icons/circle-check.svg?react";
+import DownloadIcon from "@/icons/download.svg?react";
 import ClockIcon from "@/icons/clock.svg?react";
 import EyeIcon from "@/icons/eye.svg?react";
 import EyeOffIcon from "@/icons/eye-off.svg?react";
@@ -29,6 +31,7 @@ import PackagesIcon from "@/icons/packages.svg?react";
 import PencilIcon from "@/icons/pencil.svg?react";
 import PlayerPlayIcon from "@/icons/player-play.svg?react";
 import PlusIcon from "@/icons/plus.svg?react";
+import PrinterIcon from "@/icons/printer.svg?react";
 import ReceiptIcon from "@/icons/receipt.svg?react";
 import RefreshIcon from "@/icons/refresh.svg?react";
 import SearchIcon from "@/icons/magnifying-glass.svg?react";
@@ -47,6 +50,7 @@ import XIcon from "@/icons/x.svg?react";
 import { cn } from "@/lib/cn";
 
 const glyphs = {
+  "alert-triangle": AlertTriangleIcon,
   "arrow-left": ArrowLeftIcon,
   "arrow-right": ArrowRightIcon,
   backspace: BackspaceIcon,
@@ -59,6 +63,7 @@ const glyphs = {
   "chevron-down": ChevronDownIcon,
   circle: CircleIcon,
   "circle-check": CircleCheckIcon,
+  download: DownloadIcon,
   clock: ClockIcon,
   eye: EyeIcon,
   "eye-off": EyeOffIcon,
@@ -78,6 +83,7 @@ const glyphs = {
   pencil: PencilIcon,
   "player-play": PlayerPlayIcon,
   plus: PlusIcon,
+  printer: PrinterIcon,
   receipt: ReceiptIcon,
   refresh: RefreshIcon,
   search: SearchIcon,

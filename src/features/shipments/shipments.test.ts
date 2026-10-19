@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ApiSchema } from "@/lib/api/client";
 import type { MillingOperation } from "@/lib/grinding";
-import { amountLeftToPay } from "@/lib/shipments";
+import { amountLeftToPay, shipmentFromApi, stageOf } from "@/lib/shipments";
 import type { ShipmentRecord } from "@/lib/shipments";
 import {
   amountLeftAfter,
@@ -47,10 +47,12 @@ describe("storage", () => {
       bagCount: 10,
       project: "zouerate1",
       status: "pending",
+      stage: "pending",
       source: "Chami",
       notes: "",
       transportTotal: 0,
       paid: 0,
+      debt: 0,
       ...overrides,
     };
   }
@@ -228,10 +230,12 @@ describe("history", () => {
       bagCount: 10,
       project: "zouerate1",
       status: "completed",
+      stage: "completed",
       source: "Chami",
       notes: "",
       transportTotal: 0,
       paid: 0,
+      debt: 0,
     };
   }
 
@@ -377,6 +381,8 @@ describe("backend form", () => {
     passengerCount: 2,
     passengerFare: 50.5,
     currentPayment: 1000.5,
+    debt: 250,
+    debtNotes: " Avance sur le prochain voyage ",
     mill: "3",
     notes: " Sacs mouillés ",
   };
@@ -396,6 +402,8 @@ describe("backend form", () => {
         transport_method: "hilux",
         source: "Chami",
         project: 3,
+        debt: "250",
+        debt_notes: "Avance sur le prochain voyage",
         notes: "Sacs mouillés",
       });
     });
@@ -443,6 +451,31 @@ describe("backend form", () => {
           { ...values, currentPayment: Number.NaN },
           { customerId: "7", arrivedAt: "2026-10-10T08:30:00.000Z" },
         ).current_payment,
+      ).toBe("0");
+    });
+
+    it("takes a shipment with no passengers and sends them as zero", () => {
+      const noPassengers = { ...values, passengerCount: Number.NaN, passengerFare: Number.NaN };
+
+      expect(schema.safeParse(noPassengers).success).toBe(true);
+      expect(
+        shipmentToApi(noPassengers, { customerId: "7", arrivedAt: "2026-10-10T08:30:00.000Z" }),
+      ).toMatchObject({ passengers_count: 0, passenger_transport_cost_per_person: "0" });
+    });
+
+    it("takes a debt of zero or more, apart from the transport, and sends an empty one as zero", () => {
+      expect(
+        (schema.safeParse({ ...values, debt: -1 }).error?.issues ?? []).map((issue) => [
+          issue.path.join("."),
+          issue.message,
+        ]),
+      ).toEqual([["debt", "amount"]]);
+      expect(schema.safeParse({ ...values, debt: 50000 }).success).toBe(true);
+      expect(
+        shipmentToApi(
+          { ...values, debt: Number.NaN },
+          { customerId: "7", arrivedAt: "2026-10-10T08:30:00.000Z" },
+        ).debt,
       ).toBe("0");
     });
 
@@ -524,10 +557,12 @@ describe("payment and history", () => {
     bagCount: 10,
     project: "3",
     status: "completed",
+    stage: "completed",
     source: "Chami",
     notes: "",
     transportTotal: 1000,
     paid: 400,
+    debt: 0,
   };
 
   it("gives what is left to pay on a shipment, rounded to the cent", () => {
@@ -569,11 +604,26 @@ describe("shipment payments", () => {
     source: "Chami",
     project: 3,
     status: "pending",
+    ground_bags: 0,
+    refined_bags: 0,
+    is_ground: false,
+    is_refined: false,
     notes: "",
     created_by_name: "med",
     created_at: "2026-10-10T08:30:00Z",
     updated_at: "2026-10-12T10:00:00Z",
   };
+
+  it("shows a shipment as refining once all its bags are ground, until the backend completes it", () => {
+    expect(stageOf("pending", false)).toBe("pending");
+    expect(stageOf("grinding", false)).toBe("grinding");
+    expect(stageOf("grinding", true)).toBe("refining");
+    expect(stageOf("completed", true)).toBe("completed");
+    expect(shipmentFromApi({ ...apiShipment, status: "grinding", is_ground: true }).stage).toBe(
+      "refining",
+    );
+    expect(shipmentFromApi({ ...apiShipment, status: "lost" }).status).toBe("pending");
+  });
 
   it("reads a shipment with its fares and its payments, oldest first", () => {
     const detail = shipmentDetailFromApi(apiShipment);
@@ -582,6 +632,7 @@ describe("shipment payments", () => {
       id: "52",
       transportTotal: 3200,
       paid: 2200,
+      debt: 0,
       bagFare: 300,
       passengerCount: 1,
       passengerFare: 200,
