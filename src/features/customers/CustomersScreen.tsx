@@ -156,7 +156,7 @@ export function CustomersScreen() {
           </p>
         </div>
 
-        <CustomerSearch key={query} query={query} />
+        <CustomerSearch query={query} />
 
         {can("customers", "add") ? (
           <ButtonLink href={customersHref({ query, page, create: true })} variant="primary">

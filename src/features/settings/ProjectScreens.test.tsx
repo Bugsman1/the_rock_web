@@ -4,7 +4,8 @@ import { IntlProvider } from "use-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Grinder, Project } from "@/lib/projects";
 import messages from "@/messages/fr.json";
-import { GrinderForm, ProjectForm } from "./ProjectScreens";
+import { ProjectForm } from "./ProjectForm";
+import { GrinderForm } from "./GrinderForm";
 
 const api = vi.hoisted(() => ({
   createProject: vi.fn(),

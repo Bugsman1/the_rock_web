@@ -44,19 +44,39 @@ type OperationTarget = {
   startedAt: IsoTimestamp;
 };
 
-export async function startOperation(
+function operationToApi(
   values: NewOperationValues,
   { shipmentId, grinderId, startedAt }: OperationTarget,
+) {
+  return {
+    shipment: Number(shipmentId),
+    grinder: Number(grinderId),
+    bags_count: values.bags,
+    start_time: startedAt,
+    operator: Number(values.operatorId),
+    notes: values.notes,
+  };
+}
+
+export async function startOperation(
+  values: NewOperationValues,
+  target: OperationTarget,
 ): Promise<SaveResult<keyof NewOperationValues>> {
   const { response, error } = await apiClient.POST("/api/v1/grinding-operations/", {
-    body: {
-      shipment: Number(shipmentId),
-      grinder: Number(grinderId),
-      bags_count: values.bags,
-      start_time: startedAt,
-      operator: Number(values.operatorId),
-      notes: values.notes,
-    },
+    body: operationToApi(values, target),
+  });
+
+  return saveOutcome(response, error, newOperationErrorsFromApi);
+}
+
+export async function updateOperation(
+  operationId: string,
+  values: NewOperationValues,
+  target: OperationTarget,
+): Promise<SaveResult<keyof NewOperationValues>> {
+  const { response, error } = await apiClient.PATCH("/api/v1/grinding-operations/{id}/", {
+    params: { path: { id: Number(operationId) } },
+    body: operationToApi(values, target),
   });
 
   return saveOutcome(response, error, newOperationErrorsFromApi);

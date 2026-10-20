@@ -7,6 +7,13 @@ import { localizedHref } from "@/i18n/navigation";
 import { isTokenExpired } from "@/lib/jwt";
 import { LOGIN_HREF } from "@/lib/routes";
 import { refreshTokens } from "./auth";
+import {
+  CONNECTION_LOST_STATUS,
+  isUnreachableStatus,
+  reportConnectionFailure,
+  connectedFetch,
+  reportResponse,
+} from "./connection";
 import type { Readable } from "openapi-typescript-helpers";
 import type { components, paths } from "./schema";
 import { clearSession, readSession, updateSession } from "./session";
@@ -56,12 +63,25 @@ const sessionMiddleware: Middleware = {
   },
 };
 
+const connectionMiddleware: Middleware = {
+  onResponse({ response }) {
+    reportResponse(response.status);
+
+    return response;
+  },
+  onError() {
+    reportConnectionFailure();
+
+    return new Response(null, { status: CONNECTION_LOST_STATUS });
+  },
+};
+
 export const apiClient = createClient<paths>({
   baseUrl: window.location.origin,
-  fetch: (request) => fetch(request),
+  fetch: (request) => connectedFetch(request),
 });
 
-apiClient.use(sessionMiddleware);
+apiClient.use(sessionMiddleware, connectionMiddleware);
 
 export type ApiSchema<Name extends keyof components["schemas"]> = Readable<
   components["schemas"][Name]
@@ -128,11 +148,12 @@ export function unwrap<T>({ data, response }: { data?: T; response: Response }):
   return data;
 }
 
-export type ErrorKind = "notFound" | "forbidden" | "failed";
+export type ErrorKind = "notFound" | "forbidden" | "connection" | "failed";
 
 export function errorKind(status: number | undefined): ErrorKind {
   if (status === 404) return "notFound";
   if (status === 403) return "forbidden";
+  if (status !== undefined && isUnreachableStatus(status)) return "connection";
 
   return "failed";
 }
@@ -149,4 +170,10 @@ export async function tryLoad<T>(load: () => Promise<T>): Promise<Loaded<T>> {
 
     throw error;
   }
+}
+
+const ATTACHMENT_FILE_NAME = /filename="([^"]+)"/;
+
+export function attachmentFileName(contentDisposition: string | null): string | undefined {
+  return contentDisposition?.match(ATTACHMENT_FILE_NAME)?.[1];
 }

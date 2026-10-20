@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { connectedFetch, reportConnectionFailure, reportResponse } from "./connection";
 import type { SessionTokens } from "./session";
 
 const LOGIN_PATH = "/api/v1/auth/login/";
@@ -20,12 +21,16 @@ type TokenRequestResult =
 
 async function postJson(path: string, body: object): Promise<Response | undefined> {
   try {
-    return await fetch(new URL(path, window.location.origin), {
+    const response = await connectedFetch(new URL(path, window.location.origin), {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify(body),
     });
+
+    reportResponse(response.status);
+    return response;
   } catch {
+    reportConnectionFailure();
     return undefined;
   }
 }

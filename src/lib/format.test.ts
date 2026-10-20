@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  amountOrZero,
   formatCount,
   formatDate,
   formatDateTime,
@@ -7,6 +8,7 @@ import {
   formatQuantity,
   formatTime,
   fromDecimal,
+  roundMoney,
   toDecimal,
   toMoneyDecimal,
 } from "./format";
@@ -47,6 +49,22 @@ describe("formatDateTime", () => {
 describe("formatTime", () => {
   it("renders the hour and minutes in Nouakchott time", () => {
     expect(formatTime("2026-10-05T23:30:00Z", "fr")).toBe("23:30");
+  });
+});
+
+describe("roundMoney", () => {
+  it("rounds an amount to the cent", () => {
+    expect(roundMoney(0.1 + 0.2)).toBe(0.3);
+    expect(roundMoney(12.345)).toBe(12.35);
+    expect(roundMoney(1000)).toBe(1000);
+  });
+});
+
+describe("amountOrZero", () => {
+  it("keeps an amount above zero and turns an empty or negative one into 0", () => {
+    expect(amountOrZero(12.5)).toBe(12.5);
+    expect(amountOrZero(Number.NaN)).toBe(0);
+    expect(amountOrZero(-3)).toBe(0);
   });
 });
 

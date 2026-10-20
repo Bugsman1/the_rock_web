@@ -1,6 +1,7 @@
 import type { ApiSchema } from "./api/client";
-import { fromDecimal } from "./format";
+import { fromDecimal, roundMoney } from "./format";
 import type { IsoTimestamp } from "./format";
+import { formatPhone } from "./phone";
 import type { ProjectId } from "./projects";
 
 const shipmentStatusKeys = ["pending", "grinding", "completed"] as const;
@@ -40,10 +41,8 @@ export type ShipmentRecord = {
   debt: number;
 };
 
-const MONEY_CENTS = 100;
-
 export function amountLeftToPay(record: ShipmentRecord): number {
-  return Math.round(Math.max(0, record.transportTotal - record.paid) * MONEY_CENTS) / MONEY_CENTS;
+  return roundMoney(Math.max(0, record.transportTotal - record.paid));
 }
 
 export function shipmentFromApi(shipment: ApiSchema<"Shipment">): ShipmentRecord {
@@ -51,7 +50,7 @@ export function shipmentFromApi(shipment: ApiSchema<"Shipment">): ShipmentRecord
     id: String(shipment.id),
     shipmentNumber: shipment.number,
     customerName: shipment.customer_name,
-    phone: shipment.customer_phone,
+    phone: formatPhone(shipment.customer_phone),
     arrivedAt: shipment.arrival_date,
     bagCount: shipment.bags_count,
     project: String(shipment.project),

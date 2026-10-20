@@ -16,15 +16,24 @@ export function isValidPhone(value: string): boolean {
   );
 }
 
-export function isSamePhone(a: string, b: string): boolean {
-  const local = (value: string) => value.replace(/\D/g, "").slice(-LOCAL_DIGITS);
+function localDigits(value: string): string {
+  return value.replace(/\D/g, "").slice(-LOCAL_DIGITS);
+}
 
-  return local(a) === local(b);
+export function isSamePhone(a: string, b: string): boolean {
+  return localDigits(a) === localDigits(b);
 }
 
 export function formatPhone(value: string): string {
-  const local = value.replace(/\D/g, "").slice(-LOCAL_DIGITS);
-  const pairs = local.match(/\d{2}/g) ?? [];
+  if (!isValidPhone(value)) {
+    return value;
+  }
+
+  const pairs = localDigits(value).match(/\d{2}/g) ?? [];
 
   return `+${COUNTRY_CODE} ${pairs.join(" ")}`;
+}
+
+export function phoneToApi(value: string): string {
+  return `+${COUNTRY_CODE}${localDigits(value)}`;
 }

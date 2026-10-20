@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { describe, expect, it } from "vitest";
 import { modules, rightsFromApi } from "@/lib/access";
@@ -22,21 +22,24 @@ const everything = viewing(modules);
 const supervisor = viewing(["shipments", "grinding", "refining", "customers"]);
 
 function renderShell(access: Access = everything, roleName = "manager", path = "/fr/shipments") {
+  const router = createMemoryRouter(
+    [
+      { path: "/fr/login", element: <p>login page</p> },
+      {
+        path: "/fr/*",
+        element: (
+          <AppShell access={access} userName="Sidi" roleName={roleName}>
+            <p>page</p>
+          </AppShell>
+        ),
+      },
+    ],
+    { initialEntries: [path] },
+  );
+
   return render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>
-          <Route path="/fr/login" element={<p>login page</p>} />
-          <Route
-            path="/fr/*"
-            element={
-              <AppShell access={access} userName="Sidi" roleName={roleName}>
-                <p>page</p>
-              </AppShell>
-            }
-          />
-        </Routes>
-      </MemoryRouter>
+      <RouterProvider router={router} />
     </IntlProvider>,
   );
 }

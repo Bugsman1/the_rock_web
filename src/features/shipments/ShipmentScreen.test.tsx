@@ -33,7 +33,10 @@ const stamps = { created_at: "2026-10-10T08:30:00Z", updated_at: "2026-10-12T10:
 
 const page = (results: readonly object[]) => HttpResponse.json({ count: results.length, results });
 
-function apiShipment(payments: readonly { id: number; amount: string; paid_at: string }[]) {
+function apiShipment(
+  payments: readonly { id: number; amount: string; paid_at: string }[],
+  debt = "350.00",
+) {
   const paid = payments.reduce((total, payment) => total + Number(payment.amount), 0);
 
   return {
@@ -49,7 +52,7 @@ function apiShipment(payments: readonly { id: number; amount: string; paid_at: s
     passengers_count: 1,
     passenger_transport_cost_per_person: "200.00",
     current_payment: String(paid),
-    debt: "350.00",
+    debt,
     debt_notes: "Avance sur le prochain voyage",
     payments: payments.map((payment) => ({ ...payment, notes: "" })),
     transport_method: "truck",
@@ -62,9 +65,12 @@ function apiShipment(payments: readonly { id: number; amount: string; paid_at: s
   };
 }
 
-function answer(payments: readonly { id: number; amount: string; paid_at: string }[]) {
+function answer(
+  payments: readonly { id: number; amount: string; paid_at: string }[],
+  debt = "350.00",
+) {
   server.use(
-    http.get(`${API}/shipments/52/`, () => HttpResponse.json(apiShipment(payments))),
+    http.get(`${API}/shipments/52/`, () => HttpResponse.json(apiShipment(payments, debt))),
     http.get(`${API}/customers/`, () =>
       page([{ id: 7, full_name: "Sidi", phone: "+222 46 10 93 25", is_active: true, ...stamps }]),
     ),
@@ -112,9 +118,8 @@ describe("ShipmentScreen", () => {
     expect(screen.getByText(detail.paymentStatus).nextElementSibling).toHaveTextContent(
       messages.shipments.payment.incomplete,
     );
-    const debt = screen.getByRole("note");
-    expect(debt).toHaveTextContent(detail.debt);
-    expect(debt).toHaveTextContent("350");
+    const debt = screen.getAllByText(detail.debtLabel)[0]?.nextElementSibling;
+    expect(debt).toHaveTextContent(messages.shipments.debt.badge);
     expect(debt).toHaveTextContent("Avance sur le prochain voyage");
     const payments = within(screen.getByRole("table"));
     const [, row] = payments.getAllByRole("row");
@@ -122,6 +127,46 @@ describe("ShipmentScreen", () => {
     expect(row).toHaveTextContent(/1\s000/);
     expect(screen.getAllByText(detail.left)[0]?.nextElementSibling).toHaveTextContent(/2\s200/);
     expect(screen.getByText(messages.shipments.payment.incomplete)).toBeVisible();
+  });
+
+  it("increases the debt by the amount typed, with its reason", async () => {
+    answer([firstPayment]);
+    let sent: unknown;
+    server.use(
+      http.patch(`${API}/shipments/52/`, async ({ request }) => {
+        sent = await request.json();
+        return HttpResponse.json({});
+      }),
+    );
+    const user = userEvent.setup();
+    openShipment();
+
+    await user.click(await screen.findByRole("button", { name: detail.addDebt }));
+    const drawer = within(screen.getByRole("dialog", { name: messages.shipments.debtForm.title }));
+    expect(drawer.getByLabelText(messages.shipments.debtForm.notes)).toHaveValue(
+      "Avance sur le prochain voyage",
+    );
+    await user.type(drawer.getByLabelText(messages.shipments.debtForm.amount), "150");
+    expect(
+      drawer.getByText(messages.shipments.debtForm.after).nextElementSibling,
+    ).toHaveTextContent("500");
+    await user.click(drawer.getByRole("button", { name: messages.shipments.debtForm.submit }));
+
+    await waitFor(() => {
+      expect(sent).toEqual({ debt: "500", debt_notes: "Avance sur le prochain voyage" });
+    });
+  });
+
+  it("offers to add a debt to a shipment without one, with no debt field in its form", async () => {
+    answer([firstPayment], "0.00");
+    openShipment();
+
+    expect(
+      await screen.findByRole("button", { name: messages.shipments.debtForm.add }),
+    ).toBeVisible();
+    expect(screen.queryByRole("button", { name: detail.addDebt })).toBeNull();
+    expect(screen.queryByLabelText(messages.shipments.form.debt)).toBeNull();
+    expect(screen.queryByText(detail.debtLabel)).toBeNull();
   });
 
   it("adds a second payment and shows it", async () => {
@@ -205,7 +250,7 @@ describe("ShipmentScreen", () => {
 
     expect(await screen.findByRole("heading", { name: "project shipments" })).toBeVisible();
     expect(screen.getByRole("status", { hidden: true })).toHaveTextContent(
-      messages.shipments.form.changesSaved,
+      messages.toasts.shipmentUpdated,
     );
     expect(sent).toMatchObject({ customer: 7, bags_count: 12, project: 3, debt: "350" });
     expect(sent).not.toHaveProperty("current_payment");

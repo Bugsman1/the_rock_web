@@ -2,6 +2,7 @@ import { apiClient, unwrap } from "./api/client";
 import type { ApiSchema } from "./api/client";
 import { fetchAllPages, MAX_PAGE_SIZE } from "./api/pagination";
 import { displayName } from "./profile";
+import { formatPhone } from "./phone";
 import type { ProjectId } from "./projects";
 
 export type Role = {
@@ -49,7 +50,7 @@ export function userFromApi(user: ApiSchema<"User">, roles: readonly Role[]): Us
     id: String(user.id),
     name: displayName({ full_name: user.full_name ?? "", email: user.email }),
     email: user.email,
-    phone: user.phone ?? "",
+    phone: formatPhone(user.phone ?? ""),
     role: roles.find((role) => role.id === String(user.role)),
     project: user.project === null || user.project === undefined ? undefined : String(user.project),
   };

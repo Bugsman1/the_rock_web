@@ -4,8 +4,9 @@ React + Vite rewrite of the `the_rock` front-end (Next.js). Bilingual: **Arabic 
 **French (LTR)**. Talks to the Django backend (`tayea_mills`) through `/api` on its own origin.
 
 > Status: login, app shell, **Shipments**, **Milling** (on the real grinding API), **Refining**,
-> **Clients**, **Inventory**, **Users** and **Settings** are built and connected to the API. The
-> other sections (dashboard, settlement, …) render an empty page, as in `the_rock`.
+> **Clients**, **Final settlements**, **Inventory**, **Users** and **Settings** are built and
+> connected to the API. The other sections (dashboard, accounting, …) render an empty page, as in
+> `the_rock`.
 
 ---
 
@@ -23,7 +24,7 @@ React + Vite rewrite of the `the_rock` front-end (Next.js). Bilingual: **Arabic 
 | Forms         | **react-hook-form 7** + **Zod 4**                                                       | per form                               |
 | Icons         | SVG files → React components (`vite-plugin-svgr`, `?react`)                             | `src/icons/`, `components/ui/Icon.tsx` |
 | Fonts         | IBM Plex Sans + IBM Plex Sans Arabic, self-hosted (`@fontsource`, `font-display: swap`) | `src/main.tsx`                         |
-| Tests         | **Vitest 5** + Testing Library + jsdom + MSW (async waits up to 3 s)                    | `vite.config.ts`, `vitest.setup.ts`    |
+| Tests         | **Vitest 5** + Testing Library + jsdom + MSW (async waits up to 3 s, 15 s per test)     | `vite.config.ts`, `vitest.setup.ts`    |
 | Lint / format | ESLint 9 (project rules) + Prettier 3                                                   | `eslint.config.js`, `.prettierrc.json` |
 
 ---
@@ -32,8 +33,11 @@ React + Vite rewrite of the `the_rock` front-end (Next.js). Bilingual: **Arabic 
 
 ```
 the_rock_web/
-├─ index.html                  ← root element; page background colour (= `--color-brand-50`, before CSS loads)
+├─ index.html                  ← root element; page background colour (= `--color-brand-50`, before CSS loads); tab icon = the company logo
 ├─ vite.config.ts              ← plugins, @ alias, /api proxy (BACKEND_API_URL), test config
+├─ Dockerfile, .dockerignore   ← production image: Node builds dist/, Caddy serves it
+├─ docker/Caddyfile            ← site: HTTPS for DOMAIN, SPA fallback, /api → BACKEND_URL, caching, compression
+├─ docker-compose.yml          ← VPS service on ports 80 / 443, joined to the backend's Docker network
 ├─ scripts/check-messages.mjs  ← fails if fr.json and ar.json keys differ
 ├─ scripts/generate-api-types.mjs ← backend schema (OPENAPI_SCHEMA_URL) → src/lib/api/schema.d.ts
 ├─ src/
@@ -41,12 +45,13 @@ the_rock_web/
 │  ├─ global.d.ts              ← types use-intl: Locale + Messages from ar.json
 │  ├─ app/
 │  │  ├─ app.css               ← Tailwind, design tokens, custom utilities
-│  │  ├─ router.tsx            ← every route, session guard + user loader, signed-in layout, page skeleton
+│  │  ├─ router.tsx            ← every route, session guard + user loader, signed-in layout
+│  │  ├─ PageStates.tsx        ← page skeleton (`skeletonShapeFor`), first load, `PageError`
 │  │  └─ LocaleLayout.tsx      ← validates :locale, sets <html lang dir> + title, IntlProvider
 │  ├─ i18n/                    ← locales, messages map, language names, locale-aware navigation
 │  ├─ messages/                ← ar.json (source of truth), fr.json
 │  ├─ features/                ← one folder per module, public API in index.ts
-│  │  ├─ auth/  shell/  customers/  users/  settings/  shipments/  milling/  refining/  inventory/
+│  │  ├─ auth/  shell/  customers/  users/  settings/  shipments/  milling/  refining/  inventory/  settlements/
 │  ├─ components/ui/           ← shared, domain-free UI kit
 │  ├─ components/customers/    ← client form (Clients and New shipment)
 │  ├─ components/shipments/    ← `ShipmentBadges.tsx`: `PaymentStatus`, `ShipmentStatusBadge` (Shipments and Clients)
@@ -65,32 +70,36 @@ two features lives in `lib/` or `components/`.
 
 All declared in `src/app/router.tsx` (`routes`). Under `/:locale/` (`ar` or `fr`):
 
-| Path                                                                     | Screen (loader)                                                                                      |
-| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `login`                                                                  | `LoginScreen` (a signed-in user goes to their home)                                                  |
-| `shipments`                                                              | `ShipmentsScreen` (`shipmentsLoader`)                                                                |
-| `shipments/new` (`?project=<id>` from a project page, `newShipmentHref`) | `NewShipmentScreen` (`newShipmentLoader`: that project is preselected and the back links lead to it) |
-| `shipments/:shipment` (`shipmentHref`) | `ShipmentScreen` (`shipmentLoader`): payments, invoice, edit |
-| `shipments/projects/:project` (`?grind=`)                                | `ProjectStorageScreen` (`projectStorageLoader`)                                                      |
-| `shipments/projects/:project/history`                                    | `ShipmentHistoryScreen` (`projectShipmentsLoader`)                                                   |
-| `milling` (`?site=`)                                                     | `MillingScreen` (`millingLoader`)                                                                    |
-| `milling/projects/:project` (`?operation=new&shipment=&machine=`)        | `MillingProjectScreen` (`millingProjectLoader`)                                                      |
-| `milling/projects/:project/machines/:machine`                            | `MachineDetailScreen` (`machineLoader`)                                                              |
-| `customers` (`?q=&page=&new=1&edit=`)                                    | `CustomersScreen` (`customersLoader`)                                                                |
-| `customers/:customer` (`customerHref`) | `CustomerScreen` (`customerLoader`): the client's shipments |
-| `users` (`?q=&page=&new=1&edit=`)                                        | `UsersScreen` (`usersLoader`): search by name, email or phone on the server                          |
-| `users/roles` (`?new=1&edit=&delete=`)                                   | `RolesScreen` (`rolesLoader`): roles, their sections and rights; delete only when no user has it     |
-| `refining` | `RefiningScreen` (`refiningLoader`): figures and project cards |
-| `refining/projects/:project` (`?grinding=`, `refiningProjectHref`, `startRefiningHref`) | `RefiningProjectScreen` (`refiningProjectLoader`) |
-| `inventory`                                                              | `InventoryScreen` (`inventoryLoader`): one card per project                                          |
-| `inventory/projects/:project` (`?new=resource`)                          | `InventoryProjectScreen` (`inventoryProjectLoader`): the project's resources as cards, Mercury first |
-| `inventory/resources/:resource` (`?page=`, `?action=increase\|decrease`) | `ResourceScreen` (`resourceLoader`): quantities, actions and history                                 |
-| `settings`                                                               | `SettingsHomeScreen` (`settingsHomeLoader`)                                                          |
-| `settings/profile`, `settings/language`                                  | `ProfileScreen` (`profileLoader`), `LanguageScreen`                                                  |
-| `settings/projects`, `…/new`, `…/:project`, `…/:project/edit`            | `ProjectsScreen`, `ProjectFormScreen`, `ProjectSettingsScreen`                                       |
-| `settings/projects/:project` (`?delete=1`)                               | `ProjectSettingsScreen`: delete confirmation, then back to the projects                              |
-| `settings/projects/:project/machines/new`, `…/:machine`                  | `GrinderFormScreen` (`grinderFormLoader`)                                                            |
-| other menu entries                                                       | empty page                                                                                           |
+| Path                                                                                             | Screen (loader)                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `login`                                                                                          | `LoginScreen` (a signed-in user goes to their home)                                                                                                                          |
+| `shipments`                                                                                      | `ShipmentsScreen` (`shipmentsLoader`)                                                                                                                                        |
+| `shipments/new` (`?project=<id>` from a project page, `newShipmentHref`)                         | `NewShipmentScreen` (`newShipmentLoader`: that project is preselected and the back links lead to it)                                                                         |
+| `shipments/:shipment` (`shipmentHref`)                                                           | `ShipmentScreen` (`shipmentLoader`): payments, invoice, edit                                                                                                                 |
+| `shipments/projects/:project` (`?grind=`)                                                        | `ProjectStorageScreen` (`projectStorageLoader`)                                                                                                                              |
+| `shipments/projects/:project/history`                                                            | `ShipmentHistoryScreen` (`projectShipmentsLoader`)                                                                                                                           |
+| `milling` (`?site=`)                                                                             | `MillingScreen` (`millingLoader`)                                                                                                                                            |
+| `milling/projects/:project` (`?operation=new&shipment=&machine=`)                                | `MillingProjectScreen` (`millingProjectLoader`)                                                                                                                              |
+| `milling/projects/:project/machines/:machine` (`?edit=1`, `editMillingOperationHref`)            | `MachineDetailScreen` (`machineLoader`): the running grinding, its edit drawer, the history                                                                                  |
+| `customers` (`?q=&page=&new=1&edit=`)                                                            | `CustomersScreen` (`customersLoader`)                                                                                                                                        |
+| `customers/:customer` (`customerHref`)                                                           | `CustomerScreen` (`customerLoader`): the client's shipments                                                                                                                  |
+| `settlements`                                                                                    | `SettlementsScreen` (`settlementsLoader`): one card per project in service (finished shipments to settle, settlements made); a user who sees one project goes straight to it |
+| `settlements/projects/:project` (`?q=&page=`, `settlementsProjectHref`)                          | `SettlementProjectScreen` (`settlementProjectLoader`): finished shipments to settle (each with "settle"), the project's settlements                                          |
+| `settlements/new` (`?customer=&project=`, `newSettlementHref`; back to the project it came from) | `NewSettlementScreen` (`newSettlementLoader`)                                                                                                                                |
+| `settlements/:settlement` (`?edit=1`, `?delete=1`, `settlementHref`)                             | `SettlementScreen` (`settlementLoader`): totals, PDF, edit amounts, delete                                                                                                   |
+| `users` (`?q=&page=&new=1&edit=`)                                                                | `UsersScreen` (`usersLoader`): search by name, email or phone on the server                                                                                                  |
+| `users/roles` (`?new=1&edit=&delete=`)                                                           | `RolesScreen` (`rolesLoader`): roles, their sections and rights; delete only when no user has it                                                                             |
+| `refining`                                                                                       | `RefiningScreen` (`refiningLoader`): figures and project cards                                                                                                               |
+| `refining/projects/:project` (`?grinding=`, `refiningProjectHref`, `startRefiningHref`)          | `RefiningProjectScreen` (`refiningProjectLoader`)                                                                                                                            |
+| `inventory`                                                                                      | `InventoryScreen` (`inventoryLoader`): one card per project                                                                                                                  |
+| `inventory/projects/:project` (`?new=resource`)                                                  | `InventoryProjectScreen` (`inventoryProjectLoader`): the project's resources as cards, Mercury first                                                                         |
+| `inventory/resources/:resource` (`?page=`, `?action=increase\|decrease`)                         | `ResourceScreen` (`resourceLoader`): quantities, actions and history                                                                                                         |
+| `settings`                                                                                       | `SettingsHomeScreen` (`settingsHomeLoader`)                                                                                                                                  |
+| `settings/profile`, `settings/language`                                                          | `ProfileScreen` (`profileLoader`), `LanguageScreen`                                                                                                                          |
+| `settings/projects`, `…/new`, `…/:project`, `…/:project/edit`                                    | `ProjectsScreen`, `ProjectFormScreen`, `ProjectSettingsScreen`                                                                                                               |
+| `settings/projects/:project` (`?delete=1`)                                                       | `ProjectSettingsScreen`: delete confirmation, then back to the projects                                                                                                      |
+| `settings/projects/:project/machines/new`, `…/:machine`                                          | `GrinderFormScreen` (`grinderFormLoader`)                                                                                                                                    |
+| other menu entries                                                                               | empty page                                                                                                                                                                   |
 
 `/` and `/:locale` redirect to the login page. Invalid ids in the URL answer "not found".
 
@@ -105,7 +114,9 @@ delete rights per module: shipments, grinding (Milling), refining, inventory, cu
 (Users), locations (Settings → projects). Any right on a module gives its view right; approve
 follows edit. A section opens when the role can view its module; settings home, profile and
 language are open to everyone; sections still to build (dashboard, accounting…) need view on every
-module. Form pages (new shipment, new / edit project, new / edit machine) need the add or edit right.
+module. Final settlements open with the shipments view right (the backend checks the shipments
+module for `/settlements/`). Form pages (new shipment, new settlement, new / edit project, new /
+edit machine) need the add or edit right.
 Superusers open everything. The backend enforces the rights; the UI only hides. Users get a role,
 not rights of their own.
 
@@ -117,12 +128,21 @@ edit, delete and start button, and the drawer they open, that the role lacks. In
 decrease need the add right (they are POSTs). Ending a grinding opens the
 refining form only for a role that may add refinings; otherwise it stays on the machine.
 
-**Error page:** a page whose data fails to load shows `PageError` (in `router.tsx`) inside the shell:
+**Error page:** a page whose data fails to load shows `PageError` (in `PageStates.tsx`) inside the shell:
 "not found" for a 404 (bad id, or an endpoint the backend does not have), "no permission" for a
-403, otherwise "something went wrong", with the HTTP error code shown, with "try again" (reloads the data) and "back to home". The same page covers a failure of
+403, "connection impossible, check your connection and try again" for a 502 / 503 / 504 (no code
+shown), otherwise "something went wrong", with the HTTP error code shown, with "try again" (reloads the data) and "back to home". The same page covers a failure of
 the signed-in layout itself. Inventory and Refining load their lists with `tryLoad` (`lib/api/client.ts`): a refused or
 failed list shows `PanelError` (reason + code) inside its panel, and the page keeps its title,
 queue and "new" button.
+
+**Lost connection:** every request through `apiClient` (and login / token renewal in `api/auth.ts`)
+goes through `connectedFetch`: it fails at once while the browser is offline and otherwise stops after
+15 seconds. When the signed-in layout cannot reach the server, it shows the connection error page
+instead of sending the user to login, so a reload while offline keeps the session. A request that fails or times out never throws: the
+client answers it with a 503, so a page shows the connection error above instead of loading
+forever, a form shows "save failed", and `ConnectionBanner` shows the red bar until the next answer
+from the server or the browser is back online.
 
 **Page skeleton:** while the data of another page is loading, the shell shows a skeleton shaped
 like that page (`skeletonShapeFor(pathname)`: `form`, `table`, `detail` or `cards`) and replaces it
@@ -135,22 +155,24 @@ page, drawer). The first load of the app shows the same skeleton.
 
 Ported from `the_rock`, merged to save files:
 
-| File              | Holds                                                                                                                                       |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TextField.tsx`   | `TextField`, `TimeField`, `TextArea`                                                                                                        |
-| `Cards.tsx`       | `CardGrid`, `LinkCard`, `StatGrid`, `DetailList`, `FormSection`, `KpiTile`                                                                  |
-| `PageHeader.tsx`  | `BackLink`, `PageTitle`, `PageLayout` (back link + title + actions, full width)                                                                       |
-| `TablePanel.tsx`  | `TablePanel` (optional `search` field in its header), table classes (`tableEndHeadClasses` for number columns), `StatusBadge`, `PanelError` |
-| `SearchField.tsx` | `SearchField`, `DelayedSearchField` (puts the query in the URL after 350 ms: Clients, Users)                                                |
-| `Drawer.tsx`      | `Drawer`, `DrawerActions`, `useRouteDrawer(closeHref)`                                                                                      |
-| `FieldError.tsx`  | `FieldError`, `FormError` (the "save failed" alert)                                                                                         |
-| `LoadingDots.tsx` | `LoadingDots`, `PageSkeleton({ label, shape })`                                                                                             |
+| File                   | Holds                                                                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TextField.tsx`        | `TextField`, `TimeField`, `TextArea`                                                                                                        |
+| `Cards.tsx`            | `CardGrid`, `LinkCard`, `StatGrid`, `DetailList`, `FormSection`, `KpiTile`                                                                  |
+| `PageHeader.tsx`       | `BackLink`, `PageTitle`, `PageLayout` (back link + title + actions, full width)                                                             |
+| `TablePanel.tsx`       | `TablePanel` (optional `search` field in its header), table classes (`tableEndHeadClasses` for number columns), `StatusBadge`, `PanelError` |
+| `SearchField.tsx`      | `SearchField`, `DelayedSearchField` (puts the query in the URL after 350 ms: Clients, Users)                                                |
+| `Drawer.tsx`           | `Drawer`, `DrawerActions`, `DrawerDeleteActions` (delete / cancel with "deleting": project, role, settlement), `useRouteDrawer(closeHref)`  |
+| `ConnectionBanner.tsx` | Red bar with a wifi-off icon while the connection is lost (`role="alert"`), above the top bar and on the login page                         |
+| `PdfPreview.tsx`       | `usePdfPreview(load)` (loads a PDF in the chosen language, keeps its blob URL), `PdfPreviewDialog` (print, download, close)                 |
+| `FieldError.tsx`       | `FieldError`, `FormError` (the "save failed" alert)                                                                                         |
+| `LoadingDots.tsx`      | `LoadingDots`, `PageSkeleton({ label, shape })`                                                                                             |
 
 Others: `ActionLink`, `Button`, `buttonClasses` (primary, secondary, danger), `ButtonLink`, `Checkbox`, `Combobox`, `DateField`,
 `fieldClasses`, `FieldLabel`, `Icon`, `IconButton`, `LanguageSwitcher`, `Pagination`,
 `PasswordField`, `ReadOnlyField`, `Select` (`placeholder` is shown until a choice is made, never offered in the list), `Tabs`.
 
-`components/grinding/NewOperationForm.tsx`: start-grinding form (shipment, idle machine, bags, start, operator, notes); the caller decides what happens after saving.
+`components/grinding/OperationForm.tsx`: start-grinding form (shipment, idle machine, bags, start, operator, notes); with `operation` it edits that running grinding instead (pre-filled, the operator matched by name, `PATCH` through `updateOperation`); the caller decides what happens after saving. `OperationFields.tsx`: its shipment picker and estimated-end box.
 
 `components/customers/CustomerForm.tsx`: name and phone (date added when editing), `initialName`,
 `onSaved(values)`; refuses a phone another client has.
@@ -159,45 +181,49 @@ Others: `ActionLink`, `Button`, `buttonClasses` (primary, secondary, danger), `B
 
 ## 5. Shared functions — `src/lib/`
 
-| File                                                     | Holds                                                                                                                                                                                                                                           |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `api/client.ts`                                          | `apiClient`, `tryLoad`, `errorKind` (same origin, sends `Accept-Language` and the token, renews an expired token, ends the session on 401), `unwrap`, `notFound`, `saveOutcome`, `saveFailed`, `backendFieldErrors`, `ApiSchema`                |
-| `api/auth.ts`                                            | `requestTokens`, `refreshTokens`                                                                                                                                                                                                                |
-| `api/session.ts`                                         | `saveSession`, `updateSession`, `readSession`, `clearSession`, `hasSession`                                                                                                                                                                     |
-| `api/pagination.ts`                                      | `PAGE_SIZE`, `MAX_PAGE_SIZE`, `Page`, `toPage`, `parsePageNumber`, `fetchAllPages`                                                                                                                                                              |
-| `api/schema.d.ts`                                        | Generated types (`npm run api:generate`), not linted or formatted                                                                                                                                                                               |
-| `access.ts`                                              | Modules, rights, `Access`, `rightsFromApi`, `accessFromApi`, `can`, `canOpen`, `homeHref`                                                                                                                                                       |
-| `accessContext.ts`                                       | `AccessContext` (filled by the signed-in layout), `useCan`                                                                                                                                                                                      |
-| `routes.ts`                                              | Every href and href builder                                                                                                                                                                                                                     |
-| `format.ts`                                              | `formatCount`, `formatDate`, `formatDateTime`, `formatTime`, `toMoneyDecimal`, `formatMoney` (money as typed, no currency or conversion), `fromDecimal` / `toDecimal` (backend decimals, 3 places), `formatQuantity`                            |
-| `datetime.ts`                                            | Date and time input rules, `combineDateAndTime`, `todayAsInputValue`, `nowAsTimeValue`, `addHours`, `isSameDay`, `durationParts`                                                                                                                |
-| `phone.ts`, `search.ts`, `jwt.ts`, `cn.ts`, `profile.ts` | Phone rules, text/phone search, token reading, class merging, display name and profile (`/auth/me/` has no project)                                                                                                                             |
-| `customers.ts` / `customersApi.ts`                       | Client type, schema, matching by phone, backend mapping / list, get, choices, create, update                                                                                                                                                    |
-| `projects.ts` / `projectsApi.ts`                         | Projects and machines (grinder code `P<project>-<n>`, `grinderCode`, `parseGrinderCode`), schemas, mapping / load and save                                                                                                                      |
-| `shipments.ts` / `shipmentsApi.ts`                       | Shipment record (client name and phone come with the shipment; `status` checked against pending, grinding, completed; `stage` from `stageOf`) / `amountLeftToPay` / `getShipments({ project?, customer? })`                                                                                                                                  |
-| `grinding.ts` / `grindingApi.ts`                         | Grinding operations shared by Shipments, Milling and Refining: machines, machine status, `remainingBags`, `operationFromApi` (project and machine read from `grinder_code`), start schema / `getGrindingOperations(project?)`, `startOperation` |
-| `refining.ts` / `refiningApi.ts`                         | Refining operation type and mapping / `getRefiningOperations(project?)` (shared by Refining and Inventory)                                                                                                                                      |
-| `users.ts`                                               | User and role types, `roleFromApi`, `roleLabel`, `getRoles`, `getOperators` (`/operators/`: users whose role views the module, on the project when scoped)                                                                                      |
+| File                                                     | Holds                                                                                                                                                                                                                                                                                                                                  |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `api/client.ts`                                          | `apiClient`, `tryLoad`, `errorKind` (same origin, sends `Accept-Language` and the token, renews an expired token, ends the session on 401), `unwrap`, `notFound`, `saveOutcome`, `saveFailed`, `backendFieldErrors`, `ApiSchema`, `attachmentFileName` (file name from `Content-Disposition`)                                          |
+| `api/auth.ts`                                            | `requestTokens`, `refreshTokens`                                                                                                                                                                                                                                                                                                       |
+| `api/session.ts`                                         | `saveSession`, `updateSession`, `readSession`, `clearSession`, `hasSession`                                                                                                                                                                                                                                                            |
+| `api/connection.ts`                                      | Connection state: `isConnectionLost` (a request failed, the server answered 502/503/504, or the browser is offline), `reportResponse`, `reportConnectionFailure`, `subscribeToConnection`, `connectedFetch` (fails at once while the browser is offline, otherwise 15 s at most, `REQUEST_TIMEOUT_MS`)                                 |
+| `api/pagination.ts`                                      | `PAGE_SIZE`, `MAX_PAGE_SIZE`, `Page`, `toPage`, `parsePageNumber`, `fetchAllPages`                                                                                                                                                                                                                                                     |
+| `api/schema.d.ts`                                        | Generated types (`npm run api:generate`), not linted or formatted                                                                                                                                                                                                                                                                      |
+| `access.ts`                                              | Modules, rights, `Access`, `rightsFromApi`, `accessFromApi`, `can`, `canOpen`, `homeHref`                                                                                                                                                                                                                                              |
+| `accessContext.ts`                                       | `AccessContext` (filled by the signed-in layout), `useCan`                                                                                                                                                                                                                                                                             |
+| `routes.ts`                                              | Every href and href builder                                                                                                                                                                                                                                                                                                            |
+| `format.ts`                                              | `formatCount`, `formatDate`, `formatDateTime`, `formatTime`, `roundMoney` (to the cent), `amountOrZero` (empty or negative is 0), `toMoneyDecimal`, `formatMoney` (money as typed, no currency or conversion), `fromDecimal` / `toDecimal` (backend decimals, 3 places), `formatQuantity`                                              |
+| `datetime.ts`                                            | Date and time input rules, `combineDateAndTime`, `todayAsInputValue`, `nowAsTimeValue`, `addHours`, `isSameDay`, `durationParts`                                                                                                                                                                                                       |
+| `phone.ts`, `search.ts`, `jwt.ts`, `cn.ts`, `profile.ts` | Phone rules (sent without spaces as `+222XXXXXXXX` by `phoneToApi`, shown as `+222 XX XX XX XX` by `formatPhone` when read from the backend; a customer is looked up by both forms, since older phones were saved with spaces), text/phone search, token reading, class merging, display name and profile (`/auth/me/` has no project) |
+| `customers.ts` / `customersApi.ts`                       | Client type, schema, matching by phone, backend mapping / list, get, choices, create, update                                                                                                                                                                                                                                           |
+| `projects.ts` / `projectsApi.ts`                         | Projects and machines (grinder code `P<project>-<n>`, `grinderCode`, `parseGrinderCode`), schemas, mapping / load and save                                                                                                                                                                                                             |
+| `shipments.ts` / `shipmentsApi.ts`                       | Shipment record (client name and phone come with the shipment; `status` checked against pending, grinding, completed; `stage` from `stageOf`) / `amountLeftToPay` / `getShipments({ project?, customer? })`                                                                                                                            |
+| `grinding.ts` / `grindingApi.ts`                         | Grinding operations shared by Shipments, Milling and Refining: machines, machine status, `remainingBags`, `operationFromApi` (project and machine read from `grinder_code`), start schema / `getGrindingOperations(project?)`, `startOperation`                                                                                        |
+| `refining.ts` / `refiningApi.ts`                         | Refining operation type and mapping / `getRefiningOperations(project?)` (shared by Refining and Inventory)                                                                                                                                                                                                                             |
+| `users.ts`                                               | User and role types, `roleFromApi`, `roleLabel`, `getRoles`, `getOperators` (`/operators/`: users whose role views the module, on the project when scoped)                                                                                                                                                                             |
 
 ---
 
 ## 6. Modules — `src/features/`
 
-| Module      | Files                                                                                                                                                                                                                                                                                                                                                                                                               | Notes                                                                                                 |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `auth`      | `LoginScreen`, `BrandPanel`, `LoginForm`, `loginSchema`, `signIn`                                                                                                                                                                                                                                                                                                                                                   | Tokens in `localStorage` (remember me) or `sessionStorage`                                            |
-| `shell`     | `navigation.ts`, `AppShell`, `TopBar` (+ user badge), `Sidebar` (+ items)                                                                                                                                                                                                                                                                                                                                           | Phone menu over the page; sign out clears the session. The top bar shows the company logo, no search  |
-| `customers` | `CustomersScreen.tsx`, `CustomerScreen.tsx` (one client and every shipment received from them)                                                                                                                                                                                                                                                                                                                                                                                               | Search after 350 ms, pagination, add / edit drawer                                                    |
-| `users`     | `users.ts` (user and role schemas, mapping, `roleToApi`), `usersApi.ts` (users, roles), `UsersScreen.tsx`, `RolesScreen.tsx`                                                                                                                                                                                                                                                                                        | Password optional when editing; project only for a project-scoped role; built-in role names read-only |
-| `settings`  | `SettingsScreens.tsx` (home with search, profile, language), `ProjectScreens.tsx` (projects, machines, forms)                                                                                                                                                                                                                                                                                                       | Machine number must be free in its project                                                            |
-| `shipments` | `shipments.ts` (storage = shipments `pending` or in `grinding` with bags left, `remainingBags`, history filter, `completedShipments`, transport cost, schema, mapping), `shipmentsApi.ts` (create: finds or creates the client by phone, returns the new id; `getInvoice`: the transport invoice PDF and its file name), `ShipmentsScreens.tsx` (overview, project list with the start-grinding drawer, history), `NewShipmentScreen.tsx` (`ShipmentForm` in create or edit mode: `NewShipmentForm`, `EditShipmentForm`; `useInvoicePreview`, `InvoicePreviewDialog`), `ShipmentScreen.tsx` (one shipment: payments, add payment, invoice, edit) | Starting grinding goes to the project's grinding page                                                 |
-| `milling`   | `milling.ts` (queue, summaries, end schema), `millingApi.ts` (data, end, `markMercuryAdded`), `MillingScreens.tsx` (overview, project, machine), `MillingForms.tsx` (end, `MercuryStatus`)                                                                                                                                                                                                     | See below                                                                                             |
+| Module      | Files                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Notes                                                                                                 |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `auth`      | `LoginScreen`, `BrandPanel`, `LoginForm`, `loginSchema`, `signIn`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Tokens in `localStorage` (remember me) or `sessionStorage`                                            |
+| `shell`     | `navigation.ts`, `AppShell`, `TopBar` (+ user badge), `Sidebar` (+ items)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Phone menu over the page; sign out clears the session. The top bar shows the company logo, no search  |
+| `customers` | `CustomersScreen.tsx`, `CustomerScreen.tsx` (one client and every shipment received from them)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Search after 350 ms, pagination, add / edit drawer                                                    |
+| `users`     | `users.ts` (user and role schemas, mapping, `roleToApi`), `usersApi.ts` (users, roles), `UsersScreen.tsx` + `UserForm.tsx`, `RolesScreen.tsx` + `RoleForm.tsx` (`useRoleName`) + `DeleteRoleDrawer.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Password optional when editing; project only for a project-scoped role; built-in role names read-only |
+| `settings`  | `SettingsScreens.tsx` (home with search, profile, language), `ProjectScreens.tsx` (projects list), `ProjectSettingsScreen.tsx` (one project, its machines, delete), `ProjectForm.tsx`, `GrinderForm.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Machine number must be free in its project                                                            |
+| `shipments` | `shipments.ts` (transport cost, schema, mapping, field errors), `shipmentStorage.ts` (storage = shipments `pending` or in `grinding` with bags left, `remainingBags`, client bags), `shipmentHistory.ts` (history filter, `completedShipments`), `shipmentPayments.ts` (payment and debt schemas and mapping), `shipmentsApi.ts` (create: finds or creates the client by phone, returns the new id; `getInvoice`: the transport invoice PDF and its file name, `attachmentFileName`), `ShipmentsScreens.tsx` (overview), `ProjectStorageScreen.tsx` (project list with the start-grinding drawer), `ShipmentHistoryScreen.tsx` (history), `InvoiceDownload.tsx` (PDF button), `NewShipmentScreen.tsx` (screen and loader), `ShipmentForm.tsx` (`ShipmentForm` in create or edit mode: `NewShipmentForm`, `EditShipmentForm`) with `ShipmentClientFields.tsx` (client fields, `useNewCustomer`, `NewCustomerDrawer`) and `ShipmentFormSections.tsx` (arrival, transport cost, destination), `InvoicePreview.tsx` (`useInvoicePreview` on `usePdfPreview`, `SavedShipment`), `ShipmentScreen.tsx` (one shipment: payments, invoice, edit) with `ShipmentHeader.tsx`, `PaymentForm.tsx`, `DebtForm.tsx`; form tests share `shipmentFormTesting.tsx` | Starting grinding goes to the project's grinding page                                                 |
+| `milling`   | `milling.ts` (queue, `operationShipments`, summaries, end and mercury schemas), `millingApi.ts` (data, end, `markMercuryAdded`), `MillingScreens.tsx` (overview), `MillingProjectScreen.tsx` + `MachineList.tsx` + `MillingQueueTable.tsx` (project), `MachineScreen.tsx` + `MachineHistoryTable.tsx` (machine), `MillingForms.tsx` (end, `EditOperationDrawer`), `MercuryForm.tsx` (`MercuryStatus` and its quantity form); tests share `millingTesting.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | See below                                                                                             |
 
-| `refining` | `refining.ts` (`refiningQueue`, `refiningSummary`, `queueOfProject`, `refiningsOfProject`, `refiningLoss`, schema, mapping, field errors), `refiningApi.ts` (`getRefiningData`, create), `RefiningScreen.tsx` (overview with figures and project cards; project page with queue, operations table, drawer), `RefiningForm.tsx` | Every API field is in the form and the table |
-| `inventory` | `resources.ts` (types, kinds mercury / water / fuel with `kindNamed`, `availableKinds`, schemas, `quantityAfterChange`, mapping, field errors), `resourcesApi.ts` (list, get, create, increase / decrease, history page), `InventoryScreens.tsx` (projects, project cards, resource page), `InventoryForms.tsx` (resource, quantity change) | Inventory module. A project holds only mercury, water and fuel, each once: a new resource picks one of the types it does not have yet (saved as that code, shown translated), and "new resource" disappears once it has all three; mercury is the refining material. A saved resource's type is read from its name (`kindNamed`: the backend's English, French and Arabic spellings, ignoring case, accents, Arabic diacritics and tatweel); any other resource on the server is left out of the app (`resourceFromApi` gives nothing, its page is not found). Resources are never renamed. Once added, its page opens |
+| `refining` | `refining.ts` (`refiningQueue`, `refiningSummary`, `queueOfProject`, `refiningsOfProject`, `refiningLoss`, schema, mapping, field errors), `refiningApi.ts` (`getRefiningData`, create), `RefiningScreen.tsx` (overview with figures and project cards; project page with queue, operations table, drawer), `RefiningTables.tsx` (queue and operations tables), `RefiningForm.tsx` | Every API field is in the form and the table |
+| `settlements` | `settlements.ts` (type, mapping, `settleableShipments` (completed and not settled), `settleableShipmentsOfProject`, `projectSettlementSummary`, `customerOfShipment` (by phone: the shipment API gives no customer id), `projectsOfShipments`, amounts and new-settlement schemas, mapping to the API, field errors), `settlementsApi.ts` (page, a customer's settlements, get, create, update amounts, delete, PDF), `SettlementsScreen.tsx` (project cards), `SettlementProjectScreen.tsx` (one project), `SettlementTables.tsx` (`SettlementTable`, `WaitingShipmentsTable`), `NewSettlementScreen.tsx` (customer, project, form), `SettlementForm.tsx` (shipments to tick and amounts; new and edit), `SettlementScreen.tsx` (one settlement, totals, edit drawer), `SettlementActions.tsx` (`SettlementPdf`, `DeleteSettlementDrawer`); tests share `settlementsTesting.tsx` | See "Final settlement" below |
+| `inventory` | `resources.ts` (types, kinds mercury / water / fuel with `kindNamed`, `availableKinds`, schemas, `quantityAfterChange`, mapping, field errors), `resourcesApi.ts` (list, get, create, increase / decrease, history page), `InventoryScreens.tsx` (projects, project cards), `ResourceScreen.tsx` (resource page and history), `InventoryForms.tsx` (resource, quantity change); tests share `inventoryTesting.tsx` | Inventory module. A project holds only mercury, water and fuel, each once: a new resource picks one of the types it does not have yet (saved as that code, shown translated), and "new resource" disappears once it has all three; mercury is the refining material. A saved resource's type is read from its name (`kindNamed`: the backend's English, French and Arabic spellings, ignoring case, accents, Arabic diacritics and tatweel); any other resource on the server is left out of the app (`resourceFromApi` gives nothing, its page is not found). Resources are never renamed. Once added, its page opens |
 
 **Search inside each section:** every list has its own search, the app-wide search in the top bar
-is gone. Clients and Users search on the server (`?q=`, paginated lists). The other lists filter
+is gone. Clients, Users and Settlements search on the server (`?q=`, paginated lists): the field
+(`DelayedSearchField`) stays mounted and focused while the URL follows the typing; it only takes the
+URL's query back when it changes from outside (a menu link, back / forward). The other lists filter
 the rows already loaded as you type (`matchesSearch`, says "no result" when nothing matches): the
 project's stored shipments (number, client, phone) and the shipment history, the Grinding queue
 and each machine's history, the Refining queue and refinings (each with its own search), the
@@ -240,17 +266,23 @@ the client, newest first (`GET /shipments/?customer=<id>`: number, arrival, proj
 payment status), each opening its shipment page.
 
 **Invoice preview:** every invoice button (a project's list and history, the shipment page header,
-the panel after saving a new shipment) first asks Arabic or French, then loads the PDF
-(`useInvoicePreview`) and shows it in a large centered window (`InvoicePreviewDialog`, an `iframe`
+the panel after saving a new shipment, a settlement's page) first asks Arabic or French, then loads
+the PDF (`usePdfPreview`) and shows it in a large centered window (`PdfPreviewDialog`, an `iframe`
 on the file) with "print" (the browser's print of that PDF), "download" (saved under its invoice
 number) and close (frees the file). `useModalDialog` (from `Drawer.tsx`) opens and closes it.
 
 **Saved message (`components/ui/Toast.tsx`):** `AppShell` wraps the app in `ToastProvider`, anchored
 on the page area; `useToast()(message)` shows a green box with a check for 1.5 seconds, at the top
-of the page area and centered on it (so it stays centered beside an open sidebar), in the top layer
-(`popover`) so an open drawer cannot cover it. Saving a new shipment shows "shipment saved" (the
-invoice drawer still opens); saving changes to a shipment shows "changes saved" and goes back to the
-project's Shipments page.
+of the page area and centered on it, in the top layer (`popover`) so an open drawer cannot cover it. It waits while the router is loading
+(`busy`: a navigation or revalidation in progress, from `AppShell`), so it appears only once the
+page has its new data and the form or drawer has closed; `useToast` sets the message inside a
+transition so it lands in the same render as the navigation the save starts.
+Every save or delete that succeeds shows it, each with its own message (`toasts` in the messages):
+client added / changed, new shipment saved, shipment changes saved, payment, debt, grinding started /
+changed / finished, mercury added, refining saved, resource added, quantity increased / decreased,
+project, machine, user and role added / changed, project and role deleted, settlement saved /
+changed / deleted. Saving
+changes to a shipment then goes back to the project's Shipments page.
 
 **Shipment page header:** one card: the shipment number, then "shipment status" and "payment
 status" each with its label and badge, and the PDF button; then client (with the phone), project,
@@ -298,11 +330,19 @@ downloaded at any time. The Shipments project page uses the full width.
 
 **Debt and passengers:** the shipment form (new and edit) has an optional "debt" (`debt`, 0 or
 more, empty is 0): what the client owes on the shipment apart from the transport, and an optional
-"debt reason" (`debt_notes`) shown inside the red debt box. It does not touch the
-payments or the payment status and is not on the invoice. It shows in red: a red "debt" badge under
-the payment status in the project list, the history and a client's shipments (`DebtBadge`), and a
-large red box in the shipment page header and, for the client's total, on the client page
-(`DebtNotice`, only when there is debt). Passengers are optional too: an empty count or fare is sent as 0.
+"debt reason" (`debt_notes`). It does not touch the payments or the payment status and is not on the
+invoice. A red "debt" pill (`DebtBadge`, a receipt icon and the word only, the amount on hover)
+shows under the payment status in the project's list, the history and a client's shipments, and on
+the shipment page header next to its reason. Shipment status, payment status and debt pills share
+one shape and size (icon + word, 28px high): stage pending grey / grinding orange / refining solid blue (white text) /
+completed green; payment complete green with a check, not complete orange with a clock. On the
+shipment page the title and the three labelled statuses sit on one line (wrapping on a phone). The payments section has "increase debt" for a
+shipment with debt and "add debt" for one without (shipments edit right): current debt and debt
+after (only when there is debt), the amount to add, the reason. The shipment edit form shows the
+debt fields only for a shipment that already has debt; the new-shipment form always has them. It sends
+`PATCH /shipments/{id}/ {debt, debt_notes}` (`createDebtSchema`, `debtAfter`, `debtToApi`). The client
+page shows the client's total debt in a red box (`DebtNotice`). Passengers are optional: an empty
+count or fare is sent as 0.
 
 **Shipment status (backend `9e976ac`):** the backend sets it by itself and the app never writes it:
 `pending` until the first grinding, `grinding` while some bags are not refined, `completed` once all
@@ -329,11 +369,21 @@ grinding cost any more: the app never sends or shows `grinding_cost` (the backen
 estimated time): the form asks only the end date, time and notes, and sends `end_time` and the
 notes; every allocated bag counts as ground (no "bags actually ground" field). It then opens the
 refining form of that operation. A machine's page lists every grinding on it, running ones first.
+While a grinding runs, "edit grinding" (grinding edit right) opens the same form pre-filled
+(`EditOperationDrawer`, `?edit=1`): shipment, machine, bags, start, operator and notes can change;
+its own shipment and machine stay offered because the lists are worked out without it. A finished
+grinding is not edited; mercury is never changed there.
 **Mercury:** every grinding must be mercured once (`mercury_added_at`, `mercury_added_by_name`).
 A running grinding shows "mercury not added yet" (orange) in the project's machine list and on the
-machine page; a role that can edit grinding clicks it, confirms, and the app sends
-`PATCH …/grinding-operations/{id}/ {mercury_added: true}` (`markMercuryAdded`). It then shows
-"mercury added" (green); the machine page gives the time and who, and the history its time. The
+machine page; a role that can edit grinding clicks it, a drawer asks the grams of mercury added
+(required, > 0, `createMercurySchema`), and the app sends
+`PATCH …/grinding-operations/{id}/ {mercury_added: true, mercury_quantity}` (`markMercuryAdded`).
+The backend takes that quantity from the project's Mercury stock (a `taken` history line); no
+Mercury or not enough is shown on the quantity field in the app's own words (any `mercury_quantity`
+refusal), and a refused `mercury_added` (grinding finished, mercury already added) above the buttons;
+the backend's own text is not shown because it has no Arabic or French translations yet.
+It then shows "mercury added" (green); the machine page gives the grams, the time and who, and the
+history its time. The quantity cannot be changed afterwards. The
 backend makes this final: it cannot be undone and is refused on a finished grinding. Operators offered:
 users whose role can view grinding (refining for the refining worker), on the project when the role is project-scoped. Estimated end: 2 bags per 6 hours.
 A shipment arrives in whole or half bags (12, 12.5: `isHalfBagCount`, step 0.5 in the form). A machine takes 0.5, 1, 1.5 or 2 bags: the form says so as soon as more than 2 is typed (`isHalfBagCount`),
@@ -355,28 +405,57 @@ before and after, gold with material and gold without material (without ≤ with
 before), loss reason (one of the fixed reasons, "no loss" not offered, stored as a key such as `arghawa` and shown
 in the reader's language; older free-text reasons are shown as typed) and notes. There is no "extracted gold" input: `gold_weight` is sent equal
 to the gold without material. The backend's `gold_weight_with_mercury` / `_without_mercury` are shown
-as "with / without material". Every weight is entered and shown in grams. The loss is not typed: it is
+as "with / without material". Every weight is entered and shown in grams. The weight before is filled with the grams of mercury added to the grinding and is read-only (the backend sets `weight_before` from the grinding's `mercury_quantity`); only a grinding recorded before mercury quantities (quantity 0) lets it be typed. A read-only input is shaded (`fieldClasses`). The loss is not typed: it is
 worked out as weight before less weight after (`refiningLoss`), shown read-only; the backend works out and stores the same `loss` itself, and its refusals (not
 enough material) show under that field. When the loss is 0 (`hasLoss`), the loss and its reason
 are hidden, the reason is not required and `loss_reason` is sent empty. A grinding operation counts as refined when a refining
 names its id (`refiningQueue`, oldest first). There is no edit or delete.
 
-**Refining loss and the material stock:** the refining form asks nothing about the material and never
-shows a stock quantity. The backend takes the loss out of the project's resource marked "used by
-refining" (`is_refining_material`: the resource created with the type Mercury, one per project) in the same transaction as the
-refining: a "Refining loss" decrease in its history, linked to the refining. If the project has no such
-resource or not enough of it, the backend refuses the refining and the form shows its message under the
-loss. Inventory shows every movement with the quantity before and after, and the current
-quantity; the resource list marks the refining material. History lines linked to a refining show the type "Refining loss" / "Refining loss returned" instead of a note, and "by" falls back to the user's email.
+**Mercury and the material stock:** the refining form never shows a stock quantity. The grams
+entered when mercury is added to a grinding are taken from the project's resource marked "used by
+refining" (`is_refining_material`, one Mercury per project) as a `taken` line; a refining returns its
+weight after as a `returned` line, so taken − returned is the loss (a refining recorded before
+mercury quantities still takes its loss as a decrease). If the project has no mercury or not enough,
+the backend refuses and the form shows its message. Inventory shows every movement with the quantity before and after, and the current
+quantity; the resource list marks the refining material. Mercury lines written by the grinding and refining flow show the type "Taken for grinding" (`taken`) or "Returned by refining" (`returned`); a refining's increase or decrease shows "Refining loss" / "Refining loss returned" (`refiningCorrectionType`). "By" falls back to the user's email.
 
-**Number inputs:** every number field starts empty (no `0` or other pre-filled value); the user types it, `0` included. The new-machine form only hints the next free number.
+**Settlement pages:** `/settlements` shows a card per project in service with its finished shipments
+waiting for settlement and its settlements; it opens `/settlements/projects/<id>`, which lists that
+project's `completed` shipments no settlement holds yet (number, customer, phone, arrival, bags,
+transport, debt; local search), each with "settle" (shipments add right) opening the new settlement
+on that customer and project, and below them the project's settlements (`?project=`, number search
+on the server, pages). A settlement's page and a deleted settlement lead back to its project.
+
+**Final settlement (`/api/v1/settlements/`, backend `63885ac`):** a settlement is a stored record
+(number `STL-<year>-<seq>`) of one customer's shipments in one project, with what the user enters:
+grinding cost (one amount), refining cost per gram (charged on the shipments' gold without
+mercury), and an extra debt with its description (200 characters at most). All amounts are
+optional (empty is 0, never negative). The backend works out the `totals` from the shipments
+(bag transport and passenger transport at their full cost, payments not counted; the shipments'
+debts; gold in grams, shown but not charged) and the final amount due = transport + shipments'
+debts + grinding cost + gold × refining cost per gram + extra debt; the app only shows them.
+"New settlement" (shipments add right) picks the customer (search by name or phone), then the
+project when the customer's unsettled shipments are in more than one (`?customer=&project=` in the
+URL), and lists only that project's shipments of the customer that are `completed` (every bag ground
+and refined) and that no settlement holds yet (`settleableShipments`, from `GET /settlements/?customer=`),
+all ticked; at least one must stay ticked. A shipment still in grinding or refining is never offered
+(the backend itself accepts any status when the shipments are given). Saving `POST`s the customer, the shipment ids and the amounts, then opens the
+settlement's page; the backend's refusals (already settled, another project) show under the
+shipments. The page shows customer and phone, project, shipments, who made it and when, the PDF in
+Arabic or French (`GET /settlements/{id}/pdf/?format=pdf&lang=`, saved under its number), every
+total and the final amount due; "edit the amounts" (shipments edit right) changes only the amounts
+(`PATCH`, the customer and shipments stay); "delete" (shipments delete right) frees its shipments
+for another settlement.
+
+**Number inputs:** every number field starts empty (no `0` or other pre-filled value); the user types it, `0` included. They have no up / down arrows (`app.css` hides the browser's spin buttons). The new-machine form only hints the next free number.
 
 **Inventory resources (`/api/v1/resources/`, `/resource-history/`):** per-project materials
 (mercury, …) with a fixed initial quantity. The current quantity only moves through
 `POST …/{id}/increase/` and `…/decrease/` (a quantity and a note only, never a shipment or a
 refining operation; it cannot go below zero). Every change is a read-only history entry. The
-history has no shipment column: only an automatic refining-loss line names its shipment, beside its
-type.
+history has no shipment column: a line linked to a grinding or refining names its shipment and
+grinding number (`grinding_sequence`) beside its type. On mercury the history adds a "Loss" column:
+the refining's loss on its `returned` line, "—" on every other line.
 The backend writes the first history line itself (`change_type` `initial`: 0 → initial quantity),
 shown as "Initial quantity". It also refuses a second mercury, water or fuel in a project under any
 spelling and names them "Mercury", "Water" and "Fuel", but still accepts resources with any other
@@ -390,6 +469,19 @@ name: only the app limits a project to those three.
   from `.env` (default `http://127.0.0.1:8000`). `npm run preview` does the same for the build.
 - **Production:** serve `dist/` as static files with every unknown path falling back to
   `index.html`, and forward `/api` to the backend from the same web server. No CORS is needed.
+- **VPS with Docker (same server as the backend, domain with HTTPS):**
+  1. Point the domain's DNS `A` record to the VPS IP; open ports 80 and 443 in the firewall.
+  2. Start the backend first (`tayea_mills`: `docker compose up -d`). Its network is
+     `<backend folder>_default` (`docker network ls` shows it). In the backend's `.env`, add the
+     domain to `DJANGO_ALLOWED_HOSTS`.
+  3. In this repository on the VPS: `cp .env.example .env`, then set `DOMAIN` (the domain),
+     `BACKEND_URL` (the backend service and port on that network, `web:8000`) and
+     `BACKEND_NETWORK` (the backend's network).
+  4. `docker compose up -d --build`. Caddy gets and renews the Let's Encrypt certificate by itself
+     (kept in the `caddy_data` volume), serves `dist/` with every unknown path falling back to
+     `index.html`, forwards `/api/*` to `BACKEND_URL` inside Docker, caches `/assets/` for a year and
+     never caches `index.html`.
+  5. To deploy a new version: `git pull && docker compose up -d --build`.
 
 ---
 
@@ -412,9 +504,10 @@ name: only the app limits a project to those three.
 ## 9. Known gaps / next steps
 
 - Dashboard and the accounting sections are empty pages.
-- `schema.d.ts` was generated from the live server's `/api/schema/` (2026-10-19), which runs
-  GitHub `main` `9e976ac` (shipment payments, half bags, debt and debt notes, automatic status and
-  bag progress, shipment gold).
+- `schema.d.ts` was generated (2026-10-20) from GitHub `main` `63885ac` with
+  `manage.py spectacular` (settlements, grinding `sequence` / `mercury_quantity`, stock history
+  grinding fields), not from a running server; regenerate with `npm run api:generate` once that
+  version is deployed.
 - The notifications bell does nothing yet.
 - The production bundle is one file over 500 KB; split by route.
 - `/forgot-password` link has no page (same as in `the_rock`).

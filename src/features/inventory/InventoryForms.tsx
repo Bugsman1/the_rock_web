@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
+import { useToast } from "@/components/ui/Toast";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { FormError } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
@@ -45,6 +46,8 @@ type ResourceFormProps = {
 export function ResourceForm({ project, existing, onSaved, onCancel }: ResourceFormProps) {
   const t = useTranslations("inventory");
   const common = useTranslations("common");
+  const toasts = useTranslations("toasts");
+  const toast = useToast();
   const [failed, setFailed] = useState(false);
   const kinds = availableKinds(existing);
 
@@ -76,6 +79,7 @@ export function ResourceForm({ project, existing, onSaved, onCancel }: ResourceF
     const result = await createResource(values);
 
     if (result.ok) {
+      toast(toasts("resourceAdded"));
       onSaved(result.id);
       return;
     }
@@ -143,6 +147,8 @@ type ResourceChangeFormProps = {
 export function ResourceChangeForm({ resource, type, onSaved, onCancel }: ResourceChangeFormProps) {
   const t = useTranslations("inventory");
   const common = useTranslations("common");
+  const toasts = useTranslations("toasts");
+  const toast = useToast();
   const locale = useLocale();
   const [failed, setFailed] = useState(false);
   const available = type === "decrease" ? resource.currentQuantity : undefined;
@@ -178,6 +184,7 @@ export function ResourceChangeForm({ resource, type, onSaved, onCancel }: Resour
     const result = await changeResourceQuantity(resource.id, type, values);
 
     if (result.ok) {
+      toast(type === "increase" ? toasts("stockIncreased") : toasts("stockDecreased"));
       onSaved();
       return;
     }

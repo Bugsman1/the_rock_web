@@ -43,8 +43,16 @@ export function formatTime(timestamp: IsoTimestamp, locale: Locale): string {
 
 const MONEY_CENTS = 100;
 
+export function roundMoney(amount: number): number {
+  return Math.round(amount * MONEY_CENTS) / MONEY_CENTS;
+}
+
+export function amountOrZero(value: number): number {
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
 export function toMoneyDecimal(amount: number): string {
-  return String(Math.round(amount * MONEY_CENTS) / MONEY_CENTS);
+  return String(roundMoney(amount));
 }
 
 export function formatMoney(amount: number, locale: Locale): string {

@@ -5,9 +5,11 @@ import type { ShipmentRecord } from "@/lib/shipments";
 import {
   bagsMilledOn,
   combineSummaries,
+  createMercurySchema,
   findMachine,
   isBacklogged,
   millingQueue,
+  operationShipments,
   millingShipments,
   operationHistory,
   projectsForSite,
@@ -112,6 +114,20 @@ describe("shipments in grinding", () => {
     ).toEqual(["SH-1", "SH-2"]);
   });
 
+  it("gives the start and edit forms each queued shipment with the bags it has left", () => {
+    const operations = [operation({ shipmentNumber: "SH-1", bags: 1.5 })];
+
+    expect(operationShipments([shipment], operations)).toEqual([
+      {
+        id: shipment.id,
+        shipmentNumber: "SH-1",
+        client: shipment.client,
+        bags: shipment.bags,
+        remainingBags: shipment.bags - 1.5,
+      },
+    ]);
+  });
+
   it("keeps the shipments waiting or in grinding, marking those already started", () => {
     const record: ShipmentRecord = {
       id: "12",
@@ -204,5 +220,19 @@ describe("milling flow", () => {
   it("calls the waiting bags a backlog from 50 bags", () => {
     expect(isBacklogged(49)).toBe(false);
     expect(isBacklogged(50)).toBe(true);
+  });
+});
+
+describe("mercury added to a grinding", () => {
+  const schema = createMercurySchema({ required: "required", quantityInvalid: "invalid" });
+
+  it("accepts a quantity in grams above 0", () => {
+    expect(schema.safeParse({ quantity: 12.5 }).success).toBe(true);
+  });
+
+  it("refuses an empty, zero or negative quantity", () => {
+    expect(schema.safeParse({ quantity: Number.NaN }).error?.issues[0]?.message).toBe("required");
+    expect(schema.safeParse({ quantity: 0 }).error?.issues[0]?.message).toBe("invalid");
+    expect(schema.safeParse({ quantity: -3 }).error?.issues[0]?.message).toBe("invalid");
   });
 });

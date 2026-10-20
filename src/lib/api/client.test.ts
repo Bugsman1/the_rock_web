@@ -1,7 +1,16 @@
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { apiClient, backendFieldErrors, errorKind, saveOutcome, tryLoad, unwrap } from "./client";
+import {
+  apiClient,
+  attachmentFileName,
+  backendFieldErrors,
+  errorKind,
+  saveOutcome,
+  tryLoad,
+  unwrap,
+} from "./client";
+import { isConnectionLost } from "./connection";
 import { readSession, saveSession } from "./session";
 
 const ME_URL = `${window.location.origin}/api/v1/auth/me/`;
@@ -28,6 +37,20 @@ function answerMe(seen: { authorization?: string | null }) {
 }
 
 describe("apiClient", () => {
+  it("answers 503 and marks the connection lost when the request cannot reach the server", async () => {
+    server.use(http.get(ME_URL, () => HttpResponse.error()));
+
+    const { response } = await apiClient.GET("/api/v1/auth/me/");
+
+    expect(response.status).toBe(503);
+    expect(isConnectionLost()).toBe(true);
+
+    server.use(http.get(ME_URL, () => HttpResponse.json({})));
+    await apiClient.GET("/api/v1/auth/me/");
+
+    expect(isConnectionLost()).toBe(false);
+  });
+
   it("sends the access token of the session", async () => {
     const access = tokenExpiringIn(600);
     saveSession({ access, refresh: tokenExpiringIn(6000) }, true);
@@ -133,6 +156,8 @@ describe("errorKind", () => {
   it("names a missing page, a refused permission and any other failure", () => {
     expect(errorKind(404)).toBe("notFound");
     expect(errorKind(403)).toBe("forbidden");
+    expect(errorKind(503)).toBe("connection");
+    expect(errorKind(504)).toBe("connection");
     expect(errorKind(500)).toBe("failed");
     expect(errorKind(undefined)).toBe("failed");
   });
@@ -159,5 +184,18 @@ describe("tryLoad", () => {
         throw toLogin;
       }),
     ).rejects.toBe(toLogin);
+  });
+});
+
+describe("attachmentFileName", () => {
+  it("reads the file name the backend gives an attachment", () => {
+    expect(attachmentFileName('attachment; filename="FAC-2026-0007.pdf"')).toBe(
+      "FAC-2026-0007.pdf",
+    );
+  });
+
+  it("gives nothing when the backend sends no file name", () => {
+    expect(attachmentFileName(null)).toBeUndefined();
+    expect(attachmentFileName("attachment")).toBeUndefined();
   });
 });

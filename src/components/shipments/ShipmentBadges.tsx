@@ -1,13 +1,12 @@
 import { useLocale, useTranslations } from "use-intl";
 import { Icon } from "@/components/ui/Icon";
-import { StatusBadge } from "@/components/ui/TablePanel";
-import type { StatusTone } from "@/components/ui/TablePanel";
+import type { IconName } from "@/components/ui/Icon";
 import { formatMoney } from "@/lib/format";
 import { amountLeftToPay } from "@/lib/shipments";
 import type { ShipmentRecord, ShipmentStage } from "@/lib/shipments";
 
 const pillClasses =
-  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] font-bold";
+  "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-[12px] font-bold";
 
 export function PaymentStatus({ shipment }: { shipment: ShipmentRecord }) {
   const t = useTranslations("shipments.payment");
@@ -19,6 +18,7 @@ export function PaymentStatus({ shipment }: { shipment: ShipmentRecord }) {
     </span>
   ) : (
     <span className={`${pillClasses} border-warning-300 bg-warning-50 text-warning-700`}>
+      <Icon name="clock" className="h-4 w-4" />
       {t("incomplete")}
     </span>
   );
@@ -33,22 +33,17 @@ export function DebtBadge({ amount }: { amount: number }) {
   }
 
   return (
-    <span className={`${pillClasses} border-danger-300 bg-danger-50 text-danger-700`}>
-      <Icon name="alert-triangle" className="h-4 w-4" />
-      {t("badge", { amount: formatMoney(amount, locale) })}
+    <span
+      title={formatMoney(amount, locale)}
+      className={`${pillClasses} border-danger-300 bg-danger-50 text-danger-700`}
+    >
+      <Icon name="receipt" className="h-4 w-4" />
+      {t("badge")}
     </span>
   );
 }
 
-export function DebtNotice({
-  label,
-  amount,
-  note = "",
-}: {
-  label: string;
-  amount: number;
-  note?: string;
-}) {
+export function DebtNotice({ label, amount }: { label: string; amount: number }) {
   const locale = useLocale();
 
   if (amount <= 0) {
@@ -60,29 +55,28 @@ export function DebtNotice({
       role="note"
       className="rounded-card border-danger-300 bg-danger-50 text-danger-700 flex items-center gap-4 border-[1.5px] px-5 py-4"
     >
-      <Icon name="alert-triangle" className="h-7 w-7 shrink-0" />
       <div className="flex flex-col">
         <span className="text-[14px] font-bold">{label}</span>
         <span className="text-[26px] leading-tight font-bold">{formatMoney(amount, locale)}</span>
-        {note === "" ? null : (
-          <p dir="auto" className="text-[14px] font-semibold break-words whitespace-pre-line">
-            {note}
-          </p>
-        )}
       </div>
     </div>
   );
 }
 
-const statusTones: Record<ShipmentStage, StatusTone> = {
-  pending: "neutral",
-  grinding: "warning",
-  refining: "active",
-  completed: "success",
+const stageStyles: Record<ShipmentStage, { classes: string; icon: IconName }> = {
+  pending: { classes: "border-line-strong bg-surface-page text-ink-label", icon: "clock" },
+  grinding: { classes: "border-warning-300 bg-warning-50 text-warning-700", icon: "mill" },
+  refining: { classes: "border-brand-600 bg-brand-600 text-ink-inverted", icon: "flame" },
+  completed: { classes: "border-success-300 bg-success-50 text-success-700", icon: "circle-check" },
 };
 
 export function ShipmentStatusBadge({ status }: { status: ShipmentStage }) {
   const t = useTranslations("shipments.statuses");
 
-  return <StatusBadge label={t(status)} tone={statusTones[status]} />;
+  return (
+    <span className={`${pillClasses} ${stageStyles[status].classes}`}>
+      <Icon name={stageStyles[status].icon} className="h-4 w-4" />
+      {t(status)}
+    </span>
+  );
 }

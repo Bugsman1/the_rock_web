@@ -71,10 +71,10 @@ describe("customerFromApi", () => {
 });
 
 describe("customerToApi", () => {
-  it("sends the trimmed name and the phone in one standard form", () => {
+  it("sends the trimmed name and the phone without spaces", () => {
     expect(customerToApi({ name: "  Sidi ", phone: "46109325" })).toEqual({
       full_name: "Sidi",
-      phone: "+222 46 10 93 25",
+      phone: "+22246109325",
     });
   });
 });

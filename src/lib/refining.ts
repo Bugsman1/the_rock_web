@@ -39,7 +39,7 @@ export function refiningOperationFromApi(
     workerName: operation.worker_name,
     bags: operation.bags_count,
     refinedAt: operation.refining_date ?? operation.created_at,
-    weightBefore: fromDecimal(operation.weight_before),
+    weightBefore: fromDecimal(operation.weight_before ?? "0"),
     weightAfter: fromDecimal(operation.weight_after),
     gold: fromDecimal(operation.gold_weight),
     goldWithMaterial: fromDecimal(operation.gold_weight_with_mercury ?? "0"),

@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
@@ -10,14 +10,9 @@ import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
 import { endOperation, getMillingData } from "./millingApi";
-import {
-  MachineDetailScreen,
-  machineLoader,
-  MillingProjectScreen,
-  millingProjectLoader,
-  MillingScreen,
-  millingLoader,
-} from "./MillingScreens";
+import { MillingScreen, millingLoader } from "./MillingScreens";
+import { MillingProjectScreen, millingProjectLoader } from "./MillingProjectScreen";
+import { MachineDetailScreen, machineLoader } from "./MachineScreen";
 
 const allRights: Access = { ...noAccess, superuser: true };
 
@@ -281,5 +276,36 @@ describe("milling screens", () => {
     expect(within(ended ?? section).getByText("SH-3")).toBeVisible();
     expect(within(ended ?? section).getByText("6 h 0 min")).toBeVisible();
     expect(within(ended ?? section).getByText(text.machine.history.done)).toBeVisible();
+  });
+
+  it("edits the running grinding from the machine page, its shipment and machine still offered", async () => {
+    let sent: unknown;
+    server.use(
+      http.get(`${API}/operators/`, () => HttpResponse.json([{ id: 12, name: "Ahmed" }])),
+      http.patch(`${API}/grinding-operations/5/`, async ({ request }) => {
+        sent = await request.json();
+        return HttpResponse.json({});
+      }),
+    );
+    openAt("/fr/milling/projects/3/machines/1?edit=1");
+
+    const dialog = within(await screen.findByRole("dialog", { name: text.operation.editTitle }));
+    expect(dialog.getByLabelText(text.operation.shipment)).toHaveValue("SH-1");
+    expect(dialog.getByLabelText(text.operation.machine)).toHaveValue("1");
+    expect(dialog.getByLabelText(text.operation.bags)).toHaveValue(2);
+    expect(dialog.getByLabelText(text.operation.operator)).toHaveValue("12");
+
+    await userEvent.setup().click(dialog.getByRole("button", { name: text.operation.saveChanges }));
+
+    await waitFor(() => {
+      expect(sent).toEqual({
+        shipment: 1,
+        grinder: 7,
+        bags_count: 2,
+        start_time: "2026-10-08T06:00:00.000Z",
+        operator: 12,
+        notes: "",
+      });
+    });
   });
 });

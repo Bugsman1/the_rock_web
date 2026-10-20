@@ -28,7 +28,13 @@
     "searchList": "Rechercher dans la liste",
     "noMatch": "Aucun résultat pour cette recherche.",
     "searchIn": "Rechercher dans {list}",
-    "total": "Total"
+    "total": "Total",
+    "pdf": {
+      "previewTitle": "Aperçu de la facture",
+      "print": "Imprimer",
+      "download": "Télécharger"
+    },
+    "connectionLost": "Connexion perdue. Aucune modification ne sera enregistrée tant que la connexion n'est pas rétablie."
   },
   "auth": {
     "login": {
@@ -371,7 +377,6 @@
       },
       "paid": "Montant payé",
       "saveChanges": "Enregistrer les modifications",
-      "changesSaved": "Modifications enregistrées.",
       "debt": "Dette",
       "debtNotes": "Motif de la dette"
     },
@@ -432,10 +437,7 @@
       "open": "Facture de l'expédition {number} (PDF)",
       "languages": "Langue de la facture de l'expédition {number}",
       "ar": "Arabe",
-      "fr": "Français",
-      "previewTitle": "Aperçu de la facture",
-      "print": "Imprimer",
-      "download": "Télécharger"
+      "fr": "Français"
     },
     "detail": {
       "title": "Expédition {number}",
@@ -455,11 +457,12 @@
       "addPayment": "Ajouter un versement",
       "bags": "Sacs",
       "arrivedAt": "Arrivée",
-      "debt": "Dette du client sur cette expédition",
       "client": "Client",
       "project": "Projet",
       "shipmentStatus": "Statut de l'expédition",
-      "paymentStatus": "Statut du paiement"
+      "paymentStatus": "Statut du paiement",
+      "debtLabel": "Dette",
+      "addDebt": "Augmenter la dette"
     },
     "paymentForm": {
       "title": "Nouveau versement",
@@ -477,7 +480,18 @@
       "leftAfter": "Reste après ce versement"
     },
     "debt": {
-      "badge": "Dette {amount}"
+      "badge": "Dette"
+    },
+    "debtForm": {
+      "title": "Augmenter la dette",
+      "current": "Dette actuelle",
+      "after": "Dette après l'ajout",
+      "amount": "Montant ajouté",
+      "notes": "Motif de la dette",
+      "submit": "Augmenter la dette",
+      "saving": "Enregistrement de la dette",
+      "amountInvalid": "Saisissez un montant supérieur à 0.",
+      "add": "Ajouter une dette"
     }
   },
   "milling": {
@@ -560,7 +574,9 @@
         "machineUnavailable": "Cette machine n'est plus disponible",
         "bagsOverCapacity": "Une machine ne peut pas broyer plus de {max} sacs à la fois"
       },
-      "remaining": "Restants : {count}"
+      "remaining": "Restants : {count}",
+      "editTitle": "Modifier le broyage",
+      "saveChanges": "Enregistrer les modifications"
     },
     "machine": {
       "title": "Machine {number}",
@@ -601,7 +617,8 @@
         "inService": "En service",
         "underMaintenance": "En maintenance",
         "placeholder": "Le suivi détaillé de la maintenance arrivera avec le module dédié."
-      }
+      },
+      "editOperation": "Modifier le broyage"
     },
     "end": {
       "title": "Terminer le broyage",
@@ -627,10 +644,15 @@
       "pending": "Mercure pas encore ajouté",
       "added": "Mercure ajouté",
       "markHint": "Cliquez ici quand le mercure est ajouté à ce broyage",
-      "confirm": "Le mercure a-t-il été ajouté à ce broyage ? Ce choix est définitif.",
-      "confirmYes": "Oui, ajouté",
+      "title": "Ajouter le mercure",
+      "quantity": "Quantité de mercure (g)",
+      "quantityInvalid": "Saisissez une quantité supérieure à 0.",
+      "notEnoughStock": "Le stock de mercure du projet ne suffit pas pour cette quantité.",
+      "cannotAdd": "Impossible d'ajouter le mercure : le broyage est terminé ou a déjà reçu son mercure.",
+      "fromStock": "La quantité est retirée du stock de mercure du projet et ne peut plus être modifiée.",
+      "submit": "Ajouter le mercure",
       "saving": "Enregistrement",
-      "addedOn": "{date} · {name}",
+      "addedOn": "{quantity} g · {date} · {name}",
       "notYet": "Pas encore ajouté"
     }
   },
@@ -708,7 +730,9 @@
     "changeTypes": {
       "initial": "Quantité initiale",
       "increase": "Augmentation",
-      "decrease": "Diminution"
+      "decrease": "Diminution",
+      "taken": "Pris pour le broyage",
+      "returned": "Rendu par l'affinage"
     },
     "fields": {
       "name": "Nom de la ressource",
@@ -719,6 +743,7 @@
       "quantity": "Quantité",
       "quantityBefore": "Quantité avant",
       "quantityAfter": "Quantité après",
+      "loss": "Perte",
       "note": "Note",
       "changedAt": "Date",
       "changeType": "Type",
@@ -741,6 +766,7 @@
       "quantityTooMuch": "Il ne reste que {left}"
     },
     "refiningMaterial": "Matière d'affinage",
+    "grindingNumber": "broyage {number}",
     "refiningChangeTypes": {
       "decrease": "Perte d'affinage",
       "increase": "Perte d'affinage rendue"
@@ -748,7 +774,7 @@
     "noProjects": "Aucun projet pour le moment. Ajoutez-en depuis les paramètres.",
     "resourceCount": "Ressources",
     "material": {
-      "hint": "La perte de chaque affinage en est retirée automatiquement."
+      "hint": "Chaque broyage en prend le mercure ajouté ; chaque affinage y rend le mercure récupéré."
     },
     "open": "Ouvrir",
     "kinds": {
@@ -766,6 +792,10 @@
       "title": "Accès refusé",
       "description": "Votre rôle n'a pas la permission d'ouvrir ces données. Contactez le directeur."
     },
+    "connection": {
+      "title": "Connexion impossible",
+      "description": "Le serveur n'a pas répondu. Vérifiez votre connexion internet puis réessayez."
+    },
     "failed": {
       "title": "Une erreur est survenue",
       "description": "Les données n'ont pas pu être chargées. Réessayez dans un instant."
@@ -773,5 +803,136 @@
     "status": "Code d'erreur : {status}",
     "retry": "Réessayer",
     "home": "Retour à l'accueil"
+  },
+  "settlements": {
+    "title": "Règlements finaux",
+    "new": "Nouveau règlement",
+    "listTitle": "Règlements du projet",
+    "searchPlaceholder": "N° de règlement",
+    "empty": "Aucun règlement pour le moment.",
+    "noResults": "Aucun règlement ne correspond à cette recherche.",
+    "columns": {
+      "number": "N° de règlement",
+      "customer": "Client",
+      "project": "Projet",
+      "shipments": "Expéditions",
+      "total": "Montant dû",
+      "createdAt": "Date",
+      "createdBy": "Établi par"
+    },
+    "detail": {
+      "title": "Règlement {number}",
+      "factsTitle": "Informations du règlement",
+      "totalsTitle": "Montants",
+      "edit": "Modifier les montants",
+      "editTitle": "Modifier le règlement {number}",
+      "delete": "Supprimer"
+    },
+    "totals": {
+      "bagsTransport": "Transport des sacs",
+      "passengersTransport": "Transport des passagers",
+      "shipmentsDebt": "Dettes des expéditions",
+      "grindingCost": "Coût du broyage",
+      "refiningCost": "Coût du raffinage",
+      "refiningCostDetail": "{grams} g × {price}",
+      "extraDebt": "Dette supplémentaire",
+      "grandTotal": "Montant final dû"
+    },
+    "fields": {
+      "customer": "Client",
+      "project": "Projet",
+      "shipments": "Expéditions",
+      "grindingCost": "Coût du broyage",
+      "refiningCostPerGram": "Coût du raffinage par gramme",
+      "debt": "Dette supplémentaire",
+      "debtDescription": "Motif de la dette supplémentaire",
+      "createdBy": "Établi par",
+      "createdAt": "Date de création"
+    },
+    "form": {
+      "customerPlaceholder": "Rechercher par nom ou téléphone",
+      "projectPlaceholder": "Choisir le projet",
+      "shipmentsTitle": "Expéditions réglées",
+      "amountsTitle": "Montants du règlement",
+      "noShipments": "Ce client n'a aucune expédition entièrement broyée et raffinée à régler.",
+      "submit": "Enregistrer le règlement",
+      "saveChanges": "Enregistrer les modifications",
+      "saving": "Enregistrement",
+      "select": "Inclure l'expédition {number}"
+    },
+    "shipmentColumns": {
+      "number": "N° d'expédition",
+      "arrival": "Arrivée",
+      "bags": "Sacs"
+    },
+    "errors": {
+      "shipmentsRequired": "Choisissez au moins une expédition.",
+      "amountInvalid": "Saisissez un montant égal ou supérieur à 0.",
+      "descriptionTooLong": "200 caractères au maximum."
+    },
+    "pdf": {
+      "ar": "PDF arabe",
+      "fr": "PDF français",
+      "downloading": "Chargement de la facture",
+      "failed": "La facture n'a pas pu être téléchargée, réessayez.",
+      "fileName": "reglement-{number}-{language}.pdf"
+    },
+    "delete": {
+      "title": "Supprimer le règlement",
+      "question": "Supprimer le règlement {number} ?",
+      "explanation": "Ses expéditions pourront être réglées à nouveau.",
+      "confirm": "Supprimer le règlement",
+      "deleting": "Suppression",
+      "failed": "La suppression a échoué, réessayez dans un instant"
+    },
+    "overview": {
+      "waiting": "Expéditions à régler",
+      "settled": "Règlements faits"
+    },
+    "project": {
+      "waitingTitle": "Expéditions terminées à régler",
+      "waitingEmpty": "Aucune expédition terminée n'attend de règlement dans ce projet.",
+      "settle": "Régler",
+      "settleLabel": "Régler les expéditions de {name}"
+    },
+    "waitingColumns": {
+      "number": "N° d'expédition",
+      "customer": "Client",
+      "phone": "Téléphone",
+      "arrival": "Arrivée",
+      "bags": "Sacs",
+      "transport": "Transport",
+      "debt": "Dette"
+    },
+    "noProjects": "Aucun projet pour le moment. Ajoutez-en depuis les paramètres."
+  },
+  "toasts": {
+    "customerAdded": "Client ajouté",
+    "customerUpdated": "Client modifié",
+    "shipmentAdded": "Nouvelle expédition enregistrée",
+    "shipmentUpdated": "Modifications de l'expédition enregistrées",
+    "paymentAdded": "Versement enregistré",
+    "debtUpdated": "Dette enregistrée",
+    "grindingStarted": "Broyage démarré",
+    "grindingUpdated": "Broyage modifié",
+    "grindingFinished": "Broyage terminé",
+    "mercuryAdded": "Mercure ajouté",
+    "refiningSaved": "Affinage enregistré",
+    "resourceAdded": "Ressource ajoutée",
+    "stockIncreased": "Quantité augmentée",
+    "stockDecreased": "Quantité diminuée",
+    "projectAdded": "Projet ajouté",
+    "projectUpdated": "Projet modifié",
+    "projectDeleted": "Projet supprimé",
+    "machineAdded": "Machine ajoutée",
+    "machineUpdated": "Machine modifiée",
+    "userAdded": "Utilisateur ajouté",
+    "userUpdated": "Utilisateur modifié",
+    "roleAdded": "Rôle ajouté",
+    "roleUpdated": "Rôle modifié",
+    "roleDeleted": "Rôle supprimé",
+    "settlementAdded": "Nouveau règlement enregistré",
+    "settlementUpdated": "Règlement modifié",
+    "settlementDeleted": "Règlement supprimé"
   }
 }

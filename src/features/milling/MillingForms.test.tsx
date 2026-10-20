@@ -1,18 +1,14 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { IntlProvider } from "use-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { noAccess, rightsFromApi } from "@/lib/access";
+import { rightsFromApi } from "@/lib/access";
 import type { Access } from "@/lib/access";
-import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
-import type { MillingOperation } from "@/lib/grinding";
-import { EndMillingAction, MercuryStatus } from "./MillingForms";
+import { EndMillingAction } from "./MillingForms";
+import { allRights, inFrench, running } from "./millingTesting";
 
-const allRights: Access = { ...noAccess, superuser: true };
-
-const api = vi.hoisted(() => ({ endOperation: vi.fn(), markMercuryAdded: vi.fn() }));
+const api = vi.hoisted(() => ({ endOperation: vi.fn() }));
 
 vi.mock("./millingApi", () => api);
 
@@ -21,30 +17,7 @@ const end = messages.milling.end;
 beforeEach(() => {
   api.endOperation.mockReset();
   api.endOperation.mockResolvedValue({ ok: true });
-  api.markMercuryAdded.mockReset();
-  api.markMercuryAdded.mockResolvedValue({ ok: true });
 });
-
-function inFrench(children: React.ReactNode, access: Access = allRights) {
-  return render(
-    <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <AccessContext value={access}>{children}</AccessContext>
-    </IntlProvider>,
-  );
-}
-
-const running: MillingOperation = {
-  id: "42",
-  project: "3",
-  machine: 7,
-  shipmentNumber: "SH-1052",
-  client: "Mariem",
-  bags: 2,
-  operatorName: "Ahmed",
-  startedAt: "2026-10-08T06:00:00.000Z",
-  estimatedEndAt: "2026-10-08T12:00:00.000Z",
-  notes: "",
-};
 
 async function openEndMilling(access: Access = allRights) {
   const router = createMemoryRouter(
@@ -121,76 +94,5 @@ describe("ending a milling operation", () => {
     });
     expect(api.endOperation).toHaveBeenCalled();
     expect(router.state.location.pathname).toBe("/");
-  });
-});
-
-const mercury = messages.milling.mercury;
-
-function showMercury(operation: MillingOperation, access: Access = allRights) {
-  const router = createMemoryRouter([
-    { path: "/", element: <MercuryStatus operation={operation} /> },
-  ]);
-
-  inFrench(<RouterProvider router={router} />, access);
-}
-
-describe("mercury status of a grinding", () => {
-  it("marks the mercury as added once the user confirms it", async () => {
-    const user = userEvent.setup();
-    showMercury(running);
-
-    await user.click(screen.getByRole("button", { name: mercury.pending }));
-    expect(screen.getByText(mercury.confirm)).toBeVisible();
-    expect(api.markMercuryAdded).not.toHaveBeenCalled();
-
-    await user.click(screen.getByRole("button", { name: mercury.confirmYes }));
-
-    expect(api.markMercuryAdded).toHaveBeenCalledWith("42");
-    await waitFor(() => {
-      expect(screen.queryByText(mercury.confirm)).toBeNull();
-    });
-  });
-
-  it("leaves it as it was when the user cancels", async () => {
-    const user = userEvent.setup();
-    showMercury(running);
-
-    await user.click(screen.getByRole("button", { name: mercury.pending }));
-    await user.click(screen.getByRole("button", { name: messages.common.cancel }));
-
-    expect(screen.getByRole("button", { name: mercury.pending })).toBeVisible();
-    expect(api.markMercuryAdded).not.toHaveBeenCalled();
-  });
-
-  it("shows why the backend refused it", async () => {
-    api.markMercuryAdded.mockResolvedValue({
-      ok: false,
-      fieldErrors: { mercury: "Le broyage est terminé." },
-      failed: false,
-    });
-    const user = userEvent.setup();
-    showMercury(running);
-
-    await user.click(screen.getByRole("button", { name: mercury.pending }));
-    await user.click(screen.getByRole("button", { name: mercury.confirmYes }));
-
-    expect(await screen.findByText("Le broyage est terminé.")).toBeVisible();
-  });
-
-  it("shows an added mercury with no way to take it back", () => {
-    showMercury({ ...running, mercury: { addedAt: "2026-10-08T07:00:00.000Z", byName: "Aicha" } });
-
-    expect(screen.getByText(mercury.added)).toBeVisible();
-    expect(screen.queryByRole("button")).toBeNull();
-  });
-
-  it("shows a view-only role the status without a button", () => {
-    showMercury(running, {
-      superuser: false,
-      rights: rightsFromApi([{ module: "grinding", can_view: true }]),
-    });
-
-    expect(screen.getByText(mercury.pending)).toBeVisible();
-    expect(screen.queryByRole("button")).toBeNull();
   });
 });

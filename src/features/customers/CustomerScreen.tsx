@@ -2,8 +2,8 @@ import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import {
-  DebtBadge,
   DebtNotice,
+  DebtBadge,
   PaymentStatus,
   ShipmentStatusBadge,
 } from "@/components/shipments/ShipmentBadges";

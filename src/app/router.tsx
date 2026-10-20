@@ -1,20 +1,6 @@
-import {
-  isRouteErrorResponse,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useLocation,
-  useNavigation,
-  useRevalidator,
-  useRouteError,
-} from "react-router";
+import { Outlet, redirect, useLoaderData } from "react-router";
 import type { Params, RouteObject } from "react-router";
-import { useLocale, useTranslations } from "use-intl";
-import { Button } from "@/components/ui/Button";
-import { ButtonLink } from "@/components/ui/ButtonLink";
-import { Icon } from "@/components/ui/Icon";
-import { PageSkeleton } from "@/components/ui/LoadingDots";
-import type { SkeletonShape } from "@/components/ui/LoadingDots";
+import { useLocale } from "use-intl";
 import { LoginScreen } from "@/features/auth";
 import {
   CustomerScreen,
@@ -59,6 +45,16 @@ import {
   SettingsHomeScreen,
   settingsHomeLoader,
 } from "@/features/settings";
+import {
+  NewSettlementScreen,
+  newSettlementLoader,
+  SettlementProjectScreen,
+  settlementProjectLoader,
+  SettlementScreen,
+  settlementLoader,
+  SettlementsScreen,
+  settlementsLoader,
+} from "@/features/settlements";
 import { AppShell, sectionHrefs } from "@/features/shell";
 import {
   NewShipmentScreen,
@@ -78,11 +74,13 @@ import type { Locale } from "@/i18n/locales";
 import { localizedHref, Redirect, usePathname } from "@/i18n/navigation";
 import { accessFromApi, canOpen, homeHref } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
-import { apiClient, errorKind } from "@/lib/api/client";
+import { apiClient } from "@/lib/api/client";
+import { isUnreachableStatus } from "@/lib/api/connection";
 import { hasSession } from "@/lib/api/session";
 import { displayName } from "@/lib/profile";
 import { DASHBOARD_HREF, LOGIN_HREF } from "@/lib/routes";
 import { LocaleLayout } from "./LocaleLayout";
+import { LoadingPage, useNextPathname, FirstLoad, PageError } from "./PageStates";
 
 function localeOf(params: Params): Locale {
   return isLocale(params.locale) ? params.locale : defaultLocale;
@@ -98,102 +96,15 @@ async function loadSignedInUser({ params }: { params: Params }) {
     return toLogin;
   }
 
-  const { data } = await apiClient.GET("/api/v1/auth/me/");
+  const { data, response } = await apiClient.GET("/api/v1/auth/me/");
+
+  if (isUnreachableStatus(response.status)) {
+    throw new Response(null, { status: response.status });
+  }
 
   return data === undefined
     ? toLogin
     : { access: accessFromApi(data), userName: displayName(data), roleName: data.role?.name ?? "" };
-}
-
-const pageShapes: readonly (readonly [RegExp, SkeletonShape])[] = [
-  [/^\/shipments\/new$/, "form"],
-  [/^\/settings\/projects\/(new|\d+\/edit|\d+\/machines\/(new|\d+))$/, "form"],
-  [/^\/(customers|users|users\/roles)$/, "table"],
-  [/^\/refining\/projects\/\d+$/, "table"],
-  [/^\/inventory\/(projects|resources)\/\d+$/, "table"],
-  [/^\/(shipments|milling)\/projects\/\d+(\/history)?$/, "table"],
-  [/^\/settings\/(profile|projects\/\d+)$/, "detail"],
-  [/^\/milling\/projects\/\d+\/machines\/\d+$/, "detail"],
-  [/^\/shipments\/\d+$/, "detail"],
-  [/^\/customers\/\d+$/, "table"],
-];
-
-export function skeletonShapeFor(pathname: string): SkeletonShape {
-  const [, , ...rest] = pathname.split("/");
-  const page = `/${rest.join("/")}`;
-
-  return pageShapes.find(([pattern]) => pattern.test(page))?.[1] ?? "cards";
-}
-
-function LoadingPage({ pathname }: { pathname: string }) {
-  const common = useTranslations("common");
-
-  return <PageSkeleton label={common("loading")} shape={skeletonShapeFor(pathname)} />;
-}
-
-function useNextPathname(): string | undefined {
-  const navigation = useNavigation();
-  const { pathname } = useLocation();
-
-  return navigation.state === "loading" && navigation.location.pathname !== pathname
-    ? navigation.location.pathname
-    : undefined;
-}
-
-function FirstLoad() {
-  const { pathname } = useLocation();
-
-  return (
-    <div className="p-4 md:p-6">
-      <LoadingPage pathname={pathname} />
-    </div>
-  );
-}
-
-const errorIcons = { notFound: "search", forbidden: "shield-lock", failed: "refresh" } as const;
-
-function PageError() {
-  const error = useRouteError();
-  const t = useTranslations("errors");
-  const revalidator = useRevalidator();
-  const signedIn = hasSession(new Date());
-  const status = isRouteErrorResponse(error) ? error.status : undefined;
-  const kind = errorKind(status);
-
-  return (
-    <div className="flex justify-center px-4 py-12">
-      <section
-        role="alert"
-        className="rounded-card border-line bg-surface shadow-subtle flex w-full max-w-lg flex-col items-center gap-4 border-[1.5px] p-8 text-center"
-      >
-        <span className="bg-brand-50 text-brand-700 inline-flex size-16 items-center justify-center rounded-full">
-          <Icon name={errorIcons[kind]} className="size-8" />
-        </span>
-        <h1 className="text-ink text-[22px] font-bold">{t(`${kind}.title`)}</h1>
-        <p className="text-ink-muted text-[15px] font-semibold">{t(`${kind}.description`)}</p>
-        {status === undefined ? null : (
-          <p className="text-ink-faint text-[13px] font-semibold">
-            {t("status", { status: String(status) })}
-          </p>
-        )}
-        <div className="flex flex-wrap justify-center gap-3">
-          <Button
-            variant="primary"
-            width="auto"
-            disabled={revalidator.state === "loading"}
-            onClick={() => void revalidator.revalidate()}
-          >
-            <Icon name="refresh" />
-            {t("retry")}
-          </Button>
-          <ButtonLink href={signedIn ? DASHBOARD_HREF : LOGIN_HREF} variant="secondary">
-            <Icon name="arrow-left" />
-            {t("home")}
-          </ButtonLink>
-        </div>
-      </section>
-    </div>
-  );
 }
 
 function SignedInLayout() {
@@ -218,6 +129,14 @@ function SignedInLayout() {
 const sectionRoutes: RouteObject[] = [
   { path: "customers", loader: customersLoader, element: <CustomersScreen /> },
   { path: "customers/:customer", loader: customerLoader, element: <CustomerScreen /> },
+  { path: "settlements", loader: settlementsLoader, element: <SettlementsScreen /> },
+  { path: "settlements/new", loader: newSettlementLoader, element: <NewSettlementScreen /> },
+  {
+    path: "settlements/projects/:project",
+    loader: settlementProjectLoader,
+    element: <SettlementProjectScreen />,
+  },
+  { path: "settlements/:settlement", loader: settlementLoader, element: <SettlementScreen /> },
   { path: "users", loader: usersLoader, element: <UsersScreen /> },
   { path: "users/roles", loader: rolesLoader, element: <RolesScreen /> },
   { path: "shipments", loader: shipmentsLoader, element: <ShipmentsScreen /> },

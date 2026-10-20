@@ -7,6 +7,7 @@ import {
   INVENTORY_HREF,
   MILLING_HREF,
   REFINING_HREF,
+  SETTLEMENTS_HREF,
   SHIPMENTS_HREF,
   USERS_HREF,
 } from "@/lib/routes";
@@ -57,7 +58,7 @@ const navGroups: readonly NavGroup[] = [
     key: "accounts",
     items: [
       { key: "customers", href: CUSTOMERS_HREF, icon: "users-four" },
-      { key: "settlement", href: "/settlement", icon: "receipt" },
+      { key: "settlement", href: SETTLEMENTS_HREF, icon: "receipt" },
       { key: "accounting", href: "/accounting", icon: "calculator" },
       { key: "treasury", href: "/treasury", icon: "building-bank" },
     ],

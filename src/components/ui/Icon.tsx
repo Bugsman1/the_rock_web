@@ -1,4 +1,3 @@
-import AlertTriangleIcon from "@/icons/alert-triangle.svg?react";
 import ArrowLeftIcon from "@/icons/arrow-left.svg?react";
 import ArrowRightIcon from "@/icons/arrow-right.svg?react";
 import BackspaceIcon from "@/icons/backspace.svg?react";
@@ -45,12 +44,12 @@ import UserIcon from "@/icons/user.svg?react";
 import UsersIcon from "@/icons/users.svg?react";
 import UsersFourIcon from "@/icons/users-four.svg?react";
 import WarehouseIcon from "@/icons/warehouse.svg?react";
+import WifiOffIcon from "@/icons/wifi-off.svg?react";
 import WorldIcon from "@/icons/globe.svg?react";
 import XIcon from "@/icons/x.svg?react";
 import { cn } from "@/lib/cn";
 
 const glyphs = {
-  "alert-triangle": AlertTriangleIcon,
   "arrow-left": ArrowLeftIcon,
   "arrow-right": ArrowRightIcon,
   backspace: BackspaceIcon,
@@ -97,6 +96,7 @@ const glyphs = {
   users: UsersIcon,
   "users-four": UsersFourIcon,
   warehouse: WarehouseIcon,
+  "wifi-off": WifiOffIcon,
   world: WorldIcon,
   x: XIcon,
 } as const;

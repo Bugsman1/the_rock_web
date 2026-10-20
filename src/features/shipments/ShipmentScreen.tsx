@@ -1,23 +1,12 @@
-import { useMemo, useState } from "react";
-import type { ReactNode } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { useState } from "react";
 import { useLoaderData, useRevalidator } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { Button } from "@/components/ui/Button";
-import {
-  DebtNotice,
-  PaymentStatus,
-  ShipmentStatusBadge,
-} from "@/components/shipments/ShipmentBadges";
 import { DetailList } from "@/components/ui/Cards";
-import { DateField } from "@/components/ui/DateField";
-import { Drawer, DrawerActions } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
+import { Drawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
-import { BackLink, PageTitle } from "@/components/ui/PageHeader";
-import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
+import { BackLink } from "@/components/ui/PageHeader";
 import {
   TablePanel,
   TableTotalRow,
@@ -26,27 +15,20 @@ import {
   tableHeadClasses,
   tableRowClasses,
 } from "@/components/ui/TablePanel";
-import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { getCustomerChoices } from "@/lib/customersApi";
-import { combineDateAndTime, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { formatCount, formatDateTime, formatMoney } from "@/lib/format";
 import { findProject, isInService } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
 import { shipmentsProjectHref } from "@/lib/routes";
 import { amountLeftToPay } from "@/lib/shipments";
-import { EditShipmentForm } from "./NewShipmentScreen";
-import { InvoiceDownload } from "./ShipmentsScreens";
-import { amountLeftAfter, createPaymentSchema } from "./shipments";
-import type { PaymentValues, ShipmentDetail } from "./shipments";
-import { addPayment, getShipment } from "./shipmentsApi";
-
-const paymentFields: readonly (keyof PaymentValues)[] = ["amount", "date", "time", "notes"];
-
-function isPaymentField(value: string): value is keyof PaymentValues {
-  return paymentFields.some((field) => field === value);
-}
+import { EditShipmentForm } from "./ShipmentForm";
+import type { ShipmentDetail } from "./shipments";
+import { getShipment } from "./shipmentsApi";
+import { PaymentForm } from "./PaymentForm";
+import { DebtForm } from "./DebtForm";
+import { ShipmentDetails, ShipmentHeader } from "./ShipmentHeader";
 
 export async function shipmentLoader({ params }: LoaderFunctionArgs) {
   const shipment = await getShipment(params.shipment ?? "");
@@ -59,167 +41,21 @@ export async function shipmentLoader({ params }: LoaderFunctionArgs) {
   };
 }
 
-type PaymentFormProps = {
-  shipmentId: string;
-  amountLeft: number;
-  onSaved: () => void;
-  onCancel: () => void;
-};
-
-function PaymentForm({ shipmentId, amountLeft, onSaved, onCancel }: PaymentFormProps) {
-  const t = useTranslations("shipments.paymentForm");
-  const common = useTranslations("common");
-  const locale = useLocale();
-  const [failed, setFailed] = useState(false);
-
-  const schema = useMemo(
-    () =>
-      createPaymentSchema(
-        {
-          required: common("validation.required"),
-          dateInvalid: common("validation.dateInvalid"),
-          timeInvalid: common("validation.timeInvalid"),
-          amountInvalid: t("errors.amountInvalid"),
-          amountTooHigh: t("errors.amountTooHigh", { left: formatMoney(amountLeft, locale) }),
-        },
-        amountLeft,
-      ),
-    [t, common, locale, amountLeft],
-  );
-
-  const { control, register, handleSubmit, formState, setError, trigger } = useForm<PaymentValues>({
-    mode: "onTouched",
-    resolver: zodResolver(schema),
-    defaultValues: {
-      amount: Number.NaN,
-      date: todayAsInputValue(),
-      time: nowAsTimeValue(),
-      notes: "",
-    },
-  });
-
-  const { errors } = formState;
-  const amount = useWatch({ control, name: "amount" });
-  const leftAfter = amountLeftAfter(amountLeft, amount);
-
-  async function onSubmit(values: PaymentValues) {
-    setFailed(false);
-
-    const paidAt = combineDateAndTime(values.date, values.time);
-
-    if (paidAt === undefined) {
-      setFailed(true);
-      return;
-    }
-
-    const result = await addPayment(shipmentId, values, paidAt);
-
-    if (result.ok) {
-      onSaved();
-      return;
-    }
-
-    for (const [field, message] of Object.entries(result.fieldErrors)) {
-      if (isPaymentField(field)) {
-        setError(field, { message });
-      }
-    }
-
-    setFailed(result.failed);
-  }
-
-  return (
-    <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <TextField
-            id="payment-amount"
-            type="number"
-            min={0}
-            step="any"
-            inputMode="decimal"
-            label={t("amount")}
-            required
-            error={errors.amount?.message}
-            {...register("amount", {
-              valueAsNumber: true,
-              onChange: (event: { target: { value: string } }) => {
-                if (Number(event.target.value) > amountLeft || errors.amount !== undefined) {
-                  void trigger("amount");
-                }
-              },
-            })}
-          />
-        </div>
-
-        <ReadOnlyField label={t("leftNow")} value={formatMoney(amountLeft, locale)} />
-        <ReadOnlyField
-          label={t("leftAfter")}
-          value={leftAfter === undefined ? "—" : formatMoney(leftAfter, locale)}
-          emphasis={leftAfter !== undefined}
-        />
-
-        <Controller
-          control={control}
-          name="date"
-          render={({ field }) => (
-            <DateField
-              id="payment-date"
-              label={t("date")}
-              required
-              pickerLabel={common("openCalendar")}
-              placeholder={common("datePlaceholder")}
-              error={errors.date?.message}
-              {...field}
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="time"
-          render={({ field }) => (
-            <TimeField
-              id="payment-time"
-              label={t("time")}
-              required
-              placeholder={common("timePlaceholder")}
-              error={errors.time?.message}
-              {...field}
-            />
-          )}
-        />
-
-        <div className="sm:col-span-2">
-          <TextArea
-            id="payment-notes"
-            label={t("notes")}
-            rows={2}
-            error={errors.notes?.message}
-            {...register("notes")}
-          />
-        </div>
-      </div>
-
-      {failed ? <FormError message={common("saveFailed")} /> : null}
-
-      <DrawerActions
-        submitting={formState.isSubmitting}
-        submitIcon="plus"
-        submitLabel={t("submit")}
-        savingLabel={t("saving")}
-        cancelLabel={common("cancel")}
-        onCancel={onCancel}
-      />
-    </form>
-  );
-}
-
-function PaymentsPanel({ shipment, onAdd }: { shipment: ShipmentDetail; onAdd: () => void }) {
+function PaymentsPanel({
+  shipment,
+  onAdd,
+  onAddDebt,
+}: {
+  shipment: ShipmentDetail;
+  onAdd: () => void;
+  onAddDebt: () => void;
+}) {
   const t = useTranslations("shipments.detail");
+  const debtForm = useTranslations("shipments.debtForm");
   const common = useTranslations("common");
   const locale = useLocale();
-  const canAdd = useCan()("shipments", "add");
+  const can = useCan();
+  const canAdd = can("shipments", "add");
   const amountLeft = amountLeftToPay(shipment);
 
   return (
@@ -240,6 +76,12 @@ function PaymentsPanel({ shipment, onAdd }: { shipment: ShipmentDetail; onAdd: (
             <Button variant="primary" width="auto" onClick={onAdd}>
               <Icon name="plus" />
               {t("addPayment")}
+            </Button>
+          ) : null}
+          {can("shipments", "edit") ? (
+            <Button variant="secondary" width="auto" onClick={onAddDebt}>
+              <Icon name="plus" />
+              {shipment.debt > 0 ? t("addDebt") : debtForm("add")}
             </Button>
           ) : null}
         </div>
@@ -294,109 +136,17 @@ function PaymentsPanel({ shipment, onAdd }: { shipment: ShipmentDetail; onAdd: (
   );
 }
 
-function ShipmentDetails({
-  shipment,
-  projectName,
-}: {
-  shipment: ShipmentDetail;
-  projectName: string;
-}) {
-  const t = useTranslations("shipments.form");
-  const transports = useTranslations("shipments.transportMethods");
-  const locale = useLocale();
-
-  return (
-    <section className="rounded-card border-line bg-surface border-[1.5px] p-6">
-      <DetailList
-        items={[
-          { label: t("customerName"), value: shipment.customerName },
-          { label: t("phone"), value: shipment.phone },
-          { label: t("arrivalDate"), value: formatDateTime(shipment.arrivedAt, locale) },
-          { label: t("bagCount"), value: formatCount(shipment.bagCount, locale) },
-          { label: t("transportMethod"), value: transports(shipment.transportMethod) },
-          { label: t("source"), value: shipment.source },
-          { label: t("mill"), value: projectName },
-          { label: t("notes"), value: shipment.notes === "" ? "—" : shipment.notes },
-        ]}
-      />
-    </section>
-  );
-}
-
-function HeaderFact({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-0.5">
-      <dt className="text-ink-muted text-[13px] font-semibold">{label}</dt>
-      <dd className="text-ink text-start text-[15px] font-bold break-words">{children}</dd>
-    </div>
-  );
-}
-
-function ShipmentHeader({
-  shipment,
-  projectName,
-}: {
-  shipment: ShipmentDetail;
-  projectName: string;
-}) {
-  const t = useTranslations("shipments.detail");
-  const locale = useLocale();
-
-  return (
-    <section className="rounded-card border-line bg-surface flex flex-col border-[1.5px]">
-      <div className="border-line flex flex-wrap items-center justify-between gap-4 border-b p-5">
-        <div className="flex flex-col gap-3">
-          <PageTitle>{t("title", { number: shipment.shipmentNumber })}</PageTitle>
-          <dl className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <div className="flex items-center gap-2">
-              <dt className="text-ink-muted text-[13px] font-semibold">{t("shipmentStatus")}</dt>
-              <dd>
-                <ShipmentStatusBadge status={shipment.stage} />
-              </dd>
-            </div>
-            <div className="flex items-center gap-2">
-              <dt className="text-ink-muted text-[13px] font-semibold">{t("paymentStatus")}</dt>
-              <dd>
-                <PaymentStatus shipment={shipment} />
-              </dd>
-            </div>
-          </dl>
-        </div>
-        <InvoiceDownload shipment={shipment} />
-      </div>
-
-      <dl className="grid gap-x-6 gap-y-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
-        <HeaderFact label={t("client")}>
-          <span className="block text-start">
-            <bdi>{shipment.customerName}</bdi>
-          </span>
-          <span className="text-ink-muted block text-start text-[13px] font-semibold">
-            <bdi dir="ltr">{shipment.phone}</bdi>
-          </span>
-        </HeaderFact>
-        <HeaderFact label={t("project")}>{projectName}</HeaderFact>
-        <HeaderFact label={t("arrivedAt")}>{formatDateTime(shipment.arrivedAt, locale)}</HeaderFact>
-        <HeaderFact label={t("bags")}>{formatCount(shipment.bagCount, locale)}</HeaderFact>
-      </dl>
-
-      {shipment.debt > 0 ? (
-        <div className="px-5 pb-5">
-          <DebtNotice label={t("debt")} amount={shipment.debt} note={shipment.debtNotes} />
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
 export function ShipmentScreen() {
   const { shipment, customers, projects } = useLoaderData<typeof shipmentLoader>();
   const t = useTranslations("shipments.detail");
   const payment = useTranslations("shipments.paymentForm");
+  const debtTitle = useTranslations("shipments.debtForm");
   const common = useTranslations("common");
   const canEdit = useCan()("shipments", "edit");
   const revalidator = useRevalidator();
   const replace = useReplace();
   const [adding, setAdding] = useState(false);
+  const [addingDebt, setAddingDebt] = useState(false);
   const projectName = findProject(projects, shipment.project)?.name ?? "—";
 
   return (
@@ -405,7 +155,11 @@ export function ShipmentScreen() {
 
       <ShipmentHeader shipment={shipment} projectName={projectName} />
 
-      <PaymentsPanel shipment={shipment} onAdd={() => setAdding(true)} />
+      <PaymentsPanel
+        shipment={shipment}
+        onAdd={() => setAdding(true)}
+        onAddDebt={() => setAddingDebt(true)}
+      />
 
       <div className="flex flex-col gap-3">
         <h2 className="text-ink text-[18px] font-bold">{t("detailsTitle")}</h2>
@@ -420,6 +174,22 @@ export function ShipmentScreen() {
           <ShipmentDetails shipment={shipment} projectName={projectName} />
         )}
       </div>
+
+      <Drawer
+        open={addingDebt}
+        title={shipment.debt > 0 ? debtTitle("title") : debtTitle("add")}
+        closeLabel={common("close")}
+        onClose={() => setAddingDebt(false)}
+      >
+        <DebtForm
+          shipment={shipment}
+          onCancel={() => setAddingDebt(false)}
+          onSaved={() => {
+            setAddingDebt(false);
+            void revalidator.revalidate();
+          }}
+        />
+      </Drawer>
 
       <Drawer
         open={adding}

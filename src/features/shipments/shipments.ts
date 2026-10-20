@@ -1,135 +1,14 @@
 import { z } from "zod";
 import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/client";
 import { isIsoDate, isTimeValue, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
-import { fromDecimal, toMoneyDecimal } from "@/lib/format";
+import { amountOrZero, fromDecimal, toMoneyDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
-import { isHalfBagCount, remainingBags } from "@/lib/grinding";
-import type { MillingOperation } from "@/lib/grinding";
+import { isHalfBagCount } from "@/lib/grinding";
 import { isValidPhone } from "@/lib/phone";
-import type { ProjectId } from "@/lib/projects";
-import { matchesSearch } from "@/lib/search";
 import { shipmentFromApi } from "@/lib/shipments";
-import type { ShipmentRecord, ShipmentStatusKey } from "@/lib/shipments";
+import type { ShipmentRecord } from "@/lib/shipments";
 
 export const transportMethodKeys = ["truck", "hilux", "other"] as const;
-
-type ClientBags = {
-  name: string;
-  bagCount: number;
-};
-
-const storedStatuses: readonly ShipmentStatusKey[] = ["pending", "grinding"];
-
-export type StoredShipment = ShipmentRecord & { remainingBags: number };
-
-const TOP_CLIENTS_LIMIT = 6;
-
-export function isInStorage(record: ShipmentRecord): boolean {
-  return storedStatuses.includes(record.status);
-}
-
-export function openShipments(
-  records: readonly ShipmentRecord[],
-  operations: readonly MillingOperation[],
-  project?: ProjectId,
-): readonly StoredShipment[] {
-  return records
-    .filter(
-      (record) => isInStorage(record) && (project === undefined || record.project === project),
-    )
-    .map((record) => ({
-      ...record,
-      remainingBags: remainingBags(
-        { shipmentNumber: record.shipmentNumber, bags: record.bagCount },
-        operations,
-      ),
-    }));
-}
-
-export function storedShipments(
-  records: readonly ShipmentRecord[],
-  operations: readonly MillingOperation[],
-  project?: ProjectId,
-): readonly StoredShipment[] {
-  return openShipments(records, operations, project).filter((record) => record.remainingBags > 0);
-}
-
-export function shipmentsOfProject<Shipment extends ShipmentRecord>(
-  records: readonly Shipment[],
-  project: ProjectId,
-): readonly Shipment[] {
-  return records.filter((record) => record.project === project);
-}
-
-export function bagCount(records: readonly StoredShipment[]): number {
-  return records.reduce((total, record) => total + record.remainingBags, 0);
-}
-
-export function clientBags(records: readonly StoredShipment[]): readonly ClientBags[] {
-  const totals = new Map<string, number>();
-
-  for (const record of records) {
-    totals.set(record.customerName, (totals.get(record.customerName) ?? 0) + record.remainingBags);
-  }
-
-  return [...totals].map(([name, bags]) => ({ name, bagCount: bags }));
-}
-
-export function topClientsByBags(
-  clients: readonly ClientBags[],
-  limit: number = TOP_CLIENTS_LIMIT,
-): readonly ClientBags[] {
-  return [...clients].sort((a, b) => b.bagCount - a.bagCount).slice(0, limit);
-}
-
-export function shipmentsByArrival<Shipment extends ShipmentRecord>(
-  records: readonly Shipment[],
-): readonly Shipment[] {
-  return [...records].sort((a, b) => a.arrivedAt.localeCompare(b.arrivedAt));
-}
-
-export function bagShare(bags: number, largestBagCount: number): number {
-  if (largestBagCount <= 0) return 0;
-
-  return Math.min(100, Math.round((bags / largestBagCount) * 100));
-}
-
-export type HistoryFilter = {
-  from: string;
-  to: string;
-  query: string;
-};
-
-export const emptyHistoryFilter: HistoryFilter = { from: "", to: "", query: "" };
-
-export function isFilterActive(filter: HistoryFilter): boolean {
-  return filter.from !== "" || filter.to !== "" || filter.query.trim() !== "";
-}
-
-function arrivalDay(record: ShipmentRecord): string {
-  return record.arrivedAt.slice(0, 10);
-}
-
-export function matchesQuery(record: ShipmentRecord, query: string): boolean {
-  return matchesSearch(
-    { texts: [record.customerName, record.shipmentNumber], phone: record.phone },
-    query,
-  );
-}
-
-export function filterShipments(
-  records: readonly ShipmentRecord[],
-  filter: HistoryFilter,
-): readonly ShipmentRecord[] {
-  const from = isIsoDate(filter.from) ? filter.from : undefined;
-  const to = isIsoDate(filter.to) ? filter.to : undefined;
-
-  return records
-    .filter((record) => from === undefined || arrivalDay(record) >= from)
-    .filter((record) => to === undefined || arrivalDay(record) <= to)
-    .filter((record) => matchesQuery(record, filter.query))
-    .sort((a, b) => b.arrivedAt.localeCompare(a.arrivedAt));
-}
 
 type TransportCostInput = {
   bagCount: number;
@@ -137,10 +16,6 @@ type TransportCostInput = {
   passengerCount: number;
   passengerFare: number;
 };
-
-function amountOrZero(value: number): number {
-  return Number.isFinite(value) && value > 0 ? value : 0;
-}
 
 export function bagsCost(bagCount: number, bagFare: number): number {
   return amountOrZero(bagCount) * amountOrZero(bagFare);
@@ -163,19 +38,7 @@ export function remainingToPay(total: number, payment: number): number {
   return Math.max(0, total - amountOrZero(payment));
 }
 
-const MONEY_CENTS = 100;
-
-export function amountLeftAfter(amountLeft: number, payment: number): number | undefined {
-  return Number.isFinite(payment) && payment > 0 && payment <= amountLeft
-    ? Math.round((amountLeft - payment) * MONEY_CENTS) / MONEY_CENTS
-    : undefined;
-}
-
-export function completedShipments(records: readonly ShipmentRecord[]): readonly ShipmentRecord[] {
-  return records.filter((record) => record.status === "completed");
-}
-
-const NOTES_MAX_LENGTH = 1000;
+export const NOTES_MAX_LENGTH = 1000;
 
 type ValidationMessages = {
   required: string;
@@ -374,60 +237,6 @@ export function shipmentFormValues(shipment: ShipmentDetail): NewShipmentValues 
     mill: shipment.project,
     notes: shipment.notes,
   };
-}
-
-export function createPaymentSchema(
-  messages: {
-    required: string;
-    dateInvalid: string;
-    timeInvalid: string;
-    amountInvalid: string;
-    amountTooHigh: string;
-  },
-  amountLeft: number,
-) {
-  return z.object({
-    amount: z
-      .number({ error: messages.amountInvalid })
-      .positive(messages.amountInvalid)
-      .max(amountLeft, messages.amountTooHigh),
-    date: z
-      .string()
-      .min(1, { message: messages.required, abort: true })
-      .refine(isIsoDate, messages.dateInvalid),
-    time: z
-      .string()
-      .min(1, { message: messages.required, abort: true })
-      .refine(isTimeValue, messages.timeInvalid),
-    notes: z.string().trim().max(NOTES_MAX_LENGTH),
-  });
-}
-
-export type PaymentValues = z.infer<ReturnType<typeof createPaymentSchema>>;
-
-export function paymentToApi(values: PaymentValues, shipmentId: string, paidAt: IsoTimestamp) {
-  return {
-    shipment: Number(shipmentId),
-    amount: toMoneyDecimal(values.amount),
-    paid_at: paidAt,
-    notes: values.notes,
-  };
-}
-
-export function paymentErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof PaymentValues> {
-  const amount = errors.amount ?? errors.shipment;
-
-  return {
-    ...(amount === undefined ? {} : { amount }),
-    ...(errors.paid_at === undefined ? {} : { date: errors.paid_at }),
-    ...(errors.notes === undefined ? {} : { notes: errors.notes }),
-  };
-}
-
-const ATTACHMENT_FILE_NAME = /filename="([^"]+)"/;
-
-export function invoiceFileName(contentDisposition: string | null): string | undefined {
-  return contentDisposition?.match(ATTACHMENT_FILE_NAME)?.[1];
 }
 
 export function shipmentErrorsFromApi(errors: BackendFieldErrors): FieldErrors<ShipmentField> {

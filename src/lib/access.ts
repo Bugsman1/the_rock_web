@@ -10,6 +10,7 @@ import {
   SETTINGS_LANGUAGE_HREF,
   SETTINGS_PROFILE_HREF,
   SETTINGS_PROJECTS_HREF,
+  SETTLEMENTS_HREF,
   SHIPMENTS_HREF,
   USERS_HREF,
 } from "./routes";
@@ -87,6 +88,7 @@ const sectionModules: readonly (readonly [string, Module])[] = [
   [REFINING_HREF, "refining"],
   [INVENTORY_HREF, "inventory"],
   [CUSTOMERS_HREF, "customers"],
+  [SETTLEMENTS_HREF, "shipments"],
   [USERS_HREF, "accounts"],
   [SETTINGS_PROJECTS_HREF, "locations"],
 ];
@@ -95,6 +97,7 @@ const openToEveryone: readonly string[] = [SETTINGS_PROFILE_HREF, SETTINGS_LANGU
 
 const formPages: readonly (readonly [RegExp, Module, Right])[] = [
   [/^\/shipments\/new$/, "shipments", "add"],
+  [/^\/settlements\/new$/, "shipments", "add"],
   [/^\/settings\/projects\/new$/, "locations", "add"],
   [/^\/settings\/projects\/\d+\/edit$/, "locations", "edit"],
   [/^\/settings\/projects\/\d+\/machines\/new$/, "locations", "add"],

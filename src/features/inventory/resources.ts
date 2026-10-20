@@ -74,12 +74,14 @@ export type ResourceChangeType = (typeof resourceChangeTypes)[number];
 
 export type ResourceChange = {
   id: string;
-  type: ResourceChangeType | "initial";
+  type: ResourceChangeType | "initial" | "taken" | "returned";
   quantity: number;
   quantityBefore: number;
   quantityAfter: number;
   fromRefining: boolean;
   shipmentNumber: string | undefined;
+  grindingSequence: number | undefined;
+  loss: number | undefined;
   note: string;
   byName: string;
   at: IsoTimestamp;
@@ -172,11 +174,19 @@ export function resourceChangeFromApi(entry: ApiSchema<"ResourceHistory">): Reso
     quantityBefore: fromDecimal(entry.quantity_before),
     quantityAfter: fromDecimal(entry.quantity_after),
     fromRefining: entry.refining_operation !== null,
-    shipmentNumber: typeof entry.shipment_number === "string" ? entry.shipment_number : undefined,
+    shipmentNumber: entry.shipment_number ?? undefined,
+    grindingSequence: entry.grinding_sequence ?? undefined,
+    loss: entry.loss === null ? undefined : fromDecimal(entry.loss),
     note: entry.note,
     byName: entry.created_by_name,
     at: entry.created_at,
   };
+}
+
+export function refiningCorrectionType(change: ResourceChange): ResourceChangeType | undefined {
+  return change.fromRefining && (change.type === "increase" || change.type === "decrease")
+    ? change.type
+    : undefined;
 }
 
 export function resourceChangeToApi(values: ResourceChangeValues) {

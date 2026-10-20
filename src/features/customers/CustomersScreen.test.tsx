@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
@@ -107,6 +107,36 @@ describe("CustomersScreen", () => {
     expect(seen.filter((url) => url.searchParams.has("search"))).toHaveLength(1);
   });
 
+  it("keeps the search field focused while the results follow the typing", async () => {
+    answerList(2, apiCustomers);
+    const user = userEvent.setup();
+    const router = openAt("/fr/customers");
+    const search = await screen.findByLabelText(messages.common.search);
+
+    await user.type(search, "f");
+    await waitFor(() => {
+      expect(router.state.location.search).toBe("?q=f");
+    });
+
+    expect(screen.getByLabelText(messages.common.search)).toHaveFocus();
+    await user.keyboard("ati");
+    await waitFor(() => {
+      expect(router.state.location.search).toBe("?q=fati");
+    });
+    expect(screen.getByLabelText(messages.common.search)).toHaveValue("fati");
+    expect(screen.getByLabelText(messages.common.search)).toHaveFocus();
+  });
+
+  it("empties the search field when the list is opened again without a search", async () => {
+    answerList(2, apiCustomers);
+    const router = openAt("/fr/customers?q=fati");
+
+    expect(await screen.findByLabelText(messages.common.search)).toHaveValue("fati");
+    await act(() => router.navigate("/fr/customers"));
+
+    expect(screen.getByLabelText(messages.common.search)).toHaveValue("");
+  });
+
   it("links to the previous and next pages", async () => {
     answerList(52, apiCustomers);
     openAt("/fr/customers?q=a&page=2");
@@ -183,6 +213,6 @@ describe("CustomersScreen", () => {
     await waitFor(() => {
       expect(router.state.location.search).toBe("");
     });
-    expect(created).toEqual({ full_name: "Sidi", phone: "+222 46 10 93 25" });
+    expect(created).toEqual({ full_name: "Sidi", phone: "+22246109325" });
   });
 });

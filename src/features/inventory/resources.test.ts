@@ -8,6 +8,7 @@ import {
   createResourceSchema,
   kindNamed,
   quantityAfterChange,
+  refiningCorrectionType,
   resourceChangeFromApi,
   resourceErrorsFromApi,
   resourceToApi,
@@ -24,6 +25,10 @@ const apiChange = {
   quantity_after: "8.500",
   refining_operation: 5,
   shipment_number: "SH-0004",
+  grinding_operation: 7,
+  grinding_sequence: 2,
+  grinder_code: "P3-7",
+  loss: null,
   note: "",
   created_by_name: "Aicha",
   created_at: "2026-10-12T11:00:00Z",
@@ -157,6 +162,16 @@ describe("resourceErrorsFromApi", () => {
 });
 
 describe("resourceChangeFromApi", () => {
+  it("reads the mercury a refining returned with that refining's loss", () => {
+    const change = resourceChangeFromApi({
+      ...apiChange,
+      change_type: "returned",
+      loss: "1.750",
+    });
+
+    expect(change).toMatchObject({ type: "returned", loss: 1.75, grindingSequence: 2 });
+  });
+
   it("reads a change linked to a refining operation", () => {
     expect(resourceChangeFromApi(apiChange)).toEqual({
       id: "11",
@@ -166,6 +181,8 @@ describe("resourceChangeFromApi", () => {
       quantityAfter: 8.5,
       fromRefining: true,
       shipmentNumber: "SH-0004",
+      grindingSequence: 2,
+      loss: undefined,
       note: "",
       byName: "Aicha",
       at: "2026-10-12T11:00:00Z",
@@ -223,5 +240,21 @@ describe("resourceChangeErrorsFromApi", () => {
     expect(
       resourceChangeErrorsFromApi({ quantity: "Il ne reste que 1.", note: "Trop long." }),
     ).toEqual({ quantity: "Il ne reste que 1.", note: "Trop long." });
+  });
+});
+
+describe("refiningCorrectionType", () => {
+  const change = resourceChangeFromApi(apiChange);
+
+  it("names an increase or decrease made by a refining", () => {
+    expect(refiningCorrectionType(change)).toBe("decrease");
+  });
+
+  it("leaves mercury taken, returned or changed by hand under its own type", () => {
+    expect(refiningCorrectionType({ ...change, type: "returned" })).toBeUndefined();
+    expect(
+      refiningCorrectionType({ ...change, type: "taken", fromRefining: false }),
+    ).toBeUndefined();
+    expect(refiningCorrectionType({ ...change, fromRefining: false })).toBeUndefined();
   });
 });

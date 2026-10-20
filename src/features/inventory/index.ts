@@ -3,6 +3,5 @@ export {
   inventoryProjectLoader,
   InventoryScreen,
   inventoryLoader,
-  ResourceScreen,
-  resourceLoader,
 } from "./InventoryScreens";
+export { ResourceScreen, resourceLoader } from "./ResourceScreen";

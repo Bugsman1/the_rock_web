@@ -22,10 +22,17 @@ describe("navGroupsFor", () => {
   });
 
   it("gives a role only the sections it can view", () => {
-    const groups = navGroupsFor(viewing(["shipments", "grinding", "refining"]));
+    const groups = navGroupsFor(viewing(["grinding", "refining"]));
 
     expect(groups.map((group) => group.key)).toEqual(["operations"]);
-    expect(groups[0]?.items.map((item) => item.key)).toEqual(["shipments", "milling", "refining"]);
+    expect(groups[0]?.items.map((item) => item.key)).toEqual(["milling", "refining"]);
+  });
+
+  it("opens the settlements to a role that can view shipments", () => {
+    const groups = navGroupsFor(viewing(["shipments"]));
+
+    expect(groups.map((group) => group.key)).toEqual(["operations", "accounts"]);
+    expect(groups[1]?.items.map((item) => item.key)).toEqual(["settlement"]);
   });
 });
 

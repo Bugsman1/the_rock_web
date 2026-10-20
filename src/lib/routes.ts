@@ -18,6 +18,8 @@ export const INVENTORY_HREF = "/inventory";
 
 export const CUSTOMERS_HREF = "/customers";
 
+export const SETTLEMENTS_HREF = "/settlements";
+
 export const USERS_HREF = "/users";
 
 export const SETTINGS_HREF = "/settings";
@@ -126,6 +128,10 @@ export function millingMachineHref(project: string, machine: number): string {
   return `${millingProjectHref(project)}/machines/${machine}`;
 }
 
+export function editMillingOperationHref(project: string, machine: number): string {
+  return `${millingMachineHref(project, machine)}?edit=1`;
+}
+
 type NewMillingOperationRequest = {
   shipmentNumber?: string;
   machine?: number;
@@ -174,4 +180,28 @@ export function resourceHref(
   const base = `${INVENTORY_HREF}/resources/${resource}`;
 
   return queryString === "" ? base : `${base}?${queryString}`;
+}
+
+export function settlementsProjectHref(
+  project: string,
+  params: Pick<ListPageParams, "query" | "page"> = {},
+): string {
+  return listPageHref(`${SETTLEMENTS_HREF}/projects/${project}`, params);
+}
+
+export function settlementHref(settlement: string, drawer?: "edit" | "delete"): string {
+  const href = `${SETTLEMENTS_HREF}/${settlement}`;
+
+  return drawer === undefined ? href : `${href}?${drawer}=1`;
+}
+
+export function newSettlementHref(choice: { customer?: string; project?: string } = {}): string {
+  const search = new URLSearchParams();
+
+  if (choice.customer !== undefined) search.set("customer", choice.customer);
+  if (choice.project !== undefined) search.set("project", choice.project);
+
+  const queryString = search.toString();
+
+  return queryString === "" ? `${SETTLEMENTS_HREF}/new` : `${SETTLEMENTS_HREF}/new?${queryString}`;
 }

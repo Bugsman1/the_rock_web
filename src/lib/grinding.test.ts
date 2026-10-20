@@ -113,6 +113,7 @@ describe("remainingBags", () => {
 describe("operationFromApi", () => {
   const apiOperation = {
     id: 5,
+    sequence: 1,
     shipment_number: "SH-12",
     customer_name: "Sidi",
     grinder_code: "P3-7",
@@ -152,14 +153,19 @@ describe("operationFromApi", () => {
     expect(ended?.endedAt).toBe("2026-10-08T12:00:00.000Z");
   });
 
-  it("says when the mercury was added and by whom", () => {
+  it("says when the mercury was added, by whom and how many grams", () => {
     const [operation] = operationFromApi({
       ...apiOperation,
       mercury_added_at: "2026-10-08T07:00:00.000Z",
       mercury_added_by_name: "Aicha",
+      mercury_quantity: "12.500",
     });
 
-    expect(operation?.mercury).toEqual({ addedAt: "2026-10-08T07:00:00.000Z", byName: "Aicha" });
+    expect(operation?.mercury).toEqual({
+      addedAt: "2026-10-08T07:00:00.000Z",
+      byName: "Aicha",
+      quantity: 12.5,
+    });
   });
 
   it("skips an operation whose grinder code it cannot read", () => {

@@ -3,10 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { IntlProvider } from "use-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import messages from "@/messages/fr.json";
-import type { OperationShipment } from "@/lib/grinding";
-import { NewOperationForm } from "./NewOperationForm";
+import type { MillingOperation, OperationShipment } from "@/lib/grinding";
+import { OperationForm } from "./OperationForm";
 
-const api = vi.hoisted(() => ({ startOperation: vi.fn() }));
+const api = vi.hoisted(() => ({ startOperation: vi.fn(), updateOperation: vi.fn() }));
 
 vi.mock("@/lib/grindingApi", () => api);
 
@@ -17,6 +17,8 @@ beforeEach(() => {
   onSaved.mockReset();
   api.startOperation.mockReset();
   api.startOperation.mockResolvedValue({ ok: true });
+  api.updateOperation.mockReset();
+  api.updateOperation.mockResolvedValue({ ok: true });
 });
 
 const shipments: OperationShipment[] = [
@@ -51,7 +53,7 @@ function inFrench(children: React.ReactNode) {
 
 function renderNewOperation(defaults: { shipment?: string; machine?: number } = {}) {
   return inFrench(
-    <NewOperationForm
+    <OperationForm
       projectName="Zouerate 1"
       shipments={shipments}
       idleMachines={idleMachines}
@@ -76,7 +78,7 @@ function readOnly(label: string) {
   return within(field);
 }
 
-describe("NewOperationForm", () => {
+describe("OperationForm", () => {
   it("pre-fills the machine when opened from an idle row", () => {
     renderNewOperation({ machine: 10 });
 
@@ -201,5 +203,57 @@ describe("NewOperationForm", () => {
 
     expect(await screen.findByText("Plus que les sacs restants.")).toBeVisible();
     expect(onSaved).not.toHaveBeenCalled();
+  });
+
+  it("edits a running operation, pre-filled with what was saved", async () => {
+    const running: MillingOperation = {
+      id: "42",
+      project: "3",
+      machine: 7,
+      shipmentNumber: "SH-1052",
+      client: "Mariem",
+      bags: 1.5,
+      operatorName: "Ahmed",
+      startedAt: "2026-10-08T06:00:00.000Z",
+      estimatedEndAt: "2026-10-08T10:30:00.000Z",
+      notes: "Sacs humides",
+    };
+    const user = userEvent.setup();
+    inFrench(
+      <OperationForm
+        operation={running}
+        projectName="Zouerate 1"
+        shipments={shipments}
+        idleMachines={idleMachines}
+        operators={[{ id: "emp-1", name: "Ahmed" }]}
+        defaultShipmentNumber="SH-1052"
+        defaultMachine={7}
+        defaultDate="2026-10-08"
+        defaultTime="06:00"
+        onSaved={onSaved}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(form.shipment)).toHaveValue("SH-1052");
+    expect(screen.getByLabelText(form.machine)).toHaveValue("7");
+    expect(screen.getByLabelText(form.bags)).toHaveValue(1.5);
+    expect(screen.getByLabelText(form.operator)).toHaveValue("emp-1");
+    expect(screen.getByLabelText(form.notes)).toHaveValue("Sacs humides");
+
+    await user.clear(screen.getByLabelText(form.bags));
+    await user.type(screen.getByLabelText(form.bags), "2");
+    await user.selectOptions(screen.getByLabelText(form.machine), "10");
+    await user.click(screen.getByRole("button", { name: form.saveChanges }));
+
+    await waitFor(() => {
+      expect(api.updateOperation).toHaveBeenCalledWith(
+        "42",
+        expect.objectContaining({ bags: 2, machine: "10", operatorId: "emp-1" }),
+        { shipmentId: "52", grinderId: "g10", startedAt: "2026-10-08T06:00:00.000Z" },
+      );
+    });
+    expect(api.startOperation).not.toHaveBeenCalled();
+    expect(onSaved).toHaveBeenCalled();
   });
 });

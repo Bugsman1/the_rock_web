@@ -153,6 +153,16 @@
     outline: 3px solid var(--focus-outline);
     outline-offset: 2px;
   }
+
+  input[type="number"] {
+    appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import messages from "@/messages/fr.json";
 import type { Project } from "@/lib/projects";
 import type { Role, User } from "@/lib/users";
-import { UserForm } from "./UsersScreen";
+import { UserForm } from "./UserForm";
 
 const { createUserMock, updateUserMock } = vi.hoisted(() => ({
   createUserMock: vi.fn(),

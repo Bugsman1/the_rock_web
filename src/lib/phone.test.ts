@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPhone, isSamePhone, isValidPhone, sanitizePhone } from "./phone";
+import { formatPhone, isSamePhone, isValidPhone, phoneToApi, sanitizePhone } from "./phone";
 
 describe("sanitizePhone", () => {
   it("keeps digits, spaces and a leading plus only", () => {
@@ -35,5 +35,17 @@ describe("formatPhone", () => {
     expect(formatPhone("22411830")).toBe("+222 22 41 18 30");
     expect(formatPhone("+22222411830")).toBe("+222 22 41 18 30");
     expect(formatPhone("+222 22 41 18 30")).toBe("+222 22 41 18 30");
+  });
+
+  it("leaves a missing or unusual number as it is", () => {
+    expect(formatPhone("")).toBe("");
+    expect(formatPhone("123")).toBe("123");
+  });
+});
+
+describe("phoneToApi", () => {
+  it("sends every number to the backend without spaces", () => {
+    expect(phoneToApi("22411830")).toBe("+22222411830");
+    expect(phoneToApi("+222 22 41 18 30")).toBe("+22222411830");
   });
 });

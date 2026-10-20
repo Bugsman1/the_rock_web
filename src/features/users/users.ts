@@ -2,7 +2,7 @@ import { z } from "zod";
 import { emptyRights, modules, rightsFromApi } from "@/lib/access";
 import type { Rights } from "@/lib/access";
 import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/client";
-import { formatPhone, isValidPhone } from "@/lib/phone";
+import { isValidPhone, phoneToApi } from "@/lib/phone";
 import { isRecordId } from "@/lib/projects";
 
 export const PASSWORD_MIN_LENGTH = 8;
@@ -83,7 +83,7 @@ export function userToApi(
   return {
     full_name: name.trim(),
     email: email.trim().toLowerCase(),
-    phone: formatPhone(phone),
+    phone: phoneToApi(phone),
     role: Number(role),
     project: projectScoped ? Number(project) : null,
     ...(password === "" ? {} : { password }),

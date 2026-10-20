@@ -1,4 +1,12 @@
-import { createContext, use, useCallback, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  startTransition,
+  use,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import type { ReactNode, RefObject } from "react";
 import { Icon } from "./Icon";
 
@@ -54,24 +62,33 @@ function Toast({ message, anchor }: { message: string; anchor: ToastAnchor }) {
   );
 }
 
-export function ToastProvider({ anchor, children }: { anchor: ToastAnchor; children: ReactNode }) {
+type ToastProviderProps = {
+  anchor: ToastAnchor;
+  busy?: boolean;
+  children: ReactNode;
+};
+
+export function ToastProvider({ anchor, busy = false, children }: ToastProviderProps) {
   const [shown, setShown] = useState<{ message: string; key: number }>();
-  const show = useCallback((message: string) => setShown({ message, key: Date.now() }), []);
+  const show = useCallback(
+    (message: string) => startTransition(() => setShown({ message, key: Date.now() })),
+    [],
+  );
 
   useEffect(() => {
-    if (shown === undefined) {
+    if (shown === undefined || busy) {
       return;
     }
 
     const timer = setTimeout(() => setShown(undefined), TOAST_DURATION_MS);
 
     return () => clearTimeout(timer);
-  }, [shown]);
+  }, [shown, busy]);
 
   return (
     <ToastContext value={show}>
       {children}
-      {shown === undefined ? null : (
+      {shown === undefined || busy ? null : (
         <Toast key={shown.key} message={shown.message} anchor={anchor} />
       )}
     </ToastContext>

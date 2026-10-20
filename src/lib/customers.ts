@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ApiSchema, BackendFieldErrors, FieldErrors } from "./api/client";
 import type { IsoTimestamp } from "./format";
-import { formatPhone, isSamePhone, isValidPhone } from "./phone";
+import { formatPhone, isSamePhone, isValidPhone, phoneToApi } from "./phone";
 
 export type Customer = {
   id: string;
@@ -68,13 +68,13 @@ export function customerFromApi(customer: ApiSchema<"Customer">): Customer {
   return {
     id: String(customer.id),
     name: customer.full_name,
-    phone: customer.phone,
+    phone: formatPhone(customer.phone),
     addedAt: customer.created_at,
   };
 }
 
 export function customerToApi({ name, phone }: CustomerValues) {
-  return { full_name: name.trim(), phone: formatPhone(phone) };
+  return { full_name: name.trim(), phone: phoneToApi(phone) };
 }
 
 export function customerErrorsFromApi(

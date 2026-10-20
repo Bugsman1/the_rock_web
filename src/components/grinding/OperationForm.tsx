@@ -2,27 +2,26 @@ import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
-import { Combobox } from "@/components/ui/Combobox";
+import { useToast } from "@/components/ui/Toast";
 import { DateField } from "@/components/ui/DateField";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { FormError } from "@/components/ui/FieldError";
-import { Icon } from "@/components/ui/Icon";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
 import { cn } from "@/lib/cn";
 import { combineDateAndTime } from "@/lib/datetime";
-import { formatCount, formatDateTime } from "@/lib/format";
-import {
-  BAG_STEP,
-  CAPACITY_BAGS,
-  CAPACITY_HOURS,
-  createNewOperationSchema,
-  estimatedEnd,
+import { formatCount } from "@/lib/format";
+import { BAG_STEP, CAPACITY_BAGS, createNewOperationSchema, estimatedEnd } from "@/lib/grinding";
+import type {
+  Machine,
+  MillingOperation,
+  NewOperationValues,
+  OperationShipment,
 } from "@/lib/grinding";
-import type { Machine, NewOperationValues, OperationShipment } from "@/lib/grinding";
-import { startOperation } from "@/lib/grindingApi";
+import { startOperation, updateOperation } from "@/lib/grindingApi";
 import type { Operator } from "@/lib/users";
+import { EstimatedEnd, ShipmentPicker } from "./OperationFields";
 
 const newOperationFields: readonly (keyof NewOperationValues)[] = [
   "shipmentNumber",
@@ -38,7 +37,8 @@ function isNewOperationField(value: string): value is keyof NewOperationValues {
   return newOperationFields.some((field) => field === value);
 }
 
-type NewOperationFormProps = {
+type OperationFormProps = {
+  operation?: MillingOperation;
   projectName: string;
   shipments: readonly OperationShipment[];
   idleMachines: readonly Machine[];
@@ -51,7 +51,8 @@ type NewOperationFormProps = {
   onCancel: () => void;
 };
 
-export function NewOperationForm({
+export function OperationForm({
+  operation,
   projectName,
   shipments,
   idleMachines,
@@ -62,10 +63,12 @@ export function NewOperationForm({
   defaultTime,
   onSaved,
   onCancel,
-}: NewOperationFormProps) {
+}: OperationFormProps) {
   const t = useTranslations("milling.operation");
   const milling = useTranslations("milling");
   const common = useTranslations("common");
+  const toasts = useTranslations("toasts");
+  const toast = useToast();
   const locale = useLocale();
   const count = (value: number) => formatCount(value, locale);
   const [failed, setFailed] = useState(false);
@@ -78,7 +81,6 @@ export function NewOperationForm({
 
   const initialShipment =
     defaultShipmentNumber === undefined ? undefined : findShipment(defaultShipmentNumber);
-  const [shipmentQuery, setShipmentQuery] = useState(initialShipment?.shipmentNumber ?? "");
 
   const schema = useMemo(
     () =>
@@ -113,11 +115,12 @@ export function NewOperationForm({
           defaultMachine !== undefined && findMachineNumber(defaultMachine) !== undefined
             ? String(defaultMachine)
             : "",
-        bags: Number.NaN,
+        bags: operation?.bags ?? Number.NaN,
         startDate: defaultDate,
         startTime: defaultTime,
-        operatorId: "",
-        notes: "",
+        operatorId:
+          operators.find((operator) => operator.name === operation?.operatorName)?.id ?? "",
+        notes: operation?.notes ?? "",
       },
     });
 
@@ -140,16 +143,6 @@ export function NewOperationForm({
   const estimate =
     startedAt === undefined || bagCount === 0 ? undefined : estimatedEnd(startedAt, bagCount);
 
-  const shipmentOptions = useMemo(
-    () =>
-      shipments.map((item) => ({
-        value: item.shipmentNumber,
-        label: item.shipmentNumber,
-        hint: item.client,
-      })),
-    [shipments],
-  );
-
   async function onSubmit(values: NewOperationValues) {
     setFailed(false);
 
@@ -162,13 +155,14 @@ export function NewOperationForm({
       return;
     }
 
-    const result = await startOperation(values, {
-      shipmentId: target.id,
-      grinderId: machine.grinderId,
-      startedAt,
-    });
+    const operationTarget = { shipmentId: target.id, grinderId: machine.grinderId, startedAt };
+    const result =
+      operation === undefined
+        ? await startOperation(values, operationTarget)
+        : await updateOperation(operation.id, values, operationTarget);
 
     if (result.ok) {
+      toast(operation === undefined ? toasts("grindingStarted") : toasts("grindingUpdated"));
       setSaved(true);
       onSaved();
       return;
@@ -187,33 +181,11 @@ export function NewOperationForm({
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <div className="grid gap-x-4 gap-y-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <Controller
+          <ShipmentPicker
             control={control}
-            name="shipmentNumber"
-            render={({ field }) => (
-              <Combobox
-                id="operation-shipment"
-                label={t("shipment")}
-                required
-                placeholder={t("shipmentSearch")}
-                options={shipmentOptions}
-                value={shipmentQuery}
-                onChange={(text) => {
-                  setShipmentQuery(text);
-                  if (field.value !== "") {
-                    field.onChange("");
-                  }
-                }}
-                onSelect={(option) => {
-                  field.onChange(option.value);
-                  setShipmentQuery(option.label);
-                }}
-                onBlur={field.onBlur}
-                name={field.name}
-                ref={field.ref}
-                error={errors.shipmentNumber?.message}
-              />
-            )}
+            shipments={shipments}
+            initialQuery={initialShipment?.shipmentNumber ?? ""}
+            error={errors.shipmentNumber?.message}
           />
         </div>
 
@@ -317,30 +289,14 @@ export function NewOperationForm({
         </div>
       </div>
 
-      <div className="rounded-field bg-brand-50 flex flex-col gap-1 px-4 py-3">
-        <div aria-live="polite" className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <Icon name="clock" className="text-brand-700" />
-          <span className="text-ink-label text-[14px] font-semibold">{t("estimatedEnd")}</span>
-          <span
-            className={cn(
-              "text-[16px] font-bold",
-              estimate === undefined ? "text-ink-muted" : "text-brand-700",
-            )}
-          >
-            {estimate === undefined ? t("estimatedEndPending") : formatDateTime(estimate, locale)}
-          </span>
-        </div>
-        <p className="text-ink-muted text-[13px] font-semibold">
-          {t("capacity", { bags: count(CAPACITY_BAGS), hours: count(CAPACITY_HOURS) })}
-        </p>
-      </div>
+      <EstimatedEnd estimate={estimate} />
 
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
         submitting={formState.isSubmitting || saved}
-        submitIcon="player-play"
-        submitLabel={t("submit")}
+        submitIcon={operation === undefined ? "player-play" : "circle-check"}
+        submitLabel={operation === undefined ? t("submit") : t("saveChanges")}
         savingLabel={t("saving")}
         cancelLabel={common("cancel")}
         onCancel={onCancel}

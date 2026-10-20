@@ -98,6 +98,10 @@ describe("canOpen", () => {
     expect(canOpen(viewer, "/shipments/new")).toBe(false);
     expect(canOpen(viewer, "/settings/projects/2/edit")).toBe(false);
     expect(canOpen(writer, "/shipments/new")).toBe(true);
+    expect(canOpen(viewer, "/settlements")).toBe(true);
+    expect(canOpen(viewer, "/settlements/4")).toBe(true);
+    expect(canOpen(viewer, "/settlements/new")).toBe(false);
+    expect(canOpen(writer, "/settlements/new")).toBe(true);
     expect(canOpen(writer, "/settings/projects/2/edit")).toBe(true);
     expect(canOpen(writer, "/settings/projects/new")).toBe(false);
   });

@@ -1,5 +1,6 @@
 import { apiClient, saveOutcome } from "@/lib/api/client";
 import type { BackendFieldErrors, FieldErrors, SaveResult } from "@/lib/api/client";
+import { toDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import { machinesFromGrinders } from "@/lib/grinding";
 import type { MillingOperation } from "@/lib/grinding";
@@ -8,7 +9,7 @@ import { isInService } from "@/lib/projects";
 import { getGrinders, getProjects } from "@/lib/projectsApi";
 import { getShipments } from "@/lib/shipmentsApi";
 import { millingShipments } from "./milling";
-import type { EndMillingValues } from "./milling";
+import type { EndMillingValues, MercuryValues } from "./milling";
 
 export async function getMillingData() {
   const [projects, grinders, shipments, operations] = await Promise.all([
@@ -32,14 +33,22 @@ function endErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof EndMill
   };
 }
 
-function mercuryErrorsFromApi(errors: BackendFieldErrors): FieldErrors<"mercury"> {
-  return errors.mercury_added === undefined ? {} : { mercury: errors.mercury_added };
+type MercuryRefusal = keyof MercuryValues | "closed";
+
+function mercuryErrorsFromApi(errors: BackendFieldErrors): FieldErrors<MercuryRefusal> {
+  return {
+    ...(errors.mercury_quantity === undefined ? {} : { quantity: errors.mercury_quantity }),
+    ...(errors.mercury_added === undefined ? {} : { closed: errors.mercury_added }),
+  };
 }
 
-export async function markMercuryAdded(operationId: string): Promise<SaveResult<"mercury">> {
+export async function markMercuryAdded(
+  operationId: string,
+  values: MercuryValues,
+): Promise<SaveResult<MercuryRefusal>> {
   const { response, error } = await apiClient.PATCH("/api/v1/grinding-operations/{id}/", {
     params: { path: { id: Number(operationId) } },
-    body: { mercury_added: true },
+    body: { mercury_added: true, mercury_quantity: toDecimal(values.quantity) },
   });
 
   return saveOutcome(response, error, mercuryErrorsFromApi);

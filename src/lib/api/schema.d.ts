@@ -505,7 +505,8 @@ export interface paths {
         };
         /**
          * @description Read-only: entries are written on creation (the initial quantity), by the increase /
-         *     decrease actions of a resource and by refining losses.
+         *     decrease actions of a resource, and by the mercury grinding operations take and refining
+         *     operations return.
          */
         get: operations["v1_resource_history_list"];
         put?: never;
@@ -525,7 +526,8 @@ export interface paths {
         };
         /**
          * @description Read-only: entries are written on creation (the initial quantity), by the increase /
-         *     decrease actions of a resource and by refining losses.
+         *     decrease actions of a resource, and by the mercury grinding operations take and refining
+         *     operations return.
          */
         get: operations["v1_resource_history_retrieve"];
         put?: never;
@@ -778,6 +780,88 @@ export interface paths {
          *     for every create, update and destroy (soft delete) action.
          */
         patch: operations["v1_roles_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/settlements/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
+         *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
+         *     Deleting a settlement (soft) frees its shipments for another one.
+         */
+        get: operations["v1_settlements_list"];
+        put?: never;
+        /**
+         * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
+         *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
+         *     Deleting a settlement (soft) frees its shipments for another one.
+         */
+        post: operations["v1_settlements_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
+         *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
+         *     Deleting a settlement (soft) frees its shipments for another one.
+         */
+        get: operations["v1_settlements_retrieve"];
+        /**
+         * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
+         *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
+         *     Deleting a settlement (soft) frees its shipments for another one.
+         */
+        put: operations["v1_settlements_update"];
+        post?: never;
+        /**
+         * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
+         *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
+         *     Deleting a settlement (soft) frees its shipments for another one.
+         */
+        delete: operations["v1_settlements_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
+         *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
+         *     Deleting a settlement (soft) frees its shipments for another one.
+         */
+        patch: operations["v1_settlements_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/settlements/{id}/pdf/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The settlement's invoice, as a PDF to download; it can be downloaded again at any
+         *     time.
+         */
+        get: operations["v1_settlements_pdf_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/shipment-payments/": {
@@ -1056,9 +1140,11 @@ export interface components {
          * @description * `initial` - Initial quantity
          *     * `increase` - Increase
          *     * `decrease` - Decrease
+         *     * `taken` - Taken by grinding
+         *     * `returned` - Returned by refining
          * @enum {string}
          */
-        ChangeTypeEnum: "initial" | "increase" | "decrease";
+        ChangeTypeEnum: "initial" | "increase" | "decrease" | "taken" | "returned";
         CustomTokenObtainPair: {
             email: $Write<string>;
             password: $Write<string>;
@@ -1092,6 +1178,8 @@ export interface components {
         };
         GrindingOperation: {
             id: $Read<number>;
+            /** Grinding number */
+            sequence: $Read<number>;
             shipment: $Write<number>;
             shipment_number: $Read<string>;
             customer_name: $Read<string>;
@@ -1116,6 +1204,11 @@ export interface components {
             /** Format: date-time */
             mercury_added_at: $Read<string | null>;
             mercury_added_by_name: $Read<string>;
+            /**
+             * Mercury quantity (g)
+             * Format: decimal
+             */
+            mercury_quantity?: string;
             /** Format: decimal */
             grinding_cost?: string;
             notes?: string;
@@ -1301,6 +1394,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["RolePermission"][];
         };
+        PaginatedSettlementList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Settlement"][];
+        };
         PaginatedShipmentList: {
             /** @example 123 */
             count: number;
@@ -1375,6 +1483,8 @@ export interface components {
         };
         PatchedGrindingOperation: {
             id?: $Read<number>;
+            /** Grinding number */
+            sequence?: $Read<number>;
             shipment?: $Write<number>;
             shipment_number?: $Read<string>;
             customer_name?: $Read<string>;
@@ -1399,6 +1509,11 @@ export interface components {
             /** Format: date-time */
             mercury_added_at?: $Read<string | null>;
             mercury_added_by_name?: $Read<string>;
+            /**
+             * Mercury quantity (g)
+             * Format: decimal
+             */
+            mercury_quantity?: string;
             /** Format: decimal */
             grinding_cost?: string;
             notes?: string;
@@ -1428,6 +1543,7 @@ export interface components {
         PatchedRefiningOperation: {
             id?: $Read<number>;
             grinding_operation?: number;
+            grinding_sequence?: $Read<number>;
             shipment_number?: $Read<string>;
             customer_name?: $Read<string>;
             grinder_code?: $Read<string>;
@@ -1439,12 +1555,12 @@ export interface components {
             /** Format: date-time */
             refining_date?: string;
             /**
-             * Weight before refining (kg)
+             * Weight before refining (g)
              * Format: decimal
              */
             weight_before?: string;
             /**
-             * Weight after refining (kg)
+             * Weight after refining (g)
              * Format: decimal
              */
             weight_after?: string;
@@ -1521,6 +1637,37 @@ export interface components {
             can_edit?: boolean;
             can_delete?: boolean;
             can_approve?: boolean;
+        };
+        PatchedSettlement: {
+            id?: $Read<number>;
+            number?: $Read<string>;
+            customer?: $Write<number>;
+            customer_name?: $Read<string>;
+            customer_phone?: $Read<string>;
+            project?: $Read<number>;
+            project_name?: $Read<string>;
+            shipments?: number[];
+            shipment_numbers?: $Read<string[]>;
+            /** Format: decimal */
+            grinding_cost?: string;
+            /** Format: decimal */
+            refining_cost_per_gram?: string;
+            /**
+             * Extra debt
+             * Format: decimal
+             */
+            debt?: string;
+            /** Extra debt description */
+            debt_description?: string;
+            totals?: $Read<components["schemas"]["SettlementTotals"]>;
+            created_by_name?: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
         };
         PatchedShipment: {
             id?: $Read<number>;
@@ -1626,6 +1773,7 @@ export interface components {
         RefiningOperation: {
             id: $Read<number>;
             grinding_operation: number;
+            grinding_sequence: $Read<number>;
             shipment_number: $Read<string>;
             customer_name: $Read<string>;
             grinder_code: $Read<string>;
@@ -1637,12 +1785,12 @@ export interface components {
             /** Format: date-time */
             refining_date?: string;
             /**
-             * Weight before refining (kg)
+             * Weight before refining (g)
              * Format: decimal
              */
-            weight_before: string;
+            weight_before?: string;
             /**
-             * Weight after refining (kg)
+             * Weight after refining (g)
              * Format: decimal
              */
             weight_after: string;
@@ -1703,6 +1851,10 @@ export interface components {
             refining_operation?: number | null;
             note?: string;
         };
+        /**
+         * @description A stock line with the shipment, grinding number and machine it moved for (null on a
+         *     line that is not linked to an operation, such as a manual increase).
+         */
         ResourceHistory: {
             id: $Read<number>;
             resource: $Read<number>;
@@ -1715,8 +1867,12 @@ export interface components {
             quantity_before: $Read<string>;
             /** Format: decimal */
             quantity_after: $Read<string>;
+            shipment_number: $Read<string | null>;
+            grinding_operation: $Read<number | null>;
+            grinding_sequence: $Read<number | null>;
+            grinder_code: $Read<string | null>;
             refining_operation: $Read<number | null>;
-            shipment_number: $Read<string>;
+            loss: $Read<string | null>;
             note: $Read<string>;
             created_by_name: $Read<string>;
             /**
@@ -1757,6 +1913,56 @@ export interface components {
             can_edit?: boolean;
             can_delete?: boolean;
             can_approve?: boolean;
+        };
+        Settlement: {
+            id: $Read<number>;
+            number: $Read<string>;
+            customer: $Write<number>;
+            customer_name: $Read<string>;
+            customer_phone: $Read<string>;
+            project: $Read<number>;
+            project_name: $Read<string>;
+            shipments?: number[];
+            shipment_numbers: $Read<string[]>;
+            /** Format: decimal */
+            grinding_cost?: string;
+            /** Format: decimal */
+            refining_cost_per_gram?: string;
+            /**
+             * Extra debt
+             * Format: decimal
+             */
+            debt?: string;
+            /** Extra debt description */
+            debt_description?: string;
+            totals: $Read<components["schemas"]["SettlementTotals"]>;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /** @description What the settlement adds up to, as its invoice prints it. */
+        SettlementTotals: {
+            /** Format: decimal */
+            bags_transport: string;
+            /** Format: decimal */
+            passengers_transport: string;
+            /** Format: decimal */
+            gold: string;
+            /** Format: decimal */
+            debt: string;
+            /** Format: decimal */
+            grinding_cost: string;
+            /** Format: decimal */
+            refining_cost: string;
+            /** Format: decimal */
+            extra_debt: string;
+            /** Format: decimal */
+            grand_total: string;
         };
         Shipment: {
             id: $Read<number>;
@@ -2783,8 +2989,11 @@ export interface operations {
                  * @description * `initial` - Initial quantity
                  *     * `increase` - Increase
                  *     * `decrease` - Decrease
+                 *     * `taken` - Taken by grinding
+                 *     * `returned` - Returned by refining
                  */
-                change_type?: "decrease" | "increase" | "initial";
+                change_type?: "decrease" | "increase" | "initial" | "returned" | "taken";
+                grinding_operation?: number;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -3339,6 +3548,187 @@ export interface operations {
             };
         };
     };
+    v1_settlements_list: {
+        parameters: {
+            query?: {
+                customer?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                project?: number;
+                /** @description A search term. */
+                search?: string;
+                shipments?: number[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedSettlementList"];
+                };
+            };
+        };
+    };
+    v1_settlements_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Settlement"];
+                "application/x-www-form-urlencoded": components["schemas"]["Settlement"];
+                "multipart/form-data": components["schemas"]["Settlement"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settlement"];
+                };
+            };
+        };
+    };
+    v1_settlements_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this settlement. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settlement"];
+                };
+            };
+        };
+    };
+    v1_settlements_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this settlement. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Settlement"];
+                "application/x-www-form-urlencoded": components["schemas"]["Settlement"];
+                "multipart/form-data": components["schemas"]["Settlement"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settlement"];
+                };
+            };
+        };
+    };
+    v1_settlements_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this settlement. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_settlements_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this settlement. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedSettlement"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedSettlement"];
+                "multipart/form-data": components["schemas"]["PatchedSettlement"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settlement"];
+                };
+            };
+        };
+    };
+    v1_settlements_pdf_retrieve: {
+        parameters: {
+            query?: {
+                format?: "json" | "pdf";
+                /** @description Language of the invoice (`ar` by default; the letterhead stays Arabic). */
+                lang?: "ar" | "fr";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this settlement. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+        };
+    };
     v1_shipment_payments_list: {
         parameters: {
             query?: {
@@ -3510,9 +3900,10 @@ export interface operations {
                 /**
                  * @description * `pending` - Pending
                  *     * `grinding` - In Grinding
+                 *     * `refining` - In Refining
                  *     * `completed` - Completed
                  */
-                status?: "completed" | "grinding" | "pending";
+                status?: "completed" | "grinding" | "pending" | "refining";
                 /**
                  * @description * `truck` - Truck
                  *     * `hilux` - Hilux

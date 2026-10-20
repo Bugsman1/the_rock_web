@@ -9,7 +9,8 @@ import type { Module } from "@/lib/access";
 import { saveSession } from "@/lib/api/session";
 import messages from "@/messages/ar.json";
 
-import { routes, skeletonShapeFor } from "./router";
+import { routes } from "./router";
+import { skeletonShapeFor } from "./PageStates";
 
 function account(name: string) {
   return messages.shell.userMenu.replace("{name}", name);
@@ -114,6 +115,18 @@ describe("routes", () => {
       await screen.findByRole("heading", { name: messages.auth.login.title }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/ar/login");
+  });
+
+  it("keeps the session and says to check the connection when the server cannot be reached", async () => {
+    signIn();
+    server.use(http.get(ME_URL, () => HttpResponse.error()));
+    const router = openAt("/ar/dashboard");
+
+    expect(
+      await screen.findByRole("heading", { name: messages.errors.connection.title }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(messages.errors.connection.description)).toBeVisible();
+    expect(router.state.location.pathname).toBe("/ar/dashboard");
   });
 
   it("shows a not-found page inside the app when a page's data is missing", async () => {
@@ -245,6 +258,10 @@ describe("skeletonShapeFor", () => {
   it("draws forms, tables, details and cards like the page that is coming", () => {
     expect(skeletonShapeFor("/ar/shipments/new")).toBe("form");
     expect(skeletonShapeFor("/ar/shipments/52")).toBe("detail");
+    expect(skeletonShapeFor("/ar/settlements")).toBe("cards");
+    expect(skeletonShapeFor("/ar/settlements/projects/3")).toBe("table");
+    expect(skeletonShapeFor("/ar/settlements/new")).toBe("form");
+    expect(skeletonShapeFor("/ar/settlements/4")).toBe("detail");
     expect(skeletonShapeFor("/ar/customers/7")).toBe("table");
     expect(skeletonShapeFor("/fr/settings/projects/3/machines/9")).toBe("form");
     expect(skeletonShapeFor("/ar/settings/projects/new")).toBe("form");

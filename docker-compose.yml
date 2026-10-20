@@ -1,0 +1,25 @@
+services:
+  frontend:
+    build: .
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+      BACKEND_URL: ${BACKEND_URL:-web:8000}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - backend
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  backend:
+    external: true
+    name: ${BACKEND_NETWORK:-tayea_mills_default}

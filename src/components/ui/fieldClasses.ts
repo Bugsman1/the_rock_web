@@ -5,6 +5,7 @@ export function fieldClasses(invalid: boolean): string {
     "peer rounded-field bg-surface text-ink h-12 w-full border-[1.5px] text-start text-[15px]",
     "placeholder:text-ink-faint focus:outline-none",
     "focus:border-brand-700 focus:shadow-focus",
+    "read-only:bg-surface-hover read-only:text-ink-label",
     invalid ? "border-danger-700" : "border-line",
   );
 }

@@ -4,7 +4,7 @@ import { MAX_PAGE_SIZE, PAGE_SIZE, toPage } from "./api/pagination";
 import type { Page } from "./api/pagination";
 import { customerErrorsFromApi, customerFromApi, customerToApi, isPhoneTaken } from "./customers";
 import type { Customer, CustomerValues } from "./customers";
-import { formatPhone } from "./phone";
+import { formatPhone, phoneToApi } from "./phone";
 
 const NUMERIC_ID = /^\d+$/;
 
@@ -45,12 +45,22 @@ export async function getCustomer(id: string): Promise<Customer | undefined> {
   return result.response.status === 404 ? undefined : customerFromApi(unwrap(result));
 }
 
-export async function getCustomersWithPhone(phone: string): Promise<readonly Customer[]> {
+async function searchCustomers(search: string): Promise<readonly Customer[]> {
   const result = await apiClient.GET("/api/v1/customers/", {
-    params: { query: { search: formatPhone(phone), page_size: MAX_PAGE_SIZE } },
+    params: { query: { search, page_size: MAX_PAGE_SIZE } },
   });
 
   return unwrap(result).results.map(customerFromApi);
+}
+
+export async function getCustomersWithPhone(phone: string): Promise<readonly Customer[]> {
+  const [saved, savedWithSpaces] = await Promise.all([
+    searchCustomers(phoneToApi(phone)),
+    searchCustomers(formatPhone(phone)),
+  ]);
+  const found = new Map([...saved, ...savedWithSpaces].map((customer) => [customer.id, customer]));
+
+  return [...found.values()];
 }
 
 async function phoneTakenError(

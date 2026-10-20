@@ -75,11 +75,11 @@ describe("createUserSchema", () => {
 });
 
 describe("userToApi", () => {
-  it("sends the full name, a lowercase email, the standard phone, role and project ids", () => {
+  it("sends the full name, a lowercase email, the phone without spaces, role and project ids", () => {
     expect(userToApi(input, true)).toEqual({
       full_name: "Aicha Mint Mohamed",
       email: "aicha@mills.mr",
-      phone: "+222 22 41 18 30",
+      phone: "+22222411830",
       role: 2,
       project: 3,
       password: "secret123",

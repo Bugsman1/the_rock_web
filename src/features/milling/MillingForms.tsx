@@ -3,21 +3,26 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { useRevalidator } from "react-router";
 import { useTranslations } from "use-intl";
+import { useToast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
 import { DateField } from "@/components/ui/DateField";
-import { Drawer, DrawerActions } from "@/components/ui/Drawer";
-import { FieldError, FormError } from "@/components/ui/FieldError";
+import { OperationForm } from "@/components/grinding/OperationForm";
+import { Drawer, DrawerActions, useRouteDrawer } from "@/components/ui/Drawer";
+import { FormError } from "@/components/ui/FieldError";
 import { Icon } from "@/components/ui/Icon";
 import { TextArea, TimeField } from "@/components/ui/TextField";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
-import { cn } from "@/lib/cn";
-import { combineDateAndTime } from "@/lib/datetime";
-import type { MillingOperation } from "@/lib/grinding";
-import { startRefiningHref } from "@/lib/routes";
-import { createEndMillingSchema } from "./milling";
+import { combineDateAndTime, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
+import { idleMachines, machinesOfProject } from "@/lib/grinding";
+import type { Machine, MillingOperation } from "@/lib/grinding";
+import type { Project } from "@/lib/projects";
+import { millingMachineHref, startRefiningHref } from "@/lib/routes";
+import type { Operator } from "@/lib/users";
+import { createEndMillingSchema, millingQueue, operationShipments } from "./milling";
+import type { MillingShipment } from "./milling";
 import type { EndMillingValues } from "./milling";
-import { endOperation, markMercuryAdded } from "./millingApi";
+import { endOperation } from "./millingApi";
 
 const endMillingFields: readonly (keyof EndMillingValues)[] = ["endDate", "endTime", "notes"];
 
@@ -42,6 +47,8 @@ function EndMillingForm({
 }: EndMillingFormProps) {
   const t = useTranslations("milling.end");
   const common = useTranslations("common");
+  const toasts = useTranslations("toasts");
+  const toast = useToast();
   const [failed, setFailed] = useState(false);
   const [saved, setSaved] = useState(false);
   const startedAt = operation.startedAt;
@@ -84,6 +91,7 @@ function EndMillingForm({
     const result = await endOperation(operation, values, endedAt);
 
     if (result.ok) {
+      toast(toasts("grindingFinished"));
       setSaved(true);
       onSaved();
       return;
@@ -192,91 +200,47 @@ export function EndMillingAction({
   );
 }
 
-const mercuryPillClasses =
-  "inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-2.5 py-1 text-[12px] font-bold";
+type EditOperationDrawerProps = {
+  open: boolean;
+  project: Project;
+  operation: MillingOperation;
+  data: {
+    machines: readonly Machine[];
+    shipments: readonly MillingShipment[];
+    operations: readonly MillingOperation[];
+  };
+  operators: readonly Operator[];
+};
 
-const mercuryPendingClasses = cn(
-  mercuryPillClasses,
-  "border-warning-300 bg-warning-50 text-warning-700",
-);
-
-const mercuryChoiceClasses =
-  "rounded-action inline-flex h-8 cursor-pointer items-center px-3 text-[13px] font-bold disabled:cursor-default";
-
-export function MercuryStatus({ operation }: { operation: MillingOperation }) {
-  const t = useTranslations("milling.mercury");
+export function EditOperationDrawer({
+  open,
+  project,
+  operation,
+  data,
+  operators,
+}: EditOperationDrawerProps) {
+  const t = useTranslations("milling.operation");
   const common = useTranslations("common");
-  const canMark = useCan()("grinding", "edit");
-  const revalidator = useRevalidator();
-  const [confirming, setConfirming] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string>();
-
-  async function confirm() {
-    setSaving(true);
-    setError(undefined);
-
-    const result = await markMercuryAdded(operation.id);
-
-    setSaving(false);
-
-    if (result.ok) {
-      setConfirming(false);
-      void revalidator.revalidate();
-      return;
-    }
-
-    setError(result.fieldErrors.mercury ?? common("saveFailed"));
-  }
-
-  if (operation.mercury !== undefined) {
-    return (
-      <span className={cn(mercuryPillClasses, "border-success-300 bg-success-50 text-success-700")}>
-        <Icon name="circle-check" className="h-4 w-4" />
-        {t("added")}
-      </span>
-    );
-  }
-
-  if (!canMark) {
-    return <span className={mercuryPendingClasses}>{t("pending")}</span>;
-  }
-
-  if (!confirming) {
-    return (
-      <button
-        type="button"
-        title={t("markHint")}
-        onClick={() => setConfirming(true)}
-        className={cn(mercuryPendingClasses, "hover:bg-warning-100 cursor-pointer")}
-      >
-        {t("pending")}
-      </button>
-    );
-  }
+  const { close } = useRouteDrawer(millingMachineHref(project.id, operation.machine));
+  const others = data.operations.filter((other) => other.id !== operation.id);
+  const startedAt = new Date(operation.startedAt);
 
   return (
-    <div role="group" aria-label={t("confirm")} className="flex flex-col items-start gap-2">
-      <p className="text-ink-label text-[13px] font-semibold">{t("confirm")}</p>
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={saving}
-          onClick={() => void confirm()}
-          className={cn(mercuryChoiceClasses, "bg-brand-700 text-ink-inverted hover:bg-brand-800")}
-        >
-          {saving ? t("saving") : t("confirmYes")}
-        </button>
-        <button
-          type="button"
-          disabled={saving}
-          onClick={() => setConfirming(false)}
-          className={cn(mercuryChoiceClasses, "text-ink-label hover:bg-surface-hover")}
-        >
-          {common("cancel")}
-        </button>
-      </div>
-      <FieldError id={`mercury-error-${operation.id}`} message={error} />
-    </div>
+    <Drawer open={open} title={t("editTitle")} closeLabel={common("close")} onClose={close}>
+      <OperationForm
+        key={operation.id}
+        operation={operation}
+        projectName={project.name}
+        shipments={operationShipments(millingQueue(data.shipments, others, project.id), others)}
+        idleMachines={idleMachines(machinesOfProject(data.machines, project.id), others)}
+        operators={operators}
+        defaultShipmentNumber={operation.shipmentNumber}
+        defaultMachine={operation.machine}
+        defaultDate={todayAsInputValue(startedAt)}
+        defaultTime={nowAsTimeValue(startedAt)}
+        onCancel={close}
+        onSaved={close}
+      />
+    </Drawer>
   );
 }

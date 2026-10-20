@@ -4,6 +4,7 @@ import { refiningOperationFromApi } from "./refining";
 const apiOperation = {
   id: 5,
   grinding_operation: 11,
+  grinding_sequence: 1,
   shipment_number: "SH-0004",
   customer_name: "Sidi",
   grinder_code: "P3-2",

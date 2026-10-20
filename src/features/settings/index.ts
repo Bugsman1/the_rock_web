@@ -1,13 +1,7 @@
-export {
-  GrinderFormScreen,
-  grinderFormLoader,
-  ProjectFormScreen,
-  projectFormLoader,
-  projectLoader,
-  ProjectSettingsScreen,
-  ProjectsScreen,
-  projectsLoader,
-} from "./ProjectScreens";
+export { ProjectsScreen, projectsLoader } from "./ProjectScreens";
+export { projectLoader, ProjectSettingsScreen } from "./ProjectSettingsScreen";
+export { ProjectFormScreen, projectFormLoader } from "./ProjectForm";
+export { GrinderFormScreen, grinderFormLoader } from "./GrinderForm";
 export {
   LanguageScreen,
   ProfileScreen,

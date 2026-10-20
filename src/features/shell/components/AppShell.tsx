@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { useNavigation, useRevalidator } from "react-router";
 import { useTranslations } from "use-intl";
+import { ConnectionBanner } from "@/components/ui/ConnectionBanner";
 import { ToastProvider } from "@/components/ui/Toast";
 import type { Access } from "@/lib/access";
 import { Sidebar } from "./Sidebar";
@@ -18,10 +20,14 @@ export function AppShell({ access, userName, roleName, children }: AppShellProps
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
+  const navigation = useNavigation();
+  const revalidator = useRevalidator();
+  const loading = navigation.state !== "idle" || revalidator.state !== "idle";
 
   return (
-    <ToastProvider anchor={mainRef}>
+    <ToastProvider anchor={mainRef} busy={loading}>
       <div className="bg-surface-page flex h-dvh flex-col overflow-hidden">
+        <ConnectionBanner />
         <TopBar
           roleName={roleName}
           userName={userName}

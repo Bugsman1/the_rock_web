@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
+import { useToast } from "@/components/ui/Toast";
 import { DateField } from "@/components/ui/DateField";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { FieldError, FormError } from "@/components/ui/FieldError";
@@ -55,10 +56,14 @@ export function RefiningForm({
 }: RefiningFormProps) {
   const t = useTranslations("refining");
   const common = useTranslations("common");
+  const toasts = useTranslations("toasts");
+  const toast = useToast();
   const locale = useLocale();
   const [failed, setFailed] = useState(false);
   const [saved, setSaved] = useState(false);
   const [lossError, setLossError] = useState<string>();
+  const mercuryGrams = operation.mercury?.quantity ?? 0;
+  const weightBeforeFromMercury = mercuryGrams > 0;
 
   const schema = useMemo(
     () =>
@@ -81,7 +86,7 @@ export function RefiningForm({
       workerId: "",
       date: defaultDate,
       time: defaultTime,
-      weightBefore: Number.NaN,
+      weightBefore: weightBeforeFromMercury ? mercuryGrams : Number.NaN,
       weightAfter: Number.NaN,
       goldWithMaterial: Number.NaN,
       goldWithoutMaterial: Number.NaN,
@@ -114,6 +119,7 @@ export function RefiningForm({
     });
 
     if (result.ok) {
+      toast(toasts("refiningSaved"));
       setSaved(true);
       onSaved();
       return;
@@ -130,7 +136,7 @@ export function RefiningForm({
     setFailed(result.failed);
   }
 
-  function weightField(name: WeightFieldName, label: string, required: boolean) {
+  function weightField(name: WeightFieldName, label: string, readOnly = false) {
     return (
       <TextField
         id={`refining-${name}`}
@@ -139,7 +145,8 @@ export function RefiningForm({
         step="any"
         inputMode="decimal"
         label={label}
-        required={required}
+        required
+        readOnly={readOnly}
         error={errors[name]?.message}
         {...register(name, { valueAsNumber: true })}
       />
@@ -208,11 +215,11 @@ export function RefiningForm({
           )}
         />
 
-        {weightField("weightBefore", t("fields.weightBefore"), true)}
-        {weightField("weightAfter", t("fields.weightAfter"), true)}
+        {weightField("weightBefore", t("fields.weightBefore"), weightBeforeFromMercury)}
+        {weightField("weightAfter", t("fields.weightAfter"))}
 
-        {weightField("goldWithMaterial", t("fields.goldWithMaterial"), true)}
-        {weightField("goldWithoutMaterial", t("fields.goldWithoutMaterial"), true)}
+        {weightField("goldWithMaterial", t("fields.goldWithMaterial"))}
+        {weightField("goldWithoutMaterial", t("fields.goldWithoutMaterial"))}
         {loss === 0 ? (
           <FieldError id="refining-loss-error" message={lossError} />
         ) : (

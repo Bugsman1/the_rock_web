@@ -124,6 +124,42 @@ export function DrawerActions({
   );
 }
 
+type DrawerDeleteActionsProps = {
+  deleting: boolean;
+  confirmLabel: string;
+  deletingLabel: string;
+  cancelLabel: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
+
+export function DrawerDeleteActions({
+  deleting,
+  confirmLabel,
+  deletingLabel,
+  cancelLabel,
+  onConfirm,
+  onCancel,
+}: DrawerDeleteActionsProps) {
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      {deleting ? (
+        <div className="w-50">
+          <LoadingDots label={deletingLabel} />
+        </div>
+      ) : (
+        <Button variant="danger" width="auto" onClick={onConfirm}>
+          <Icon name="trash" />
+          {confirmLabel}
+        </Button>
+      )}
+      <Button variant="secondary" width="auto" onClick={onCancel} disabled={deleting}>
+        {cancelLabel}
+      </Button>
+    </div>
+  );
+}
+
 export function useRouteDrawer(closeHref: string) {
   const replace = useReplace();
 

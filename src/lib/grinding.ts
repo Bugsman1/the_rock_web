@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ApiSchema } from "./api/client";
 import { addHours, isIsoDate, isTimeValue } from "./datetime";
+import { fromDecimal } from "./format";
 import type { IsoTimestamp } from "./format";
 import { isInService, parseGrinderCode } from "./projects";
 import type { Grinder, ProjectId } from "./projects";
@@ -34,6 +35,7 @@ export type MillingOperation = {
 type MercuryAdded = {
   addedAt: IsoTimestamp;
   byName: string;
+  quantity: number;
 };
 
 export type OperationShipment = {
@@ -160,7 +162,13 @@ export function operationFromApi(
       ...(endedAt === undefined ? {} : { endedAt }),
       ...(mercuryAddedAt === undefined
         ? {}
-        : { mercury: { addedAt: mercuryAddedAt, byName: operation.mercury_added_by_name } }),
+        : {
+            mercury: {
+              addedAt: mercuryAddedAt,
+              byName: operation.mercury_added_by_name,
+              quantity: fromDecimal(operation.mercury_quantity ?? "0"),
+            },
+          }),
     },
   ];
 }

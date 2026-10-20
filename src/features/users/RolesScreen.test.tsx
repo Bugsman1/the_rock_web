@@ -7,7 +7,8 @@ import { noAccess, rightsFromApi } from "@/lib/access";
 import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
-import { RoleForm, RolesScreen, rolesLoader } from "./RolesScreen";
+import { RolesScreen, rolesLoader } from "./RolesScreen";
+import { RoleForm } from "./RoleForm";
 import { newRoleValues, roleValuesOf } from "./users";
 import type { RoleDetails } from "./users";
 

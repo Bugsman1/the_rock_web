@@ -28,7 +28,13 @@
     "searchList": "ابحث في القائمة",
     "noMatch": "لا توجد نتائج لهذا البحث.",
     "searchIn": "ابحث في {list}",
-    "total": "المجموع"
+    "total": "المجموع",
+    "pdf": {
+      "previewTitle": "معاينة الفاتورة",
+      "print": "طباعة",
+      "download": "تنزيل"
+    },
+    "connectionLost": "انقطع الاتصال. لن تُحفظ أي تغييرات حتى يعود الاتصال."
   },
   "auth": {
     "login": {
@@ -371,7 +377,6 @@
       },
       "paid": "المدفوع",
       "saveChanges": "حفظ التعديلات",
-      "changesSaved": "تم حفظ التعديلات.",
       "debt": "الدين",
       "debtNotes": "سبب الدين"
     },
@@ -432,10 +437,7 @@
       "open": "فاتورة الشحنة {number} (PDF)",
       "languages": "لغة فاتورة الشحنة {number}",
       "ar": "عربية",
-      "fr": "فرنسية",
-      "previewTitle": "معاينة الفاتورة",
-      "print": "طباعة",
-      "download": "تنزيل"
+      "fr": "فرنسية"
     },
     "detail": {
       "title": "الشحنة {number}",
@@ -455,11 +457,12 @@
       "addPayment": "إضافة دفعة",
       "bags": "الأكياس",
       "arrivedAt": "تاريخ الوصول",
-      "debt": "دين على العميل في هذه الشحنة",
       "client": "العميل",
       "project": "المشروع",
       "shipmentStatus": "حالة الشحنة",
-      "paymentStatus": "حالة الدفع"
+      "paymentStatus": "حالة الدفع",
+      "debtLabel": "الدين",
+      "addDebt": "زيادة الدين"
     },
     "paymentForm": {
       "title": "دفعة جديدة",
@@ -477,7 +480,18 @@
       "leftAfter": "الباقي بعد هذه الدفعة"
     },
     "debt": {
-      "badge": "دين {amount}"
+      "badge": "دين"
+    },
+    "debtForm": {
+      "title": "زيادة الدين",
+      "current": "الدين الحالي",
+      "after": "الدين بعد الزيادة",
+      "amount": "المبلغ المضاف",
+      "notes": "سبب الدين",
+      "submit": "زيادة الدين",
+      "saving": "جارٍ حفظ الدين",
+      "amountInvalid": "أدخل مبلغًا أكبر من 0.",
+      "add": "إضافة دين"
     }
   },
   "milling": {
@@ -560,7 +574,9 @@
         "machineUnavailable": "هذه الآلة لم تعد متاحة",
         "bagsOverCapacity": "لا يمكن للآلة طحن أكثر من {max} كيس في المرة الواحدة"
       },
-      "remaining": "المتبقي: {count}"
+      "remaining": "المتبقي: {count}",
+      "editTitle": "تعديل الطحنة",
+      "saveChanges": "حفظ التعديلات"
     },
     "machine": {
       "title": "الآلة {number}",
@@ -601,7 +617,8 @@
         "inService": "في الخدمة",
         "underMaintenance": "في الصيانة",
         "placeholder": "ستتوفر المتابعة التفصيلية للصيانة مع الوحدة المخصصة لها."
-      }
+      },
+      "editOperation": "تعديل الطحنة"
     },
     "end": {
       "title": "إنهاء الطحن",
@@ -627,10 +644,15 @@
       "pending": "لم يُضف الزئبق بعد",
       "added": "أُضيف الزئبق",
       "markHint": "اضغط هنا عند إضافة الزئبق إلى هذه الطحنة",
-      "confirm": "هل أُضيف الزئبق إلى هذه الطحنة؟ لا يمكن التراجع عن ذلك.",
-      "confirmYes": "نعم، أُضيف",
+      "title": "إضافة الزئبق",
+      "quantity": "كمية الزئبق (غ)",
+      "quantityInvalid": "أدخل كمية أكبر من 0.",
+      "notEnoughStock": "لا يوجد في مخزون الزئبق للمشروع ما يكفي لهذه الكمية.",
+      "cannotAdd": "لا يمكن إضافة الزئبق: الطحنة منتهية أو أُضيف إليها الزئبق من قبل.",
+      "fromStock": "تُخصم الكمية من مخزون الزئبق في المشروع ولا يمكن تعديلها بعد الحفظ.",
+      "submit": "إضافة الزئبق",
       "saving": "جارٍ الحفظ",
-      "addedOn": "{date} · {name}",
+      "addedOn": "{quantity} غ · {date} · {name}",
       "notYet": "لم يُضف بعد"
     }
   },
@@ -708,7 +730,9 @@
     "changeTypes": {
       "initial": "الكمية الأولية",
       "increase": "زيادة",
-      "decrease": "إنقاص"
+      "decrease": "إنقاص",
+      "taken": "مأخوذ للطحن",
+      "returned": "مُعاد من التصفية"
     },
     "fields": {
       "name": "اسم المورد",
@@ -719,6 +743,7 @@
       "quantity": "الكمية",
       "quantityBefore": "الكمية قبل",
       "quantityAfter": "الكمية بعد",
+      "loss": "الخسارة",
       "note": "ملاحظة",
       "changedAt": "التاريخ",
       "changeType": "النوع",
@@ -741,6 +766,7 @@
       "quantityTooMuch": "المتبقي {left} فقط"
     },
     "refiningMaterial": "مادة التصفية",
+    "grindingNumber": "الطحنة {number}",
     "refiningChangeTypes": {
       "decrease": "فاقد التصفية",
       "increase": "إرجاع فاقد التصفية"
@@ -748,7 +774,7 @@
     "noProjects": "لا توجد مشاريع بعد. أضفها من الإعدادات.",
     "resourceCount": "الموارد",
     "material": {
-      "hint": "يُخصم منه فاقد كل عملية تصفية تلقائيًا."
+      "hint": "يُخصم منه الزئبق المضاف لكل طحنة، ويُعاد إليه ما يُسترجع في التصفية."
     },
     "open": "فتح",
     "kinds": {
@@ -766,6 +792,10 @@
       "title": "لا تملك الصلاحية",
       "description": "دورك لا يملك صلاحية فتح هذه البيانات. تواصل مع المدير."
     },
+    "connection": {
+      "title": "تعذّر الاتصال",
+      "description": "لم يصل أي رد من الخادم. تحقق من اتصالك بالإنترنت ثم أعد المحاولة."
+    },
     "failed": {
       "title": "حدث خطأ",
       "description": "تعذر تحميل البيانات. حاول مرة أخرى بعد قليل."
@@ -773,5 +803,136 @@
     "status": "رمز الخطأ: {status}",
     "retry": "إعادة المحاولة",
     "home": "العودة إلى الرئيسية"
+  },
+  "settlements": {
+    "title": "التسويات النهائية",
+    "new": "تسوية جديدة",
+    "listTitle": "تسويات المشروع",
+    "searchPlaceholder": "رقم التسوية",
+    "empty": "لا توجد تسويات بعد.",
+    "noResults": "لا توجد تسوية بهذا الرقم.",
+    "columns": {
+      "number": "رقم التسوية",
+      "customer": "الزبون",
+      "project": "المشروع",
+      "shipments": "الشحنات",
+      "total": "المبلغ المستحق",
+      "createdAt": "التاريخ",
+      "createdBy": "أعدّها"
+    },
+    "detail": {
+      "title": "التسوية {number}",
+      "factsTitle": "معلومات التسوية",
+      "totalsTitle": "المبالغ",
+      "edit": "تعديل المبالغ",
+      "editTitle": "تعديل التسوية {number}",
+      "delete": "حذف"
+    },
+    "totals": {
+      "bagsTransport": "نقل الأكياس",
+      "passengersTransport": "نقل الركاب",
+      "shipmentsDebt": "ديون الشحنات",
+      "grindingCost": "تكلفة الطحن",
+      "refiningCost": "تكلفة التصفية",
+      "refiningCostDetail": "{grams} غ × {price}",
+      "extraDebt": "دين إضافي",
+      "grandTotal": "المبلغ المستحق النهائي"
+    },
+    "fields": {
+      "customer": "الزبون",
+      "project": "المشروع",
+      "shipments": "الشحنات",
+      "grindingCost": "تكلفة الطحن",
+      "refiningCostPerGram": "تكلفة التصفية لكل غرام",
+      "debt": "دين إضافي",
+      "debtDescription": "سبب الدين الإضافي",
+      "createdBy": "أعدّها",
+      "createdAt": "تاريخ الإنشاء"
+    },
+    "form": {
+      "customerPlaceholder": "ابحث بالاسم أو الهاتف",
+      "projectPlaceholder": "اختر المشروع",
+      "shipmentsTitle": "الشحنات المشمولة",
+      "amountsTitle": "مبالغ التسوية",
+      "noShipments": "لا توجد شحنات مكتملة الطحن والتصفية غير مسوّاة لهذا الزبون.",
+      "submit": "حفظ التسوية",
+      "saveChanges": "حفظ التعديلات",
+      "saving": "جارٍ الحفظ",
+      "select": "تضمين الشحنة {number}"
+    },
+    "shipmentColumns": {
+      "number": "رقم الشحنة",
+      "arrival": "الوصول",
+      "bags": "الأكياس"
+    },
+    "errors": {
+      "shipmentsRequired": "اختر شحنة واحدة على الأقل.",
+      "amountInvalid": "أدخل مبلغًا يساوي 0 أو أكثر.",
+      "descriptionTooLong": "200 حرف على الأكثر."
+    },
+    "pdf": {
+      "ar": "PDF عربي",
+      "fr": "PDF فرنسي",
+      "downloading": "جارٍ تحميل الفاتورة",
+      "failed": "تعذر تحميل الفاتورة، حاول مرة أخرى.",
+      "fileName": "تسوية-{number}-{language}.pdf"
+    },
+    "delete": {
+      "title": "حذف التسوية",
+      "question": "حذف التسوية {number}؟",
+      "explanation": "تصبح شحناتها متاحة لتسوية أخرى.",
+      "confirm": "حذف التسوية",
+      "deleting": "جارٍ الحذف",
+      "failed": "تعذر الحذف، حاول مرة أخرى بعد قليل"
+    },
+    "overview": {
+      "waiting": "شحنات بانتظار التسوية",
+      "settled": "تسويات منجزة"
+    },
+    "project": {
+      "waitingTitle": "شحنات منتهية بانتظار التسوية",
+      "waitingEmpty": "لا توجد شحنات منتهية بانتظار التسوية في هذا المشروع.",
+      "settle": "تسوية",
+      "settleLabel": "تسوية شحنات {name}"
+    },
+    "waitingColumns": {
+      "number": "رقم الشحنة",
+      "customer": "الزبون",
+      "phone": "الهاتف",
+      "arrival": "الوصول",
+      "bags": "الأكياس",
+      "transport": "النقل",
+      "debt": "الدين"
+    },
+    "noProjects": "لا توجد مشاريع بعد. أضفها من الإعدادات."
+  },
+  "toasts": {
+    "customerAdded": "تمت إضافة الزبون",
+    "customerUpdated": "تم حفظ بيانات الزبون",
+    "shipmentAdded": "تم حفظ الشحنة الجديدة",
+    "shipmentUpdated": "تم حفظ تعديلات الشحنة",
+    "paymentAdded": "تم تسجيل الدفعة",
+    "debtUpdated": "تم حفظ الدين",
+    "grindingStarted": "تم بدء الطحن",
+    "grindingUpdated": "تم حفظ تعديلات الطحنة",
+    "grindingFinished": "تم إنهاء الطحن",
+    "mercuryAdded": "تمت إضافة الزئبق",
+    "refiningSaved": "تم حفظ التصفية",
+    "resourceAdded": "تمت إضافة المورد",
+    "stockIncreased": "تمت زيادة الكمية",
+    "stockDecreased": "تم إنقاص الكمية",
+    "projectAdded": "تمت إضافة المشروع",
+    "projectUpdated": "تم حفظ المشروع",
+    "projectDeleted": "تم حذف المشروع",
+    "machineAdded": "تمت إضافة الآلة",
+    "machineUpdated": "تم حفظ الآلة",
+    "userAdded": "تمت إضافة المستخدم",
+    "userUpdated": "تم حفظ المستخدم",
+    "roleAdded": "تمت إضافة الدور",
+    "roleUpdated": "تم حفظ الدور",
+    "roleDeleted": "تم حذف الدور",
+    "settlementAdded": "تم حفظ التسوية الجديدة",
+    "settlementUpdated": "تم حفظ تعديلات التسوية",
+    "settlementDeleted": "تم حذف التسوية"
   }
 }

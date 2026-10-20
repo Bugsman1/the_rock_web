@@ -9,14 +9,9 @@ import { modules, noAccess, rightsFromApi } from "@/lib/access";
 import type { Access, Module } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
-import {
-  GrinderFormScreen,
-  grinderFormLoader,
-  ProjectSettingsScreen,
-  projectLoader,
-  ProjectsScreen,
-  projectsLoader,
-} from "./ProjectScreens";
+import { ProjectsScreen, projectsLoader } from "./ProjectScreens";
+import { ProjectSettingsScreen, projectLoader } from "./ProjectSettingsScreen";
+import { GrinderFormScreen, grinderFormLoader } from "./GrinderForm";
 import {
   LanguageScreen,
   ProfileScreen,

@@ -1,10 +1,5 @@
 export { NewShipmentScreen, newShipmentLoader } from "./NewShipmentScreen";
 export { ShipmentScreen, shipmentLoader } from "./ShipmentScreen";
-export {
-  ProjectStorageScreen,
-  projectShipmentsLoader,
-  projectStorageLoader,
-  ShipmentHistoryScreen,
-  ShipmentsScreen,
-  shipmentsLoader,
-} from "./ShipmentsScreens";
+export { ShipmentsScreen, shipmentsLoader } from "./ShipmentsScreens";
+export { ProjectStorageScreen, projectStorageLoader } from "./ProjectStorageScreen";
+export { projectShipmentsLoader, ShipmentHistoryScreen } from "./ShipmentHistoryScreen";

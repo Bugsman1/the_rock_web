@@ -44,13 +44,27 @@ export function DelayedSearchField({
 }: DelayedSearchFieldProps) {
   const replace = useReplace();
   const [search, setSearch] = useState(query);
+  const [requested, setRequested] = useState(query);
+  const [shownQuery, setShownQuery] = useState(query);
+
+  if (query !== shownQuery) {
+    setShownQuery(query);
+
+    if (query !== requested) {
+      setSearch(query);
+      setRequested(query);
+    }
+  }
 
   useEffect(() => {
     if (search.trim() === query) {
       return;
     }
 
-    const timer = setTimeout(() => replace(hrefFor(search)), SEARCH_DELAY_MS);
+    const timer = setTimeout(() => {
+      setRequested(search.trim());
+      replace(hrefFor(search));
+    }, SEARCH_DELAY_MS);
 
     return () => clearTimeout(timer);
   }, [search, query, replace, hrefFor]);

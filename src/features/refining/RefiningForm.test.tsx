@@ -34,11 +34,11 @@ const grinding: MillingOperation = {
   endedAt: "2026-10-12T18:00:00Z",
 };
 
-function renderForm() {
+function renderForm(operation: MillingOperation = grinding) {
   return render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
       <RefiningForm
-        operation={grinding}
+        operation={operation}
         projectName="Zouérat 1"
         workers={[{ id: "4", name: "Aicha" }]}
         defaultDate="2026-10-12"
@@ -72,6 +72,25 @@ async function fillRequired(before: string, after: string, gold: string) {
 }
 
 describe("RefiningForm", () => {
+  it("fills the weight before refining with the mercury added to the grinding", () => {
+    renderForm({
+      ...grinding,
+      mercury: { addedAt: "2026-10-12T07:00:00Z", byName: "Aicha", quantity: 120.5 },
+    });
+
+    const weightBefore = screen.getByLabelText(fields.weightBefore);
+    expect(weightBefore).toHaveValue(120.5);
+    expect(weightBefore).toHaveAttribute("readonly");
+  });
+
+  it("lets the weight before be typed when the grinding has no mercury quantity", () => {
+    renderForm();
+
+    const weightBefore = screen.getByLabelText(fields.weightBefore);
+    expect(weightBefore).toHaveValue(null);
+    expect(weightBefore).not.toHaveAttribute("readonly");
+  });
+
   it("shows the grinding it refines and refines exactly the bags ground", () => {
     renderForm();
 

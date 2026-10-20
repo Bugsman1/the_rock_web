@@ -1,4 +1,11 @@
-import { apiClient, notFound, saveFailed, saveOutcome, unwrap } from "@/lib/api/client";
+import {
+  apiClient,
+  attachmentFileName,
+  notFound,
+  saveFailed,
+  saveOutcome,
+  unwrap,
+} from "@/lib/api/client";
 import type { SaveResult } from "@/lib/api/client";
 import { customerToApi, matchCustomer } from "@/lib/customers";
 import { getCustomersWithPhone } from "@/lib/customersApi";
@@ -7,15 +14,19 @@ import { combineDateAndTime } from "@/lib/datetime";
 import type { IsoTimestamp } from "@/lib/format";
 import { isRecordId } from "@/lib/projects";
 import {
-  invoiceFileName,
   newShipmentToApi,
-  paymentErrorsFromApi,
-  paymentToApi,
   shipmentDetailFromApi,
   shipmentErrorsFromApi,
   shipmentToApi,
 } from "./shipments";
-import type { NewShipmentValues, PaymentValues, ShipmentDetail } from "./shipments";
+import {
+  paymentErrorsFromApi,
+  paymentToApi,
+  debtErrorsFromApi,
+  debtToApi,
+} from "./shipmentPayments";
+import type { NewShipmentValues, ShipmentDetail } from "./shipments";
+import type { DebtValues, PaymentValues } from "./shipmentPayments";
 
 type SaveShipmentResult = SaveResult<keyof NewShipmentValues>;
 
@@ -114,6 +125,19 @@ export async function getShipment(shipmentId: string): Promise<ShipmentDetail> {
   );
 }
 
+export async function increaseDebt(
+  shipmentId: string,
+  debt: number,
+  values: DebtValues,
+): Promise<SaveResult<keyof DebtValues>> {
+  const { response, error } = await apiClient.PATCH("/api/v1/shipments/{id}/", {
+    params: { path: { id: Number(shipmentId) } },
+    body: debtToApi(debt, values),
+  });
+
+  return saveOutcome(response, error, debtErrorsFromApi);
+}
+
 export async function addPayment(
   shipmentId: string,
   values: PaymentValues,
@@ -139,5 +163,5 @@ export async function getInvoice(shipmentId: string, locale: Locale): Promise<In
 
   return data === undefined
     ? undefined
-    : { file: data, fileName: invoiceFileName(response.headers.get("Content-Disposition")) };
+    : { file: data, fileName: attachmentFileName(response.headers.get("Content-Disposition")) };
 }

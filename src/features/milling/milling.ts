@@ -9,7 +9,7 @@ import {
   operationsOfShipment,
   remainingBags,
 } from "@/lib/grinding";
-import type { Machine, MachineStatus, MillingOperation } from "@/lib/grinding";
+import type { Machine, MachineStatus, MillingOperation, OperationShipment } from "@/lib/grinding";
 import type { Project, ProjectId, SiteKey } from "@/lib/projects";
 import type { ShipmentRecord, ShipmentStatusKey } from "@/lib/shipments";
 
@@ -98,6 +98,19 @@ export function millingQueue(
   return shipments
     .filter((shipment) => shipment.project === project && remainingBags(shipment, operations) > 0)
     .sort((a, b) => a.arrivedAt.localeCompare(b.arrivedAt));
+}
+
+export function operationShipments(
+  queue: readonly MillingShipment[],
+  operations: readonly MillingOperation[],
+): readonly OperationShipment[] {
+  return queue.map((shipment) => ({
+    id: shipment.id,
+    shipmentNumber: shipment.shipmentNumber,
+    client: shipment.client,
+    bags: shipment.bags,
+    remainingBags: remainingBags(shipment, operations),
+  }));
 }
 
 const millingStatuses: readonly ShipmentStatusKey[] = ["pending", "grinding"];
@@ -225,3 +238,11 @@ export function createEndMillingSchema(
 }
 
 export type EndMillingValues = z.infer<ReturnType<typeof createEndMillingSchema>>;
+
+export function createMercurySchema(messages: { required: string; quantityInvalid: string }) {
+  return z.object({
+    quantity: z.number({ error: messages.required }).positive(messages.quantityInvalid),
+  });
+}
+
+export type MercuryValues = z.infer<ReturnType<typeof createMercurySchema>>;

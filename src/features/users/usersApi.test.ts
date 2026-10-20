@@ -114,7 +114,7 @@ describe("createUser", () => {
     expect(body).toEqual({
       full_name: "Sidi Salem",
       email: "sidi@mills.mr",
-      phone: "+222 46 10 93 25",
+      phone: "+22246109325",
       role: 2,
       project: 3,
       password: "secret123",
@@ -152,7 +152,7 @@ describe("updateUser", () => {
     expect(body).toEqual({
       full_name: "Sidi Salem",
       email: "sidi@mills.mr",
-      phone: "+222 46 10 93 25",
+      phone: "+22246109325",
       role: 1,
       project: null,
     });

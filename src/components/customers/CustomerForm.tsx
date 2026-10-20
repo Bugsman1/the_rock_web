@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "use-intl";
 import { Controller, useForm } from "react-hook-form";
+import { useToast } from "@/components/ui/Toast";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { FormError } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
@@ -22,6 +23,8 @@ type CustomerFormProps = {
 export function CustomerForm({ customer, initialName = "", onSaved, onCancel }: CustomerFormProps) {
   const t = useTranslations("customers");
   const common = useTranslations("common");
+  const toasts = useTranslations("toasts");
+  const toast = useToast();
   const locale = useLocale();
   const [failed, setFailed] = useState(false);
 
@@ -52,6 +55,7 @@ export function CustomerForm({ customer, initialName = "", onSaved, onCancel }: 
         : await updateCustomer(customer.id, values, phoneTaken);
 
     if (result.ok) {
+      toast(customer === undefined ? toasts("customerAdded") : toasts("customerUpdated"));
       onSaved(values);
       return;
     }
