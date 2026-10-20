@@ -479,8 +479,8 @@ name: only the app limits a project to those three.
      `BACKEND_NETWORK` (the backend's network).
   4. `docker compose up -d --build`. Caddy gets and renews the Let's Encrypt certificate by itself
      (kept in the `caddy_data` volume), serves `dist/` with every unknown path falling back to
-     `index.html`, forwards `/api/*` to `BACKEND_URL` inside Docker, caches `/assets/` for a year and
-     never caches `index.html`.
+     `index.html`, forwards `/api/*` to `BACKEND_URL` inside Docker, caches `/assets/` for a year (a missing
+     asset answers 404, never the page) and never caches `index.html`.
   5. To deploy a new version: `git pull && docker compose up -d --build`.
 
 ---
