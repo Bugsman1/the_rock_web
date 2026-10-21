@@ -41,26 +41,26 @@ describe("mercury added to a grinding", () => {
     const user = await openMercuryForm();
 
     expect(screen.getByRole("dialog", { name: mercury.title })).toBeVisible();
-    await user.type(screen.getByLabelText(mercury.quantity), "12.5");
+    await user.type(screen.getByLabelText(mercury.quantity), "150.5");
     await user.click(screen.getByRole("button", { name: mercury.submit }));
 
     await waitFor(() => {
-      expect(api.markMercuryAdded).toHaveBeenCalledWith("42", { quantity: 12.5 });
+      expect(api.markMercuryAdded).toHaveBeenCalledWith("42", { quantity: 150.5 });
     });
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 
-  it("refuses an empty or zero quantity", async () => {
+  it("refuses an empty quantity or one under 100 grams", async () => {
     const user = await openMercuryForm();
 
     await user.click(screen.getByRole("button", { name: mercury.submit }));
     expect(await screen.findByText(messages.common.validation.required)).toBeVisible();
 
-    await user.type(screen.getByLabelText(mercury.quantity), "0");
+    await user.type(screen.getByLabelText(mercury.quantity), "99");
     await user.click(screen.getByRole("button", { name: mercury.submit }));
-    expect(await screen.findByText(mercury.quantityInvalid)).toBeVisible();
+    expect(await screen.findByText(mercury.quantityTooLow.replace("{min}", "100"))).toBeVisible();
     expect(api.markMercuryAdded).not.toHaveBeenCalled();
   });
 
@@ -96,7 +96,7 @@ describe("mercury added to a grinding", () => {
     });
     const user = await openMercuryForm();
 
-    await user.type(screen.getByLabelText(mercury.quantity), "5");
+    await user.type(screen.getByLabelText(mercury.quantity), "150");
     await user.click(screen.getByRole("button", { name: mercury.submit }));
 
     expect(await screen.findByText(mercury.cannotAdd)).toBeVisible();

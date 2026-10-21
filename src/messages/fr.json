@@ -570,7 +570,7 @@
       "saving": "Démarrage du broyage",
       "errors": {
         "bagsInvalid": "Saisissez des sacs par demi-sac : 0,5, 1, 1,5 ou 2",
-        "bagsTooMany": "Ne peut pas dépasser les sacs restants",
+        "bagsTooMany": "Le nombre de sacs ne peut pas dépasser ce qui reste dans l'expédition",
         "machineUnavailable": "Cette machine n'est plus disponible",
         "bagsOverCapacity": "Une machine ne peut pas broyer plus de {max} sacs à la fois",
         "startBeforeArrival": "Le broyage ne peut pas commencer avant l'arrivée de l'expédition."
@@ -647,7 +647,7 @@
       "markHint": "Cliquez ici quand le mercure est ajouté à ce broyage",
       "title": "Ajouter le mercure",
       "quantity": "Quantité de mercure (g)",
-      "quantityInvalid": "Saisissez une quantité supérieure à 0.",
+      "quantityTooLow": "La première quantité de mercure ne peut pas être inférieure à {min} g",
       "notEnoughStock": "Le stock de mercure du projet ne suffit pas pour cette quantité.",
       "cannotAdd": "Impossible d'ajouter le mercure : le broyage est terminé ou a déjà reçu son mercure.",
       "fromStock": "La quantité est retirée du stock de mercure du projet et ne peut plus être modifiée.",

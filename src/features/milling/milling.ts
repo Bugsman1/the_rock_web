@@ -240,9 +240,13 @@ export function createEndMillingSchema(
 
 export type EndMillingValues = z.infer<ReturnType<typeof createEndMillingSchema>>;
 
-export function createMercurySchema(messages: { required: string; quantityInvalid: string }) {
+export const MERCURY_MIN_GRAMS = 100;
+
+export function createMercurySchema(messages: { required: string; quantityTooLow: string }) {
   return z.object({
-    quantity: z.number({ error: messages.required }).positive(messages.quantityInvalid),
+    quantity: z
+      .number({ error: messages.required })
+      .min(MERCURY_MIN_GRAMS, messages.quantityTooLow),
   });
 }
 

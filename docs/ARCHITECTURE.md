@@ -376,7 +376,7 @@ grinding is not edited; mercury is never changed there.
 **Mercury:** every grinding must be mercured once (`mercury_added_at`, `mercury_added_by_name`).
 A running grinding shows "mercury not added yet" (orange) in the project's machine list and on the
 machine page; a role that can edit grinding clicks it, a drawer asks the grams of mercury added
-(required, > 0, `createMercurySchema`), and the app sends
+(required, at least 100 g, `MERCURY_MIN_GRAMS`, `createMercurySchema`), and the app sends
 `PATCH …/grinding-operations/{id}/ {mercury_added: true, mercury_quantity}` (`markMercuryAdded`).
 The backend takes that quantity from the project's Mercury stock (a `taken` history line); no
 Mercury or not enough is shown on the quantity field in the app's own words (any `mercury_quantity`
@@ -386,7 +386,7 @@ It then shows "mercury added" (green); the machine page gives the grams, the tim
 history its time. The quantity cannot be changed afterwards. The
 backend makes this final: it cannot be undone and is refused on a finished grinding. Operators offered:
 users whose role can view grinding (refining for the refining worker), on the project when the role is project-scoped. Estimated end: 2 bags per 6 hours.
-A shipment arrives in whole or half bags (12, 12.5: `isHalfBagCount`, step 0.5 in the form). A machine takes 0.5, 1, 1.5 or 2 bags: the form says so as soon as more than 2 is typed (`isHalfBagCount`),
+A shipment arrives in whole or half bags (12, 12.5: `isHalfBagCount`, step 0.5 in the form). A machine takes 0.5, 1, 1.5 or 2 bags: the form says so as soon as more than 2 is typed (`isHalfBagCount`), and as soon as more bags are typed than the shipment still has it says the bags cannot be more than what is left (the note under the field keeps showing what is left, never a negative count),
 and the refining takes exactly the bags of the grinding. The backend stores shipment, grinding and refining bags in half bags and refuses more than 2 per grinding.
 
 **Refining pages:** `/refining` shows three figures (grindings waiting for refining with their

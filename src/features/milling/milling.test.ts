@@ -225,15 +225,16 @@ describe("milling flow", () => {
 });
 
 describe("mercury added to a grinding", () => {
-  const schema = createMercurySchema({ required: "required", quantityInvalid: "invalid" });
+  const schema = createMercurySchema({ required: "required", quantityTooLow: "too low" });
 
-  it("accepts a quantity in grams above 0", () => {
-    expect(schema.safeParse({ quantity: 12.5 }).success).toBe(true);
+  it("accepts a first quantity of 100 grams or more", () => {
+    expect(schema.safeParse({ quantity: 100 }).success).toBe(true);
+    expect(schema.safeParse({ quantity: 250.5 }).success).toBe(true);
   });
 
-  it("refuses an empty, zero or negative quantity", () => {
+  it("refuses an empty quantity or one under 100 grams", () => {
     expect(schema.safeParse({ quantity: Number.NaN }).error?.issues[0]?.message).toBe("required");
-    expect(schema.safeParse({ quantity: 0 }).error?.issues[0]?.message).toBe("invalid");
-    expect(schema.safeParse({ quantity: -3 }).error?.issues[0]?.message).toBe("invalid");
+    expect(schema.safeParse({ quantity: 99.9 }).error?.issues[0]?.message).toBe("too low");
+    expect(schema.safeParse({ quantity: 0 }).error?.issues[0]?.message).toBe("too low");
   });
 });

@@ -169,6 +169,28 @@ describe("OperationForm", () => {
     expect(api.startOperation).not.toHaveBeenCalled();
   });
 
+  it("says at once that the bags cannot be more than the shipment has, never a negative count", async () => {
+    const user = userEvent.setup();
+    renderNewOperation({ shipment: "SH-1053", machine: 7 });
+
+    await user.type(screen.getByLabelText(form.bags), "1.5");
+
+    expect(await screen.findByText(form.errors.bagsTooMany)).toBeVisible();
+    expect(screen.getByText(form.remaining.replace("{count}", "1"))).toBeVisible();
+    expect(screen.queryByText(/-0,5/)).not.toBeInTheDocument();
+  });
+
+  it("still says a machine takes at most 2 bags at a time", async () => {
+    const user = userEvent.setup();
+    renderNewOperation({ shipment: "SH-1052", machine: 7 });
+
+    await user.type(screen.getByLabelText(form.bags), "3");
+
+    expect(
+      await screen.findByText(form.errors.bagsOverCapacity.replace("{max}", "2")),
+    ).toBeVisible();
+  });
+
   it("starts the operation on the chosen machine and shipment", async () => {
     const user = userEvent.setup();
     renderNewOperation({ shipment: "SH-1052", machine: 7 });

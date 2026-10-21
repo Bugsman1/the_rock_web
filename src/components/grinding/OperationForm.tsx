@@ -8,7 +8,6 @@ import { FieldError, FormError } from "@/components/ui/FieldError";
 import { ReadOnlyDateAndTime, ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { TextArea, TextField } from "@/components/ui/TextField";
-import { cn } from "@/lib/cn";
 import { combineDateAndTime } from "@/lib/datetime";
 import { formatCount } from "@/lib/format";
 import { BAG_STEP, CAPACITY_BAGS, createNewOperationSchema, estimatedEnd } from "@/lib/grinding";
@@ -134,11 +133,10 @@ export function OperationForm({
 
   const shipment = findShipment(shipmentNumber);
   const bagCount = Number.isFinite(bags) && bags > 0 ? bags : 0;
-  const remainingAfter = shipment === undefined ? undefined : shipment.remainingBags - bagCount;
   const remainingNote =
     shipment === undefined
       ? undefined
-      : bagCount === 0
+      : bagCount === 0 || bagCount > shipment.remainingBags
         ? t("remaining", { count: count(shipment.remainingBags) })
         : t("remainingAfter", { count: count(shipment.remainingBags - bagCount) });
   const startedAt = combineDateAndTime(startDate, startTime);
@@ -229,15 +227,7 @@ export function OperationForm({
             })}
           />
           {remainingNote === undefined ? null : (
-            <p
-              aria-live="polite"
-              className={cn(
-                "text-[13px] font-bold",
-                remainingAfter !== undefined && remainingAfter < 0
-                  ? "text-danger-700"
-                  : "text-ink-muted",
-              )}
-            >
+            <p aria-live="polite" className="text-ink-muted text-[13px] font-bold">
               {remainingNote}
             </p>
           )}

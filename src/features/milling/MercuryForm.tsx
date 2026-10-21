@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRevalidator } from "react-router";
-import { useTranslations } from "use-intl";
+import { useLocale, useTranslations } from "use-intl";
 import { useToast } from "@/components/ui/Toast";
 import { Drawer, DrawerActions } from "@/components/ui/Drawer";
 import { FormError } from "@/components/ui/FieldError";
@@ -11,8 +11,9 @@ import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { TextField } from "@/components/ui/TextField";
 import { useCan } from "@/lib/accessContext";
 import { cn } from "@/lib/cn";
+import { formatCount } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
-import { createMercurySchema } from "./milling";
+import { createMercurySchema, MERCURY_MIN_GRAMS } from "./milling";
 import type { MercuryValues } from "./milling";
 import { markMercuryAdded } from "./millingApi";
 
@@ -31,13 +32,16 @@ function MercuryForm({ operation, onSaved, onCancel }: MercuryFormProps) {
   const [closed, setClosed] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const locale = useLocale();
   const schema = useMemo(
     () =>
       createMercurySchema({
         required: common("validation.required"),
-        quantityInvalid: t("mercury.quantityInvalid"),
+        quantityTooLow: t("mercury.quantityTooLow", {
+          min: formatCount(MERCURY_MIN_GRAMS, locale),
+        }),
       }),
-    [t, common],
+    [t, common, locale],
   );
 
   const { register, handleSubmit, formState, setError } = useForm<MercuryValues>({

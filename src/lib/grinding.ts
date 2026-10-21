@@ -215,28 +215,27 @@ export function createNewOperationSchema(
       operatorId: z.string().min(1, messages.required),
       notes: z.string().trim().max(500),
     })
-    .superRefine((values, context) => {
-      const remaining = rules.remainingBagsOf(values.shipmentNumber);
+    .refine(
+      (values) => {
+        const remaining = rules.remainingBagsOf(values.shipmentNumber);
 
-      if (remaining !== undefined && values.bags > remaining) {
-        context.addIssue({ code: "custom", path: ["bags"], message: messages.bagsTooMany });
-      }
+        return remaining === undefined || !Number.isFinite(values.bags) || values.bags <= remaining;
+      },
+      { path: ["bags"], message: messages.bagsTooMany, when: () => true },
+    )
+    .refine(
+      (values) => {
+        const arrivedAt = rules.arrivedAtOf(values.shipmentNumber);
+        const startedAt = combineDateAndTime(values.startDate, values.startTime);
 
-      const arrivedAt = rules.arrivedAtOf(values.shipmentNumber);
-      const startedAt = combineDateAndTime(values.startDate, values.startTime);
-
-      if (
-        arrivedAt !== undefined &&
-        startedAt !== undefined &&
-        Date.parse(startedAt) < Date.parse(arrivedAt)
-      ) {
-        context.addIssue({
-          code: "custom",
-          path: ["startTime"],
-          message: messages.startBeforeArrival,
-        });
-      }
-    });
+        return (
+          arrivedAt === undefined ||
+          startedAt === undefined ||
+          Date.parse(startedAt) >= Date.parse(arrivedAt)
+        );
+      },
+      { path: ["startTime"], message: messages.startBeforeArrival, when: () => true },
+    );
 }
 
 export type NewOperationValues = z.infer<ReturnType<typeof createNewOperationSchema>>;
