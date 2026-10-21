@@ -103,6 +103,7 @@ export function DebtForm({
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
+        dirty={formState.isDirty}
         submitting={formState.isSubmitting}
         submitIcon="plus"
         submitLabel={shipment.debt > 0 ? t("submit") : t("add")}

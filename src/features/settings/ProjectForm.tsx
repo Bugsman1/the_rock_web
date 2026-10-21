@@ -100,6 +100,7 @@ export function ProjectForm({ item: project, onSaved, onCancel }: FormProps<Proj
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
+        dirty={formState.isDirty}
         submitting={formState.isSubmitting}
         submitIcon={project === undefined ? "plus" : "circle-check"}
         submitLabel={project === undefined ? t("form.create") : t("form.submit")}

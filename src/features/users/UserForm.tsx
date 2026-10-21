@@ -175,6 +175,7 @@ export function UserForm({ user, projects, roles: roleChoices, onSaved, onCancel
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
+        dirty={formState.isDirty}
         submitting={formState.isSubmitting}
         submitIcon={creating ? "plus" : "circle-check"}
         submitLabel={creating ? t("form.create") : t("form.submit")}

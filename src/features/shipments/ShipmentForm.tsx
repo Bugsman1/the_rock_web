@@ -205,6 +205,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
         {failed ? <FormError message={common("saveFailed")} /> : null}
 
         <DrawerActions
+          dirty={formState.isDirty}
           submitting={formState.isSubmitting}
           submitIcon={mode.kind === "edit" ? "circle-check" : "plus"}
           submitLabel={mode.kind === "edit" ? t("saveChanges") : t("submit")}

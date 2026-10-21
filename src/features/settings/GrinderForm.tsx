@@ -118,6 +118,7 @@ export function GrinderForm({
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
+        dirty={formState.isDirty}
         submitting={formState.isSubmitting}
         submitIcon={grinder === undefined ? "plus" : "circle-check"}
         submitLabel={grinder === undefined ? t("form.create") : t("form.submit")}

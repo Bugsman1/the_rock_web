@@ -266,6 +266,7 @@ export function RefiningForm({
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
+        dirty={formState.isDirty}
         submitting={formState.isSubmitting || saved}
         submitIcon={refining === undefined ? "flame" : "circle-check"}
         submitLabel={refining === undefined ? t("form.submit") : t("form.saveChanges")}

@@ -244,6 +244,33 @@ describe("ShipmentScreen", () => {
     ).toBeVisible();
   });
 
+  it("asks before throwing away a typed payment, and sends nothing", async () => {
+    answer([firstPayment]);
+    let sent = false;
+    server.use(
+      http.post(`${API}/shipment-payments/`, () => {
+        sent = true;
+        return HttpResponse.json({}, { status: 201 });
+      }),
+    );
+    const user = userEvent.setup();
+    openShipment();
+
+    await user.click(await screen.findByRole("button", { name: detail.addPayment }));
+    const drawer = within(screen.getByRole("dialog", { name: paymentForm.title }));
+    await user.type(drawer.getByLabelText(paymentForm.amount), "500");
+    await user.click(drawer.getByRole("button", { name: messages.common.cancel }));
+
+    expect(drawer.getByText(messages.common.discard.question)).toBeVisible();
+
+    await user.click(drawer.getByRole("button", { name: messages.common.discard.confirm }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: paymentForm.title })).not.toBeInTheDocument();
+    });
+    expect(sent).toBe(false);
+  });
+
   it("offers no new payment once the shipment is fully paid", async () => {
     answer([firstPayment, { id: 2, amount: "2200.00", paid_at: "2026-10-12T10:00:00Z" }]);
     openShipment();

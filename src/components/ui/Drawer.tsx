@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { useTranslations } from "use-intl";
 import { Button } from "./Button";
 import { Icon } from "./Icon";
 import type { IconName } from "./Icon";
@@ -103,6 +104,7 @@ type DrawerActionsProps = {
   savingLabel: string;
   cancelLabel: string;
   onCancel: () => void;
+  dirty: boolean;
   sticky?: boolean;
 };
 
@@ -113,15 +115,32 @@ export function DrawerActions({
   savingLabel,
   cancelLabel,
   onCancel,
+  dirty,
   sticky = true,
 }: DrawerActionsProps) {
+  const t = useTranslations("common.discard");
+  const [confirming, setConfirming] = useState(false);
+  const barClasses = cn(
+    "border-line bg-surface -mx-6 -mb-6 flex flex-wrap items-center gap-3 border-t-[1.5px] px-6 py-4",
+    sticky && "sticky bottom-0",
+  );
+
+  if (confirming) {
+    return (
+      <div role="alertdialog" aria-label={t("question")} className={barClasses}>
+        <p className="text-ink w-full text-[15px] font-semibold">{t("question")}</p>
+        <Button variant="danger" width="auto" onClick={onCancel}>
+          {t("confirm")}
+        </Button>
+        <Button variant="secondary" width="auto" onClick={() => setConfirming(false)}>
+          {t("keep")}
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={cn(
-        "border-line bg-surface -mx-6 -mb-6 flex flex-wrap items-center gap-3 border-t-[1.5px] px-6 py-4",
-        sticky && "sticky bottom-0",
-      )}
-    >
+    <div className={barClasses}>
       {submitting ? (
         <div className="w-50">
           <LoadingDots label={savingLabel} />
@@ -133,7 +152,12 @@ export function DrawerActions({
         </Button>
       )}
 
-      <Button variant="secondary" width="auto" onClick={onCancel} disabled={submitting}>
+      <Button
+        variant="secondary"
+        width="auto"
+        onClick={dirty ? () => setConfirming(true) : onCancel}
+        disabled={submitting}
+      >
         {cancelLabel}
       </Button>
     </div>

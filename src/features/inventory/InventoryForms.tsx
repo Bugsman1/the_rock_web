@@ -126,6 +126,7 @@ export function ResourceForm({ project, existing, onSaved, onCancel }: ResourceF
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
+        dirty={formState.isDirty}
         submitting={formState.isSubmitting}
         submitIcon="plus"
         submitLabel={t("form.create")}
@@ -241,6 +242,7 @@ export function ResourceChangeForm({ resource, type, onSaved, onCancel }: Resour
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
+        dirty={formState.isDirty}
         submitting={formState.isSubmitting}
         submitIcon={type === "increase" ? "plus" : "minus"}
         submitLabel={t(`form.${type}Submit`)}

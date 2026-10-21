@@ -144,6 +144,7 @@ export function RoleForm({ role, onSaved, onCancel }: RoleFormProps) {
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
+        dirty={formState.isDirty}
         submitting={formState.isSubmitting}
         submitIcon={role === undefined ? "plus" : "circle-check"}
         submitLabel={role === undefined ? t("form.create") : t("form.submit")}

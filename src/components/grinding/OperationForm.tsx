@@ -273,6 +273,7 @@ export function OperationForm({
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
+        dirty={formState.isDirty}
         submitting={formState.isSubmitting || saved}
         submitIcon={operation === undefined ? "player-play" : "circle-check"}
         submitLabel={operation === undefined ? t("submit") : t("saveChanges")}

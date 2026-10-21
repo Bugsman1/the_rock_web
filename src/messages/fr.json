@@ -34,7 +34,12 @@
       "print": "Imprimer",
       "download": "Télécharger"
     },
-    "connectionLost": "Connexion perdue. Aucune modification ne sera enregistrée tant que la connexion n'est pas rétablie."
+    "connectionLost": "Connexion perdue. Aucune modification ne sera enregistrée tant que la connexion n'est pas rétablie.",
+    "discard": {
+      "question": "Abandonner les modifications ? Ce que vous avez saisi ne sera pas enregistré.",
+      "confirm": "Abandonner les modifications",
+      "keep": "Continuer la saisie"
+    }
   },
   "auth": {
     "login": {

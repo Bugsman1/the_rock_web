@@ -168,6 +168,7 @@ export function PaymentForm({ shipmentId, amountLeft, onSaved, onCancel }: Payme
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
+        dirty={formState.isDirty}
         submitting={formState.isSubmitting}
         submitIcon="plus"
         submitLabel={t("submit")}

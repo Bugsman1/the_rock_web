@@ -109,6 +109,7 @@ export function CustomerForm({ customer, initialName = "", onSaved, onCancel }: 
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
+        dirty={formState.isDirty}
         submitting={formState.isSubmitting}
         submitIcon={customer === undefined ? "plus" : "circle-check"}
         submitLabel={customer === undefined ? t("form.create") : t("form.submit")}

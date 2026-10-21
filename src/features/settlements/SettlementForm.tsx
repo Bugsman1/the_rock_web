@@ -206,6 +206,7 @@ export function SettlementForm({
       {failed ? <FormError message={common("saveFailed")} /> : null}
 
       <DrawerActions
+        dirty={formState.isDirty}
         submitting={formState.isSubmitting || saved}
         submitIcon="receipt"
         submitLabel={submitLabel}

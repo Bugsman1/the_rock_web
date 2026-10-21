@@ -258,7 +258,9 @@ Drawers close with the `backspace` icon (28px).
 project's Shipments page, a client and a shipment. Table headers are grey (`bg-surface-page`), rows
 are 48px, numbers end-aligned, and `TableTotalRow` adds a total under the bags or amount column
 (shipments history, a client's shipments, a shipment's payments, a machine's grindings). Every form,
-in a drawer or on a page, ends with `DrawerActions` (save, then cancel): stuck to the bottom in a
+in a drawer or on a page, ends with `DrawerActions` (save, then cancel; with typed changes,
+`dirty` from `formState.isDirty`, cancel first asks "discard the changes?" — discard leaves without
+saving, keep editing goes back to the form; only the cancel button asks): stuck to the bottom in a
 drawer, in place at the end of the page form (new and edit shipment, `sticky={false}`).
 
 **Icons:** `src/icons` mixes Tabler (stroke) and Phosphor (fill) icons; every file uses
