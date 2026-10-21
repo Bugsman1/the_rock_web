@@ -21,6 +21,10 @@ export function bagsCost(bagCount: number, bagFare: number): number {
   return amountOrZero(bagCount) * amountOrZero(bagFare);
 }
 
+export function hasPassengers(passengerCount: number): boolean {
+  return amountOrZero(passengerCount) > 0;
+}
+
 export function passengersCost(passengerCount: number, passengerFare: number): number {
   return amountOrZero(passengerCount) * amountOrZero(passengerFare);
 }
@@ -48,6 +52,7 @@ type ValidationMessages = {
   timeInvalid: string;
   amountInvalid: string;
   passengerCountInvalid: string;
+  passengerFareRequired: string;
   paymentTooHigh: string;
   totalBelowPaid: string;
 };
@@ -95,6 +100,10 @@ export function createNewShipmentSchema(messages: ValidationMessages, alreadyPai
       mill: z.string().min(1, messages.required),
       notes: z.string().max(NOTES_MAX_LENGTH),
     })
+    .refine(
+      (values) => !hasPassengers(values.passengerCount) || amountOrZero(values.passengerFare) > 0,
+      { path: ["passengerFare"], message: messages.passengerFareRequired, when: () => true },
+    )
     .superRefine((values, context) => {
       if (amountOrZero(values.currentPayment) > transportTotal(values)) {
         context.addIssue({

@@ -342,7 +342,8 @@ after (only when there is debt), the amount to add, the reason. The shipment edi
 debt fields only for a shipment that already has debt; the new-shipment form always has them. It sends
 `PATCH /shipments/{id}/ {debt, debt_notes}` (`createDebtSchema`, `debtAfter`, `debtToApi`). The client
 page shows the client's total debt in a red box (`DebtNotice`). Passengers are optional: an empty
-count or fare is sent as 0.
+count or fare is sent as 0; as soon as the count is above 0 the fare per passenger is required and
+above 0 (`hasPassengers`, `passengerFareRequired`).
 
 **Shipment status (backend `9e976ac`):** the backend sets it by itself and the app never writes it:
 `pending` until the first grinding, `grinding` while some bags are not refined, `completed` once all

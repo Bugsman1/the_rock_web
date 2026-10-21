@@ -116,6 +116,26 @@ describe("ShipmentForm", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  it("needs the passenger fare as soon as passengers are typed", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    const fareLabel = () => screen.getByText(form.passengerFare).parentElement;
+
+    expect(fareLabel()).not.toHaveTextContent("*");
+    await user.type(screen.getByLabelText(form.passengerCount), "3");
+    expect(fareLabel()).toHaveTextContent("*");
+
+    await user.type(screen.getByLabelText(form.customerName), "أحمد");
+    await user.type(screen.getByLabelText(form.phone), "22334455");
+    await user.type(screen.getByLabelText(form.source), "الشامي");
+    await user.type(screen.getByLabelText(form.bagCount), "12");
+    await user.type(screen.getByLabelText(form.bagFare), "100");
+    await user.click(screen.getByRole("button", { name: form.submit }));
+
+    expect(await screen.findByText(form.errors.passengerFareRequired)).toBeVisible();
+    expect(createShipmentMock).not.toHaveBeenCalled();
+  });
+
   it("says when saving failed for another reason", async () => {
     createShipmentMock.mockResolvedValue({ ok: false, fieldErrors: {}, failed: true });
     const user = userEvent.setup();

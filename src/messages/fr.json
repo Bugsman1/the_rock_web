@@ -344,7 +344,8 @@
         "passengerCountInvalid": "Saisissez un nombre de passagers valide, 0 ou plus",
         "phoneTaken": "Ce numéro appartient au client {name}",
         "paymentTooHigh": "Ne peut pas dépasser le total du transport",
-        "totalBelowPaid": "Le total du transport ne peut pas être inférieur au montant payé ({paid})."
+        "totalBelowPaid": "Le total du transport ne peut pas être inférieur au montant payé ({paid}).",
+        "passengerFareRequired": "Saisissez le prix par passager : l'expédition a des passagers"
       },
       "mill": "Projet",
       "notes": "Notes",

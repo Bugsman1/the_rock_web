@@ -130,6 +130,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
           timeInvalid: common("validation.timeInvalid"),
           amountInvalid: t("errors.amountInvalid"),
           passengerCountInvalid: t("errors.passengerCountInvalid"),
+          passengerFareRequired: t("errors.passengerFareRequired"),
           paymentTooHigh: t("errors.paymentTooHigh"),
           totalBelowPaid: t("errors.totalBelowPaid", { paid: formatMoney(paid, locale) }),
         },

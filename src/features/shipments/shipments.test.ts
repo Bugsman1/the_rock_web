@@ -117,6 +117,7 @@ describe("backend form", () => {
       timeInvalid: "time",
       amountInvalid: "amount",
       passengerCountInvalid: "passengers",
+      passengerFareRequired: "fare required",
       paymentTooHigh: "too high",
       totalBelowPaid: "below paid",
     });
@@ -156,6 +157,18 @@ describe("backend form", () => {
       ).toMatchObject({ passengers_count: 0, passenger_transport_cost_per_person: "0" });
     });
 
+    it("needs the fare per passenger as soon as the shipment has passengers", () => {
+      const fareIssues = (passengerCount: number, passengerFare: number) =>
+        (schema.safeParse({ ...values, passengerCount, passengerFare }).error?.issues ?? []).map(
+          (issue) => [issue.path.join("."), issue.message],
+        );
+
+      expect(fareIssues(3, Number.NaN)).toEqual([["passengerFare", "fare required"]]);
+      expect(fareIssues(3, 0)).toEqual([["passengerFare", "fare required"]]);
+      expect(fareIssues(3, 500)).toEqual([]);
+      expect(fareIssues(0, Number.NaN)).toEqual([]);
+    });
+
     it("takes a debt of zero or more, apart from the transport, and sends an empty one as zero", () => {
       expect(
         (schema.safeParse({ ...values, debt: -1 }).error?.issues ?? []).map((issue) => [
@@ -188,6 +201,7 @@ describe("backend form", () => {
           timeInvalid: "time",
           amountInvalid: "amount",
           passengerCountInvalid: "passengers",
+          passengerFareRequired: "fare required",
           paymentTooHigh: "too high",
           totalBelowPaid: "below paid",
         },

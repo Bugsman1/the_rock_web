@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/format";
 import type { Project } from "@/lib/projects";
 import {
   bagsCost,
+  hasPassengers,
   passengersCost,
   remainingToPay,
   transportMethodKeys,
@@ -121,6 +122,7 @@ export function TransportCostFields({ form, paid, showDebt }: TransportCostField
         step="any"
         inputMode="decimal"
         label={t("passengerFare")}
+        required={hasPassengers(passengerCount)}
         error={errors.passengerFare?.message}
         {...register("passengerFare", { valueAsNumber: true })}
       />
