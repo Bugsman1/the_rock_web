@@ -31,7 +31,7 @@ export interface paths {
          * @description Takes a set of user credentials and returns an access and refresh JSON web
          *     token pair to prove the authentication of those credentials.
          */
-        post: operations["v1_auth_login_create"];
+        post: operations["auth_login_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -46,7 +46,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Returns the currently authenticated user, with their role and permissions. */
-        get: operations["v1_auth_me_retrieve"];
+        get: operations["auth_me_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -68,7 +68,7 @@ export interface paths {
          * @description Takes a refresh type JSON web token and returns an access type JSON web
          *     token if the refresh token is valid.
          */
-        post: operations["v1_auth_refresh_create"];
+        post: operations["auth_refresh_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -86,13 +86,13 @@ export interface paths {
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        get: operations["v1_customers_list"];
+        get: operations["customers_list"];
         put?: never;
         /**
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        post: operations["v1_customers_create"];
+        post: operations["customers_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -110,25 +110,25 @@ export interface paths {
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        get: operations["v1_customers_retrieve"];
+        get: operations["customers_retrieve"];
         /**
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        put: operations["v1_customers_update"];
+        put: operations["customers_update"];
         post?: never;
         /**
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        delete: operations["v1_customers_destroy"];
+        delete: operations["customers_destroy"];
         options?: never;
         head?: never;
         /**
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        patch: operations["v1_customers_partial_update"];
+        patch: operations["customers_partial_update"];
         trace?: never;
     };
     "/api/v1/grinders/": {
@@ -147,7 +147,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        get: operations["v1_grinders_list"];
+        get: operations["grinders_list"];
         put?: never;
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
@@ -158,7 +158,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        post: operations["v1_grinders_create"];
+        post: operations["grinders_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -181,7 +181,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        get: operations["v1_grinders_retrieve"];
+        get: operations["grinders_retrieve"];
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
          *     the records of their own project, and stops them from creating or moving a
@@ -191,7 +191,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        put: operations["v1_grinders_update"];
+        put: operations["grinders_update"];
         post?: never;
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
@@ -202,7 +202,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        delete: operations["v1_grinders_destroy"];
+        delete: operations["grinders_destroy"];
         options?: never;
         head?: never;
         /**
@@ -214,7 +214,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        patch: operations["v1_grinders_partial_update"];
+        patch: operations["grinders_partial_update"];
         trace?: never;
     };
     "/api/v1/grinding-operations/": {
@@ -233,7 +233,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        get: operations["v1_grinding_operations_list"];
+        get: operations["grinding_operations_list"];
         put?: never;
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
@@ -244,7 +244,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        post: operations["v1_grinding_operations_create"];
+        post: operations["grinding_operations_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -267,7 +267,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        get: operations["v1_grinding_operations_retrieve"];
+        get: operations["grinding_operations_retrieve"];
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
          *     the records of their own project, and stops them from creating or moving a
@@ -277,7 +277,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        put: operations["v1_grinding_operations_update"];
+        put: operations["grinding_operations_update"];
         post?: never;
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
@@ -288,7 +288,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        delete: operations["v1_grinding_operations_destroy"];
+        delete: operations["grinding_operations_destroy"];
         options?: never;
         head?: never;
         /**
@@ -300,7 +300,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        patch: operations["v1_grinding_operations_partial_update"];
+        patch: operations["grinding_operations_partial_update"];
         trace?: never;
     };
     "/api/v1/operators/": {
@@ -315,7 +315,7 @@ export interface paths {
          *     that module, on that project when the role is project-scoped. Open to whoever may add or
          *     edit in the module, so the forms can offer them without access to the users module.
          */
-        get: operations["v1_operators_list"];
+        get: operations["operators_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -340,7 +340,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        get: operations["v1_projects_list"];
+        get: operations["projects_list"];
         put?: never;
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
@@ -351,7 +351,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        post: operations["v1_projects_create"];
+        post: operations["projects_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -374,7 +374,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        get: operations["v1_projects_retrieve"];
+        get: operations["projects_retrieve"];
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
          *     the records of their own project, and stops them from creating or moving a
@@ -384,7 +384,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        put: operations["v1_projects_update"];
+        put: operations["projects_update"];
         post?: never;
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
@@ -395,7 +395,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        delete: operations["v1_projects_destroy"];
+        delete: operations["projects_destroy"];
         options?: never;
         head?: never;
         /**
@@ -407,7 +407,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        patch: operations["v1_projects_partial_update"];
+        patch: operations["projects_partial_update"];
         trace?: never;
     };
     "/api/v1/refining-operations/": {
@@ -426,7 +426,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        get: operations["v1_refining_operations_list"];
+        get: operations["refining_operations_list"];
         put?: never;
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
@@ -437,7 +437,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        post: operations["v1_refining_operations_create"];
+        post: operations["refining_operations_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -460,7 +460,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        get: operations["v1_refining_operations_retrieve"];
+        get: operations["refining_operations_retrieve"];
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
          *     the records of their own project, and stops them from creating or moving a
@@ -470,7 +470,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        put: operations["v1_refining_operations_update"];
+        put: operations["refining_operations_update"];
         post?: never;
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
@@ -481,7 +481,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        delete: operations["v1_refining_operations_destroy"];
+        delete: operations["refining_operations_destroy"];
         options?: never;
         head?: never;
         /**
@@ -493,7 +493,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        patch: operations["v1_refining_operations_partial_update"];
+        patch: operations["refining_operations_partial_update"];
         trace?: never;
     };
     "/api/v1/resource-history/": {
@@ -508,7 +508,7 @@ export interface paths {
          *     decrease actions of a resource, and by the mercury grinding operations take and refining
          *     operations return.
          */
-        get: operations["v1_resource_history_list"];
+        get: operations["resource_history_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -529,7 +529,7 @@ export interface paths {
          *     decrease actions of a resource, and by the mercury grinding operations take and refining
          *     operations return.
          */
-        get: operations["v1_resource_history_retrieve"];
+        get: operations["resource_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -554,7 +554,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        get: operations["v1_resources_list"];
+        get: operations["resources_list"];
         put?: never;
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
@@ -565,7 +565,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        post: operations["v1_resources_create"];
+        post: operations["resources_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -588,7 +588,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        get: operations["v1_resources_retrieve"];
+        get: operations["resources_retrieve"];
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
          *     the records of their own project, and stops them from creating or moving a
@@ -598,7 +598,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        put: operations["v1_resources_update"];
+        put: operations["resources_update"];
         post?: never;
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
@@ -609,7 +609,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        delete: operations["v1_resources_destroy"];
+        delete: operations["resources_destroy"];
         options?: never;
         head?: never;
         /**
@@ -621,7 +621,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        patch: operations["v1_resources_partial_update"];
+        patch: operations["resources_partial_update"];
         trace?: never;
     };
     "/api/v1/resources/{id}/decrease/": {
@@ -642,7 +642,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        post: operations["v1_resources_decrease_create"];
+        post: operations["resources_decrease_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -667,7 +667,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        post: operations["v1_resources_increase_create"];
+        post: operations["resources_increase_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -685,13 +685,13 @@ export interface paths {
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        get: operations["v1_role_permissions_list"];
+        get: operations["role_permissions_list"];
         put?: never;
         /**
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        post: operations["v1_role_permissions_create"];
+        post: operations["role_permissions_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -709,12 +709,12 @@ export interface paths {
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        get: operations["v1_role_permissions_retrieve"];
+        get: operations["role_permissions_retrieve"];
         /**
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        put: operations["v1_role_permissions_update"];
+        put: operations["role_permissions_update"];
         post?: never;
         delete?: never;
         options?: never;
@@ -723,7 +723,7 @@ export interface paths {
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        patch: operations["v1_role_permissions_partial_update"];
+        patch: operations["role_permissions_partial_update"];
         trace?: never;
     };
     "/api/v1/roles/": {
@@ -737,13 +737,13 @@ export interface paths {
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        get: operations["v1_roles_list"];
+        get: operations["roles_list"];
         put?: never;
         /**
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        post: operations["v1_roles_create"];
+        post: operations["roles_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -761,25 +761,25 @@ export interface paths {
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        get: operations["v1_roles_retrieve"];
+        get: operations["roles_retrieve"];
         /**
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        put: operations["v1_roles_update"];
+        put: operations["roles_update"];
         post?: never;
         /**
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        delete: operations["v1_roles_destroy"];
+        delete: operations["roles_destroy"];
         options?: never;
         head?: never;
         /**
          * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
          *     for every create, update and destroy (soft delete) action.
          */
-        patch: operations["v1_roles_partial_update"];
+        patch: operations["roles_partial_update"];
         trace?: never;
     };
     "/api/v1/settlements/": {
@@ -794,14 +794,14 @@ export interface paths {
          *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
          *     Deleting a settlement (soft) frees its shipments for another one.
          */
-        get: operations["v1_settlements_list"];
+        get: operations["settlements_list"];
         put?: never;
         /**
          * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
          *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
          *     Deleting a settlement (soft) frees its shipments for another one.
          */
-        post: operations["v1_settlements_create"];
+        post: operations["settlements_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -820,20 +820,20 @@ export interface paths {
          *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
          *     Deleting a settlement (soft) frees its shipments for another one.
          */
-        get: operations["v1_settlements_retrieve"];
+        get: operations["settlements_retrieve"];
         /**
          * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
          *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
          *     Deleting a settlement (soft) frees its shipments for another one.
          */
-        put: operations["v1_settlements_update"];
+        put: operations["settlements_update"];
         post?: never;
         /**
          * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
          *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
          *     Deleting a settlement (soft) frees its shipments for another one.
          */
-        delete: operations["v1_settlements_destroy"];
+        delete: operations["settlements_destroy"];
         options?: never;
         head?: never;
         /**
@@ -841,7 +841,7 @@ export interface paths {
          *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
          *     Deleting a settlement (soft) frees its shipments for another one.
          */
-        patch: operations["v1_settlements_partial_update"];
+        patch: operations["settlements_partial_update"];
         trace?: never;
     };
     "/api/v1/settlements/{id}/pdf/": {
@@ -855,13 +855,69 @@ export interface paths {
          * @description The settlement's invoice, as a PDF to download; it can be downloaded again at any
          *     time.
          */
-        get: operations["v1_settlements_pdf_retrieve"];
+        get: operations["settlements_pdf_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shipment-debts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The debts of shipments, each with its date and time. Each write recomputes the
+         *     shipment's debt; the debts of a shipment an active settlement holds cannot change.
+         */
+        get: operations["shipment_debts_list"];
+        put?: never;
+        /**
+         * @description The debts of shipments, each with its date and time. Each write recomputes the
+         *     shipment's debt; the debts of a shipment an active settlement holds cannot change.
+         */
+        post: operations["shipment_debts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shipment-debts/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The debts of shipments, each with its date and time. Each write recomputes the
+         *     shipment's debt; the debts of a shipment an active settlement holds cannot change.
+         */
+        get: operations["shipment_debts_retrieve"];
+        /**
+         * @description The debts of shipments, each with its date and time. Each write recomputes the
+         *     shipment's debt; the debts of a shipment an active settlement holds cannot change.
+         */
+        put: operations["shipment_debts_update"];
+        post?: never;
+        /**
+         * @description The debts of shipments, each with its date and time. Each write recomputes the
+         *     shipment's debt; the debts of a shipment an active settlement holds cannot change.
+         */
+        delete: operations["shipment_debts_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description The debts of shipments, each with its date and time. Each write recomputes the
+         *     shipment's debt; the debts of a shipment an active settlement holds cannot change.
+         */
+        patch: operations["shipment_debts_partial_update"];
         trace?: never;
     };
     "/api/v1/shipment-payments/": {
@@ -875,13 +931,13 @@ export interface paths {
          * @description The payments (installments) of shipments. Each write recomputes the shipment's
          *     current_payment, which may not exceed its transport total.
          */
-        get: operations["v1_shipment_payments_list"];
+        get: operations["shipment_payments_list"];
         put?: never;
         /**
          * @description The payments (installments) of shipments. Each write recomputes the shipment's
          *     current_payment, which may not exceed its transport total.
          */
-        post: operations["v1_shipment_payments_create"];
+        post: operations["shipment_payments_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -899,25 +955,25 @@ export interface paths {
          * @description The payments (installments) of shipments. Each write recomputes the shipment's
          *     current_payment, which may not exceed its transport total.
          */
-        get: operations["v1_shipment_payments_retrieve"];
+        get: operations["shipment_payments_retrieve"];
         /**
          * @description The payments (installments) of shipments. Each write recomputes the shipment's
          *     current_payment, which may not exceed its transport total.
          */
-        put: operations["v1_shipment_payments_update"];
+        put: operations["shipment_payments_update"];
         post?: never;
         /**
          * @description The payments (installments) of shipments. Each write recomputes the shipment's
          *     current_payment, which may not exceed its transport total.
          */
-        delete: operations["v1_shipment_payments_destroy"];
+        delete: operations["shipment_payments_destroy"];
         options?: never;
         head?: never;
         /**
          * @description The payments (installments) of shipments. Each write recomputes the shipment's
          *     current_payment, which may not exceed its transport total.
          */
-        patch: operations["v1_shipment_payments_partial_update"];
+        patch: operations["shipment_payments_partial_update"];
         trace?: never;
     };
     "/api/v1/shipments/": {
@@ -936,7 +992,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        get: operations["v1_shipments_list"];
+        get: operations["shipments_list"];
         put?: never;
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
@@ -947,7 +1003,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        post: operations["v1_shipments_create"];
+        post: operations["shipments_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -970,7 +1026,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        get: operations["v1_shipments_retrieve"];
+        get: operations["shipments_retrieve"];
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
          *     the records of their own project, and stops them from creating or moving a
@@ -980,7 +1036,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        put: operations["v1_shipments_update"];
+        put: operations["shipments_update"];
         post?: never;
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
@@ -991,7 +1047,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        delete: operations["v1_shipments_destroy"];
+        delete: operations["shipments_destroy"];
         options?: never;
         head?: never;
         /**
@@ -1003,7 +1059,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        patch: operations["v1_shipments_partial_update"];
+        patch: operations["shipments_partial_update"];
         trace?: never;
     };
     "/api/v1/shipments/{id}/gold/": {
@@ -1017,7 +1073,7 @@ export interface paths {
          * @description The gold extracted from the shipment without mercury (g): the sum over the active
          *     refinings of its active grinding operations.
          */
-        get: operations["v1_shipments_gold_retrieve"];
+        get: operations["shipments_gold_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1037,7 +1093,7 @@ export interface paths {
          * @description The transport invoice of the shipment, as a PDF to download. The first download
          *     gives the shipment its invoice number.
          */
-        get: operations["v1_shipments_invoice_retrieve"];
+        get: operations["shipments_invoice_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1062,7 +1118,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        get: operations["v1_users_list"];
+        get: operations["users_list"];
         put?: never;
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
@@ -1073,7 +1129,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        post: operations["v1_users_create"];
+        post: operations["users_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1096,7 +1152,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        get: operations["v1_users_retrieve"];
+        get: operations["users_retrieve"];
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
          *     the records of their own project, and stops them from creating or moving a
@@ -1106,7 +1162,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        put: operations["v1_users_update"];
+        put: operations["users_update"];
         post?: never;
         /**
          * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
@@ -1117,7 +1173,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        delete: operations["v1_users_destroy"];
+        delete: operations["users_destroy"];
         options?: never;
         head?: never;
         /**
@@ -1129,7 +1185,7 @@ export interface paths {
          *     ("project" by default, "pk" for the Project viewset itself). Must be listed
          *     before `AuditLogMixin` so its perform_create/perform_update run first.
          */
-        patch: operations["v1_users_partial_update"];
+        patch: operations["users_partial_update"];
         trace?: never;
     };
 }
@@ -1252,9 +1308,10 @@ export interface components {
          *     * `grinding` - Grinding
          *     * `refining` - Refining
          *     * `inventory` - Inventory
+         *     * `settlements` - Settlements
          * @enum {string}
          */
-        ModuleEnum: "accounts" | "locations" | "customers" | "shipments" | "grinding" | "refining" | "inventory";
+        ModuleEnum: "accounts" | "locations" | "customers" | "shipments" | "grinding" | "refining" | "inventory" | "settlements";
         Operator: {
             id: $Read<number>;
             name: $Read<string>;
@@ -1408,6 +1465,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Settlement"][];
+        };
+        PaginatedShipmentDebtList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["ShipmentDebt"][];
         };
         PaginatedShipmentList: {
             /** @example 123 */
@@ -1567,11 +1639,6 @@ export interface components {
             /** Format: decimal */
             weight_loss?: $Read<string>;
             /**
-             * Extracted gold weight (g)
-             * Format: decimal
-             */
-            gold_weight?: string;
-            /**
              * Gold weight with mercury (g)
              * Format: decimal
              */
@@ -1649,7 +1716,7 @@ export interface components {
             shipments?: number[];
             shipment_numbers?: $Read<string[]>;
             /** Format: decimal */
-            grinding_cost?: string;
+            grinding_cost_per_bag?: string;
             /** Format: decimal */
             refining_cost_per_gram?: string;
             /**
@@ -1694,8 +1761,8 @@ export interface components {
             current_payment?: string;
             payments?: $Read<components["schemas"]["ShipmentPaymentSummary"][]>;
             /** Format: decimal */
-            debt?: string;
-            debt_notes?: string;
+            debt?: $Read<string>;
+            debts?: $Read<components["schemas"]["ShipmentDebtSummary"][]>;
             transport_method?: components["schemas"]["TransportMethodEnum"];
             source?: string;
             project?: number;
@@ -1707,6 +1774,27 @@ export interface components {
             is_ground?: $Read<boolean>;
             is_refined?: $Read<boolean>;
             notes?: string;
+            created_by_name?: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        PatchedShipmentDebt: {
+            id?: $Read<number>;
+            shipment?: number;
+            shipment_number?: $Read<string>;
+            /** Format: decimal */
+            amount?: string;
+            /**
+             * Debt date
+             * Format: date-time
+             */
+            incurred_at?: string;
+            description?: string;
             created_by_name?: $Read<string | null>;
             /**
              * أنشئت في
@@ -1796,11 +1884,6 @@ export interface components {
             weight_after: string;
             /** Format: decimal */
             weight_loss: $Read<string>;
-            /**
-             * Extracted gold weight (g)
-             * Format: decimal
-             */
-            gold_weight: string;
             /**
              * Gold weight with mercury (g)
              * Format: decimal
@@ -1925,7 +2008,7 @@ export interface components {
             shipments?: number[];
             shipment_numbers: $Read<string[]>;
             /** Format: decimal */
-            grinding_cost?: string;
+            grinding_cost_per_bag?: string;
             /** Format: decimal */
             refining_cost_per_gram?: string;
             /**
@@ -1953,6 +2036,8 @@ export interface components {
             passengers_transport: string;
             /** Format: decimal */
             gold: string;
+            /** Format: decimal */
+            bags: string;
             /** Format: decimal */
             debt: string;
             /** Format: decimal */
@@ -1989,8 +2074,8 @@ export interface components {
             current_payment?: string;
             payments: $Read<components["schemas"]["ShipmentPaymentSummary"][]>;
             /** Format: decimal */
-            debt?: string;
-            debt_notes?: string;
+            debt: $Read<string>;
+            debts: $Read<components["schemas"]["ShipmentDebtSummary"][]>;
             transport_method: components["schemas"]["TransportMethodEnum"];
             source: string;
             project: number;
@@ -2010,6 +2095,39 @@ export interface components {
             created_at: $Read<string>;
             /** Format: date-time */
             updated_at: $Read<string>;
+        };
+        ShipmentDebt: {
+            id: $Read<number>;
+            shipment: number;
+            shipment_number: $Read<string>;
+            /** Format: decimal */
+            amount: string;
+            /**
+             * Debt date
+             * Format: date-time
+             */
+            incurred_at?: string;
+            description?: string;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /** @description A debt as listed on its shipment. */
+        ShipmentDebtSummary: {
+            id: $Read<number>;
+            /** Format: decimal */
+            amount: $Read<string>;
+            /**
+             * Debt date
+             * Format: date-time
+             */
+            incurred_at: $Read<string>;
+            description: $Read<string>;
         };
         /** @description The gold of a shipment: the sum over the active refinings of its grinding operations. */
         ShipmentGold: {
@@ -2103,7 +2221,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    v1_auth_login_create: {
+    auth_login_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -2128,7 +2246,7 @@ export interface operations {
             };
         };
     };
-    v1_auth_me_retrieve: {
+    auth_me_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -2147,7 +2265,7 @@ export interface operations {
             };
         };
     };
-    v1_auth_refresh_create: {
+    auth_refresh_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -2172,7 +2290,7 @@ export interface operations {
             };
         };
     };
-    v1_customers_list: {
+    customers_list: {
         parameters: {
             query?: {
                 /** @description Which field to use when ordering the results. */
@@ -2200,7 +2318,7 @@ export interface operations {
             };
         };
     };
-    v1_customers_create: {
+    customers_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -2225,7 +2343,7 @@ export interface operations {
             };
         };
     };
-    v1_customers_retrieve: {
+    customers_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -2247,7 +2365,7 @@ export interface operations {
             };
         };
     };
-    v1_customers_update: {
+    customers_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -2275,7 +2393,7 @@ export interface operations {
             };
         };
     };
-    v1_customers_destroy: {
+    customers_destroy: {
         parameters: {
             query?: never;
             header?: never;
@@ -2296,7 +2414,7 @@ export interface operations {
             };
         };
     };
-    v1_customers_partial_update: {
+    customers_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -2324,7 +2442,7 @@ export interface operations {
             };
         };
     };
-    v1_grinders_list: {
+    grinders_list: {
         parameters: {
             query?: {
                 /** @description Which field to use when ordering the results. */
@@ -2359,7 +2477,7 @@ export interface operations {
             };
         };
     };
-    v1_grinders_create: {
+    grinders_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -2384,7 +2502,7 @@ export interface operations {
             };
         };
     };
-    v1_grinders_retrieve: {
+    grinders_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -2406,7 +2524,7 @@ export interface operations {
             };
         };
     };
-    v1_grinders_update: {
+    grinders_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -2434,7 +2552,7 @@ export interface operations {
             };
         };
     };
-    v1_grinders_destroy: {
+    grinders_destroy: {
         parameters: {
             query?: never;
             header?: never;
@@ -2455,7 +2573,7 @@ export interface operations {
             };
         };
     };
-    v1_grinders_partial_update: {
+    grinders_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -2483,7 +2601,7 @@ export interface operations {
             };
         };
     };
-    v1_grinding_operations_list: {
+    grinding_operations_list: {
         parameters: {
             query?: {
                 grinder?: number;
@@ -2516,7 +2634,7 @@ export interface operations {
             };
         };
     };
-    v1_grinding_operations_create: {
+    grinding_operations_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -2541,7 +2659,7 @@ export interface operations {
             };
         };
     };
-    v1_grinding_operations_retrieve: {
+    grinding_operations_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -2563,7 +2681,7 @@ export interface operations {
             };
         };
     };
-    v1_grinding_operations_update: {
+    grinding_operations_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -2591,7 +2709,7 @@ export interface operations {
             };
         };
     };
-    v1_grinding_operations_destroy: {
+    grinding_operations_destroy: {
         parameters: {
             query?: never;
             header?: never;
@@ -2612,7 +2730,7 @@ export interface operations {
             };
         };
     };
-    v1_grinding_operations_partial_update: {
+    grinding_operations_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -2640,7 +2758,7 @@ export interface operations {
             };
         };
     };
-    v1_operators_list: {
+    operators_list: {
         parameters: {
             query: {
                 /**
@@ -2666,7 +2784,7 @@ export interface operations {
             };
         };
     };
-    v1_projects_list: {
+    projects_list: {
         parameters: {
             query?: {
                 /** @description Which field to use when ordering the results. */
@@ -2700,7 +2818,7 @@ export interface operations {
             };
         };
     };
-    v1_projects_create: {
+    projects_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -2725,7 +2843,7 @@ export interface operations {
             };
         };
     };
-    v1_projects_retrieve: {
+    projects_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -2747,7 +2865,7 @@ export interface operations {
             };
         };
     };
-    v1_projects_update: {
+    projects_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -2775,7 +2893,7 @@ export interface operations {
             };
         };
     };
-    v1_projects_destroy: {
+    projects_destroy: {
         parameters: {
             query?: never;
             header?: never;
@@ -2796,7 +2914,7 @@ export interface operations {
             };
         };
     };
-    v1_projects_partial_update: {
+    projects_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -2824,7 +2942,7 @@ export interface operations {
             };
         };
     };
-    v1_refining_operations_list: {
+    refining_operations_list: {
         parameters: {
             query?: {
                 grinder?: number;
@@ -2858,7 +2976,7 @@ export interface operations {
             };
         };
     };
-    v1_refining_operations_create: {
+    refining_operations_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -2883,7 +3001,7 @@ export interface operations {
             };
         };
     };
-    v1_refining_operations_retrieve: {
+    refining_operations_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -2905,7 +3023,7 @@ export interface operations {
             };
         };
     };
-    v1_refining_operations_update: {
+    refining_operations_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -2933,7 +3051,7 @@ export interface operations {
             };
         };
     };
-    v1_refining_operations_destroy: {
+    refining_operations_destroy: {
         parameters: {
             query?: never;
             header?: never;
@@ -2954,7 +3072,7 @@ export interface operations {
             };
         };
     };
-    v1_refining_operations_partial_update: {
+    refining_operations_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -2982,7 +3100,7 @@ export interface operations {
             };
         };
     };
-    v1_resource_history_list: {
+    resource_history_list: {
         parameters: {
             query?: {
                 /**
@@ -3022,7 +3140,7 @@ export interface operations {
             };
         };
     };
-    v1_resource_history_retrieve: {
+    resource_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -3044,7 +3162,7 @@ export interface operations {
             };
         };
     };
-    v1_resources_list: {
+    resources_list: {
         parameters: {
             query?: {
                 /** @description Which field to use when ordering the results. */
@@ -3073,7 +3191,7 @@ export interface operations {
             };
         };
     };
-    v1_resources_create: {
+    resources_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -3098,7 +3216,7 @@ export interface operations {
             };
         };
     };
-    v1_resources_retrieve: {
+    resources_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -3120,7 +3238,7 @@ export interface operations {
             };
         };
     };
-    v1_resources_update: {
+    resources_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -3148,7 +3266,7 @@ export interface operations {
             };
         };
     };
-    v1_resources_destroy: {
+    resources_destroy: {
         parameters: {
             query?: never;
             header?: never;
@@ -3169,7 +3287,7 @@ export interface operations {
             };
         };
     };
-    v1_resources_partial_update: {
+    resources_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -3197,7 +3315,7 @@ export interface operations {
             };
         };
     };
-    v1_resources_decrease_create: {
+    resources_decrease_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -3225,7 +3343,7 @@ export interface operations {
             };
         };
     };
-    v1_resources_increase_create: {
+    resources_increase_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -3253,7 +3371,7 @@ export interface operations {
             };
         };
     };
-    v1_role_permissions_list: {
+    role_permissions_list: {
         parameters: {
             query?: {
                 /**
@@ -3264,8 +3382,9 @@ export interface operations {
                  *     * `grinding` - Grinding
                  *     * `refining` - Refining
                  *     * `inventory` - Inventory
+                 *     * `settlements` - Settlements
                  */
-                module?: "accounts" | "customers" | "grinding" | "inventory" | "locations" | "refining" | "shipments";
+                module?: "accounts" | "customers" | "grinding" | "inventory" | "locations" | "refining" | "settlements" | "shipments";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -3292,7 +3411,7 @@ export interface operations {
             };
         };
     };
-    v1_role_permissions_create: {
+    role_permissions_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -3317,7 +3436,7 @@ export interface operations {
             };
         };
     };
-    v1_role_permissions_retrieve: {
+    role_permissions_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -3339,7 +3458,7 @@ export interface operations {
             };
         };
     };
-    v1_role_permissions_update: {
+    role_permissions_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -3367,7 +3486,7 @@ export interface operations {
             };
         };
     };
-    v1_role_permissions_partial_update: {
+    role_permissions_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -3395,7 +3514,7 @@ export interface operations {
             };
         };
     };
-    v1_roles_list: {
+    roles_list: {
         parameters: {
             query?: {
                 name?: string;
@@ -3424,7 +3543,7 @@ export interface operations {
             };
         };
     };
-    v1_roles_create: {
+    roles_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -3449,7 +3568,7 @@ export interface operations {
             };
         };
     };
-    v1_roles_retrieve: {
+    roles_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -3471,7 +3590,7 @@ export interface operations {
             };
         };
     };
-    v1_roles_update: {
+    roles_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -3499,7 +3618,7 @@ export interface operations {
             };
         };
     };
-    v1_roles_destroy: {
+    roles_destroy: {
         parameters: {
             query?: never;
             header?: never;
@@ -3520,7 +3639,7 @@ export interface operations {
             };
         };
     };
-    v1_roles_partial_update: {
+    roles_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -3548,7 +3667,7 @@ export interface operations {
             };
         };
     };
-    v1_settlements_list: {
+    settlements_list: {
         parameters: {
             query?: {
                 customer?: number;
@@ -3579,7 +3698,7 @@ export interface operations {
             };
         };
     };
-    v1_settlements_create: {
+    settlements_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -3604,7 +3723,7 @@ export interface operations {
             };
         };
     };
-    v1_settlements_retrieve: {
+    settlements_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -3626,7 +3745,7 @@ export interface operations {
             };
         };
     };
-    v1_settlements_update: {
+    settlements_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -3654,7 +3773,7 @@ export interface operations {
             };
         };
     };
-    v1_settlements_destroy: {
+    settlements_destroy: {
         parameters: {
             query?: never;
             header?: never;
@@ -3675,7 +3794,7 @@ export interface operations {
             };
         };
     };
-    v1_settlements_partial_update: {
+    settlements_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -3703,7 +3822,7 @@ export interface operations {
             };
         };
     };
-    v1_settlements_pdf_retrieve: {
+    settlements_pdf_retrieve: {
         parameters: {
             query?: {
                 format?: "json" | "pdf";
@@ -3729,7 +3848,160 @@ export interface operations {
             };
         };
     };
-    v1_shipment_payments_list: {
+    shipment_debts_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+                shipment?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedShipmentDebtList"];
+                };
+            };
+        };
+    };
+    shipment_debts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShipmentDebt"];
+                "application/x-www-form-urlencoded": components["schemas"]["ShipmentDebt"];
+                "multipart/form-data": components["schemas"]["ShipmentDebt"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentDebt"];
+                };
+            };
+        };
+    };
+    shipment_debts_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this shipment debt. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentDebt"];
+                };
+            };
+        };
+    };
+    shipment_debts_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this shipment debt. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShipmentDebt"];
+                "application/x-www-form-urlencoded": components["schemas"]["ShipmentDebt"];
+                "multipart/form-data": components["schemas"]["ShipmentDebt"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentDebt"];
+                };
+            };
+        };
+    };
+    shipment_debts_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this shipment debt. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    shipment_debts_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this shipment debt. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedShipmentDebt"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedShipmentDebt"];
+                "multipart/form-data": components["schemas"]["PatchedShipmentDebt"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentDebt"];
+                };
+            };
+        };
+    };
+    shipment_payments_list: {
         parameters: {
             query?: {
                 /** @description Which field to use when ordering the results. */
@@ -3758,7 +4030,7 @@ export interface operations {
             };
         };
     };
-    v1_shipment_payments_create: {
+    shipment_payments_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -3783,7 +4055,7 @@ export interface operations {
             };
         };
     };
-    v1_shipment_payments_retrieve: {
+    shipment_payments_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -3805,7 +4077,7 @@ export interface operations {
             };
         };
     };
-    v1_shipment_payments_update: {
+    shipment_payments_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -3833,7 +4105,7 @@ export interface operations {
             };
         };
     };
-    v1_shipment_payments_destroy: {
+    shipment_payments_destroy: {
         parameters: {
             query?: never;
             header?: never;
@@ -3854,7 +4126,7 @@ export interface operations {
             };
         };
     };
-    v1_shipment_payments_partial_update: {
+    shipment_payments_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -3882,7 +4154,7 @@ export interface operations {
             };
         };
     };
-    v1_shipments_list: {
+    shipments_list: {
         parameters: {
             query?: {
                 arrival_date?: string;
@@ -3927,7 +4199,7 @@ export interface operations {
             };
         };
     };
-    v1_shipments_create: {
+    shipments_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -3952,7 +4224,7 @@ export interface operations {
             };
         };
     };
-    v1_shipments_retrieve: {
+    shipments_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -3974,7 +4246,7 @@ export interface operations {
             };
         };
     };
-    v1_shipments_update: {
+    shipments_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -4002,7 +4274,7 @@ export interface operations {
             };
         };
     };
-    v1_shipments_destroy: {
+    shipments_destroy: {
         parameters: {
             query?: never;
             header?: never;
@@ -4023,7 +4295,7 @@ export interface operations {
             };
         };
     };
-    v1_shipments_partial_update: {
+    shipments_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -4051,7 +4323,7 @@ export interface operations {
             };
         };
     };
-    v1_shipments_gold_retrieve: {
+    shipments_gold_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -4073,7 +4345,7 @@ export interface operations {
             };
         };
     };
-    v1_shipments_invoice_retrieve: {
+    shipments_invoice_retrieve: {
         parameters: {
             query?: {
                 format?: "json" | "pdf";
@@ -4099,7 +4371,7 @@ export interface operations {
             };
         };
     };
-    v1_users_list: {
+    users_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
@@ -4130,7 +4402,7 @@ export interface operations {
             };
         };
     };
-    v1_users_create: {
+    users_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -4155,7 +4427,7 @@ export interface operations {
             };
         };
     };
-    v1_users_retrieve: {
+    users_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -4177,7 +4449,7 @@ export interface operations {
             };
         };
     };
-    v1_users_update: {
+    users_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -4205,7 +4477,7 @@ export interface operations {
             };
         };
     };
-    v1_users_destroy: {
+    users_destroy: {
         parameters: {
             query?: never;
             header?: never;
@@ -4226,7 +4498,7 @@ export interface operations {
             };
         };
     };
-    v1_users_partial_update: {
+    users_partial_update: {
         parameters: {
             query?: never;
             header?: never;

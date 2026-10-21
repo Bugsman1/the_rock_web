@@ -11,6 +11,7 @@ import { customerToApi, matchCustomer } from "@/lib/customers";
 import { getCustomersWithPhone } from "@/lib/customersApi";
 import type { Locale } from "@/i18n/locales";
 import { combineDateAndTime } from "@/lib/datetime";
+import { amountOrZero } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import { isRecordId } from "@/lib/projects";
 import {
@@ -60,7 +61,7 @@ async function customerIdFor(
 export async function createShipment(
   values: NewShipmentValues,
   phoneTaken: (owner: string) => string,
-): Promise<{ ok: true; id: string } | Failure> {
+): Promise<{ ok: true; id: string; debtFailed: boolean } | Failure> {
   const arrivedAt = combineDateAndTime(values.arrivalDate, values.arrivalTime);
 
   if (arrivedAt === undefined) {
@@ -78,7 +79,12 @@ export async function createShipment(
   });
 
   if (data !== undefined) {
-    return { ok: true, id: String(data.id) };
+    const id = String(data.id);
+    const debt = amountOrZero(values.debt);
+    const debtFailed =
+      debt > 0 && !(await addDebt(id, { amount: debt, notes: values.debtNotes })).ok;
+
+    return { ok: true, id, debtFailed };
   }
 
   const outcome = saveOutcome(response, error, shipmentErrorsFromApi);
@@ -125,14 +131,12 @@ export async function getShipment(shipmentId: string): Promise<ShipmentDetail> {
   );
 }
 
-export async function increaseDebt(
+export async function addDebt(
   shipmentId: string,
-  debt: number,
   values: DebtValues,
 ): Promise<SaveResult<keyof DebtValues>> {
-  const { response, error } = await apiClient.PATCH("/api/v1/shipments/{id}/", {
-    params: { path: { id: Number(shipmentId) } },
-    body: debtToApi(debt, values),
+  const { response, error } = await apiClient.POST("/api/v1/shipment-debts/", {
+    body: debtToApi(shipmentId, values),
   });
 
   return saveOutcome(response, error, debtErrorsFromApi);

@@ -114,8 +114,8 @@ delete rights per module: shipments, grinding (Milling), refining, inventory, cu
 (Users), locations (Settings → projects). Any right on a module gives its view right; approve
 follows edit. A section opens when the role can view its module; settings home, profile and
 language are open to everyone; sections still to build (dashboard, accounting…) need view on every
-module. Final settlements open with the shipments view right (the backend checks the shipments
-module for `/settlements/`). Form pages (new shipment, new settlement, new / edit project, new /
+module. Final settlements have their own module, `settlements` (view / add / edit / delete in the roles
+screen, "Final settlement"); the section, its pages and buttons follow it, never the shipments rights. Form pages (new shipment, new settlement, new / edit project, new /
 edit machine) need the add or edit right.
 Superusers open everything. The backend enforces the rights; the UI only hides. Users get a role,
 not rights of their own.
@@ -336,21 +336,21 @@ and an invoice column: a PDF button that shows the language choice (Arabic, Fren
 opens the invoice preview (`useInvoicePreview`, shared with the new-shipment panel), so the invoice can be
 downloaded at any time. The Shipments project page uses the full width.
 
-**Debt and passengers:** the shipment form (new and edit) has an optional "debt" (`debt`, 0 or
-more, empty is 0): what the client owes on the shipment apart from the transport, and an optional
-"debt reason" (`debt_notes`). It does not touch the payments or the payment status and is not on the
-invoice. A red "debt" pill (`DebtBadge`, a receipt icon and the word only, the amount on hover)
-shows under the payment status in the project's list, the history and a client's shipments, and on
-the shipment page header next to its reason. Shipment status, payment status and debt pills share
-one shape and size (icon + word, 28px high): stage pending grey / grinding orange / refining solid blue (white text) /
-completed green; payment complete green with a check, not complete orange with a clock. On the
-shipment page the title and the three labelled statuses sit on one line (wrapping on a phone). Below the payments, a debt section shows the debt in a plain table (amount, reason centred under its heading and
-wrapping when long; or "no debt"),
-with "increase debt" for a
-shipment with debt and "add debt" for one without (shipments edit right): current debt and debt
-after (only when there is debt), the amount to add, the reason. The shipment edit form shows the
-debt fields only for a shipment that already has debt; the new-shipment form always has them. It sends
-`PATCH /shipments/{id}/ {debt, debt_notes}` (`createDebtSchema`, `debtAfter`, `debtToApi`). The client
+**Debt and passengers (backend `6044583`, `ShipmentDebt`):** a shipment owes the sum of its debts,
+each one a record with its amount, date and reason (`/api/v1/shipment-debts/`); the shipment's
+`debt` is that total, read-only, and its `debts` list them. The new-shipment form has an optional
+"debt" and "debt reason": once the shipment is saved they are recorded as its first debt
+(`createShipment` → `addDebt`); if that fails the saved panel says so (`debtFailed`) and the debt can
+be added from the shipment page. The edit form has no debt fields. The shipment page's debt section
+lists every debt (date, amount, reason centred, "—" when empty) with their total, or "no debt", and
+"add debt" / "increase debt" (shipments add right) opens the debt drawer: current debt and debt
+after, the amount, the reason; it `POST`s a new debt (`createDebtSchema`, `debtAfter`,
+`debtToApi`); the date is the backend's now. A debt is never edited or deleted from the app, and the
+backend refuses new debts while the shipment is in a settlement. A "debt" pill (`DebtBadge`, the
+amount on hover) shows under the payment status in the project's list, the history and a client's
+shipments. Shipment status, payment status and debt pills share one shape and size (icon + word,
+28px high): stage pending grey / grinding orange / refining solid blue (white text) / completed
+green; payment complete green with a check, not complete orange with a clock. The client
 page shows the client's total debt in a red box (`DebtNotice`). Passengers are optional: an empty
 count or fare is sent as 0; as soon as the count is above 0 the fare per passenger is required and
 above 0 (`hasPassengers`, `passengerFareRequired`).
@@ -444,12 +444,12 @@ on the server, pages). A settlement's page and a deleted settlement lead back to
 
 **Final settlement (`/api/v1/settlements/`, backend `63885ac`):** a settlement is a stored record
 (number `STL-<year>-<seq>`) of one customer's shipments in one project, with what the user enters:
-grinding cost (one amount), refining cost per gram (charged on the shipments' gold without
+grinding cost per bag (× the settlement's bags, `grinding_cost_per_bag`), refining cost per gram (charged on the shipments' gold without
 mercury), and an extra debt with its description (200 characters at most). All amounts are
 optional (empty is 0, never negative). The backend works out the `totals` from the shipments
 (bag transport and passenger transport at their full cost, payments not counted; the shipments'
 debts; gold in grams, shown but not charged) and the final amount due = transport + shipments'
-debts + grinding cost + gold × refining cost per gram + extra debt; the app only shows them.
+debts + bags × grinding cost per bag + gold × refining cost per gram + extra debt; the app only shows them.
 "New settlement" (shipments add right) picks the customer (search by name or phone; when opened
 from a finished shipment's "settle", the customer is shown read-only with no search), then the
 project when the customer's unsettled shipments are in more than one (`?customer=&project=` in the
@@ -528,7 +528,7 @@ name: only the app limits a project to those three.
 ## 9. Known gaps / next steps
 
 - Dashboard and the accounting sections are empty pages.
-- `schema.d.ts` was generated (2026-10-20) from GitHub `main` `63885ac` with
+- `schema.d.ts` was generated (2026-10-21) from GitHub `main` `de14eb2` with
   `manage.py spectacular` (settlements, grinding `sequence` / `mercury_quantity`, stock history
   grinding fields), not from a running server; regenerate with `npm run api:generate` once that
   version is deployed.

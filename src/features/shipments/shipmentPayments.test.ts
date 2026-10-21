@@ -26,6 +26,8 @@ describe("shipment payments", () => {
     passengers_count: 1,
     passenger_transport_cost_per_person: "200.00",
     current_payment: "2200.00",
+    debt: "0.00",
+    debts: [],
     payments: [
       { id: 1, amount: "1000.00", paid_at: "2026-10-10T08:30:00Z", notes: "" },
       { id: 2, amount: "1200.00", paid_at: "2026-10-12T10:00:00Z", notes: "Deuxième" },
@@ -55,15 +57,16 @@ describe("shipment payments", () => {
     expect(shipmentFromApi({ ...apiShipment, status: "lost" }).status).toBe("pending");
   });
 
-  it("adds to the debt and sends the new total with its reason", () => {
+  it("adds a debt of its own to the shipment, with its reason", () => {
     const debtSchema = createDebtSchema({ amountInvalid: "amount" });
 
     expect(debtSchema.safeParse({ amount: 0, notes: "" }).success).toBe(false);
     expect(debtAfter(350, 150.5)).toBe(500.5);
     expect(debtAfter(350, Number.NaN)).toBe(350);
-    expect(debtToApi(350, { amount: 150, notes: " Avance " })).toEqual({
-      debt: "500",
-      debt_notes: "Avance",
+    expect(debtToApi("52", { amount: 150, notes: " Avance " })).toEqual({
+      shipment: 52,
+      amount: "150",
+      description: "Avance",
     });
   });
 

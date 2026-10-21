@@ -98,10 +98,19 @@ describe("canOpen", () => {
     expect(canOpen(viewer, "/shipments/new")).toBe(false);
     expect(canOpen(viewer, "/settings/projects/2/edit")).toBe(false);
     expect(canOpen(writer, "/shipments/new")).toBe(true);
-    expect(canOpen(viewer, "/settlements")).toBe(true);
-    expect(canOpen(viewer, "/settlements/4")).toBe(true);
-    expect(canOpen(viewer, "/settlements/new")).toBe(false);
-    expect(canOpen(writer, "/settlements/new")).toBe(true);
+    expect(canOpen(viewer, "/settlements")).toBe(false);
+    expect(canOpen(access(["settlements"]), "/settlements")).toBe(true);
+    expect(canOpen(access(["settlements"]), "/settlements/4")).toBe(true);
+    expect(canOpen(access(["settlements"]), "/settlements/new")).toBe(false);
+    expect(
+      canOpen(
+        {
+          superuser: false,
+          rights: rightsFromApi([{ module: "settlements", can_view: true, can_add: true }]),
+        },
+        "/settlements/new",
+      ),
+    ).toBe(true);
     expect(canOpen(writer, "/settings/projects/2/edit")).toBe(true);
     expect(canOpen(writer, "/settings/projects/new")).toBe(false);
   });

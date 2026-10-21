@@ -110,6 +110,27 @@ describe("RoleForm", () => {
     expect(onSaved).toHaveBeenCalled();
   });
 
+  it("gives final settlement its own rights, apart from shipments", async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText(text.fields.name), "Comptable");
+    await user.click(rightBox("view", "settlements"));
+    await user.click(rightBox("add", "settlements"));
+    await user.click(screen.getByRole("button", { name: text.form.create }));
+
+    await waitFor(() => {
+      expect(createRoleMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          rights: {
+            ...newRoleValues().rights,
+            settlements: { view: true, add: true, edit: false, delete: false },
+          },
+        }),
+      );
+    });
+  });
+
   it("requires a name", async () => {
     const user = userEvent.setup();
     renderForm();

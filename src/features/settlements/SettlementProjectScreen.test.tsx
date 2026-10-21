@@ -83,11 +83,11 @@ describe("SettlementProjectScreen", () => {
     expect(await screen.findByText(text.project.waitingEmpty)).toBeVisible();
   });
 
-  it("offers no settling to a role that can only view shipments", async () => {
+  it("offers no settling to a role that can only view settlements", async () => {
     answerShipments();
     openAt("/fr/settlements/projects/3", {
       superuser: false,
-      rights: rightsFromApi([{ module: "shipments", can_view: true }]),
+      rights: rightsFromApi([{ module: "settlements", can_view: true }]),
     });
 
     expect(await screen.findByText("SHP-00003")).toBeVisible();

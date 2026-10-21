@@ -54,7 +54,18 @@ function apiShipment(
     passenger_transport_cost_per_person: "200.00",
     current_payment: String(paid),
     debt,
-    debt_notes: "Avance sur le prochain voyage",
+    debts:
+      Number(debt) > 0
+        ? [
+            {
+              id: 1,
+              amount: "200.00",
+              incurred_at: "2026-10-10T09:00:00Z",
+              description: "Avance sur le prochain voyage",
+            },
+            { id: 2, amount: "150.00", incurred_at: "2026-10-11T09:00:00Z", description: "" },
+          ]
+        : [],
     payments: payments.map((payment) => ({ ...payment, notes: "" })),
     transport_method: "truck",
     source: "Chami",
@@ -132,13 +143,13 @@ describe("ShipmentScreen", () => {
     expect(screen.getAllByText(detail.left)[0]?.nextElementSibling).toHaveTextContent(/2\s200/);
   });
 
-  it("increases the debt by the amount typed, with its reason", async () => {
+  it("adds a new debt of its own, with its reason", async () => {
     answer([firstPayment]);
     let sent: unknown;
     server.use(
-      http.patch(`${API}/shipments/52/`, async ({ request }) => {
+      http.post(`${API}/shipment-debts/`, async ({ request }) => {
         sent = await request.json();
-        return HttpResponse.json({});
+        return HttpResponse.json({}, { status: 201 });
       }),
     );
     const user = userEvent.setup();
@@ -146,17 +157,16 @@ describe("ShipmentScreen", () => {
 
     await user.click(await screen.findByRole("button", { name: detail.addDebt }));
     const drawer = within(screen.getByRole("dialog", { name: messages.shipments.debtForm.title }));
-    expect(drawer.getByLabelText(messages.shipments.debtForm.notes)).toHaveValue(
-      "Avance sur le prochain voyage",
-    );
+    expect(drawer.getByLabelText(messages.shipments.debtForm.notes)).toHaveValue("");
     await user.type(drawer.getByLabelText(messages.shipments.debtForm.amount), "150");
     expect(
       drawer.getByText(messages.shipments.debtForm.after).nextElementSibling,
     ).toHaveTextContent("500");
+    await user.type(drawer.getByLabelText(messages.shipments.debtForm.notes), "Carburant");
     await user.click(drawer.getByRole("button", { name: messages.shipments.debtForm.submit }));
 
     await waitFor(() => {
-      expect(sent).toEqual({ debt: "500", debt_notes: "Avance sur le prochain voyage" });
+      expect(sent).toEqual({ shipment: 52, amount: "150", description: "Carburant" });
     });
   });
 
@@ -172,22 +182,22 @@ describe("ShipmentScreen", () => {
     expect(screen.getByText(detail.noDebt)).toBeVisible();
   });
 
-  it("shows the debt in a table with its amount and its reason", async () => {
+  it("lists every debt with its date, amount and reason, and their total", async () => {
     answer([firstPayment]);
     openShipment();
 
     await screen.findByText(detail.debtLabel, { selector: "h2" });
     const debt = panel(detail.debtLabel);
-    const [header, row] = debt.getAllByRole("row");
+    const [header, first, second, total] = debt.getAllByRole("row");
 
+    expect(header).toHaveTextContent(detail.columns.incurredAt);
     expect(header).toHaveTextContent(detail.columns.amount);
     expect(header).toHaveTextContent(messages.shipments.debtForm.notes);
-    expect(row).toHaveTextContent(formatMoney(350, "fr"));
-    expect(row).toHaveTextContent("Avance sur le prochain voyage");
-    expect(debt.getByRole("columnheader", { name: messages.shipments.debtForm.notes })).toHaveClass(
-      "text-center",
-    );
-    expect(debt.getByText("Avance sur le prochain voyage")).toHaveClass("text-center");
+    expect(first).toHaveTextContent(formatMoney(200, "fr"));
+    expect(first).toHaveTextContent("Avance sur le prochain voyage");
+    expect(second).toHaveTextContent(formatMoney(150, "fr"));
+    expect(second).toHaveTextContent("—");
+    expect(total).toHaveTextContent(`${messages.common.total}${formatMoney(350, "fr")}`);
     expect(debt.getByRole("button", { name: detail.addDebt })).toBeVisible();
   });
 
@@ -301,7 +311,8 @@ describe("ShipmentScreen", () => {
     expect(screen.getByRole("status", { hidden: true })).toHaveTextContent(
       messages.toasts.shipmentUpdated,
     );
-    expect(sent).toMatchObject({ customer: 7, bags_count: 12, project: 3, debt: "350" });
+    expect(sent).toMatchObject({ customer: 7, bags_count: 12, project: 3 });
+    expect(sent).not.toHaveProperty("debt");
     expect(sent).not.toHaveProperty("current_payment");
   });
 

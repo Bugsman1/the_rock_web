@@ -10,6 +10,7 @@ import type { ShipmentRecord } from "@/lib/shipments";
 const DEBT_DESCRIPTION_MAX_LENGTH = 200;
 
 export type SettlementTotals = {
+  bags: number;
   bagsTransport: number;
   passengersTransport: number;
   gold: number;
@@ -29,7 +30,7 @@ export type Settlement = {
   projectName: string;
   shipmentIds: readonly string[];
   shipmentNumbers: readonly string[];
-  grindingCost: number;
+  grindingCostPerBag: number;
   refiningCostPerGram: number;
   debt: number;
   debtDescription: string;
@@ -50,11 +51,12 @@ export function settlementFromApi(settlement: ApiSchema<"Settlement">): Settleme
     projectName: settlement.project_name,
     shipmentIds: (settlement.shipments ?? []).map(String),
     shipmentNumbers: settlement.shipment_numbers,
-    grindingCost: fromDecimal(settlement.grinding_cost ?? "0"),
+    grindingCostPerBag: fromDecimal(settlement.grinding_cost_per_bag ?? "0"),
     refiningCostPerGram: fromDecimal(settlement.refining_cost_per_gram ?? "0"),
     debt: fromDecimal(settlement.debt ?? "0"),
     debtDescription: settlement.debt_description ?? "",
     totals: {
+      bags: fromDecimal(totals.bags),
       bagsTransport: fromDecimal(totals.bags_transport),
       passengersTransport: fromDecimal(totals.passengers_transport),
       gold: fromDecimal(totals.gold),
@@ -128,7 +130,7 @@ function optionalAmount(message: string) {
 
 export function createSettlementAmountsSchema(messages: SettlementMessages) {
   return z.object({
-    grindingCost: optionalAmount(messages.amountInvalid),
+    grindingCostPerBag: optionalAmount(messages.amountInvalid),
     refiningCostPerGram: optionalAmount(messages.amountInvalid),
     debt: optionalAmount(messages.amountInvalid),
     debtDescription: z
@@ -152,7 +154,7 @@ export type NewSettlementValues = z.infer<ReturnType<typeof createNewSettlementS
 
 export function settlementAmountsToApi(values: SettlementAmountsValues) {
   return {
-    grinding_cost: toMoneyDecimal(amountOrZero(values.grindingCost)),
+    grinding_cost_per_bag: toMoneyDecimal(amountOrZero(values.grindingCostPerBag)),
     refining_cost_per_gram: toMoneyDecimal(amountOrZero(values.refiningCostPerGram)),
     debt: toMoneyDecimal(amountOrZero(values.debt)),
     debt_description: values.debtDescription.trim(),
@@ -169,7 +171,7 @@ export function newSettlementToApi(customerId: string, values: NewSettlementValu
 
 export function settlementAmountsFromSettlement(settlement: Settlement): SettlementAmountsValues {
   return {
-    grindingCost: settlement.grindingCost,
+    grindingCostPerBag: settlement.grindingCostPerBag,
     refiningCostPerGram: settlement.refiningCostPerGram,
     debt: settlement.debt,
     debtDescription: settlement.debtDescription,
@@ -179,7 +181,7 @@ export function settlementAmountsFromSettlement(settlement: Settlement): Settlem
 const fieldOfApi: Readonly<Record<string, keyof NewSettlementValues>> = {
   customer: "shipmentIds",
   shipments: "shipmentIds",
-  grinding_cost: "grindingCost",
+  grinding_cost_per_bag: "grindingCostPerBag",
   refining_cost_per_gram: "refiningCostPerGram",
   debt: "debt",
   debt_description: "debtDescription",

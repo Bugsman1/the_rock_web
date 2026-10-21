@@ -20,7 +20,7 @@ const messages = {
 
 const values = {
   shipmentIds: ["1", "2"],
-  grindingCost: 5000,
+  grindingCostPerBag: 250,
   refiningCostPerGram: Number.NaN,
   debt: 2000.555,
   debtDescription: "  Avance  ",
@@ -35,13 +35,14 @@ describe("settlementFromApi", () => {
       number: "STL-2026-00004",
       project: "3",
       shipmentIds: ["1", "2"],
-      grindingCost: 5000,
+      grindingCostPerBag: 250,
       refiningCostPerGram: 1500,
       debt: 2000,
       debtDescription: "Avance sur carburant",
       createdByName: "Sidi",
     });
     expect(settlement.totals).toEqual({
+      bags: 20,
       bagsTransport: 21000,
       passengersTransport: 3000,
       gold: 12.25,
@@ -134,7 +135,7 @@ describe("newSettlementToApi", () => {
     expect(newSettlementToApi("7", values)).toEqual({
       customer: 7,
       shipments: [1, 2],
-      grinding_cost: "5000",
+      grinding_cost_per_bag: "250",
       refining_cost_per_gram: "0",
       debt: "2000.56",
       debt_description: "Avance",

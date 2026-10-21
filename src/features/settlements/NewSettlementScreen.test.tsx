@@ -60,7 +60,7 @@ describe("NewSettlementScreen", () => {
     const router = openAt("/fr/settlements/new?customer=7");
     const user = userEvent.setup();
 
-    await user.type(await screen.findByLabelText(text.fields.grindingCost), "5000");
+    await user.type(await screen.findByLabelText(text.fields.grindingCostPerBag), "250");
     await user.click(screen.getByRole("button", { name: text.form.submit }));
 
     expect(
@@ -72,7 +72,7 @@ describe("NewSettlementScreen", () => {
     expect(sent).toEqual({
       customer: 7,
       shipments: [3],
-      grinding_cost: "5000",
+      grinding_cost_per_bag: "250",
       refining_cost_per_gram: "0",
       debt: "0",
       debt_description: "",

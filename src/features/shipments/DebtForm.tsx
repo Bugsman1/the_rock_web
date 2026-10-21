@@ -12,11 +12,11 @@ import { DataTable } from "@/components/ui/DataTable";
 import { TablePanel } from "@/components/ui/TablePanel";
 import { TextArea, TextField } from "@/components/ui/TextField";
 import { useCan } from "@/lib/accessContext";
-import { formatMoney } from "@/lib/format";
+import { formatDateTime, formatMoney } from "@/lib/format";
 import { createDebtSchema, debtAfter } from "./shipmentPayments";
-import type { ShipmentDetail } from "./shipments";
+import type { ShipmentDebt, ShipmentDetail } from "./shipments";
 import type { DebtValues } from "./shipmentPayments";
-import { increaseDebt } from "./shipmentsApi";
+import { addDebt } from "./shipmentsApi";
 
 export function DebtForm({
   shipment,
@@ -37,7 +37,7 @@ export function DebtForm({
   const { control, register, handleSubmit, formState, setError } = useForm<DebtValues>({
     mode: "onTouched",
     resolver: zodResolver(schema),
-    defaultValues: { amount: Number.NaN, notes: shipment.debtNotes },
+    defaultValues: { amount: Number.NaN, notes: "" },
   });
   const { errors } = formState;
   const amount = useWatch({ control, name: "amount" });
@@ -45,7 +45,7 @@ export function DebtForm({
   async function onSubmit(values: DebtValues) {
     setFailed(false);
 
-    const result = await increaseDebt(shipment.id, shipment.debt, values);
+    const result = await addDebt(shipment.id, values);
 
     if (result.ok) {
       toast(toasts("debtUpdated"));
@@ -124,12 +124,13 @@ export function DebtPanel({
 }) {
   const t = useTranslations("shipments.detail");
   const debtForm = useTranslations("shipments.debtForm");
+  const common = useTranslations("common");
   const locale = useLocale();
-  const canEdit = useCan()("shipments", "edit");
+  const canAdd = useCan()("shipments", "add");
 
   return (
     <TablePanel title={t("debtLabel")}>
-      {canEdit ? (
+      {canAdd ? (
         <div className="border-line flex justify-end border-b p-4">
           <Button variant="secondary" width="auto" onClick={onAddDebt}>
             <Icon name="plus" />
@@ -141,27 +142,38 @@ export function DebtPanel({
       <DataTable
         columns={[
           {
+            key: "incurredAt",
+            header: t("columns.incurredAt"),
+            className: "text-ink-muted font-semibold",
+            cell: (debt: ShipmentDebt) => formatDateTime(debt.incurredAt, locale),
+          },
+          {
             key: "amount",
             header: t("columns.amount"),
             align: "end",
             className: "text-ink w-40 font-bold",
-            cell: (debt: ShipmentDetail) => formatMoney(debt.debt, locale),
+            cell: (debt: ShipmentDebt) => formatMoney(debt.amount, locale),
           },
           {
             key: "notes",
             header: debtForm("notes"),
             align: "center",
             className: "text-ink-muted font-semibold whitespace-normal",
-            cell: (debt: ShipmentDetail) => (
+            cell: (debt: ShipmentDebt) => (
               <p dir="auto" className="text-center break-words">
-                {debt.debtNotes === "" ? "—" : debt.debtNotes}
+                {debt.description === "" ? "—" : debt.description}
               </p>
             ),
           },
         ]}
-        rows={shipment.debt > 0 ? [shipment] : []}
+        rows={shipment.debts}
         rowKey={(debt) => debt.id}
         empty={t("noDebt")}
+        total={{
+          label: common("total"),
+          column: "amount",
+          value: formatMoney(shipment.debt, locale),
+        }}
       />
     </TablePanel>
   );

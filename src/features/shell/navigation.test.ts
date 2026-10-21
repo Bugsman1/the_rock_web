@@ -28,11 +28,12 @@ describe("navGroupsFor", () => {
     expect(groups[0]?.items.map((item) => item.key)).toEqual(["milling", "refining"]);
   });
 
-  it("opens the settlements to a role that can view shipments", () => {
-    const groups = navGroupsFor(viewing(["shipments"]));
+  it("shows the settlements only to a role that can view settlements", () => {
+    expect(navGroupsFor(viewing(["shipments"])).map((group) => group.key)).toEqual(["operations"]);
 
-    expect(groups.map((group) => group.key)).toEqual(["operations", "accounts"]);
-    expect(groups[1]?.items.map((item) => item.key)).toEqual(["settlement"]);
+    const groups = navGroupsFor(viewing(["settlements"]));
+    expect(groups.map((group) => group.key)).toEqual(["accounts"]);
+    expect(groups[0]?.items.map((item) => item.key)).toEqual(["settlement"]);
   });
 });
 

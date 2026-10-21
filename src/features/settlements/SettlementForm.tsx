@@ -17,7 +17,7 @@ import type { NewSettlementValues } from "./settlements";
 
 const settlementFields: readonly (keyof NewSettlementValues)[] = [
   "shipmentIds",
-  "grindingCost",
+  "grindingCostPerBag",
   "refiningCostPerGram",
   "debt",
   "debtDescription",
@@ -155,7 +155,7 @@ export function SettlementForm({
     setFailed(result.failed);
   }
 
-  function amountField(name: "grindingCost" | "refiningCostPerGram" | "debt") {
+  function amountField(name: "grindingCostPerBag" | "refiningCostPerGram" | "debt") {
     return (
       <TextField
         id={`settlement-${name}`}
@@ -190,7 +190,7 @@ export function SettlementForm({
       )}
 
       <FormSection title={t("form.amountsTitle")}>
-        {amountField("grindingCost")}
+        {amountField("grindingCostPerBag")}
         {amountField("refiningCostPerGram")}
         {amountField("debt")}
         <TextField

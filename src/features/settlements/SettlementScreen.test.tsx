@@ -44,7 +44,7 @@ describe("SettlementScreen", () => {
       [text.totals.bagsTransport, money(21000)],
       [text.totals.passengersTransport, money(3000)],
       [text.totals.shipmentsDebt, money(250)],
-      [text.totals.grindingCost, money(5000)],
+      [`${text.totals.grindingCost}20 sacs × ${money(250)}`, money(5000)],
       [`${text.totals.refiningCost}12,25 g × ${money(1500)}`, money(18375)],
       [`${text.totals.extraDebt}Avance sur carburant`, money(2000)],
       [text.totals.grandTotal, money(49625)],
@@ -64,15 +64,15 @@ describe("SettlementScreen", () => {
 
     const dialog = within(await screen.findByRole("dialog", { name: /STL-2026-00004/ }));
     expect(dialog.queryByRole("checkbox")).not.toBeInTheDocument();
-    await user.clear(dialog.getByLabelText(text.fields.grindingCost));
-    await user.type(dialog.getByLabelText(text.fields.grindingCost), "7000");
+    await user.clear(dialog.getByLabelText(text.fields.grindingCostPerBag));
+    await user.type(dialog.getByLabelText(text.fields.grindingCostPerBag), "300");
     await user.click(dialog.getByRole("button", { name: text.form.saveChanges }));
 
     await waitFor(() => {
       expect(router.state.location.search).toBe("");
     });
     expect(sent).toEqual({
-      grinding_cost: "7000",
+      grinding_cost_per_bag: "300",
       refining_cost_per_gram: "1500",
       debt: "2000",
       debt_description: "Avance sur carburant",
@@ -125,10 +125,10 @@ describe("SettlementScreen", () => {
     );
   });
 
-  it("offers no edit or delete to a role that can only view shipments", async () => {
+  it("offers no edit or delete to a role that can only view settlements", async () => {
     openAt("/fr/settlements/4?edit=1", {
       superuser: false,
-      rights: rightsFromApi([{ module: "shipments", can_view: true }]),
+      rights: rightsFromApi([{ module: "settlements", can_view: true }]),
     });
 
     expect(await screen.findByRole("heading", { name: title })).toBeVisible();

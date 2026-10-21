@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { filledShipmentValues } from "./shipmentFormTesting";
 import {
   bagsCost,
   isShipmentField,
@@ -10,7 +11,6 @@ import {
   createNewShipmentSchema,
   remainingToPay,
 } from "./shipments";
-import type { NewShipmentValues } from "./shipments";
 
 describe("transport cost", () => {
   describe("bagsCost", () => {
@@ -62,23 +62,7 @@ describe("transport cost", () => {
 });
 
 describe("backend form", () => {
-  const values: NewShipmentValues = {
-    customerName: "Sidi Salem",
-    phone: "46109325",
-    arrivalDate: "2026-10-10",
-    arrivalTime: "08:30",
-    bagCount: 16,
-    transportMethod: "hilux",
-    source: " Chami ",
-    bagFare: 200,
-    passengerCount: 2,
-    passengerFare: 50.5,
-    currentPayment: 1000.5,
-    debt: 250,
-    debtNotes: " Avance sur le prochain voyage ",
-    mill: "3",
-    notes: " Sacs mouillés ",
-  };
+  const values = filledShipmentValues;
 
   describe("shipmentToApi", () => {
     it("sends the fares as typed, the ids as numbers and trimmed texts, and no status", () => {
@@ -95,8 +79,6 @@ describe("backend form", () => {
         transport_method: "hilux",
         source: "Chami",
         project: 3,
-        debt: "250",
-        debt_notes: "Avance sur le prochain voyage",
         notes: "Sacs mouillés",
       });
     });
@@ -169,7 +151,7 @@ describe("backend form", () => {
       expect(fareIssues(0, Number.NaN)).toEqual([]);
     });
 
-    it("takes a debt of zero or more, apart from the transport, and sends an empty one as zero", () => {
+    it("takes a debt of zero or more, apart from the transport, never sent with the shipment", () => {
       expect(
         (schema.safeParse({ ...values, debt: -1 }).error?.issues ?? []).map((issue) => [
           issue.path.join("."),
@@ -178,11 +160,8 @@ describe("backend form", () => {
       ).toEqual([["debt", "amount"]]);
       expect(schema.safeParse({ ...values, debt: 50000 }).success).toBe(true);
       expect(
-        shipmentToApi(
-          { ...values, debt: Number.NaN },
-          { customerId: "7", arrivedAt: "2026-10-10T08:30:00.000Z" },
-        ).debt,
-      ).toBe("0");
+        shipmentToApi(values, { customerId: "7", arrivedAt: "2026-10-10T08:30:00.000Z" }),
+      ).not.toHaveProperty("debt");
     });
 
     it("is never negative nor more than the transport total", () => {

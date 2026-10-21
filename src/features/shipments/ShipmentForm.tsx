@@ -27,7 +27,7 @@ import {
 
 type ShipmentFormMode =
   | { kind: "create"; backHref: string }
-  | { kind: "edit"; shipmentId: string; paid: number; hasDebt: boolean; onSaved: () => void };
+  | { kind: "edit"; shipmentId: string; paid: number; onSaved: () => void };
 
 type ShipmentFormProps = {
   defaultValues: NewShipmentValues;
@@ -101,7 +101,6 @@ export function EditShipmentForm({
         kind: "edit",
         shipmentId: shipment.id,
         paid: shipment.paid,
-        hasDebt: shipment.debt > 0,
         onSaved,
       }}
     />
@@ -114,7 +113,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
   const replace = useReplace();
   const locale = useLocale();
   const [failed, setFailed] = useState(false);
-  const [savedId, setSavedId] = useState<string>();
+  const [saved, setSaved] = useState<{ id: string; debtFailed: boolean }>();
   const toasts = useTranslations("toasts");
   const toast = useToast();
   const paid = mode.kind === "edit" ? mode.paid : 0;
@@ -169,7 +168,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
 
     if (result.ok) {
       toast(toasts("shipmentAdded"));
-      setSavedId(result.id);
+      setSaved({ id: result.id, debtFailed: result.debtFailed });
       return;
     }
 
@@ -198,7 +197,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
         <TransportCostFields
           form={form}
           paid={mode.kind === "edit" ? mode.paid : undefined}
-          showDebt={mode.kind === "create" || mode.hasDebt}
+          showDebt={mode.kind === "create"}
         />
         <DestinationFields form={form} projects={projects} />
 
@@ -225,13 +224,17 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
 
       {mode.kind === "create" ? (
         <Drawer
-          open={savedId !== undefined}
+          open={saved !== undefined}
           title={t("saved.title")}
           closeLabel={common("close")}
           onClose={() => replace(mode.backHref)}
         >
-          {savedId === undefined ? null : (
-            <SavedShipment shipmentId={savedId} backHref={mode.backHref} />
+          {saved === undefined ? null : (
+            <SavedShipment
+              shipmentId={saved.id}
+              debtFailed={saved.debtFailed}
+              backHref={mode.backHref}
+            />
           )}
         </Drawer>
       ) : null}

@@ -24,17 +24,21 @@ export function debtAfter(debt: number, added: number): number {
   return roundMoney(debt + amountOrZero(added));
 }
 
-export function debtToApi(debt: number, values: DebtValues) {
+export function debtToApi(shipmentId: string, values: DebtValues) {
   return {
-    debt: toMoneyDecimal(debtAfter(debt, values.amount)),
-    debt_notes: values.notes.trim(),
+    shipment: Number(shipmentId),
+    amount: toMoneyDecimal(values.amount),
+    description: values.notes.trim(),
   };
 }
 
 export function debtErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof DebtValues> {
   return {
-    ...(errors.debt === undefined ? {} : { amount: errors.debt }),
-    ...(errors.debt_notes === undefined ? {} : { notes: errors.debt_notes }),
+    ...(errors.amount === undefined ? {} : { amount: errors.amount }),
+    ...((errors.shipment ?? errors.non_field_errors) === undefined
+      ? {}
+      : { amount: errors.shipment ?? errors.non_field_errors }),
+    ...(errors.description === undefined ? {} : { notes: errors.description }),
   };
 }
 

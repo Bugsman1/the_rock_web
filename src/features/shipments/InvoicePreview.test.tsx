@@ -31,7 +31,7 @@ vi.mock("@/i18n/navigation", () => ({
 beforeEach(() => {
   replace.mockReset();
   createShipmentMock.mockReset();
-  createShipmentMock.mockResolvedValue({ ok: true, id: "52" });
+  createShipmentMock.mockResolvedValue({ ok: true, id: "52", debtFailed: false });
   getInvoiceMock.mockReset();
   createCustomerMock.mockReset();
   createCustomerMock.mockResolvedValue({ ok: true });
@@ -121,6 +121,13 @@ describe("SavedShipment", () => {
 
     await user.click(preview.getByRole("button", { name: messages.common.close }));
     expect(revokeUrl).toHaveBeenCalledWith("blob:invoice");
+  });
+
+  it("says when the shipment was saved but its debt was not", async () => {
+    createShipmentMock.mockResolvedValue({ ok: true, id: "52", debtFailed: true });
+    await saveFilledShipment();
+
+    expect(screen.getByText(form.saved.debtFailed)).toBeVisible();
   });
 
   it("hides the way back while the invoice is downloading", async () => {

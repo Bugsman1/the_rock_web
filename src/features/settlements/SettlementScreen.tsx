@@ -11,7 +11,7 @@ import { TablePanel } from "@/components/ui/TablePanel";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { notFound } from "@/lib/api/client";
-import { formatDateTime, formatMoney, formatQuantity } from "@/lib/format";
+import { formatCount, formatDateTime, formatMoney, formatQuantity } from "@/lib/format";
 import { settlementHref, settlementsProjectHref } from "@/lib/routes";
 import { DeleteSettlementDrawer, SettlementPdf } from "./SettlementActions";
 import { SettlementForm } from "./SettlementForm";
@@ -45,7 +45,14 @@ function SettlementTotals({ settlement }: { settlement: Settlement }) {
     { label: t("totals.bagsTransport"), value: totals.bagsTransport },
     { label: t("totals.passengersTransport"), value: totals.passengersTransport },
     { label: t("totals.shipmentsDebt"), value: totals.shipmentsDebt },
-    { label: t("totals.grindingCost"), value: totals.grindingCost },
+    {
+      label: t("totals.grindingCost"),
+      value: totals.grindingCost,
+      detail: t("totals.grindingCostDetail", {
+        bags: formatCount(totals.bags, locale),
+        price: money(settlement.grindingCostPerBag),
+      }),
+    },
     {
       label: t("totals.refiningCost"),
       value: totals.refiningCost,
@@ -141,8 +148,8 @@ export function SettlementScreen() {
   const common = useTranslations("common");
   const locale = useLocale();
   const can = useCan();
-  const canEdit = can("shipments", "edit");
-  const canDelete = can("shipments", "delete");
+  const canEdit = can("settlements", "edit");
+  const canDelete = can("settlements", "delete");
 
   return (
     <PageLayout

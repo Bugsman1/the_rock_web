@@ -305,6 +305,7 @@
         "refining": "التصفية",
         "inventory": "المخزون",
         "customers": "العملاء",
+        "settlements": "التسوية النهائية",
         "accounts": "المستخدمون والصلاحيات",
         "locations": "المشاريع والآلات"
       },
@@ -379,7 +380,8 @@
         "downloading": "جارٍ تحميل الفاتورة",
         "failed": "تعذر تنزيل الفاتورة، حاول مرة أخرى.",
         "back": "العودة إلى الشحنات",
-        "fileName": "facture-expedition-{id}-{language}.pdf"
+        "fileName": "facture-expedition-{id}-{language}.pdf",
+        "debtFailed": "حُفظت الشحنة لكن تعذّر تسجيل الدين. أضفه من صفحة الشحنة."
       },
       "paid": "المدفوع",
       "saveChanges": "حفظ التعديلات",
@@ -453,7 +455,8 @@
         "number": "الدفعة",
         "paidAt": "تاريخ الدفع",
         "amount": "المبلغ",
-        "notes": "ملاحظات"
+        "notes": "ملاحظات",
+        "incurredAt": "تاريخ الدين"
       },
       "installment": "الدفعة {n}",
       "noPayments": "لا توجد دفعات على هذه الشحنة بعد.",
@@ -847,14 +850,15 @@
       "refiningCost": "تكلفة التصفية",
       "refiningCostDetail": "{grams} غ × {price}",
       "extraDebt": "دين إضافي",
-      "grandTotal": "المبلغ المستحق النهائي"
+      "grandTotal": "المبلغ المستحق النهائي",
+      "grindingCostDetail": "{bags} كيس × {price}"
     },
     "fields": {
       "customer": "الزبون",
       "phone": "الهاتف",
       "project": "المشروع",
       "shipments": "الشحنات",
-      "grindingCost": "تكلفة الطحن",
+      "grindingCostPerBag": "تكلفة الطحن لكل كيس",
       "refiningCostPerGram": "تكلفة التصفية لكل غرام",
       "debt": "دين إضافي",
       "debtDescription": "سبب الدين الإضافي",

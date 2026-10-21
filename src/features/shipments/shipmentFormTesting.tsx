@@ -5,6 +5,7 @@ import messages from "@/messages/ar.json";
 import type { Customer } from "@/lib/customers";
 import type { Project } from "@/lib/projects";
 import { NewShipmentForm } from "./ShipmentForm";
+import type { NewShipmentValues } from "./shipments";
 
 export const form = messages.shipments.form;
 
@@ -68,3 +69,21 @@ export async function saveFilledShipment(defaultProject?: string) {
 
   return user;
 }
+
+export const filledShipmentValues: NewShipmentValues = {
+  customerName: "Sidi Salem",
+  phone: "46109325",
+  arrivalDate: "2026-10-10",
+  arrivalTime: "08:30",
+  bagCount: 16,
+  transportMethod: "hilux",
+  source: " Chami ",
+  bagFare: 200,
+  passengerCount: 2,
+  passengerFare: 50.5,
+  currentPayment: 1000.5,
+  debt: 250,
+  debtNotes: " Avance sur le prochain voyage ",
+  mill: "3",
+  notes: " Sacs mouillés ",
+};

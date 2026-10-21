@@ -151,8 +151,6 @@ const fieldOfApi: Readonly<Record<string, ShipmentField>> = {
   passengers_count: "passengerCount",
   passenger_transport_cost_per_person: "passengerFare",
   current_payment: "currentPayment",
-  debt: "debt",
-  debt_notes: "debtNotes",
   project: "mill",
   notes: "notes",
 };
@@ -180,8 +178,6 @@ export function shipmentToApi(
     transport_method: values.transportMethod,
     source: values.source.trim(),
     project: Number(values.mill),
-    debt: toMoneyDecimal(amountOrZero(values.debt)),
-    debt_notes: values.debtNotes.trim(),
     notes: values.notes.trim(),
   };
 }
@@ -200,12 +196,19 @@ export type ShipmentPayment = {
   notes: string;
 };
 
+export type ShipmentDebt = {
+  id: string;
+  amount: number;
+  incurredAt: IsoTimestamp;
+  description: string;
+};
+
 export type ShipmentDetail = ShipmentRecord & {
   transportMethod: (typeof transportMethodKeys)[number];
   bagFare: number;
   passengerCount: number;
   passengerFare: number;
-  debtNotes: string;
+  debts: readonly ShipmentDebt[];
   payments: readonly ShipmentPayment[];
 };
 
@@ -216,7 +219,12 @@ export function shipmentDetailFromApi(shipment: ApiSchema<"Shipment">): Shipment
     bagFare: fromDecimal(shipment.bag_transport_cost_per_bag),
     passengerCount: shipment.passengers_count ?? 0,
     passengerFare: fromDecimal(shipment.passenger_transport_cost_per_person ?? "0"),
-    debtNotes: shipment.debt_notes ?? "",
+    debts: shipment.debts.map((debt) => ({
+      id: String(debt.id),
+      amount: fromDecimal(debt.amount),
+      incurredAt: debt.incurred_at,
+      description: debt.description,
+    })),
     payments: (shipment.payments ?? []).map((payment) => ({
       id: String(payment.id),
       amount: fromDecimal(payment.amount),
@@ -241,8 +249,8 @@ export function shipmentFormValues(shipment: ShipmentDetail): NewShipmentValues 
     passengerCount: shipment.passengerCount,
     passengerFare: shipment.passengerFare,
     currentPayment: Number.NaN,
-    debt: shipment.debt,
-    debtNotes: shipment.debtNotes,
+    debt: Number.NaN,
+    debtNotes: "",
     mill: shipment.project,
     notes: shipment.notes,
   };

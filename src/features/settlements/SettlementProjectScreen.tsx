@@ -51,7 +51,7 @@ export function SettlementProjectScreen() {
   const t = useTranslations("settlements");
   const common = useTranslations("common");
   const locale = useLocale();
-  const canAdd = useCan()("shipments", "add");
+  const canAdd = useCan()("settlements", "add");
   const [waitingQuery, setWaitingQuery] = useState("");
   const { pageCount } = settlementPage;
   const searchHref = useCallback(

@@ -23,7 +23,15 @@ export function useInvoicePreview(shipmentId: string) {
   });
 }
 
-export function SavedShipment({ shipmentId, backHref }: { shipmentId: string; backHref: string }) {
+export function SavedShipment({
+  shipmentId,
+  debtFailed,
+  backHref,
+}: {
+  shipmentId: string;
+  debtFailed: boolean;
+  backHref: string;
+}) {
   const t = useTranslations("shipments.form.saved");
   const { loading, failed, preview, open, close } = useInvoicePreview(shipmentId);
 
@@ -31,6 +39,7 @@ export function SavedShipment({ shipmentId, backHref }: { shipmentId: string; ba
     <div className="flex flex-col gap-5">
       <p className="text-ink-muted text-[15px] font-semibold">{t("body")}</p>
 
+      {debtFailed ? <FormError message={t("debtFailed")} /> : null}
       {failed ? <FormError message={t("failed")} /> : null}
 
       <div className="flex flex-wrap items-center gap-3">

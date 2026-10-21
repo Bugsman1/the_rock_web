@@ -16,7 +16,7 @@ beforeEach(() => {
 
 const empty: NewSettlementValues = {
   shipmentIds: ["1"],
-  grindingCost: Number.NaN,
+  grindingCostPerBag: Number.NaN,
   refiningCostPerGram: Number.NaN,
   debt: Number.NaN,
   debtDescription: "",
@@ -58,7 +58,7 @@ describe("SettlementForm", () => {
     expect(select("SHP-00002")).not.toBeChecked();
 
     await user.click(select("SHP-00002"));
-    await user.type(screen.getByLabelText(text.fields.grindingCost), "5000");
+    await user.type(screen.getByLabelText(text.fields.grindingCostPerBag), "250");
     await user.type(screen.getByLabelText(text.fields.refiningCostPerGram), "1500");
     await user.type(screen.getByLabelText(text.fields.debt), "2000");
     await user.type(screen.getByLabelText(text.fields.debtDescription), "Avance");
@@ -67,7 +67,7 @@ describe("SettlementForm", () => {
     await waitFor(() => {
       expect(onSave).toHaveBeenCalledWith({
         shipmentIds: ["1", "2"],
-        grindingCost: 5000,
+        grindingCostPerBag: 250,
         refiningCostPerGram: 1500,
         debt: 2000,
         debtDescription: "Avance",
@@ -89,7 +89,7 @@ describe("SettlementForm", () => {
   it("refuses a negative amount", async () => {
     const user = renderForm();
 
-    await user.type(screen.getByLabelText(text.fields.grindingCost), "-5");
+    await user.type(screen.getByLabelText(text.fields.grindingCostPerBag), "-5");
     await user.click(screen.getByRole("button", { name: text.form.submit }));
 
     expect(await screen.findByText(text.errors.amountInvalid)).toBeVisible();

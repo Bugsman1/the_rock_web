@@ -305,6 +305,7 @@
         "refining": "Affinage",
         "inventory": "Inventaire",
         "customers": "Clients",
+        "settlements": "Règlement final",
         "accounts": "Utilisateurs et permissions",
         "locations": "Projets et machines"
       },
@@ -379,7 +380,8 @@
         "downloading": "Chargement de la facture",
         "failed": "La facture n'a pas pu être téléchargée, réessayez.",
         "back": "Retour aux expéditions",
-        "fileName": "facture-expedition-{id}-{language}.pdf"
+        "fileName": "facture-expedition-{id}-{language}.pdf",
+        "debtFailed": "L'expédition est enregistrée mais la dette n'a pas pu l'être. Ajoutez-la depuis la page de l'expédition."
       },
       "paid": "Montant payé",
       "saveChanges": "Enregistrer les modifications",
@@ -453,7 +455,8 @@
         "number": "Versement",
         "paidAt": "Date du paiement",
         "amount": "Montant",
-        "notes": "Notes"
+        "notes": "Notes",
+        "incurredAt": "Date de la dette"
       },
       "installment": "Versement {n}",
       "noPayments": "Aucun versement sur cette expédition pour le moment.",
@@ -847,14 +850,15 @@
       "refiningCost": "Coût du raffinage",
       "refiningCostDetail": "{grams} g × {price}",
       "extraDebt": "Dette supplémentaire",
-      "grandTotal": "Montant final dû"
+      "grandTotal": "Montant final dû",
+      "grindingCostDetail": "{bags} sacs × {price}"
     },
     "fields": {
       "customer": "Client",
       "phone": "Téléphone",
       "project": "Projet",
       "shipments": "Expéditions",
-      "grindingCost": "Coût du broyage",
+      "grindingCostPerBag": "Coût du broyage par sac",
       "refiningCostPerGram": "Coût du raffinage par gramme",
       "debt": "Dette supplémentaire",
       "debtDescription": "Motif de la dette supplémentaire",

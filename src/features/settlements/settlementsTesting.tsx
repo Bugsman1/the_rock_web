@@ -34,11 +34,12 @@ export const apiSettlement = {
   project_name: "Zouérat 1",
   shipments: [1, 2],
   shipment_numbers: ["SHP-00001", "SHP-00002"],
-  grinding_cost: "5000.00",
+  grinding_cost_per_bag: "250.00",
   refining_cost_per_gram: "1500.00",
   debt: "2000.00",
   debt_description: "Avance sur carburant",
   totals: {
+    bags: "20.000",
     bags_transport: "21000.00",
     passengers_transport: "3000.00",
     gold: "12.250",

@@ -65,7 +65,7 @@ export async function newSettlementLoader({ request }: LoaderFunctionArgs) {
 function emptyValues(shipmentIds: readonly string[]): NewSettlementValues {
   return {
     shipmentIds: [...shipmentIds],
-    grindingCost: Number.NaN,
+    grindingCostPerBag: Number.NaN,
     refiningCostPerGram: Number.NaN,
     debt: Number.NaN,
     debtDescription: "",
