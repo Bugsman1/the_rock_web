@@ -274,7 +274,7 @@ payment status), each opening its shipment page.
 the panel after saving a new shipment, a settlement's page) first asks Arabic or French, then loads
 the PDF (`usePdfPreview`) and shows it in a large centered window (`PdfPreviewDialog`, an `iframe`
 on the file) with "print" (the browser's print of that PDF), "download" (saved under its invoice
-number) and close (frees the file). `useModalDialog` (from `Drawer.tsx`) opens and closes it.
+number) and close (frees the file). `useModalDialog` (from `Drawer.tsx`) opens and closes it, and closes any dialog removed from the page while still open (leaving the page with a drawer open), so it never stays stuck on top of the next page (seen in Safari).
 
 **Saved message (`components/ui/Toast.tsx`):** `AppShell` wraps the app in `ToastProvider`, anchored
 on the page area; `useToast()(message)` shows a green box with a check for 1.5 seconds, at the top

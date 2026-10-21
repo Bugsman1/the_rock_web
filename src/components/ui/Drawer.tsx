@@ -43,6 +43,22 @@ export function useModalDialog(open: boolean) {
     }
   }, [open]);
 
+  useEffect(() => {
+    const dialog = dialogRef.current;
+
+    return () => {
+      if (dialog === null || !dialog.open) {
+        return;
+      }
+
+      if (typeof dialog.close === "function") {
+        dialog.close();
+      } else {
+        dialog.removeAttribute("open");
+      }
+    };
+  }, []);
+
   return dialogRef;
 }
 
