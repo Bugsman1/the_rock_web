@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
@@ -106,7 +106,7 @@ export function OperationForm({
     [t, common, locale, shipments, idleMachines],
   );
 
-  const { control, register, handleSubmit, formState, setError, trigger } =
+  const { control, register, handleSubmit, formState, setError, trigger, getValues } =
     useForm<NewOperationValues>({
       mode: "onTouched",
       resolver: zodResolver(schema),
@@ -130,6 +130,12 @@ export function OperationForm({
     control,
     name: ["shipmentNumber", "bags", "startDate", "startTime"],
   });
+
+  useEffect(() => {
+    if (Number.isFinite(getValues("bags"))) {
+      void trigger("bags");
+    }
+  }, [shipmentNumber, getValues, trigger]);
 
   const shipment = findShipment(shipmentNumber);
   const bagCount = Number.isFinite(bags) && bags > 0 ? bags : 0;

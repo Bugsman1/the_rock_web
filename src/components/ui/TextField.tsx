@@ -1,4 +1,10 @@
-import type { ComponentProps, ComponentPropsWithoutRef, ReactNode } from "react";
+import type {
+  ComponentProps,
+  ComponentPropsWithoutRef,
+  KeyboardEvent,
+  ReactNode,
+  WheelEvent,
+} from "react";
 import { FieldError } from "./FieldError";
 import { FieldLabel } from "./FieldLabel";
 import { fieldClasses, fieldIconClasses } from "./fieldClasses";
@@ -6,6 +12,20 @@ import { Icon } from "./Icon";
 import type { IconName } from "./Icon";
 import { cn } from "@/lib/cn";
 import { maskTimeValue } from "@/lib/datetime";
+
+const STEP_KEYS: ReadonlySet<string> = new Set(["ArrowUp", "ArrowDown"]);
+
+function keepTypedNumberOnWheel(event: WheelEvent<HTMLInputElement>) {
+  if (event.currentTarget.type === "number") {
+    event.currentTarget.blur();
+  }
+}
+
+function keepTypedNumberOnKeys(event: KeyboardEvent<HTMLInputElement>) {
+  if (event.currentTarget.type === "number" && STEP_KEYS.has(event.key)) {
+    event.preventDefault();
+  }
+}
 
 type TextFieldProps = Omit<ComponentPropsWithoutRef<"input">, "className" | "id"> & {
   id: string;
@@ -58,6 +78,8 @@ export function TextField({
                   trailing === undefined ? "pe-4" : "pe-13",
                 ],
           )}
+          onWheel={keepTypedNumberOnWheel}
+          onKeyDown={keepTypedNumberOnKeys}
           {...props}
         />
 

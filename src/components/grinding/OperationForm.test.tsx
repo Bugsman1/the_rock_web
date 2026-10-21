@@ -180,6 +180,29 @@ describe("OperationForm", () => {
     expect(screen.queryByText(/-0,5/)).not.toBeInTheDocument();
   });
 
+  it("says the bags are too many the moment the shipment is chosen after them", async () => {
+    const user = userEvent.setup();
+    renderNewOperation({ machine: 7 });
+
+    await user.type(screen.getByLabelText(form.bags), "1.5");
+    expect(screen.queryByText(form.errors.bagsTooMany)).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(form.shipment), "SH-1053");
+    await user.click(await screen.findByRole("option", { name: /SH-1053/ }));
+
+    expect(await screen.findByText(form.errors.bagsTooMany)).toBeVisible();
+  });
+
+  it("asks for the bags again as soon as the field is emptied", async () => {
+    const user = userEvent.setup();
+    renderNewOperation({ shipment: "SH-1052", machine: 7 });
+
+    await user.type(screen.getByLabelText(form.bags), "2");
+    await user.clear(screen.getByLabelText(form.bags));
+
+    expect(await screen.findByText(messages.common.validation.required)).toBeVisible();
+  });
+
   it("still says a machine takes at most 2 bags at a time", async () => {
     const user = userEvent.setup();
     renderNewOperation({ shipment: "SH-1052", machine: 7 });

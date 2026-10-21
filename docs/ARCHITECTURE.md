@@ -386,7 +386,7 @@ It then shows "mercury added" (green); the machine page gives the grams, the tim
 history its time. The quantity cannot be changed afterwards. The
 backend makes this final: it cannot be undone and is refused on a finished grinding. Operators offered:
 users whose role can view grinding (refining for the refining worker), on the project when the role is project-scoped. Estimated end: 2 bags per 6 hours.
-A shipment arrives in whole or half bags (12, 12.5: `isHalfBagCount`, step 0.5 in the form). A machine takes 0.5, 1, 1.5 or 2 bags: the form says so as soon as more than 2 is typed (`isHalfBagCount`), and as soon as more bags are typed than the shipment still has it says the bags cannot be more than what is left (the note under the field keeps showing what is left, never a negative count),
+A shipment arrives in whole or half bags (12, 12.5: `isHalfBagCount`, step 0.5 in the form). A machine takes 0.5, 1, 1.5 or 2 bags: the form says so as soon as more than 2 is typed (`isHalfBagCount`), and as soon as more bags are typed than the shipment still has, or a shipment with fewer bags left is chosen after them, it says the bags cannot be more than what is left (the note under the field keeps showing what is left, never a negative count),
 and the refining takes exactly the bags of the grinding. The backend stores shipment, grinding and refining bags in half bags and refuses more than 2 per grinding.
 
 **Refining pages:** `/refining` shows three figures (grindings waiting for refining with their
@@ -454,7 +454,7 @@ arrival or start read-only. A grinding cannot start before its shipment arrived
 (`startBeforeArrival`, from `OperationShipment.arrivedAt`) nor end before it started
 (`endBeforeStart`); both show under the read-only time (a wrong clock). Payment dates stay typed.
 
-**Number inputs:** every number field starts empty (no `0` or other pre-filled value); the user types it, `0` included. They have no up / down arrows (`app.css` hides the browser's spin buttons). The new-machine form only hints the next free number.
+**Number inputs:** every number field starts empty (no `0` or other pre-filled value); the user types it, `0` included. They have no up / down arrows (`app.css` hides the browser's spin buttons), and the value changes only by typing: `TextField` lets go of the field on a mouse-wheel turn (the page scrolls instead) and ignores the ↑ / ↓ keys. The new-machine form only hints the next free number.
 
 **Inventory resources (`/api/v1/resources/`, `/resource-history/`):** per-project materials
 (mercury, …) with a fixed initial quantity. The current quantity only moves through
