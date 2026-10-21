@@ -8,12 +8,9 @@ import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
 import { DelayedSearchField } from "@/components/ui/SearchField";
 import { Pagination } from "@/components/ui/Pagination";
-import {
-  TablePanel,
-  tableCellClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
+import { DataTable } from "@/components/ui/DataTable";
+import type { DataColumn } from "@/components/ui/DataTable";
+import { TablePanel } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
 import { parsePageNumber } from "@/lib/api/pagination";
 import { formatCount } from "@/lib/format";
@@ -91,14 +88,6 @@ function UserTable({
   const roles = useTranslations("roles");
   const canEdit = useCan()("accounts", "edit");
 
-  if (users.length === 0) {
-    return (
-      <p className="text-ink-muted p-6 text-[15px] font-semibold">
-        {query === "" ? t("empty") : common("noMatch")}
-      </p>
-    );
-  }
-
   function projectLabel(user: User) {
     if (user.role !== undefined && !user.role.projectScoped) return t("allProjects");
     if (user.project === undefined) return "";
@@ -106,60 +95,65 @@ function UserTable({
     return findProject(projects, user.project)?.name ?? user.project;
   }
 
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead className="bg-surface-page">
-          <tr className="border-line border-b-[1.5px]">
-            <th className={tableHeadClasses}>{t("fields.name")}</th>
-            <th className={tableHeadClasses}>{t("fields.email")}</th>
-            <th className={tableHeadClasses}>{t("fields.phone")}</th>
-            <th className={tableHeadClasses}>{t("fields.role")}</th>
-            <th className={tableHeadClasses}>{t("fields.project")}</th>
-            {canEdit ? (
-              <th className={tableHeadClasses}>
-                <span className="sr-only">{t("fields.action")}</span>
-              </th>
-            ) : null}
-          </tr>
-        </thead>
+  const columns: DataColumn<User>[] = [
+    {
+      key: "name",
+      header: t("fields.name"),
+      className: "text-ink font-bold",
+      cell: (user) => <span dir="auto">{user.name}</span>,
+    },
+    {
+      key: "email",
+      header: t("fields.email"),
+      className: "text-ink-muted font-semibold",
+      cell: (user) => <span dir="ltr">{user.email}</span>,
+    },
+    {
+      key: "phone",
+      header: t("fields.phone"),
+      className: "text-ink font-semibold",
+      cell: (user) => <span dir="ltr">{user.phone}</span>,
+    },
+    {
+      key: "role",
+      header: t("fields.role"),
+      className: "text-ink font-semibold",
+      cell: (user) =>
+        user.role === undefined ? t("noRole") : roleLabel(user.role.name, (name) => roles(name)),
+    },
+    {
+      key: "project",
+      header: t("fields.project"),
+      className: "text-ink-muted font-semibold",
+      cell: projectLabel,
+    },
+  ];
 
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id} className={tableRowClasses}>
-              <td className={`${tableCellClasses} text-ink font-bold`}>
-                <span dir="auto">{user.name}</span>
-              </td>
-              <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                <span dir="ltr">{user.email}</span>
-              </td>
-              <td className={`${tableCellClasses} text-ink font-semibold`}>
-                <span dir="ltr">{user.phone}</span>
-              </td>
-              <td className={`${tableCellClasses} text-ink font-semibold`}>
-                {user.role === undefined
-                  ? t("noRole")
-                  : roleLabel(user.role.name, (name) => roles(name))}
-              </td>
-              <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                {projectLabel(user)}
-              </td>
-              {canEdit ? (
-                <td className={`${tableCellClasses} text-end`}>
-                  <ActionLink
-                    href={usersHref({ query, page, edit: user.id })}
-                    icon="pencil"
-                    ariaLabel={t("editLabel", { name: user.name })}
-                  >
-                    {t("edit")}
-                  </ActionLink>
-                </td>
-              ) : null}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+  if (canEdit) {
+    columns.push({
+      key: "action",
+      header: t("fields.action"),
+      hideHeader: true,
+      align: "end",
+      cell: (user) => (
+        <ActionLink
+          href={usersHref({ query, page, edit: user.id })}
+          icon="pencil"
+          ariaLabel={t("editLabel", { name: user.name })}
+        >
+          {t("edit")}
+        </ActionLink>
+      ),
+    });
+  }
+
+  return (
+    <DataTable
+      columns={columns}
+      rows={users}
+      rowKey={(user) => user.id}
+      empty={query === "" ? t("empty") : common("noMatch")}
+    />
   );
 }
 
@@ -197,20 +191,22 @@ export function UsersScreen() {
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <UsersTabs />
-        <div className="w-full sm:w-72">
-          <DelayedSearchField
-            id="user-search"
-            label={common("search")}
-            placeholder={t("searchPlaceholder")}
-            query={query}
-            hrefFor={searchHref}
-          />
-        </div>
-      </div>
+      <UsersTabs />
 
-      <TablePanel title={t("listTitle")}>
+      <TablePanel
+        title={t("listTitle")}
+        search={{
+          field: (
+            <DelayedSearchField
+              id="user-search"
+              label={common("search")}
+              placeholder={t("searchPlaceholder")}
+              query={query}
+              hrefFor={searchHref}
+            />
+          ),
+        }}
+      >
         <UserTable users={users.items} projects={projects} query={query} page={page} />
 
         {pageCount > 1 ? (

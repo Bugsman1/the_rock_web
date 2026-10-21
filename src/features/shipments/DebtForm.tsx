@@ -8,16 +8,10 @@ import { DrawerActions } from "@/components/ui/Drawer";
 import { FormError } from "@/components/ui/FieldError";
 import { Icon } from "@/components/ui/Icon";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
-import {
-  TablePanel,
-  tableCellClasses,
-  tableEndHeadClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
+import { DataTable } from "@/components/ui/DataTable";
+import { TablePanel } from "@/components/ui/TablePanel";
 import { TextArea, TextField } from "@/components/ui/TextField";
 import { useCan } from "@/lib/accessContext";
-import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/format";
 import { createDebtSchema, debtAfter } from "./shipmentPayments";
 import type { ShipmentDetail } from "./shipments";
@@ -143,34 +137,31 @@ export function DebtPanel({
         </div>
       ) : null}
 
-      {shipment.debt > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead className="bg-surface-page">
-              <tr className="border-line border-b">
-                <th className={tableEndHeadClasses}>{t("columns.amount")}</th>
-                <th className={cn(tableHeadClasses, "text-center")}>{debtForm("notes")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className={tableRowClasses}>
-                <td className={`${tableCellClasses} text-ink w-40 text-end font-bold`}>
-                  {formatMoney(shipment.debt, locale)}
-                </td>
-                <td
-                  className={cn(tableCellClasses, "text-ink-muted font-semibold whitespace-normal")}
-                >
-                  <p dir="auto" className="text-center break-words">
-                    {shipment.debtNotes === "" ? "—" : shipment.debtNotes}
-                  </p>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("noDebt")}</p>
-      )}
+      <DataTable
+        columns={[
+          {
+            key: "amount",
+            header: t("columns.amount"),
+            align: "end",
+            className: "text-ink w-40 font-bold",
+            cell: (debt: ShipmentDetail) => formatMoney(debt.debt, locale),
+          },
+          {
+            key: "notes",
+            header: debtForm("notes"),
+            align: "center",
+            className: "text-ink-muted font-semibold whitespace-normal",
+            cell: (debt: ShipmentDetail) => (
+              <p dir="auto" className="text-center break-words">
+                {debt.debtNotes === "" ? "—" : debt.debtNotes}
+              </p>
+            ),
+          },
+        ]}
+        rows={shipment.debt > 0 ? [shipment] : []}
+        rowKey={(debt) => debt.id}
+        empty={t("noDebt")}
+      />
     </TablePanel>
   );
 }

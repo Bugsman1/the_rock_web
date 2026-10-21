@@ -120,4 +120,13 @@ describe("NewSettlementScreen", () => {
       expect(router.state.location.search).toBe("?customer=7&project=3");
     });
   });
+
+  it("shows the customer it was opened for, with no customer search", async () => {
+    answerShipments([apiShipment(3, "completed")]);
+    openAt("/fr/settlements/new?customer=7&project=3");
+
+    expect(await screen.findByText("SHP-00003")).toBeVisible();
+    expect(screen.getByText(text.fields.customer).nextElementSibling).toHaveTextContent("Ahmed");
+    expect(screen.queryByRole("combobox", { name: text.fields.customer })).not.toBeInTheDocument();
+  });
 });

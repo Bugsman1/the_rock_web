@@ -9,19 +9,15 @@ import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
 import { Pagination } from "@/components/ui/Pagination";
 import { DelayedSearchField } from "@/components/ui/SearchField";
-import {
-  TablePanel,
-  tableCellClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
+import { DataTable } from "@/components/ui/DataTable";
+import type { DataColumn } from "@/components/ui/DataTable";
+import { TablePanel } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
 import { parsePageNumber } from "@/lib/api/pagination";
 import type { Customer } from "@/lib/customers";
 import { getCustomer, getCustomerPage } from "@/lib/customersApi";
 import { formatCount, formatDate } from "@/lib/format";
 import { customerHref, customersHref } from "@/lib/routes";
-import { Link } from "@/i18n/navigation";
 
 export async function customersLoader({ request }: LoaderFunctionArgs) {
   const params = new URL(request.url).searchParams;
@@ -48,69 +44,57 @@ function CustomerTable({ customers, query, page }: CustomerTableProps) {
   const can = useCan();
   const canEdit = can("customers", "edit");
   const canOpen = can("shipments", "view");
+  const columns: DataColumn<Customer>[] = [
+    {
+      key: "name",
+      header: t("fields.name"),
+      rowLink: true,
+      className: "text-ink font-bold",
+      cell: (customer) => <span dir="auto">{customer.name}</span>,
+    },
+    {
+      key: "phone",
+      header: t("fields.phone"),
+      className: "text-ink font-semibold",
+      cell: (customer) => <span dir="ltr">{customer.phone}</span>,
+    },
+    {
+      key: "addedAt",
+      header: t("fields.addedAt"),
+      className: "text-ink-muted font-semibold",
+      cell: (customer) => formatDate(customer.addedAt, locale),
+    },
+  ];
 
-  if (customers.length === 0) {
-    return (
-      <p className="text-ink-muted p-6 text-[15px] font-semibold">
-        {query === "" ? t("empty") : t("noResults")}
-      </p>
-    );
+  if (canEdit) {
+    columns.push({
+      key: "action",
+      header: t("fields.action"),
+      hideHeader: true,
+      align: "end",
+      interactive: true,
+      cell: (customer) => (
+        <ActionLink
+          href={customersHref({ query, page, edit: customer.id })}
+          icon="pencil"
+          ariaLabel={t("editLabel", { name: customer.name })}
+        >
+          {t("edit")}
+        </ActionLink>
+      ),
+    });
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead className="bg-surface-page">
-          <tr className="border-line border-b-[1.5px]">
-            <th className={tableHeadClasses}>{t("fields.name")}</th>
-            <th className={tableHeadClasses}>{t("fields.phone")}</th>
-            <th className={tableHeadClasses}>{t("fields.addedAt")}</th>
-            {canEdit ? (
-              <th className={tableHeadClasses}>
-                <span className="sr-only">{t("fields.action")}</span>
-              </th>
-            ) : null}
-          </tr>
-        </thead>
-
-        <tbody>
-          {customers.map((customer) => (
-            <tr key={customer.id} className={`${tableRowClasses} relative`}>
-              <td className={`${tableCellClasses} text-ink font-bold`}>
-                {canOpen ? (
-                  <Link
-                    href={customerHref(customer.id)}
-                    dir="auto"
-                    className="after:absolute after:inset-0"
-                  >
-                    {customer.name}
-                  </Link>
-                ) : (
-                  <span dir="auto">{customer.name}</span>
-                )}
-              </td>
-              <td className={`${tableCellClasses} text-ink font-semibold`}>
-                <span dir="ltr">{customer.phone}</span>
-              </td>
-              <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                {formatDate(customer.addedAt, locale)}
-              </td>
-              {canEdit ? (
-                <td className={`${tableCellClasses} relative z-10 text-end`}>
-                  <ActionLink
-                    href={customersHref({ query, page, edit: customer.id })}
-                    icon="pencil"
-                    ariaLabel={t("editLabel", { name: customer.name })}
-                  >
-                    {t("edit")}
-                  </ActionLink>
-                </td>
-              ) : null}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      rows={customers}
+      rowKey={(customer) => customer.id}
+      empty={query === "" ? t("empty") : t("noResults")}
+      {...(canOpen
+        ? { rowLink: (customer: Customer) => ({ href: customerHref(customer.id) }) }
+        : {})}
+    />
   );
 }
 
@@ -123,15 +107,13 @@ function CustomerSearch({ query }: { query: string }) {
   const common = useTranslations("common");
 
   return (
-    <div className="min-w-60 flex-1 md:mx-auto md:max-w-md">
-      <DelayedSearchField
-        id="customer-search"
-        label={common("search")}
-        placeholder={t("searchPlaceholder")}
-        query={query}
-        hrefFor={searchHref}
-      />
-    </div>
+    <DelayedSearchField
+      id="customer-search"
+      label={common("search")}
+      placeholder={t("searchPlaceholder")}
+      query={query}
+      hrefFor={searchHref}
+    />
   );
 }
 
@@ -148,15 +130,13 @@ export function CustomersScreen() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-baseline gap-4">
           <PageTitle>{t("title")}</PageTitle>
           <p className="text-ink-muted text-[15px] font-semibold">
             {t("count", { count: formatCount(customers.total, locale) })}
           </p>
         </div>
-
-        <CustomerSearch query={query} />
 
         {can("customers", "add") ? (
           <ButtonLink href={customersHref({ query, page, create: true })} variant="primary">
@@ -166,7 +146,7 @@ export function CustomersScreen() {
         ) : null}
       </div>
 
-      <TablePanel title={t("listTitle")}>
+      <TablePanel title={t("listTitle")} search={{ field: <CustomerSearch query={query} /> }}>
         <CustomerTable customers={customers.items} query={query} page={page} />
 
         {pageCount > 1 ? (

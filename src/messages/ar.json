@@ -784,7 +784,8 @@
       "mercury": "الزئبق",
       "water": "الماء",
       "fuel": "البنزين"
-    }
+    },
+    "historyEmpty": "لا توجد حركات على هذا المورد بعد."
   },
   "errors": {
     "notFound": {
@@ -832,6 +833,8 @@
       "delete": "حذف"
     },
     "totals": {
+      "item": "البند",
+      "amount": "المبلغ",
       "bagsTransport": "نقل الأكياس",
       "passengersTransport": "نقل الركاب",
       "shipmentsDebt": "ديون الشحنات",

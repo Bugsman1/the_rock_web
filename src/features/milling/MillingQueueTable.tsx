@@ -2,12 +2,9 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { Icon } from "@/components/ui/Icon";
-import {
-  StatusBadge,
-  tableCellClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
+import { DataTable } from "@/components/ui/DataTable";
+import type { DataColumn } from "@/components/ui/DataTable";
+import { StatusBadge } from "@/components/ui/TablePanel";
 import type { StatusTone } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
 import { formatCount } from "@/lib/format";
@@ -42,60 +39,63 @@ export function MillingQueueTable({ queue, query }: { queue: readonly QueueRow[]
     matchesSearch({ texts: [row.shipmentNumber, row.client], phone: "" }, query),
   );
 
-  if (rows.length === 0) {
-    return (
-      <p className="text-ink-muted p-6 text-[15px] font-semibold">
-        {queue.length === 0 ? t("queueEmpty") : common("noMatch")}
-      </p>
-    );
-  }
-
   const visible = expanded ? rows : rows.slice(0, QUEUE_PREVIEW_LIMIT);
+  const columns: DataColumn<QueueRow>[] = [
+    {
+      key: "position",
+      header: t("queueColumns.position"),
+      className: "text-brand-700 font-bold",
+      cell: (row) => formatCount(row.position, locale),
+    },
+    {
+      key: "shipment",
+      header: t("queueColumns.shipment"),
+      className: "text-ink font-bold",
+      cell: (row) => row.shipmentNumber,
+    },
+    {
+      key: "client",
+      header: t("queueColumns.client"),
+      className: "text-ink font-bold",
+      cell: (row) => <span dir="auto">{row.client}</span>,
+    },
+    {
+      key: "remaining",
+      header: t("queueColumns.remaining"),
+      className: "text-ink font-bold",
+      cell: (row) => row.remaining,
+    },
+    {
+      key: "status",
+      header: t("queueColumns.status"),
+      cell: (row) => (
+        <StatusBadge label={statuses(row.status)} tone={queueStatusTones[row.status]} />
+      ),
+    },
+  ];
+
+  if (canStart) {
+    columns.push({
+      key: "action",
+      header: t("queueColumns.action"),
+      hideHeader: true,
+      align: "end",
+      cell: (row) => (
+        <ActionLink href={row.startHref} icon="player-play">
+          {t("start")}
+        </ActionLink>
+      ),
+    });
+  }
 
   return (
     <div className="flex flex-col">
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead className="bg-surface-page">
-            <tr className="border-line border-b-[1.5px]">
-              <th className={tableHeadClasses}>{t("queueColumns.position")}</th>
-              <th className={tableHeadClasses}>{t("queueColumns.shipment")}</th>
-              <th className={tableHeadClasses}>{t("queueColumns.client")}</th>
-              <th className={tableHeadClasses}>{t("queueColumns.remaining")}</th>
-              <th className={tableHeadClasses}>{t("queueColumns.status")}</th>
-              {canStart ? (
-                <th className={tableHeadClasses}>
-                  <span className="sr-only">{t("queueColumns.action")}</span>
-                </th>
-              ) : null}
-            </tr>
-          </thead>
-          <tbody>
-            {visible.map((row) => (
-              <tr key={row.shipmentNumber} className={tableRowClasses}>
-                <td className={`${tableCellClasses} text-brand-700 font-bold`}>
-                  {formatCount(row.position, locale)}
-                </td>
-                <td className={`${tableCellClasses} text-ink font-bold`}>{row.shipmentNumber}</td>
-                <td className={`${tableCellClasses} text-ink font-bold`}>
-                  <span dir="auto">{row.client}</span>
-                </td>
-                <td className={`${tableCellClasses} text-ink font-bold`}>{row.remaining}</td>
-                <td className={tableCellClasses}>
-                  <StatusBadge label={statuses(row.status)} tone={queueStatusTones[row.status]} />
-                </td>
-                {canStart ? (
-                  <td className={`${tableCellClasses} text-end`}>
-                    <ActionLink href={row.startHref} icon="player-play">
-                      {t("start")}
-                    </ActionLink>
-                  </td>
-                ) : null}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={columns}
+        rows={visible}
+        rowKey={(row) => row.shipmentNumber}
+        empty={queue.length === 0 ? t("queueEmpty") : common("noMatch")}
+      />
 
       {rows.length > QUEUE_PREVIEW_LIMIT ? (
         <button

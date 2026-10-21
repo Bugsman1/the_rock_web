@@ -7,14 +7,9 @@ import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
 import { PageLayout } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
-import {
-  StatusBadge,
-  TablePanel,
-  tableCellClasses,
-  tableEndHeadClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
+import { StatusBadge, TablePanel } from "@/components/ui/TablePanel";
+import { DataTable } from "@/components/ui/DataTable";
+import type { DataColumn } from "@/components/ui/DataTable";
 import { useCan } from "@/lib/accessContext";
 import { notFound } from "@/lib/api/client";
 import { parsePageNumber } from "@/lib/api/pagination";
@@ -83,62 +78,79 @@ function HistoryTable({ changes, showsLoss }: HistoryTableProps) {
   const t = useTranslations("inventory");
   const locale = useLocale();
   const quantity = (value: number) => formatQuantity(value, locale);
+  const columns: DataColumn<ResourceChange>[] = [
+    {
+      key: "at",
+      header: t("fields.changedAt"),
+      className: "text-ink-muted font-semibold",
+      cell: (change) => formatDateTime(change.at, locale),
+    },
+    {
+      key: "type",
+      header: t("fields.changeType"),
+      cell: (change) => <ChangeTypeCell change={change} />,
+    },
+    {
+      key: "quantity",
+      header: t("fields.quantity"),
+      align: "end",
+      className: "text-ink font-bold",
+      cell: (change) => quantity(change.quantity),
+    },
+    {
+      key: "before",
+      header: t("fields.quantityBefore"),
+      align: "end",
+      className: "text-ink-muted font-semibold",
+      cell: (change) => quantity(change.quantityBefore),
+    },
+    {
+      key: "after",
+      header: t("fields.quantityAfter"),
+      align: "end",
+      className: "text-brand-700 font-bold",
+      cell: (change) => quantity(change.quantityAfter),
+    },
+    ...(showsLoss
+      ? [
+          {
+            key: "loss",
+            header: t("fields.loss"),
+            align: "end" as const,
+            className: "text-danger-700 font-bold",
+            cell: (change: ResourceChange) =>
+              change.loss === undefined ? "—" : quantity(change.loss),
+          },
+        ]
+      : []),
+    {
+      key: "note",
+      header: t("fields.note"),
+      className: "text-ink-muted max-w-60 font-semibold",
+      cell: (change) =>
+        change.note === "" ? (
+          "—"
+        ) : (
+          <span dir="auto" title={change.note} className="block truncate">
+            {change.note}
+          </span>
+        ),
+    },
+    {
+      key: "by",
+      header: t("fields.changedBy"),
+      className: "text-ink font-semibold",
+      cell: (change) => <span dir="auto">{change.byName === "" ? "—" : change.byName}</span>,
+    },
+  ];
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead className="bg-surface-page">
-          <tr className="border-line border-b-[1.5px]">
-            <th className={tableHeadClasses}>{t("fields.changedAt")}</th>
-            <th className={tableHeadClasses}>{t("fields.changeType")}</th>
-            <th className={tableEndHeadClasses}>{t("fields.quantity")}</th>
-            <th className={tableEndHeadClasses}>{t("fields.quantityBefore")}</th>
-            <th className={tableEndHeadClasses}>{t("fields.quantityAfter")}</th>
-            {showsLoss ? <th className={tableEndHeadClasses}>{t("fields.loss")}</th> : null}
-            <th className={tableHeadClasses}>{t("fields.note")}</th>
-            <th className={tableHeadClasses}>{t("fields.changedBy")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {changes.map((change) => (
-            <tr key={change.id} className={tableRowClasses}>
-              <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                {formatDateTime(change.at, locale)}
-              </td>
-              <td className={tableCellClasses}>
-                <ChangeTypeCell change={change} />
-              </td>
-              <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                {quantity(change.quantity)}
-              </td>
-              <td className={`${tableCellClasses} text-ink-muted text-end font-semibold`}>
-                {quantity(change.quantityBefore)}
-              </td>
-              <td className={`${tableCellClasses} text-brand-700 text-end font-bold`}>
-                {quantity(change.quantityAfter)}
-              </td>
-              {showsLoss ? (
-                <td className={`${tableCellClasses} text-danger-700 text-end font-bold`}>
-                  {change.loss === undefined ? "—" : quantity(change.loss)}
-                </td>
-              ) : null}
-              <td className={`${tableCellClasses} text-ink-muted max-w-60 font-semibold`}>
-                {change.note === "" ? (
-                  "—"
-                ) : (
-                  <span dir="auto" title={change.note} className="block truncate">
-                    {change.note}
-                  </span>
-                )}
-              </td>
-              <td className={`${tableCellClasses} text-ink font-semibold`}>
-                <span dir="auto">{change.byName === "" ? "—" : change.byName}</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      rows={changes}
+      rowKey={(change) => change.id}
+      empty={t("historyEmpty")}
+    />
   );
 }
 

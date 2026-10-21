@@ -1,12 +1,7 @@
 import { useLocale, useTranslations } from "use-intl";
 import { ActionLink } from "@/components/ui/ActionLink";
-import {
-  tableCellClasses,
-  tableEndHeadClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
-import { Link } from "@/i18n/navigation";
+import { DataTable } from "@/components/ui/DataTable";
+import type { DataColumn } from "@/components/ui/DataTable";
 import type { Customer } from "@/lib/customers";
 import { formatCount, formatDate, formatMoney } from "@/lib/format";
 import type { ProjectId } from "@/lib/projects";
@@ -14,10 +9,6 @@ import { newSettlementHref, settlementHref } from "@/lib/routes";
 import type { ShipmentRecord } from "@/lib/shipments";
 import { customerOfShipment } from "./settlements";
 import type { Settlement } from "./settlements";
-
-function EmptyTable({ message }: { message: string }) {
-  return <p className="text-ink-muted p-6 text-[15px] font-semibold">{message}</p>;
-}
 
 export function SettlementTable({
   settlements,
@@ -28,58 +19,57 @@ export function SettlementTable({
 }) {
   const t = useTranslations("settlements");
   const locale = useLocale();
-
-  if (settlements.length === 0) {
-    return <EmptyTable message={query === "" ? t("empty") : t("noResults")} />;
-  }
+  const columns: DataColumn<Settlement>[] = [
+    {
+      key: "number",
+      header: t("columns.number"),
+      rowLink: true,
+      className: "text-ink font-bold",
+      cell: (settlement) => <span dir="ltr">{settlement.number}</span>,
+    },
+    {
+      key: "customer",
+      header: t("columns.customer"),
+      className: "text-ink font-semibold",
+      cell: (settlement) => <span dir="auto">{settlement.customerName}</span>,
+    },
+    {
+      key: "shipments",
+      header: t("columns.shipments"),
+      className: "text-ink-muted font-semibold",
+      cell: (settlement) => <span dir="ltr">{settlement.shipmentNumbers.join(", ")}</span>,
+    },
+    {
+      key: "total",
+      header: t("columns.total"),
+      align: "end",
+      className: "text-ink font-bold",
+      cell: (settlement) => formatMoney(settlement.totals.grandTotal, locale),
+    },
+    {
+      key: "createdAt",
+      header: t("columns.createdAt"),
+      className: "text-ink-muted font-semibold",
+      cell: (settlement) => formatDate(settlement.createdAt, locale),
+    },
+    {
+      key: "createdBy",
+      header: t("columns.createdBy"),
+      className: "text-ink font-semibold",
+      cell: (settlement) => (
+        <span dir="auto">{settlement.createdByName === "" ? "—" : settlement.createdByName}</span>
+      ),
+    },
+  ];
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead className="bg-surface-page">
-          <tr className="border-line border-b-[1.5px]">
-            <th className={tableHeadClasses}>{t("columns.number")}</th>
-            <th className={tableHeadClasses}>{t("columns.customer")}</th>
-            <th className={tableHeadClasses}>{t("columns.shipments")}</th>
-            <th className={tableEndHeadClasses}>{t("columns.total")}</th>
-            <th className={tableHeadClasses}>{t("columns.createdAt")}</th>
-            <th className={tableHeadClasses}>{t("columns.createdBy")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {settlements.map((settlement) => (
-            <tr key={settlement.id} className={`${tableRowClasses} relative`}>
-              <td className={`${tableCellClasses} text-ink font-bold`}>
-                <Link
-                  href={settlementHref(settlement.id)}
-                  dir="ltr"
-                  className="after:absolute after:inset-0"
-                >
-                  {settlement.number}
-                </Link>
-              </td>
-              <td className={`${tableCellClasses} text-ink font-semibold`}>
-                <span dir="auto">{settlement.customerName}</span>
-              </td>
-              <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                <span dir="ltr">{settlement.shipmentNumbers.join(", ")}</span>
-              </td>
-              <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                {formatMoney(settlement.totals.grandTotal, locale)}
-              </td>
-              <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                {formatDate(settlement.createdAt, locale)}
-              </td>
-              <td className={`${tableCellClasses} text-ink font-semibold`}>
-                <span dir="auto">
-                  {settlement.createdByName === "" ? "—" : settlement.createdByName}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      rows={settlements}
+      rowKey={(settlement) => settlement.id}
+      empty={query === "" ? t("empty") : t("noResults")}
+      rowLink={(settlement) => ({ href: settlementHref(settlement.id) })}
+    />
   );
 }
 
@@ -101,75 +91,82 @@ export function WaitingShipmentsTable({
   const t = useTranslations("settlements");
   const locale = useLocale();
   const money = (amount: number) => formatMoney(amount, locale);
+  const columns: DataColumn<ShipmentRecord>[] = [
+    {
+      key: "number",
+      header: t("waitingColumns.number"),
+      className: "text-ink font-bold",
+      cell: (shipment) => <span dir="ltr">{shipment.shipmentNumber}</span>,
+    },
+    {
+      key: "customer",
+      header: t("waitingColumns.customer"),
+      className: "text-ink font-semibold",
+      cell: (shipment) => <span dir="auto">{shipment.customerName}</span>,
+    },
+    {
+      key: "phone",
+      header: t("waitingColumns.phone"),
+      className: "text-ink-muted font-semibold",
+      cell: (shipment) => <span dir="ltr">{shipment.phone}</span>,
+    },
+    {
+      key: "arrival",
+      header: t("waitingColumns.arrival"),
+      className: "text-ink-muted font-semibold",
+      cell: (shipment) => formatDate(shipment.arrivedAt, locale),
+    },
+    {
+      key: "bags",
+      header: t("waitingColumns.bags"),
+      align: "end",
+      className: "text-ink font-bold",
+      cell: (shipment) => formatCount(shipment.bagCount, locale),
+    },
+    {
+      key: "transport",
+      header: t("waitingColumns.transport"),
+      align: "end",
+      className: "text-ink font-bold",
+      cell: (shipment) => money(shipment.transportTotal),
+    },
+    {
+      key: "debt",
+      header: t("waitingColumns.debt"),
+      align: "end",
+      className: "text-ink font-bold",
+      cell: (shipment) => money(shipment.debt),
+    },
+  ];
 
-  if (shipments.length === 0) {
-    return <EmptyTable message={emptyMessage} />;
+  if (canSettle) {
+    columns.push({
+      key: "settle",
+      header: t("project.settle"),
+      hideHeader: true,
+      align: "end",
+      cell: (shipment) => {
+        const customer = customerOfShipment(customers, shipment);
+
+        return customer === undefined ? null : (
+          <ActionLink
+            href={newSettlementHref({ customer: customer.id, project })}
+            icon="receipt"
+            ariaLabel={t("project.settleLabel", { name: shipment.customerName })}
+          >
+            {t("project.settle")}
+          </ActionLink>
+        );
+      },
+    });
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead className="bg-surface-page">
-          <tr className="border-line border-b-[1.5px]">
-            <th className={tableHeadClasses}>{t("waitingColumns.number")}</th>
-            <th className={tableHeadClasses}>{t("waitingColumns.customer")}</th>
-            <th className={tableHeadClasses}>{t("waitingColumns.phone")}</th>
-            <th className={tableHeadClasses}>{t("waitingColumns.arrival")}</th>
-            <th className={tableEndHeadClasses}>{t("waitingColumns.bags")}</th>
-            <th className={tableEndHeadClasses}>{t("waitingColumns.transport")}</th>
-            <th className={tableEndHeadClasses}>{t("waitingColumns.debt")}</th>
-            {canSettle ? (
-              <th className={tableHeadClasses}>
-                <span className="sr-only">{t("project.settle")}</span>
-              </th>
-            ) : null}
-          </tr>
-        </thead>
-        <tbody>
-          {shipments.map((shipment) => {
-            const customer = customerOfShipment(customers, shipment);
-
-            return (
-              <tr key={shipment.id} className={tableRowClasses}>
-                <td className={`${tableCellClasses} text-ink font-bold`}>
-                  <span dir="ltr">{shipment.shipmentNumber}</span>
-                </td>
-                <td className={`${tableCellClasses} text-ink font-semibold`}>
-                  <span dir="auto">{shipment.customerName}</span>
-                </td>
-                <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                  <span dir="ltr">{shipment.phone}</span>
-                </td>
-                <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                  {formatDate(shipment.arrivedAt, locale)}
-                </td>
-                <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                  {formatCount(shipment.bagCount, locale)}
-                </td>
-                <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                  {money(shipment.transportTotal)}
-                </td>
-                <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                  {money(shipment.debt)}
-                </td>
-                {canSettle ? (
-                  <td className={`${tableCellClasses} text-end`}>
-                    {customer === undefined ? null : (
-                      <ActionLink
-                        href={newSettlementHref({ customer: customer.id, project })}
-                        icon="receipt"
-                        ariaLabel={t("project.settleLabel", { name: shipment.customerName })}
-                      >
-                        {t("project.settle")}
-                      </ActionLink>
-                    )}
-                  </td>
-                ) : null}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      rows={shipments}
+      rowKey={(shipment) => shipment.id}
+      empty={emptyMessage}
+    />
   );
 }

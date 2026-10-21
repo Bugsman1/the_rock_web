@@ -6,12 +6,8 @@ import { DetailList } from "@/components/ui/Cards";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
 import { PageLayout } from "@/components/ui/PageHeader";
-import {
-  TablePanel,
-  TableTotalRow,
-  tableCellClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
+import { DataTable } from "@/components/ui/DataTable";
+import { TablePanel } from "@/components/ui/TablePanel";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { notFound } from "@/lib/api/client";
@@ -67,33 +63,36 @@ function SettlementTotals({ settlement }: { settlement: Settlement }) {
 
   return (
     <TablePanel title={t("detail.totalsTitle")}>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <tbody>
-            {lines.map((line) => (
-              <tr key={line.label} className={tableRowClasses}>
-                <td className={`${tableCellClasses} text-ink-label font-semibold`}>
-                  {line.label}
-                  {line.detail === undefined ? null : (
-                    <span dir="auto" className="text-ink-muted ms-2 text-[13px]">
-                      {line.detail}
-                    </span>
-                  )}
-                </td>
-                <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                  {money(line.value)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-          <TableTotalRow
-            label={t("totals.grandTotal")}
-            value={money(totals.grandTotal)}
-            columnsBefore={1}
-            columnsAfter={0}
-          />
-        </table>
-      </div>
+      <DataTable
+        columns={[
+          {
+            key: "item",
+            header: t("totals.item"),
+            className: "text-ink-label font-semibold",
+            cell: (line: TotalLine) => (
+              <>
+                {line.label}
+                {line.detail === undefined ? null : (
+                  <span dir="auto" className="text-ink-muted ms-2 text-[13px]">
+                    {line.detail}
+                  </span>
+                )}
+              </>
+            ),
+          },
+          {
+            key: "amount",
+            header: t("totals.amount"),
+            align: "end",
+            className: "text-ink font-bold",
+            cell: (line: TotalLine) => money(line.value),
+          },
+        ]}
+        rows={lines}
+        rowKey={(line) => line.label}
+        empty=""
+        total={{ label: t("totals.grandTotal"), column: "amount", value: money(totals.grandTotal) }}
+      />
     </TablePanel>
   );
 }

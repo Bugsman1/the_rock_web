@@ -2,12 +2,8 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { Icon } from "@/components/ui/Icon";
-import {
-  tableCellClasses,
-  tableEndHeadClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
+import { DataTable } from "@/components/ui/DataTable";
+import type { DataColumn } from "@/components/ui/DataTable";
 import { Link } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { cn } from "@/lib/cn";
@@ -47,6 +43,96 @@ export function MachineList({ project, rows }: { project: string; rows: readonly
     return isSameDay(end, now) ? formatTime(end, locale) : formatDateTime(end, locale);
   }
 
+  const columns: DataColumn<MachineRow>[] = [
+    {
+      key: "machine",
+      header: t("project.columns.machine"),
+      className: "text-ink font-bold",
+      cell: ({ number }) => formatCount(number, locale),
+    },
+    {
+      key: "status",
+      header: t("project.columns.status"),
+      cell: ({ status }) => <MachineStatusLabel status={status} label={t(`statuses.${status}`)} />,
+    },
+    {
+      key: "assignment",
+      header: t("project.columns.assignment"),
+      className: "max-w-72",
+      cell: ({ operation }) =>
+        operation === undefined ? (
+          <span className="text-ink-faint">—</span>
+        ) : (
+          <span className="flex min-w-0 items-baseline gap-1.5">
+            <span dir="auto" className="text-ink truncate font-bold">
+              {operation.client}
+            </span>
+            <span aria-hidden className="text-ink-faint">
+              ·
+            </span>
+            <span className="text-ink-muted font-semibold">{operation.shipmentNumber}</span>
+          </span>
+        ),
+    },
+    {
+      key: "mercury",
+      header: t("mercury.column"),
+      cell: ({ operation }) =>
+        operation === undefined ? (
+          <span className="text-ink-faint">—</span>
+        ) : (
+          <MercuryStatus operation={operation} />
+        ),
+    },
+    {
+      key: "bags",
+      header: t("project.columns.bags"),
+      align: "end",
+      className: "text-ink font-bold",
+      cell: ({ operation }) =>
+        operation === undefined ? "—" : formatCount(operation.bags, locale),
+    },
+    {
+      key: "estimatedEnd",
+      header: t("project.columns.estimatedEnd"),
+      className: "text-ink-muted font-semibold",
+      cell: ({ operation }) =>
+        operation === undefined ? "—" : estimatedEndLabel(operation.estimatedEndAt),
+    },
+    {
+      key: "action",
+      header: t("project.columns.action"),
+      hideHeader: true,
+      align: "end",
+      cell: ({ number, status }) =>
+        canStart && status === "idle" ? (
+          <ActionLink
+            href={newMillingOperationHref(project, { machine: number })}
+            icon="plus"
+            variant="ghost"
+          >
+            {t("project.start")}
+          </ActionLink>
+        ) : null,
+    },
+    {
+      key: "details",
+      header: t("project.columns.details"),
+      hideHeader: true,
+      align: "end",
+      className: "w-12",
+      cell: ({ number }) => (
+        <Link
+          href={millingMachineHref(project, number)}
+          aria-label={t("project.openMachine", { number: formatCount(number, locale) })}
+          className="text-ink-muted hover:text-brand-700 hover:bg-surface-hover rounded-action inline-flex size-9 items-center justify-center"
+        >
+          <Icon name="arrow-right" className="h-5 w-5" />
+        </Link>
+      ),
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-3">
       <div role="group" aria-label={t("project.statusFilter")} className="flex flex-wrap gap-2">
@@ -75,90 +161,13 @@ export function MachineList({ project, rows }: { project: string; rows: readonly
         })}
       </div>
 
-      <div className="border-line rounded-field overflow-x-auto border-[1.5px]">
-        <table className="w-full border-collapse">
-          <thead className="bg-surface-page">
-            <tr className="border-line border-b-[1.5px]">
-              <th className={tableHeadClasses}>{t("project.columns.machine")}</th>
-              <th className={tableHeadClasses}>{t("project.columns.status")}</th>
-              <th className={tableHeadClasses}>{t("project.columns.assignment")}</th>
-              <th className={tableHeadClasses}>{t("mercury.column")}</th>
-              <th className={tableEndHeadClasses}>{t("project.columns.bags")}</th>
-              <th className={tableHeadClasses}>{t("project.columns.estimatedEnd")}</th>
-              <th className={tableHeadClasses}>
-                <span className="sr-only">{t("project.columns.action")}</span>
-              </th>
-              <th className={tableHeadClasses}>
-                <span className="sr-only">{t("project.columns.details")}</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {visible.map(({ number, status, operation }) => (
-              <tr key={number} className={tableRowClasses}>
-                <td className={`${tableCellClasses} text-ink font-bold`}>
-                  {formatCount(number, locale)}
-                </td>
-                <td className={tableCellClasses}>
-                  <MachineStatusLabel status={status} label={t(`statuses.${status}`)} />
-                </td>
-                <td className={`${tableCellClasses} max-w-72`}>
-                  {operation === undefined ? (
-                    <span className="text-ink-faint">—</span>
-                  ) : (
-                    <span className="flex min-w-0 items-baseline gap-1.5">
-                      <span dir="auto" className="text-ink truncate font-bold">
-                        {operation.client}
-                      </span>
-                      <span aria-hidden className="text-ink-faint">
-                        ·
-                      </span>
-                      <span className="text-ink-muted font-semibold">
-                        {operation.shipmentNumber}
-                      </span>
-                    </span>
-                  )}
-                </td>
-                <td className={tableCellClasses}>
-                  {operation === undefined ? (
-                    <span className="text-ink-faint">—</span>
-                  ) : (
-                    <MercuryStatus operation={operation} />
-                  )}
-                </td>
-                <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                  {operation === undefined ? "—" : formatCount(operation.bags, locale)}
-                </td>
-                <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                  {operation === undefined ? "—" : estimatedEndLabel(operation.estimatedEndAt)}
-                </td>
-                <td className={`${tableCellClasses} text-end`}>
-                  {canStart && status === "idle" ? (
-                    <ActionLink
-                      href={newMillingOperationHref(project, { machine: number })}
-                      icon="plus"
-                      variant="ghost"
-                    >
-                      {t("project.start")}
-                    </ActionLink>
-                  ) : null}
-                </td>
-                <td className={`${tableCellClasses} w-12 text-end`}>
-                  <Link
-                    href={millingMachineHref(project, number)}
-                    aria-label={t("project.openMachine", { number: formatCount(number, locale) })}
-                    className="text-ink-muted hover:text-brand-700 hover:bg-surface-hover rounded-action inline-flex size-9 items-center justify-center"
-                  >
-                    <Icon name="arrow-right" className="h-5 w-5" />
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {visible.length === 0 ? (
-          <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("project.noMachines")}</p>
-        ) : null}
+      <div className="border-line rounded-field border-[1.5px]">
+        <DataTable
+          columns={columns}
+          rows={visible}
+          rowKey={(row) => String(row.number)}
+          empty={t("project.noMachines")}
+        />
       </div>
     </div>
   );

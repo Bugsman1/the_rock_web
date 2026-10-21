@@ -4,6 +4,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useTranslations } from "use-intl";
 import { Combobox } from "@/components/ui/Combobox";
 import { PageLayout } from "@/components/ui/PageHeader";
+import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { useReplace } from "@/i18n/navigation";
 import { getCustomerChoices } from "@/lib/customersApi";
@@ -78,6 +79,7 @@ export function NewSettlementScreen() {
   const common = useTranslations("common");
   const replace = useReplace();
   const [customerText, setCustomerText] = useState(customer?.name ?? "");
+  const [openedForCustomer] = useState(customer !== undefined);
   const backHref =
     fromProject === undefined ? SETTLEMENTS_HREF : settlementsProjectHref(fromProject);
 
@@ -95,27 +97,31 @@ export function NewSettlementScreen() {
     <PageLayout backHref={backHref} backLabel={common("back")} title={t("new")}>
       <section className="rounded-card border-line bg-surface shadow-subtle flex flex-col gap-6 border-[1.5px] p-6">
         <div className="grid gap-x-5 gap-y-4 md:grid-cols-2 lg:grid-cols-3">
-          <Combobox
-            id="settlement-customer"
-            label={t("fields.customer")}
-            required
-            placeholder={t("form.customerPlaceholder")}
-            value={customerText}
-            options={customers.map((option) => ({
-              value: option.id,
-              label: option.name,
-              hint: option.phone,
-            }))}
-            onChange={setCustomerText}
-            onSelect={(option) =>
-              replace(
-                newSettlementHref({
-                  customer: option.value,
-                  ...(fromProject === undefined ? {} : { project: fromProject }),
-                }),
-              )
-            }
-          />
+          {openedForCustomer && customer !== undefined ? (
+            <ReadOnlyField label={t("fields.customer")} value={customer.name} />
+          ) : (
+            <Combobox
+              id="settlement-customer"
+              label={t("fields.customer")}
+              required
+              placeholder={t("form.customerPlaceholder")}
+              value={customerText}
+              options={customers.map((option) => ({
+                value: option.id,
+                label: option.name,
+                hint: option.phone,
+              }))}
+              onChange={setCustomerText}
+              onSelect={(option) =>
+                replace(
+                  newSettlementHref({
+                    customer: option.value,
+                    ...(fromProject === undefined ? {} : { project: fromProject }),
+                  }),
+                )
+              }
+            />
+          )}
 
           {customer === undefined || choice === undefined || choice.projects.length < 2 ? null : (
             <Select

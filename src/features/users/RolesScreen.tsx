@@ -7,13 +7,9 @@ import { ActionLink } from "@/components/ui/ActionLink";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
-import {
-  TablePanel,
-  tableCellClasses,
-  tableEndHeadClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
+import { DataTable } from "@/components/ui/DataTable";
+import type { DataColumn } from "@/components/ui/DataTable";
+import { TablePanel } from "@/components/ui/TablePanel";
 import { modules } from "@/lib/access";
 import { useCan } from "@/lib/accessContext";
 import { formatCount } from "@/lib/format";
@@ -49,84 +45,83 @@ function RolesTable({ all, query }: { all: readonly RoleDetails[]; query: string
   const canDelete = can("accounts", "delete");
   const roles = all.filter((role) => matchesSearch({ texts: [nameOf(role)], phone: "" }, query));
 
-  if (roles.length === 0) {
-    return (
-      <p className="text-ink-muted p-6 text-[15px] font-semibold">
-        {all.length === 0 ? t("empty") : common("noMatch")}
-      </p>
-    );
+  const columns: DataColumn<RoleDetails>[] = [
+    {
+      key: "name",
+      header: t("fields.name"),
+      className: "text-ink font-bold",
+      cell: (role) => <span dir="auto">{nameOf(role)}</span>,
+    },
+    {
+      key: "sections",
+      header: t("fields.sections"),
+      className: "text-ink-muted max-w-96 font-semibold",
+      cell: (role) => {
+        const sections = modules.filter((module) => role.rights[module].view);
+
+        return (
+          <span className="block truncate">
+            {sections.length === 0
+              ? t("noSection")
+              : sections.map((module) => t(`modules.${module}`)).join(" · ")}
+          </span>
+        );
+      },
+    },
+    {
+      key: "projectScoped",
+      header: t("fields.projectScoped"),
+      className: "text-ink font-semibold",
+      cell: (role) => (role.projectScoped ? t("yes") : t("no")),
+    },
+    {
+      key: "users",
+      header: t("fields.users"),
+      align: "end",
+      className: "text-ink font-bold",
+      cell: (role) => formatCount(role.usersCount, locale),
+    },
+  ];
+
+  if (canEdit || canDelete) {
+    columns.push({
+      key: "action",
+      header: t("fields.action"),
+      hideHeader: true,
+      cell: (role) => (
+        <div className="flex justify-end gap-1">
+          {canEdit ? (
+            <ActionLink
+              href={rolesHref({ edit: role.id })}
+              icon="pencil"
+              variant="ghost"
+              ariaLabel={t("editLabel", { name: nameOf(role) })}
+            >
+              {t("edit")}
+            </ActionLink>
+          ) : null}
+          {canDelete && role.usersCount === 0 ? (
+            <ActionLink
+              href={rolesHref({ remove: role.id })}
+              icon="trash"
+              variant="ghost"
+              ariaLabel={t("deleteLabel", { name: nameOf(role) })}
+            >
+              {t("delete")}
+            </ActionLink>
+          ) : null}
+        </div>
+      ),
+    });
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead className="bg-surface-page">
-          <tr className="border-line border-b-[1.5px]">
-            <th className={tableHeadClasses}>{t("fields.name")}</th>
-            <th className={tableHeadClasses}>{t("fields.sections")}</th>
-            <th className={tableHeadClasses}>{t("fields.projectScoped")}</th>
-            <th className={tableEndHeadClasses}>{t("fields.users")}</th>
-            {canEdit || canDelete ? (
-              <th className={tableHeadClasses}>
-                <span className="sr-only">{t("fields.action")}</span>
-              </th>
-            ) : null}
-          </tr>
-        </thead>
-        <tbody>
-          {roles.map((role) => {
-            const sections = modules.filter((module) => role.rights[module].view);
-
-            return (
-              <tr key={role.id} className={tableRowClasses}>
-                <td className={`${tableCellClasses} text-ink font-bold`}>
-                  <span dir="auto">{nameOf(role)}</span>
-                </td>
-                <td className={`${tableCellClasses} text-ink-muted max-w-96 font-semibold`}>
-                  <span className="block truncate">
-                    {sections.length === 0
-                      ? t("noSection")
-                      : sections.map((module) => t(`modules.${module}`)).join(" · ")}
-                  </span>
-                </td>
-                <td className={`${tableCellClasses} text-ink font-semibold`}>
-                  {role.projectScoped ? t("yes") : t("no")}
-                </td>
-                <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                  {formatCount(role.usersCount, locale)}
-                </td>
-                {canEdit || canDelete ? (
-                  <td className={tableCellClasses}>
-                    <div className="flex justify-end gap-1">
-                      {canEdit ? (
-                        <ActionLink
-                          href={rolesHref({ edit: role.id })}
-                          icon="pencil"
-                          variant="ghost"
-                          ariaLabel={t("editLabel", { name: nameOf(role) })}
-                        >
-                          {t("edit")}
-                        </ActionLink>
-                      ) : null}
-                      {canDelete && role.usersCount === 0 ? (
-                        <ActionLink
-                          href={rolesHref({ remove: role.id })}
-                          icon="trash"
-                          variant="ghost"
-                          ariaLabel={t("deleteLabel", { name: nameOf(role) })}
-                        >
-                          {t("delete")}
-                        </ActionLink>
-                      ) : null}
-                    </div>
-                  </td>
-                ) : null}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      rows={roles}
+      rowKey={(role) => role.id}
+      empty={all.length === 0 ? t("empty") : common("noMatch")}
+    />
   );
 }
 

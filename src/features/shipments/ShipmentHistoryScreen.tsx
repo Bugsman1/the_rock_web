@@ -6,15 +6,9 @@ import { DebtBadge, PaymentStatus } from "@/components/shipments/ShipmentBadges"
 import { DateField } from "@/components/ui/DateField";
 import { Icon } from "@/components/ui/Icon";
 import { BackLink, PageTitle } from "@/components/ui/PageHeader";
-import {
-  TableTotalRow,
-  tableCellClasses,
-  tableEndHeadClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
+import { DataTable } from "@/components/ui/DataTable";
+import type { DataColumn } from "@/components/ui/DataTable";
 import { TextField } from "@/components/ui/TextField";
-import { Link } from "@/i18n/navigation";
 import { formatCount, formatDateTime } from "@/lib/format";
 import { requireProject } from "@/lib/projectsApi";
 import { shipmentHref, shipmentsProjectHref } from "@/lib/routes";
@@ -49,6 +43,67 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
   const locale = useLocale();
   const [filter, setFilter] = useState<HistoryFilter>(emptyHistoryFilter);
   const results = filterShipments(records, filter);
+
+  const columns: DataColumn<ShipmentRecord>[] = [
+    {
+      key: "shipment",
+      header: t("columns.shipment"),
+      rowLink: true,
+      className: "text-ink font-bold",
+      cell: (record) => record.shipmentNumber,
+    },
+    {
+      key: "client",
+      header: t("columns.client"),
+      className: "text-ink font-bold",
+      cell: (record) => <span dir="auto">{record.customerName}</span>,
+    },
+    {
+      key: "phone",
+      header: t("columns.phone"),
+      className: "text-ink-muted font-semibold",
+      cell: (record) => <span dir="ltr">{record.phone}</span>,
+    },
+    {
+      key: "arrivedAt",
+      header: t("columns.arrivedAt"),
+      className: "text-ink-muted font-semibold",
+      cell: (record) => formatDateTime(record.arrivedAt, locale),
+    },
+    {
+      key: "bags",
+      header: t("columns.bags"),
+      align: "end",
+      className: "text-ink font-bold",
+      cell: (record) => formatCount(record.bagCount, locale),
+    },
+    {
+      key: "payment",
+      header: payment("column"),
+      cell: (record) => (
+        <div className="flex flex-col items-start gap-1">
+          <PaymentStatus shipment={record} />
+          <DebtBadge amount={record.debt} />
+        </div>
+      ),
+    },
+    {
+      key: "invoice",
+      header: invoice("column"),
+      interactive: true,
+      cell: (record) => <InvoiceDownload shipment={record} />,
+    },
+    {
+      key: "notes",
+      header: t("columns.notes"),
+      className: "text-ink-muted max-w-64 font-semibold",
+      cell: (record) => (
+        <p dir="auto" className="line-clamp-2 break-words" title={record.notes}>
+          {record.notes}
+        </p>
+      ),
+    },
+  ];
 
   function update(changes: Partial<HistoryFilter>) {
     setFilter((current) => ({ ...current, ...changes }));
@@ -101,74 +156,23 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
         ) : null}
       </div>
 
-      {results.length === 0 ? (
-        <p className="text-ink-muted border-line border-t p-6 text-[15px] font-semibold">
-          {t("empty")}
-        </p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead className="bg-surface-page">
-              <tr className="border-line border-y-[1.5px]">
-                <th className={tableHeadClasses}>{t("columns.shipment")}</th>
-                <th className={tableHeadClasses}>{t("columns.client")}</th>
-                <th className={tableHeadClasses}>{t("columns.phone")}</th>
-                <th className={tableHeadClasses}>{t("columns.arrivedAt")}</th>
-                <th className={tableEndHeadClasses}>{t("columns.bags")}</th>
-                <th className={tableHeadClasses}>{payment("column")}</th>
-                <th className={tableHeadClasses}>{invoice("column")}</th>
-                <th className={tableHeadClasses}>{t("columns.notes")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.map((record) => (
-                <tr key={record.id} className={`${tableRowClasses} relative`}>
-                  <td className={`${tableCellClasses} text-ink font-bold`}>
-                    <Link href={shipmentHref(record.id)} className="after:absolute after:inset-0">
-                      {record.shipmentNumber}
-                    </Link>
-                  </td>
-                  <td className={`${tableCellClasses} text-ink font-bold`}>
-                    <span dir="auto">{record.customerName}</span>
-                  </td>
-                  <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                    <span dir="ltr">{record.phone}</span>
-                  </td>
-                  <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                    {formatDateTime(record.arrivedAt, locale)}
-                  </td>
-                  <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                    {formatCount(record.bagCount, locale)}
-                  </td>
-                  <td className={tableCellClasses}>
-                    <div className="flex flex-col items-start gap-1">
-                      <PaymentStatus shipment={record} />
-                      <DebtBadge amount={record.debt} />
-                    </div>
-                  </td>
-                  <td className={`${tableCellClasses} relative z-10`}>
-                    <InvoiceDownload shipment={record} />
-                  </td>
-                  <td className={`${tableCellClasses} text-ink-muted max-w-64 font-semibold`}>
-                    <p dir="auto" className="line-clamp-2 break-words" title={record.notes}>
-                      {record.notes}
-                    </p>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <TableTotalRow
-              label={common("total")}
-              value={formatCount(
-                results.reduce((total, record) => total + record.bagCount, 0),
-                locale,
-              )}
-              columnsBefore={4}
-              columnsAfter={3}
-            />
-          </table>
-        </div>
-      )}
+      <div className="border-line border-t">
+        <DataTable
+          columns={columns}
+          rows={results}
+          rowKey={(record) => record.id}
+          empty={t("empty")}
+          rowLink={(record) => ({ href: shipmentHref(record.id) })}
+          total={{
+            label: common("total"),
+            column: "bags",
+            value: formatCount(
+              results.reduce((total, record) => total + record.bagCount, 0),
+              locale,
+            ),
+          }}
+        />
+      </div>
     </div>
   );
 }

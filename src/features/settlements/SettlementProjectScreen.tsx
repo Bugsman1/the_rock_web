@@ -97,9 +97,10 @@ export function SettlementProjectScreen() {
         />
       </TablePanel>
 
-      <TablePanel title={t("listTitle")}>
-        <div className="border-line border-b-[1.5px] p-4">
-          <div className="md:max-w-md">
+      <TablePanel
+        title={t("listTitle")}
+        search={{
+          field: (
             <DelayedSearchField
               id="settlement-search"
               label={common("search")}
@@ -107,9 +108,9 @@ export function SettlementProjectScreen() {
               query={query}
               hrefFor={searchHref}
             />
-          </div>
-        </div>
-
+          ),
+        }}
+      >
         <SettlementTable settlements={settlementPage.items} query={query} />
 
         {pageCount > 1 ? (

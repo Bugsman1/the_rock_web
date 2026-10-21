@@ -8,15 +8,9 @@ import {
   ShipmentStatusBadge,
 } from "@/components/shipments/ShipmentBadges";
 import { PageLayout } from "@/components/ui/PageHeader";
-import {
-  TablePanel,
-  TableTotalRow,
-  tableCellClasses,
-  tableEndHeadClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
-import { Link } from "@/i18n/navigation";
+import { DataTable } from "@/components/ui/DataTable";
+import type { DataColumn } from "@/components/ui/DataTable";
+import { TablePanel } from "@/components/ui/TablePanel";
 import { notFound } from "@/lib/api/client";
 import { getCustomer } from "@/lib/customersApi";
 import { formatCount, formatDateTime, formatMoney } from "@/lib/format";
@@ -53,63 +47,66 @@ function CustomerShipmentsTable({
   const common = useTranslations("common");
   const locale = useLocale();
 
-  if (shipments.length === 0) {
-    return <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("noShipments")}</p>;
-  }
+  const columns: DataColumn<ShipmentRecord>[] = [
+    {
+      key: "shipment",
+      header: t("columns.shipment"),
+      rowLink: true,
+      className: "text-ink font-bold",
+      cell: (shipment) => shipment.shipmentNumber,
+    },
+    {
+      key: "arrivedAt",
+      header: t("columns.arrivedAt"),
+      className: "text-ink-muted font-semibold",
+      cell: (shipment) => formatDateTime(shipment.arrivedAt, locale),
+    },
+    {
+      key: "project",
+      header: t("columns.project"),
+      className: "text-ink font-semibold",
+      cell: (shipment) => projectName(shipment.project),
+    },
+    {
+      key: "bags",
+      header: t("columns.bags"),
+      align: "end",
+      className: "text-ink font-bold",
+      cell: (shipment) => formatCount(shipment.bagCount, locale),
+    },
+    {
+      key: "status",
+      header: t("columns.status"),
+      cell: (shipment) => <ShipmentStatusBadge status={shipment.stage} />,
+    },
+    {
+      key: "payment",
+      header: t("columns.payment"),
+      cell: (shipment) => (
+        <div className="flex flex-col items-start gap-1">
+          <PaymentStatus shipment={shipment} />
+          <DebtBadge amount={shipment.debt} />
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead className="bg-surface-page">
-          <tr className="border-line border-b">
-            <th className={tableHeadClasses}>{t("columns.shipment")}</th>
-            <th className={tableHeadClasses}>{t("columns.arrivedAt")}</th>
-            <th className={tableHeadClasses}>{t("columns.project")}</th>
-            <th className={tableEndHeadClasses}>{t("columns.bags")}</th>
-            <th className={tableHeadClasses}>{t("columns.status")}</th>
-            <th className={tableHeadClasses}>{t("columns.payment")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {shipments.map((shipment) => (
-            <tr key={shipment.id} className={`${tableRowClasses} relative`}>
-              <td className={`${tableCellClasses} text-ink font-bold`}>
-                <Link href={shipmentHref(shipment.id)} className="after:absolute after:inset-0">
-                  {shipment.shipmentNumber}
-                </Link>
-              </td>
-              <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                {formatDateTime(shipment.arrivedAt, locale)}
-              </td>
-              <td className={`${tableCellClasses} text-ink font-semibold`}>
-                {projectName(shipment.project)}
-              </td>
-              <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                {formatCount(shipment.bagCount, locale)}
-              </td>
-              <td className={tableCellClasses}>
-                <ShipmentStatusBadge status={shipment.stage} />
-              </td>
-              <td className={tableCellClasses}>
-                <div className="flex flex-col items-start gap-1">
-                  <PaymentStatus shipment={shipment} />
-                  <DebtBadge amount={shipment.debt} />
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-        <TableTotalRow
-          label={common("total")}
-          value={formatCount(
-            shipments.reduce((total, shipment) => total + shipment.bagCount, 0),
-            locale,
-          )}
-          columnsBefore={3}
-          columnsAfter={2}
-        />
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      rows={shipments}
+      rowKey={(shipment) => shipment.id}
+      empty={t("noShipments")}
+      rowLink={(shipment) => ({ href: shipmentHref(shipment.id) })}
+      total={{
+        label: common("total"),
+        column: "bags",
+        value: formatCount(
+          shipments.reduce((total, shipment) => total + shipment.bagCount, 0),
+          locale,
+        ),
+      }}
+    />
   );
 }
 

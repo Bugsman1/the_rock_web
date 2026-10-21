@@ -7,9 +7,10 @@ import { Checkbox } from "@/components/ui/Checkbox";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { FormError } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
-import { tableCellClasses, tableHeadClasses } from "@/components/ui/TablePanel";
+import { DataTable } from "@/components/ui/DataTable";
 import { TextField } from "@/components/ui/TextField";
 import { modules, rights } from "@/lib/access";
+import type { Module } from "@/lib/access";
 import { builtInRoleNames, roleLabel } from "@/lib/users";
 import { createRoleSchema, newRoleValues, roleValuesOf } from "./users";
 import type { RoleDetails, RoleValues } from "./users";
@@ -108,40 +109,34 @@ export function RoleForm({ role, onSaved, onCancel }: RoleFormProps) {
           {t("form.permissions")}
         </legend>
         <div className="border-line rounded-field overflow-x-auto border-[1.5px]">
-          <table className="w-full border-collapse">
-            <thead className="bg-surface-page">
-              <tr className="border-line border-b-[1.5px]">
-                <th className={tableHeadClasses}>{t("fields.section")}</th>
-                {rights.map((right) => (
-                  <th key={right} className={tableHeadClasses}>
-                    {t(`rights.${right}`)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {modules.map((module) => (
-                <tr key={module} className="border-line-subtle border-b last:border-b-0">
-                  <td className={`${tableCellClasses} text-ink font-semibold`}>
-                    {t(`modules.${module}`)}
-                  </td>
-                  {rights.map((right) => (
-                    <td key={right} className="px-4 py-1">
-                      <Checkbox
-                        id={`role-${module}-${right}`}
-                        label={t("form.rightLabel", {
-                          right: t(`rights.${right}`),
-                          section: t(`modules.${module}`),
-                        })}
-                        hideLabel
-                        {...register(`rights.${module}.${right}`)}
-                      />
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable
+            columns={[
+              {
+                key: "section",
+                header: t("fields.section"),
+                className: "text-ink font-semibold",
+                cell: (module: Module) => t(`modules.${module}`),
+              },
+              ...rights.map((right) => ({
+                key: right,
+                header: t(`rights.${right}`),
+                cell: (module: Module) => (
+                  <Checkbox
+                    id={`role-${module}-${right}`}
+                    label={t("form.rightLabel", {
+                      right: t(`rights.${right}`),
+                      section: t(`modules.${module}`),
+                    })}
+                    hideLabel
+                    {...register(`rights.${module}.${right}`)}
+                  />
+                ),
+              })),
+            ]}
+            rows={modules}
+            rowKey={(module) => module}
+            empty=""
+          />
         </div>
         <p className="text-ink-muted text-[13px] font-semibold">{t("form.viewHint")}</p>
       </fieldset>

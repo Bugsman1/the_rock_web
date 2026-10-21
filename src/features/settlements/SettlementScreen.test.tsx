@@ -38,7 +38,8 @@ describe("SettlementScreen", () => {
     expect(screen.getByText("+222 22 41 18 30")).toHaveAttribute("dir", "ltr");
     expect(screen.getByText("SHP-00001, SHP-00002")).toBeVisible();
 
-    const rows = screen.getAllByRole("row");
+    const [header, ...rows] = screen.getAllByRole("row");
+    expect(header).toHaveTextContent(`${text.totals.item}${text.totals.amount}`);
     expect(rows.map((row) => cellsOf(row))).toEqual([
       [text.totals.bagsTransport, money(21000)],
       [text.totals.passengersTransport, money(3000)],

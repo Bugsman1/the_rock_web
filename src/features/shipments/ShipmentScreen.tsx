@@ -7,14 +7,8 @@ import { DetailList } from "@/components/ui/Cards";
 import { Drawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
 import { BackLink } from "@/components/ui/PageHeader";
-import {
-  TablePanel,
-  TableTotalRow,
-  tableCellClasses,
-  tableEndHeadClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
+import { TablePanel } from "@/components/ui/TablePanel";
+import { DataTable } from "@/components/ui/DataTable";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { getCustomerChoices } from "@/lib/customersApi";
@@ -24,7 +18,7 @@ import { getProjects } from "@/lib/projectsApi";
 import { shipmentsProjectHref } from "@/lib/routes";
 import { amountLeftToPay } from "@/lib/shipments";
 import { EditShipmentForm } from "./ShipmentForm";
-import type { ShipmentDetail } from "./shipments";
+import type { ShipmentDetail, ShipmentPayment } from "./shipments";
 import { getShipment } from "./shipmentsApi";
 import { PaymentForm } from "./PaymentForm";
 import { DebtForm, DebtPanel } from "./DebtForm";
@@ -72,51 +66,51 @@ function PaymentsPanel({ shipment, onAdd }: { shipment: ShipmentDetail; onAdd: (
         </div>
       </div>
 
-      {shipment.payments.length === 0 ? (
-        <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("noPayments")}</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead className="bg-surface-page">
-              <tr className="border-line border-b">
-                <th className={tableHeadClasses}>{t("columns.number")}</th>
-                <th className={tableHeadClasses}>{t("columns.paidAt")}</th>
-                <th className={tableEndHeadClasses}>{t("columns.amount")}</th>
-                <th className={tableHeadClasses}>{t("columns.notes")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {shipment.payments.map((payment, index) => (
-                <tr key={payment.id} className={tableRowClasses}>
-                  <td className={`${tableCellClasses} text-ink font-bold`}>
-                    {t("installment", { n: formatCount(index + 1, locale) })}
-                  </td>
-                  <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                    {formatDateTime(payment.paidAt, locale)}
-                  </td>
-                  <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                    {formatMoney(payment.amount, locale)}
-                  </td>
-                  <td className={`${tableCellClasses} text-ink-muted max-w-64 font-semibold`}>
-                    <p dir="auto" className="line-clamp-2 break-words" title={payment.notes}>
-                      {payment.notes}
-                    </p>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <TableTotalRow
-              label={common("total")}
-              value={formatMoney(
-                shipment.payments.reduce((total, payment) => total + payment.amount, 0),
-                locale,
-              )}
-              columnsBefore={2}
-              columnsAfter={1}
-            />
-          </table>
-        </div>
-      )}
+      <DataTable
+        columns={[
+          {
+            key: "number",
+            header: t("columns.number"),
+            className: "text-ink font-bold",
+            cell: (_payment: ShipmentPayment, index: number) =>
+              t("installment", { n: formatCount(index + 1, locale) }),
+          },
+          {
+            key: "paidAt",
+            header: t("columns.paidAt"),
+            className: "text-ink-muted font-semibold",
+            cell: (payment: ShipmentPayment) => formatDateTime(payment.paidAt, locale),
+          },
+          {
+            key: "amount",
+            header: t("columns.amount"),
+            align: "end",
+            className: "text-ink font-bold",
+            cell: (payment: ShipmentPayment) => formatMoney(payment.amount, locale),
+          },
+          {
+            key: "notes",
+            header: t("columns.notes"),
+            className: "text-ink-muted max-w-64 font-semibold",
+            cell: (payment: ShipmentPayment) => (
+              <p dir="auto" className="line-clamp-2 break-words" title={payment.notes}>
+                {payment.notes}
+              </p>
+            ),
+          },
+        ]}
+        rows={shipment.payments}
+        rowKey={(payment) => payment.id}
+        empty={t("noPayments")}
+        total={{
+          label: common("total"),
+          column: "amount",
+          value: formatMoney(
+            shipment.payments.reduce((total, payment) => total + payment.amount, 0),
+            locale,
+          ),
+        }}
+      />
     </TablePanel>
   );
 }

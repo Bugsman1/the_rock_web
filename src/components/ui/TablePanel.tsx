@@ -2,39 +2,6 @@ import { useId } from "react";
 import type { ReactNode } from "react";
 import { SearchField } from "./SearchField";
 
-const tableHeadBase =
-  "bg-surface-page text-ink-muted px-4 py-2.5 text-[13px] font-bold whitespace-nowrap";
-
-export const tableHeadClasses = `${tableHeadBase} text-start`;
-
-export const tableEndHeadClasses = `${tableHeadBase} text-end`;
-
-export const tableCellClasses = "px-4 py-2.5 text-[14px] whitespace-nowrap";
-
-export const tableRowClasses =
-  "border-line-subtle hover:bg-surface-hover h-12 border-b last:border-b-0";
-
-type TableTotalRowProps = {
-  label: string;
-  value: string;
-  columnsBefore: number;
-  columnsAfter: number;
-};
-
-export function TableTotalRow({ label, value, columnsBefore, columnsAfter }: TableTotalRowProps) {
-  return (
-    <tfoot>
-      <tr className="border-line bg-surface-page h-12 border-t-[1.5px]">
-        <td colSpan={columnsBefore} className={`${tableCellClasses} text-ink-muted font-bold`}>
-          {label}
-        </td>
-        <td className={`${tableCellClasses} text-ink text-end font-bold`}>{value}</td>
-        {columnsAfter > 0 ? <td colSpan={columnsAfter} /> : null}
-      </tr>
-    </tfoot>
-  );
-}
-
 type TableSearch = {
   label: string;
   placeholder: string;
@@ -44,7 +11,7 @@ type TableSearch = {
 
 type TablePanelProps = {
   title: string;
-  search?: TableSearch;
+  search?: TableSearch | { field: ReactNode };
   children: ReactNode;
 };
 
@@ -57,14 +24,18 @@ export function TablePanel({ title, search, children }: TablePanelProps) {
         <h2 className="text-ink text-[16px] font-bold">{title}</h2>
         {search === undefined ? null : (
           <div className="w-full sm:w-72">
-            <SearchField
-              id={searchId}
-              label={search.label}
-              placeholder={search.placeholder}
-              autoComplete="off"
-              value={search.value}
-              onChange={(event) => search.onChange(event.target.value)}
-            />
+            {"field" in search ? (
+              search.field
+            ) : (
+              <SearchField
+                id={searchId}
+                label={search.label}
+                placeholder={search.placeholder}
+                autoComplete="off"
+                value={search.value}
+                onChange={(event) => search.onChange(event.target.value)}
+              />
+            )}
           </div>
         )}
       </div>

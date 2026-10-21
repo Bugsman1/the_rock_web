@@ -784,7 +784,8 @@
       "mercury": "Mercure",
       "water": "Eau",
       "fuel": "Essence"
-    }
+    },
+    "historyEmpty": "Aucun mouvement sur cette ressource pour le moment."
   },
   "errors": {
     "notFound": {
@@ -832,6 +833,8 @@
       "delete": "Supprimer"
     },
     "totals": {
+      "item": "Poste",
+      "amount": "Montant",
       "bagsTransport": "Transport des sacs",
       "passengersTransport": "Transport des passagers",
       "shipmentsDebt": "Dettes des expéditions",

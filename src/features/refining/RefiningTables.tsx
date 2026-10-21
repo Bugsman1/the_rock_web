@@ -1,12 +1,7 @@
 import { useLocale, useTranslations } from "use-intl";
-import { Link } from "@/i18n/navigation";
 import { ActionLink } from "@/components/ui/ActionLink";
-import {
-  tableCellClasses,
-  tableEndHeadClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
+import { DataTable } from "@/components/ui/DataTable";
+import type { DataColumn } from "@/components/ui/DataTable";
 import { useCan } from "@/lib/accessContext";
 import { formatCount, formatDateTime, formatQuantity } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
@@ -41,79 +36,78 @@ export function RefiningQueueTable({
     ),
   );
 
-  if (operations.length === 0) {
-    return (
-      <p className="text-ink-muted p-6 text-[15px] font-semibold">
-        {queue.length === 0 ? t("queueEmpty") : common("noMatch")}
-      </p>
-    );
+  const columns: DataColumn<MillingOperation>[] = [
+    {
+      key: "shipment",
+      header: t("fields.shipment"),
+      className: "text-ink font-bold",
+      cell: (operation) => operation.shipmentNumber,
+    },
+    {
+      key: "client",
+      header: t("fields.client"),
+      className: "text-ink font-bold",
+      cell: (operation) => <span dir="auto">{operation.client}</span>,
+    },
+    {
+      key: "machine",
+      header: t("fields.machine"),
+      className: "text-ink font-semibold",
+      cell: (operation) => (
+        <span dir="ltr">{grinderCode(operation.project, operation.machine)}</span>
+      ),
+    },
+    {
+      key: "bags",
+      header: t("fields.bags"),
+      align: "end",
+      className: "text-ink font-bold",
+      cell: (operation) => formatCount(operation.bags, locale),
+    },
+    {
+      key: "groundAt",
+      header: t("fields.groundAt"),
+      className: "text-ink-muted font-semibold",
+      cell: (operation) =>
+        operation.endedAt === undefined ? "—" : formatDateTime(operation.endedAt, locale),
+    },
+  ];
+
+  if (canStart) {
+    columns.push({
+      key: "action",
+      header: t("fields.action"),
+      hideHeader: true,
+      align: "end",
+      cell: (operation) => (
+        <ActionLink
+          href={startRefiningHref(operation.project, operation.id)}
+          icon="flame"
+          ariaLabel={t("startLabel", { number: operation.shipmentNumber })}
+        >
+          {t("start")}
+        </ActionLink>
+      ),
+    });
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead className="bg-surface-page">
-          <tr className="border-line border-b-[1.5px]">
-            <th className={tableHeadClasses}>{t("fields.shipment")}</th>
-            <th className={tableHeadClasses}>{t("fields.client")}</th>
-            <th className={tableHeadClasses}>{t("fields.machine")}</th>
-            <th className={tableEndHeadClasses}>{t("fields.bags")}</th>
-            <th className={tableHeadClasses}>{t("fields.groundAt")}</th>
-            {canStart ? (
-              <th className={tableHeadClasses}>
-                <span className="sr-only">{t("fields.action")}</span>
-              </th>
-            ) : null}
-          </tr>
-        </thead>
-        <tbody>
-          {operations.map((operation) => (
-            <tr key={operation.id} className={tableRowClasses}>
-              <td className={`${tableCellClasses} text-ink font-bold`}>
-                {operation.shipmentNumber}
-              </td>
-              <td className={`${tableCellClasses} text-ink font-bold`}>
-                <span dir="auto">{operation.client}</span>
-              </td>
-              <td className={`${tableCellClasses} text-ink font-semibold`}>
-                <span dir="ltr">{grinderCode(operation.project, operation.machine)}</span>
-              </td>
-              <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                {formatCount(operation.bags, locale)}
-              </td>
-              <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                {operation.endedAt === undefined ? "—" : formatDateTime(operation.endedAt, locale)}
-              </td>
-              {canStart ? (
-                <td className={`${tableCellClasses} text-end`}>
-                  <ActionLink
-                    href={startRefiningHref(operation.project, operation.id)}
-                    icon="flame"
-                    ariaLabel={t("startLabel", { number: operation.shipmentNumber })}
-                  >
-                    {t("start")}
-                  </ActionLink>
-                </td>
-              ) : null}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      rows={operations}
+      rowKey={(operation) => operation.id}
+      empty={queue.length === 0 ? t("queueEmpty") : common("noMatch")}
+    />
   );
 }
 
-function TextCell({ value }: { value: string }) {
-  return (
-    <td className={`${tableCellClasses} text-ink-muted max-w-60 font-semibold`}>
-      {value === "" ? (
-        "—"
-      ) : (
-        <span dir="auto" title={value} className="block truncate">
-          {value}
-        </span>
-      )}
-    </td>
+function TruncatedText({ value }: { value: string }) {
+  return value === "" ? (
+    "—"
+  ) : (
+    <span dir="auto" title={value} className="block truncate">
+      {value}
+    </span>
   );
 }
 
@@ -131,7 +125,6 @@ export function RefiningOperationsTable({
   const locale = useLocale();
   const quantity = (value: number) => formatQuantity(value, locale);
   const optionalQuantity = (value: number) => (value > 0 ? quantity(value) : "—");
-  const number = `${tableCellClasses} text-ink text-end font-bold`;
   const operations = refinings.filter((operation) =>
     matchesSearch(
       {
@@ -147,84 +140,96 @@ export function RefiningOperationsTable({
     ),
   );
 
-  if (operations.length === 0) {
-    return (
-      <p className="text-ink-muted p-6 text-[15px] font-semibold">
-        {refinings.length === 0 ? t("operationsEmpty") : common("noMatch")}
-      </p>
-    );
-  }
+  const weight = (
+    key: string,
+    header: string,
+    value: (operation: RefiningOperation) => string,
+  ) => ({
+    key,
+    header,
+    align: "end" as const,
+    className: "text-ink font-bold",
+    cell: value,
+  });
+  const columns: DataColumn<RefiningOperation>[] = [
+    {
+      key: "refinedAt",
+      header: t("fields.refinedAt"),
+      className: "text-ink-muted font-semibold",
+      cell: (operation) => formatDateTime(operation.refinedAt, locale),
+    },
+    {
+      key: "shipment",
+      header: t("fields.shipment"),
+      rowLink: true,
+      className: "text-ink font-bold",
+      cell: (operation) => operation.shipmentNumber,
+    },
+    {
+      key: "client",
+      header: t("fields.client"),
+      className: "text-ink font-bold",
+      cell: (operation) => <span dir="auto">{operation.client}</span>,
+    },
+    {
+      key: "machine",
+      header: t("fields.machine"),
+      className: "text-ink font-semibold",
+      cell: (operation) => <span dir="ltr">{operation.grinderCode}</span>,
+    },
+    {
+      key: "worker",
+      header: t("fields.worker"),
+      className: "text-ink font-semibold",
+      cell: (operation) => <span dir="auto">{operation.workerName}</span>,
+    },
+    weight("bags", t("fields.bags"), (operation) => formatCount(operation.bags, locale)),
+    weight("weightBefore", t("fields.weightBefore"), (operation) =>
+      quantity(operation.weightBefore),
+    ),
+    weight("weightAfter", t("fields.weightAfter"), (operation) => quantity(operation.weightAfter)),
+    weight("goldWithMaterial", t("fields.goldWithMaterial"), (operation) =>
+      quantity(operation.goldWithMaterial),
+    ),
+    weight("goldWithoutMaterial", t("fields.goldWithoutMaterial"), (operation) =>
+      optionalQuantity(operation.goldWithoutMaterial),
+    ),
+    weight("loss", t("fields.loss"), (operation) => quantity(operation.loss)),
+    {
+      key: "lossReason",
+      header: t("fields.lossReason"),
+      className: "text-ink-muted max-w-60 font-semibold",
+      cell: (operation) => (
+        <TruncatedText
+          value={
+            isLossReasonKey(operation.lossReason)
+              ? t(`lossReasons.${operation.lossReason}`)
+              : operation.lossReason
+          }
+        />
+      ),
+    },
+    {
+      key: "notes",
+      header: t("fields.notes"),
+      className: "text-ink-muted max-w-60 font-semibold",
+      cell: (operation) => <TruncatedText value={operation.notes} />,
+    },
+  ];
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead className="bg-surface-page">
-          <tr className="border-line border-b-[1.5px]">
-            <th className={tableHeadClasses}>{t("fields.refinedAt")}</th>
-            <th className={tableHeadClasses}>{t("fields.shipment")}</th>
-            <th className={tableHeadClasses}>{t("fields.client")}</th>
-            <th className={tableHeadClasses}>{t("fields.machine")}</th>
-            <th className={tableHeadClasses}>{t("fields.worker")}</th>
-            <th className={tableEndHeadClasses}>{t("fields.bags")}</th>
-            <th className={tableEndHeadClasses}>{t("fields.weightBefore")}</th>
-            <th className={tableEndHeadClasses}>{t("fields.weightAfter")}</th>
-            <th className={tableEndHeadClasses}>{t("fields.goldWithMaterial")}</th>
-            <th className={tableEndHeadClasses}>{t("fields.goldWithoutMaterial")}</th>
-            <th className={tableEndHeadClasses}>{t("fields.loss")}</th>
-            <th className={tableHeadClasses}>{t("fields.lossReason")}</th>
-            <th className={tableHeadClasses}>{t("fields.notes")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {operations.map((operation) => {
-            const editHref = editHrefOf(operation);
+    <DataTable
+      columns={columns}
+      rows={operations}
+      rowKey={(operation) => operation.id}
+      empty={refinings.length === 0 ? t("operationsEmpty") : common("noMatch")}
+      rowLink={(operation) => {
+        const href = editHrefOf(operation);
 
-            return (
-              <tr key={operation.id} className={`${tableRowClasses} relative`}>
-                <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                  {formatDateTime(operation.refinedAt, locale)}
-                </td>
-                <td className={`${tableCellClasses} text-ink font-bold`}>
-                  {editHref === undefined ? (
-                    operation.shipmentNumber
-                  ) : (
-                    <Link
-                      href={editHref}
-                      aria-label={t("editLabel", { shipment: operation.shipmentNumber })}
-                      className="after:absolute after:inset-0"
-                    >
-                      {operation.shipmentNumber}
-                    </Link>
-                  )}
-                </td>
-                <td className={`${tableCellClasses} text-ink font-bold`}>
-                  <span dir="auto">{operation.client}</span>
-                </td>
-                <td className={`${tableCellClasses} text-ink font-semibold`}>
-                  <span dir="ltr">{operation.grinderCode}</span>
-                </td>
-                <td className={`${tableCellClasses} text-ink font-semibold`}>
-                  <span dir="auto">{operation.workerName}</span>
-                </td>
-                <td className={number}>{formatCount(operation.bags, locale)}</td>
-                <td className={number}>{quantity(operation.weightBefore)}</td>
-                <td className={number}>{quantity(operation.weightAfter)}</td>
-                <td className={number}>{quantity(operation.goldWithMaterial)}</td>
-                <td className={number}>{optionalQuantity(operation.goldWithoutMaterial)}</td>
-                <td className={number}>{quantity(operation.loss)}</td>
-                <TextCell
-                  value={
-                    isLossReasonKey(operation.lossReason)
-                      ? t(`lossReasons.${operation.lossReason}`)
-                      : operation.lossReason
-                  }
-                />
-                <TextCell value={operation.notes} />
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+        return href === undefined
+          ? undefined
+          : { href, label: t("editLabel", { shipment: operation.shipmentNumber }) };
+      }}
+    />
   );
 }

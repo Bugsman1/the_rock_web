@@ -6,17 +6,13 @@ import { useToast } from "@/components/ui/Toast";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { DetailList } from "@/components/ui/Cards";
+import { DataTable } from "@/components/ui/DataTable";
+import type { DataColumn } from "@/components/ui/DataTable";
 import { Drawer, DrawerDeleteActions, useRouteDrawer } from "@/components/ui/Drawer";
 import { FormError } from "@/components/ui/FieldError";
 import { Icon } from "@/components/ui/Icon";
 import { PageLayout } from "@/components/ui/PageHeader";
-import {
-  StatusBadge,
-  TablePanel,
-  tableCellClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
+import { StatusBadge, TablePanel } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
 import { formatCount } from "@/lib/format";
 import { grindersOfProject } from "@/lib/projects";
@@ -120,58 +116,42 @@ function GrinderTable({
     ),
   );
 
-  if (grinders.length === 0) {
-    return (
-      <p className="text-ink-muted p-6 text-[15px] font-semibold">
-        {all.length === 0 ? t("empty") : common("noMatch")}
-      </p>
-    );
+  const machine = (grinder: Grinder) =>
+    t("machine", { number: formatCount(grinder.number, locale) });
+  const columns: DataColumn<Grinder>[] = [
+    { key: "number", header: t("fields.number"), className: "text-ink font-bold", cell: machine },
+    {
+      key: "status",
+      header: t("fields.status"),
+      cell: (grinder) => <StatusBadge label={statuses(grinder.status)} />,
+    },
+  ];
+
+  if (canEdit) {
+    columns.push({
+      key: "action",
+      header: t("fields.action"),
+      hideHeader: true,
+      align: "end",
+      cell: (grinder) => (
+        <ActionLink
+          href={grinderHref(project, grinder.id)}
+          icon="pencil"
+          ariaLabel={t("editLabel", { number: formatCount(grinder.number, locale) })}
+        >
+          {t("edit")}
+        </ActionLink>
+      ),
+    });
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead className="bg-surface-page">
-          <tr className="border-line border-b-[1.5px]">
-            <th className={tableHeadClasses}>{t("fields.number")}</th>
-            <th className={tableHeadClasses}>{t("fields.status")}</th>
-            {canEdit ? (
-              <th className={tableHeadClasses}>
-                <span className="sr-only">{t("fields.action")}</span>
-              </th>
-            ) : null}
-          </tr>
-        </thead>
-
-        <tbody>
-          {grinders.map((grinder) => {
-            const number = formatCount(grinder.number, locale);
-
-            return (
-              <tr key={grinder.id} className={tableRowClasses}>
-                <td className={`${tableCellClasses} text-ink font-bold`}>
-                  {t("machine", { number })}
-                </td>
-                <td className={tableCellClasses}>
-                  <StatusBadge label={statuses(grinder.status)} />
-                </td>
-                {canEdit ? (
-                  <td className={`${tableCellClasses} text-end`}>
-                    <ActionLink
-                      href={grinderHref(project, grinder.id)}
-                      icon="pencil"
-                      ariaLabel={t("editLabel", { number })}
-                    >
-                      {t("edit")}
-                    </ActionLink>
-                  </td>
-                ) : null}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      rows={grinders}
+      rowKey={(grinder) => grinder.id}
+      empty={all.length === 0 ? t("empty") : common("noMatch")}
+    />
   );
 }
 

@@ -13,16 +13,11 @@ import {
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
 import { PageLayout } from "@/components/ui/PageHeader";
-import {
-  TablePanel,
-  tableCellClasses,
-  tableEndHeadClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
-import { Link, useReplace } from "@/i18n/navigation";
+import { TablePanel } from "@/components/ui/TablePanel";
+import { DataTable } from "@/components/ui/DataTable";
+import type { DataColumn } from "@/components/ui/DataTable";
+import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
-import { cn } from "@/lib/cn";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { formatCount, formatDateTime } from "@/lib/format";
 import { idleMachines, machinesFromGrinders } from "@/lib/grinding";
@@ -102,88 +97,95 @@ function ClientQueueTable({
       ),
     );
 
-  if (rows.length === 0) {
-    return (
-      <p className="text-ink-muted p-6 text-[15px] font-semibold">
-        {shipments.length === 0 ? text("empty") : common("noMatch")}
-      </p>
-    );
+  type Row = (typeof rows)[number];
+  const columns: DataColumn<Row>[] = [
+    {
+      key: "position",
+      header: text("position"),
+      className: "text-brand-700 font-bold",
+      cell: ({ position }) => formatCount(position, locale),
+    },
+    {
+      key: "shipment",
+      header: text("shipment"),
+      rowLink: true,
+      className: "text-ink font-bold",
+      cell: ({ shipment }) => shipment.shipmentNumber,
+    },
+    {
+      key: "client",
+      header: text("client"),
+      className: "text-ink font-bold",
+      cell: ({ shipment }) => <span dir="auto">{shipment.customerName}</span>,
+    },
+    {
+      key: "arrivedAt",
+      header: text("arrivedAt"),
+      className: "text-ink-muted font-semibold",
+      cell: ({ shipment }) => formatDateTime(shipment.arrivedAt, locale),
+    },
+    {
+      key: "remaining",
+      header: text("remaining"),
+      align: "end",
+      className: "text-ink font-bold",
+      cell: ({ shipment }) =>
+        text("remainingOf", {
+          remaining: formatCount(shipment.remainingBags, locale),
+          total: formatCount(shipment.bagCount, locale),
+        }),
+    },
+    {
+      key: "status",
+      header: text("status"),
+      cell: ({ shipment }) => <ShipmentStatusBadge status={shipment.stage} />,
+    },
+    {
+      key: "payment",
+      header: payment("column"),
+      cell: ({ shipment }) => (
+        <div className="flex flex-col items-start gap-1">
+          <PaymentStatus shipment={shipment} />
+          <DebtBadge amount={shipment.debt} />
+        </div>
+      ),
+    },
+    {
+      key: "invoice",
+      header: invoice("column"),
+      interactive: true,
+      cell: ({ shipment }) => <InvoiceDownload shipment={shipment} />,
+    },
+  ];
+
+  if (canStart) {
+    columns.push({
+      key: "action",
+      header: text("action"),
+      hideHeader: true,
+      align: "end",
+      interactive: true,
+      cell: ({ shipment }) =>
+        shipment.remainingBags > 0 ? (
+          <ActionLink
+            href={startGrindingHref(project, shipment.shipmentNumber)}
+            icon="player-play"
+            ariaLabel={`${text("startMilling")} ${shipment.shipmentNumber}`}
+          >
+            {text("startMilling")}
+          </ActionLink>
+        ) : null,
+    });
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-start">
-        <thead>
-          <tr className="border-line border-b-[1.5px]">
-            <th className={tableHeadClasses}>{text("position")}</th>
-            <th className={tableHeadClasses}>{text("shipment")}</th>
-            <th className={tableHeadClasses}>{text("client")}</th>
-            <th className={tableHeadClasses}>{text("arrivedAt")}</th>
-            <th className={tableEndHeadClasses}>{text("remaining")}</th>
-            <th className={cn(tableHeadClasses, "ps-10")}>{text("status")}</th>
-            <th className={tableHeadClasses}>{payment("column")}</th>
-            <th className={tableHeadClasses}>{invoice("column")}</th>
-            {canStart ? (
-              <th className={tableHeadClasses}>
-                <span className="sr-only">{text("action")}</span>
-              </th>
-            ) : null}
-          </tr>
-        </thead>
-
-        <tbody>
-          {rows.map(({ shipment, position }) => (
-            <tr key={shipment.shipmentNumber} className={`${tableRowClasses} relative`}>
-              <td className={`${tableCellClasses} text-brand-700 font-bold`}>
-                {formatCount(position, locale)}
-              </td>
-              <td className={`${tableCellClasses} text-ink font-bold`}>
-                <Link href={shipmentHref(shipment.id)} className="after:absolute after:inset-0">
-                  {shipment.shipmentNumber}
-                </Link>
-              </td>
-              <td className={`${tableCellClasses} text-ink font-bold`}>
-                <span dir="auto">{shipment.customerName}</span>
-              </td>
-              <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                {formatDateTime(shipment.arrivedAt, locale)}
-              </td>
-              <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                {text("remainingOf", {
-                  remaining: formatCount(shipment.remainingBags, locale),
-                  total: formatCount(shipment.bagCount, locale),
-                })}
-              </td>
-              <td className={cn(tableCellClasses, "ps-10")}>
-                <ShipmentStatusBadge status={shipment.stage} />
-              </td>
-              <td className={tableCellClasses}>
-                <div className="flex flex-col items-start gap-1">
-                  <PaymentStatus shipment={shipment} />
-                  <DebtBadge amount={shipment.debt} />
-                </div>
-              </td>
-              <td className={`${tableCellClasses} relative z-10`}>
-                <InvoiceDownload shipment={shipment} />
-              </td>
-              {canStart ? (
-                <td className={`${tableCellClasses} relative z-10 text-end`}>
-                  {shipment.remainingBags > 0 ? (
-                    <ActionLink
-                      href={startGrindingHref(project, shipment.shipmentNumber)}
-                      icon="player-play"
-                      ariaLabel={`${text("startMilling")} ${shipment.shipmentNumber}`}
-                    >
-                      {text("startMilling")}
-                    </ActionLink>
-                  ) : null}
-                </td>
-              ) : null}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      rows={rows}
+      rowKey={({ shipment }) => shipment.shipmentNumber}
+      empty={shipments.length === 0 ? text("empty") : common("noMatch")}
+      rowLink={({ shipment }) => ({ href: shipmentHref(shipment.id) })}
+    />
   );
 }
 

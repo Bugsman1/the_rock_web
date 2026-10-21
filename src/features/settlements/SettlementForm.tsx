@@ -6,12 +6,7 @@ import { FormSection } from "@/components/ui/Cards";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { FieldError, FormError } from "@/components/ui/FieldError";
-import {
-  tableCellClasses,
-  tableEndHeadClasses,
-  tableHeadClasses,
-  tableRowClasses,
-} from "@/components/ui/TablePanel";
+import { DataTable } from "@/components/ui/DataTable";
 import { TextField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
 import type { SaveResult } from "@/lib/api/client";
@@ -49,43 +44,48 @@ function ShipmentChoice({ shipments, selected, onChange, error }: ShipmentChoice
 
   return (
     <div className="flex flex-col gap-2 md:col-span-2 lg:col-span-3">
-      <div className="border-line overflow-x-auto rounded-xl border-[1.5px]">
-        <table className="w-full border-collapse">
-          <thead className="bg-surface-page">
-            <tr className="border-line border-b-[1.5px]">
-              <th className={tableHeadClasses}>
-                <span className="sr-only">{t("fields.shipments")}</span>
-              </th>
-              <th className={tableHeadClasses}>{t("shipmentColumns.number")}</th>
-              <th className={tableHeadClasses}>{t("shipmentColumns.arrival")}</th>
-              <th className={tableEndHeadClasses}>{t("shipmentColumns.bags")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {shipments.map((shipment) => (
-              <tr key={shipment.id} className={tableRowClasses}>
-                <td className={`${tableCellClasses} w-12`}>
-                  <Checkbox
-                    id={`settle-shipment-${shipment.id}`}
-                    label={t("form.select", { number: shipment.shipmentNumber })}
-                    hideLabel
-                    checked={selected.includes(shipment.id)}
-                    onChange={(event) => toggle(shipment.id, event.target.checked)}
-                  />
-                </td>
-                <td className={`${tableCellClasses} text-ink font-bold`}>
-                  <span dir="ltr">{shipment.shipmentNumber}</span>
-                </td>
-                <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                  {formatDate(shipment.arrivedAt, locale)}
-                </td>
-                <td className={`${tableCellClasses} text-ink text-end font-bold`}>
-                  {formatCount(shipment.bagCount, locale)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="border-line rounded-xl border-[1.5px]">
+        <DataTable
+          columns={[
+            {
+              key: "select",
+              header: t("fields.shipments"),
+              hideHeader: true,
+              className: "w-12",
+              cell: (shipment: ShipmentRecord) => (
+                <Checkbox
+                  id={`settle-shipment-${shipment.id}`}
+                  label={t("form.select", { number: shipment.shipmentNumber })}
+                  hideLabel
+                  checked={selected.includes(shipment.id)}
+                  onChange={(event) => toggle(shipment.id, event.target.checked)}
+                />
+              ),
+            },
+            {
+              key: "number",
+              header: t("shipmentColumns.number"),
+              className: "text-ink font-bold",
+              cell: (shipment: ShipmentRecord) => <span dir="ltr">{shipment.shipmentNumber}</span>,
+            },
+            {
+              key: "arrival",
+              header: t("shipmentColumns.arrival"),
+              className: "text-ink-muted font-semibold",
+              cell: (shipment: ShipmentRecord) => formatDate(shipment.arrivedAt, locale),
+            },
+            {
+              key: "bags",
+              header: t("shipmentColumns.bags"),
+              align: "end",
+              className: "text-ink font-bold",
+              cell: (shipment: ShipmentRecord) => formatCount(shipment.bagCount, locale),
+            },
+          ]}
+          rows={shipments}
+          rowKey={(shipment) => shipment.id}
+          empty={t("form.noShipments")}
+        />
       </div>
       <FieldError id="settle-shipments-error" message={error} />
     </div>

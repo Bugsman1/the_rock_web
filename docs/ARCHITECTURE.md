@@ -155,18 +155,19 @@ page, drawer). The first load of the app shows the same skeleton.
 
 Ported from `the_rock`, merged to save files:
 
-| File                   | Holds                                                                                                                                       |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TextField.tsx`        | `TextField`, `TimeField`, `TextArea`                                                                                                        |
-| `Cards.tsx`            | `CardGrid`, `LinkCard`, `StatGrid`, `DetailList` (an item can be `dir: "ltr"`, for phones), `FormSection`, `KpiTile`                        |
-| `PageHeader.tsx`       | `BackLink`, `PageTitle`, `PageLayout` (back link + title + actions, full width)                                                             |
-| `TablePanel.tsx`       | `TablePanel` (optional `search` field in its header), table classes (`tableEndHeadClasses` for number columns), `StatusBadge`, `PanelError` |
-| `SearchField.tsx`      | `SearchField`, `DelayedSearchField` (puts the query in the URL after 350 ms: Clients, Users)                                                |
-| `Drawer.tsx`           | `Drawer`, `DrawerActions`, `DrawerDeleteActions` (delete / cancel with "deleting": project, role, settlement), `useRouteDrawer(closeHref)`  |
-| `ConnectionBanner.tsx` | Red bar with a wifi-off icon while the connection is lost (`role="alert"`), above the top bar and on the login page                         |
-| `PdfPreview.tsx`       | `usePdfPreview(load)` (loads a PDF in the chosen language, keeps its blob URL), `PdfPreviewDialog` (print, download, close)                 |
-| `FieldError.tsx`       | `FieldError`, `FormError` (the "save failed" alert)                                                                                         |
-| `LoadingDots.tsx`      | `LoadingDots`, `PageSkeleton({ label, shape })`                                                                                             |
+| File                   | Holds                                                                                                                                                                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TextField.tsx`        | `TextField`, `TimeField`, `TextArea`                                                                                                                                                                                                           |
+| `Cards.tsx`            | `CardGrid`, `LinkCard`, `StatGrid`, `DetailList` (an item can be `dir: "ltr"`, for phones), `FormSection`, `KpiTile`                                                                                                                           |
+| `PageHeader.tsx`       | `BackLink`, `PageTitle`, `PageLayout` (back link + title + actions, full width)                                                                                                                                                                |
+| `TablePanel.tsx`       | `TablePanel` (a titled card; its header holds the list's search: a local filter, or a server search field via `{ field }`), `StatusBadge`, `PanelError`                                                                                        |
+| `DataTable.tsx`        | `DataTable` — every table of the app: columns (heading, alignment, cell), rows, empty message, optional row link (`rowLink` column, `interactive` cells stay clickable) and total row; the table classes and `TableTotalRow` are private to it |
+| `SearchField.tsx`      | `SearchField`, `DelayedSearchField` (puts the query in the URL after 350 ms: Clients, Users)                                                                                                                                                   |
+| `Drawer.tsx`           | `Drawer`, `DrawerActions`, `DrawerDeleteActions` (delete / cancel with "deleting": project, role, settlement), `useRouteDrawer(closeHref)`                                                                                                     |
+| `ConnectionBanner.tsx` | Red bar with a wifi-off icon while the connection is lost (`role="alert"`), above the top bar and on the login page                                                                                                                            |
+| `PdfPreview.tsx`       | `usePdfPreview(load)` (loads a PDF in the chosen language, keeps its blob URL), `PdfPreviewDialog` (print, download, close)                                                                                                                    |
+| `FieldError.tsx`       | `FieldError`, `FormError` (the "save failed" alert)                                                                                                                                                                                            |
+| `LoadingDots.tsx`      | `LoadingDots`, `PageSkeleton({ label, shape })`                                                                                                                                                                                                |
 
 Others: `ActionLink`, `Button`, `buttonClasses` (primary, secondary, danger), `ButtonLink`, `Checkbox`, `Combobox`, `DateField`,
 `fieldClasses`, `FieldLabel`, `Icon`, `IconButton`, `LanguageSwitcher`, `Pagination`,
@@ -221,7 +222,7 @@ Others: `ActionLink`, `Button`, `buttonClasses` (primary, secondary, danger), `B
 | `inventory` | `resources.ts` (types, kinds mercury / water / fuel with `kindNamed`, `availableKinds`, schemas, `quantityAfterChange`, mapping, field errors), `resourcesApi.ts` (list, get, create, increase / decrease, history page), `InventoryScreens.tsx` (projects, project cards), `ResourceScreen.tsx` (resource page and history), `InventoryForms.tsx` (resource, quantity change); tests share `inventoryTesting.tsx` | Inventory module. A project holds only mercury, water and fuel, each once: a new resource picks one of the types it does not have yet (saved as that code, shown translated), and "new resource" disappears once it has all three; mercury is the refining material. A saved resource's type is read from its name (`kindNamed`: the backend's English, French and Arabic spellings, ignoring case, accents, Arabic diacritics and tatweel); any other resource on the server is left out of the app (`resourceFromApi` gives nothing, its page is not found). Resources are never renamed. Once added, its page opens |
 
 **Search inside each section:** every list has its own search, the app-wide search in the top bar
-is gone. Clients, Users and Settlements search on the server (`?q=`, paginated lists): the field
+is gone. Clients, Users and Settlements search on the server (`?q=`, paginated lists), from the table header: the field
 (`DelayedSearchField`) stays mounted and focused while the URL follows the typing; it only takes the
 URL's query back when it changes from outside (a menu link, back / forward). The other lists filter
 the rows already loaded as you type (`matchesSearch`, says "no result" when nothing matches): the
@@ -251,7 +252,8 @@ it opens a menu with the name and role, "my profile" (`/settings/profile`) and l
 (`useLogOut`, shared with the sidebar). Menus close on an outside click or Escape (`useDismiss`).
 Drawers close with the `backspace` icon (28px).
 
-**Page headers and tables:** every page title is `PageTitle`; `PageLayout` takes optional
+**Page headers and tables:** every page title is `PageTitle`; every table is a `DataTable` inside a
+`TablePanel`, with its search in the panel header; `PageLayout` takes optional
 `stats` (a line of key numbers under the title, `PageStats`) and an optional back link. Used on a
 project's Shipments page, a client and a shipment. Table headers are grey (`bg-surface-page`), rows
 are 48px, numbers end-aligned, and `TableTotalRow` adds a total under the bags or amount column
@@ -446,7 +448,8 @@ optional (empty is 0, never negative). The backend works out the `totals` from t
 (bag transport and passenger transport at their full cost, payments not counted; the shipments'
 debts; gold in grams, shown but not charged) and the final amount due = transport + shipments'
 debts + grinding cost + gold × refining cost per gram + extra debt; the app only shows them.
-"New settlement" (shipments add right) picks the customer (search by name or phone), then the
+"New settlement" (shipments add right) picks the customer (search by name or phone; when opened
+from a finished shipment's "settle", the customer is shown read-only with no search), then the
 project when the customer's unsettled shipments are in more than one (`?customer=&project=` in the
 URL), and lists only that project's shipments of the customer that are `completed` (every bag ground
 and refined) and that no settlement holds yet (`settleableShipments`, from `GET /settlements/?customer=`),
