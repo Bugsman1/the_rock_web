@@ -37,6 +37,21 @@ function answerMe(seen: { authorization?: string | null }) {
 }
 
 describe("apiClient", () => {
+  it("asks for the server's messages in the page's language on every call", async () => {
+    let language: string | null = null;
+    server.use(
+      http.get(ME_URL, ({ request }) => {
+        language = request.headers.get("Accept-Language");
+        return HttpResponse.json({});
+      }),
+    );
+    document.documentElement.lang = "ar";
+
+    await apiClient.GET("/api/v1/auth/me/");
+
+    expect(language).toBe("ar");
+  });
+
   it("answers 503 and marks the connection lost when the request cannot reach the server", async () => {
     server.use(http.get(ME_URL, () => HttpResponse.error()));
 

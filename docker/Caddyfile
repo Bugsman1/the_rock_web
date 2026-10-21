@@ -3,7 +3,9 @@
 	root * /srv
 
 	handle /api/* {
-		reverse_proxy {$BACKEND_URL}
+		reverse_proxy {$BACKEND_URL} {
+			header_up Host {$API_DOMAIN}
+		}
 	}
 
 	handle /assets/* {
@@ -17,4 +19,9 @@
 		try_files {path} /index.html
 		file_server
 	}
+}
+
+{$API_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy {$BACKEND_URL}
 }

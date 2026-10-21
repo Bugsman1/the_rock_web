@@ -23,7 +23,11 @@ async function postJson(path: string, body: object): Promise<Response | undefine
   try {
     const response = await connectedFetch(new URL(path, window.location.origin), {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Language": document.documentElement.lang,
+      },
       body: JSON.stringify(body),
     });
 

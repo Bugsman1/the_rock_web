@@ -30,6 +30,21 @@ describe("requestTokens", () => {
     expect(sent).toEqual(credentials);
   });
 
+  it("asks for the server's messages in the page's language, not the browser's", async () => {
+    let language: string | null = null;
+    server.use(
+      http.post(LOGIN_URL, ({ request }) => {
+        language = request.headers.get("Accept-Language");
+        return HttpResponse.json({ access: "access-token", refresh: "refresh-token" });
+      }),
+    );
+    document.documentElement.lang = "fr";
+
+    await requestTokens(credentials);
+
+    expect(language).toBe("fr");
+  });
+
   it("reports wrong credentials", async () => {
     server.use(
       http.post(LOGIN_URL, () => HttpResponse.json({ detail: "No account" }, { status: 401 })),
