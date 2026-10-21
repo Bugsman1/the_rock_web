@@ -127,7 +127,7 @@ export function CustomerScreen() {
       backHref={customersHref()}
       backLabel={common("back")}
       title={customer.name}
-      description={customer.phone}
+      description={<bdi dir="ltr">{customer.phone}</bdi>}
       stats={[
         { label: t("shipments"), value: formatCount(shipments.length, locale) },
         { label: t("bags"), value: formatCount(bags, locale) },

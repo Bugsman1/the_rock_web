@@ -27,7 +27,7 @@ import { EditShipmentForm } from "./ShipmentForm";
 import type { ShipmentDetail } from "./shipments";
 import { getShipment } from "./shipmentsApi";
 import { PaymentForm } from "./PaymentForm";
-import { DebtForm } from "./DebtForm";
+import { DebtForm, DebtPanel } from "./DebtForm";
 import { ShipmentDetails, ShipmentHeader } from "./ShipmentHeader";
 
 export async function shipmentLoader({ params }: LoaderFunctionArgs) {
@@ -41,17 +41,8 @@ export async function shipmentLoader({ params }: LoaderFunctionArgs) {
   };
 }
 
-function PaymentsPanel({
-  shipment,
-  onAdd,
-  onAddDebt,
-}: {
-  shipment: ShipmentDetail;
-  onAdd: () => void;
-  onAddDebt: () => void;
-}) {
+function PaymentsPanel({ shipment, onAdd }: { shipment: ShipmentDetail; onAdd: () => void }) {
   const t = useTranslations("shipments.detail");
-  const debtForm = useTranslations("shipments.debtForm");
   const common = useTranslations("common");
   const locale = useLocale();
   const can = useCan();
@@ -76,12 +67,6 @@ function PaymentsPanel({
             <Button variant="primary" width="auto" onClick={onAdd}>
               <Icon name="plus" />
               {t("addPayment")}
-            </Button>
-          ) : null}
-          {can("shipments", "edit") ? (
-            <Button variant="secondary" width="auto" onClick={onAddDebt}>
-              <Icon name="plus" />
-              {shipment.debt > 0 ? t("addDebt") : debtForm("add")}
             </Button>
           ) : null}
         </div>
@@ -155,11 +140,9 @@ export function ShipmentScreen() {
 
       <ShipmentHeader shipment={shipment} projectName={projectName} />
 
-      <PaymentsPanel
-        shipment={shipment}
-        onAdd={() => setAdding(true)}
-        onAddDebt={() => setAddingDebt(true)}
-      />
+      <PaymentsPanel shipment={shipment} onAdd={() => setAdding(true)} />
+
+      <DebtPanel shipment={shipment} onAddDebt={() => setAddingDebt(true)} />
 
       <div className="flex flex-col gap-3">
         <h2 className="text-ink text-[18px] font-bold">{t("detailsTitle")}</h2>

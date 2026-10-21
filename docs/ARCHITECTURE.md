@@ -158,7 +158,7 @@ Ported from `the_rock`, merged to save files:
 | File                   | Holds                                                                                                                                       |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `TextField.tsx`        | `TextField`, `TimeField`, `TextArea`                                                                                                        |
-| `Cards.tsx`            | `CardGrid`, `LinkCard`, `StatGrid`, `DetailList`, `FormSection`, `KpiTile`                                                                  |
+| `Cards.tsx`            | `CardGrid`, `LinkCard`, `StatGrid`, `DetailList` (an item can be `dir: "ltr"`, for phones), `FormSection`, `KpiTile`                        |
 | `PageHeader.tsx`       | `BackLink`, `PageTitle`, `PageLayout` (back link + title + actions, full width)                                                             |
 | `TablePanel.tsx`       | `TablePanel` (optional `search` field in its header), table classes (`tableEndHeadClasses` for number columns), `StatusBadge`, `PanelError` |
 | `SearchField.tsx`      | `SearchField`, `DelayedSearchField` (puts the query in the URL after 350 ms: Clients, Users)                                                |
@@ -259,6 +259,8 @@ drawer, in place at the end of the page form (new and edit shipment, `sticky={fa
 **Icons:** `src/icons` mixes Tabler (stroke) and Phosphor (fill) icons; every file uses
 `currentColor` so it follows the text colour. Clients use `users-four`.
 
+**Phones** are always shown left to right (`dir="ltr"`), so their digits keep their order in Arabic; their place still follows the page direction.
+
 **One client (`/customers/<id>`):** for a role that can view shipments, a client's name in the
 Clients list opens their page (the whole row is a link; "edit" stays separate): name and phone, the
 number of shipments, their bags and what is left to pay on them, and every shipment received from
@@ -336,7 +338,8 @@ shows under the payment status in the project's list, the history and a client's
 the shipment page header next to its reason. Shipment status, payment status and debt pills share
 one shape and size (icon + word, 28px high): stage pending grey / grinding orange / refining solid blue (white text) /
 completed green; payment complete green with a check, not complete orange with a clock. On the
-shipment page the title and the three labelled statuses sit on one line (wrapping on a phone). The payments section has "increase debt" for a
+shipment page the title and the three labelled statuses sit on one line (wrapping on a phone). Below the payments, a debt section shows the debt in a red box with its reason (or "no debt"),
+with "increase debt" for a
 shipment with debt and "add debt" for one without (shipments edit right): current debt and debt
 after (only when there is debt), the amount to add, the reason. The shipment edit form shows the
 debt fields only for a shipment that already has debt; the new-shipment form always has them. It sends

@@ -8,6 +8,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { noAccess } from "@/lib/access";
 import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
+import { formatMoney } from "@/lib/format";
 import messages from "@/messages/fr.json";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ShipmentScreen, shipmentLoader } from "./ShipmentScreen";
@@ -166,7 +167,25 @@ describe("ShipmentScreen", () => {
     ).toBeVisible();
     expect(screen.queryByRole("button", { name: detail.addDebt })).toBeNull();
     expect(screen.queryByLabelText(messages.shipments.form.debt)).toBeNull();
-    expect(screen.queryByText(detail.debtLabel)).toBeNull();
+    expect(screen.getByText(detail.noDebt)).toBeVisible();
+  });
+
+  it("shows how much the shipment owes and why in its debt section", async () => {
+    answer([firstPayment]);
+    openShipment();
+
+    const heading = await screen.findByText(detail.debtLabel, { selector: "h2" });
+    const section = heading.closest("section");
+
+    if (section === null) {
+      throw new Error("debt section missing");
+    }
+
+    expect(within(section).getByText(messages.shipments.debtForm.current)).toBeVisible();
+    expect(within(section).getByText(formatMoney(350, "fr"))).toBeVisible();
+    expect(within(section).getByText(messages.shipments.debtForm.notes)).toBeVisible();
+    expect(within(section).getByText("Avance sur le prochain voyage")).toBeVisible();
+    expect(within(section).getByRole("button", { name: detail.addDebt })).toBeVisible();
   });
 
   it("adds a second payment and shows it", async () => {

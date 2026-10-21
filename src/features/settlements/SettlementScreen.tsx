@@ -170,10 +170,8 @@ export function SettlementScreen() {
       <section className="rounded-card border-line bg-surface shadow-subtle flex flex-col gap-5 border-[1.5px] p-6">
         <DetailList
           items={[
-            {
-              label: t("fields.customer"),
-              value: `${settlement.customerName} · ${settlement.customerPhone}`,
-            },
+            { label: t("fields.customer"), value: settlement.customerName },
+            { label: t("fields.phone"), value: settlement.customerPhone, dir: "ltr" },
             { label: t("fields.project"), value: settlement.projectName },
             { label: t("fields.shipments"), value: settlement.shipmentNumbers.join(", ") },
             {

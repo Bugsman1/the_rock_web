@@ -34,7 +34,8 @@ describe("SettlementScreen", () => {
     openAt("/fr/settlements/4");
 
     expect(await screen.findByRole("heading", { name: title })).toBeVisible();
-    expect(screen.getByText("Ahmed · +222 22 41 18 30")).toBeVisible();
+    expect(screen.getByText("Ahmed")).toBeVisible();
+    expect(screen.getByText("+222 22 41 18 30")).toHaveAttribute("dir", "ltr");
     expect(screen.getByText("SHP-00001, SHP-00002")).toBeVisible();
 
     const rows = screen.getAllByRole("row");

@@ -110,6 +110,14 @@ describe("CustomerScreen", () => {
     );
   });
 
+  it("keeps the phone's digits in order whatever the page direction", async () => {
+    answer([]);
+    openCustomer();
+
+    expect(await screen.findByRole("heading", { name: "Ahmed" })).toBeVisible();
+    expect(screen.getByText("+222 22 41 18 30")).toHaveAttribute("dir", "ltr");
+  });
+
   it("sums the shipments, their bags and what is left to pay", async () => {
     answer([apiShipment(2, "pending", "0.00"), apiShipment(1, "completed", "1050.00")]);
     openCustomer();

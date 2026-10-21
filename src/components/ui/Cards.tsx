@@ -63,6 +63,7 @@ export function StatGrid({
 type DetailItem = {
   label: string;
   value: string;
+  dir?: "ltr";
 };
 
 export function DetailList({ items }: { items: readonly DetailItem[] }) {
@@ -72,7 +73,7 @@ export function DetailList({ items }: { items: readonly DetailItem[] }) {
         <div key={item.label} className="flex min-w-0 flex-col gap-0.5">
           <dt className="text-ink-muted text-[13px] font-bold">{item.label}</dt>
           <dd className="text-ink text-start text-[15px] font-bold break-words">
-            <bdi>{item.value}</bdi>
+            <bdi dir={item.dir ?? "auto"}>{item.value}</bdi>
           </dd>
         </div>
       ))}

@@ -47,7 +47,7 @@ type PageLayoutProps = {
   backHref?: string;
   backLabel: string;
   title: string;
-  description?: string;
+  description?: ReactNode;
   stats?: readonly PageStat[];
   action?: ReactNode;
   children: ReactNode;
