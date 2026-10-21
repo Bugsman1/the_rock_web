@@ -252,4 +252,19 @@ describe("RefiningForm", () => {
     await user.click(screen.getByRole("button", { name: text.form.submit }));
     expect(api.createRefiningOperation).not.toHaveBeenCalled();
   });
+
+  it("says at once that the mercury after refining cannot weigh more than before", async () => {
+    renderForm({
+      ...grinding,
+      mercury: { addedAt: "2026-10-12T07:00:00Z", byName: "Aicha", quantity: 120 },
+    });
+    const user = userEvent.setup();
+
+    await user.type(screen.getByLabelText(fields.weightAfter), "130");
+
+    expect(await screen.findByText(text.errors.weightAfterTooHigh)).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: text.form.submit }));
+    expect(api.createRefiningOperation).not.toHaveBeenCalled();
+  });
 });

@@ -107,6 +107,12 @@ export function RefiningForm({
       void trigger("goldWithoutMaterial");
     }
   }, [goldWithMaterial, goldWithoutMaterial, trigger]);
+
+  useEffect(() => {
+    if (Number.isFinite(weightAfter)) {
+      void trigger("weightAfter");
+    }
+  }, [weightBefore, weightAfter, trigger]);
   const loss = refiningLoss(weightBefore, weightAfter);
 
   async function onSubmit(values: RefiningValues) {

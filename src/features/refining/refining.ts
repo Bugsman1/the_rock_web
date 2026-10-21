@@ -115,15 +115,14 @@ export function createRefiningSchema(messages: {
       message: messages.required,
       when: () => true,
     })
+    .refine(
+      (values) =>
+        !Number.isFinite(values.weightAfter) ||
+        !Number.isFinite(values.weightBefore) ||
+        values.weightAfter <= values.weightBefore,
+      { path: ["weightAfter"], message: messages.weightAfterTooHigh, when: () => true },
+    )
     .superRefine((values, context) => {
-      if (values.weightAfter > values.weightBefore) {
-        context.addIssue({
-          code: "custom",
-          path: ["weightAfter"],
-          message: messages.weightAfterTooHigh,
-        });
-      }
-
       if (values.goldWithoutMaterial > values.weightBefore) {
         context.addIssue({
           code: "custom",
