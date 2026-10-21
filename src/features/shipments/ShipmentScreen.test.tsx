@@ -105,6 +105,16 @@ function openShipment(access: Access = allRights) {
   return router;
 }
 
+function panel(title: string) {
+  const section = screen.getByText(title, { selector: "h2" }).closest("section");
+
+  if (section === null) {
+    throw new Error(`no panel ${title}`);
+  }
+
+  return within(section);
+}
+
 describe("ShipmentScreen", () => {
   it("shows what was paid, in which payments, and what is left", async () => {
     answer([firstPayment]);
@@ -113,21 +123,13 @@ describe("ShipmentScreen", () => {
     expect(
       await screen.findByRole("heading", { name: detail.title.replace("{number}", "SHP-00052") }),
     ).toBeVisible();
-    expect(screen.getByText(detail.shipmentStatus).nextElementSibling).toHaveTextContent(
-      messages.shipments.statuses.pending,
-    );
-    expect(screen.getByText(detail.paymentStatus).nextElementSibling).toHaveTextContent(
-      messages.shipments.payment.incomplete,
-    );
-    const debt = screen.getAllByText(detail.debtLabel)[0]?.nextElementSibling;
-    expect(debt).toHaveTextContent(messages.shipments.debt.badge);
-    expect(debt).toHaveTextContent("Avance sur le prochain voyage");
-    const payments = within(screen.getByRole("table"));
+    expect(screen.queryByText(messages.shipments.statuses.pending)).not.toBeInTheDocument();
+    expect(screen.queryByText(messages.shipments.payment.incomplete)).not.toBeInTheDocument();
+    const payments = panel(detail.paymentsTitle);
     const [, row] = payments.getAllByRole("row");
     expect(row).toHaveTextContent(detail.installment.replace("{n}", "1"));
     expect(row).toHaveTextContent(/1\s000/);
     expect(screen.getAllByText(detail.left)[0]?.nextElementSibling).toHaveTextContent(/2\s200/);
-    expect(screen.getByText(messages.shipments.payment.incomplete)).toBeVisible();
   });
 
   it("increases the debt by the amount typed, with its reason", async () => {
@@ -170,22 +172,19 @@ describe("ShipmentScreen", () => {
     expect(screen.getByText(detail.noDebt)).toBeVisible();
   });
 
-  it("shows how much the shipment owes and why in its debt section", async () => {
+  it("shows the debt in a table with its amount and its reason", async () => {
     answer([firstPayment]);
     openShipment();
 
-    const heading = await screen.findByText(detail.debtLabel, { selector: "h2" });
-    const section = heading.closest("section");
+    await screen.findByText(detail.debtLabel, { selector: "h2" });
+    const debt = panel(detail.debtLabel);
+    const [header, row] = debt.getAllByRole("row");
 
-    if (section === null) {
-      throw new Error("debt section missing");
-    }
-
-    expect(within(section).getByText(messages.shipments.debtForm.current)).toBeVisible();
-    expect(within(section).getByText(formatMoney(350, "fr"))).toBeVisible();
-    expect(within(section).getByText(messages.shipments.debtForm.notes)).toBeVisible();
-    expect(within(section).getByText("Avance sur le prochain voyage")).toBeVisible();
-    expect(within(section).getByRole("button", { name: detail.addDebt })).toBeVisible();
+    expect(header).toHaveTextContent(detail.columns.amount);
+    expect(header).toHaveTextContent(messages.shipments.debtForm.notes);
+    expect(row).toHaveTextContent(formatMoney(350, "fr"));
+    expect(row).toHaveTextContent("Avance sur le prochain voyage");
+    expect(debt.getByRole("button", { name: detail.addDebt })).toBeVisible();
   });
 
   it("adds a second payment and shows it", async () => {
@@ -207,7 +206,7 @@ describe("ShipmentScreen", () => {
     await user.click(drawer.getByRole("button", { name: paymentForm.submit }));
 
     await waitFor(() => {
-      expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(3);
+      expect(panel(detail.paymentsTitle).getAllByRole("row")).toHaveLength(4);
     });
     expect(sent).toMatchObject({ shipment: 52, amount: "1200" });
   });
@@ -245,7 +244,7 @@ describe("ShipmentScreen", () => {
     answer([firstPayment, { id: 2, amount: "2200.00", paid_at: "2026-10-12T10:00:00Z" }]);
     openShipment();
 
-    expect(await screen.findByText(messages.shipments.payment.complete)).toBeVisible();
+    expect(await screen.findByText(detail.installment.replace("{n}", "2"))).toBeVisible();
     expect(screen.queryByRole("button", { name: detail.addPayment })).toBeNull();
   });
 

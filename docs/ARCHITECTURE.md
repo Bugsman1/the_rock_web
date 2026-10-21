@@ -239,7 +239,10 @@ shipments, with no per-status bar.
 **Status colours:** `StatusBadge` takes a `tone`: green (`success`) for done, blue (`active`) for
 in progress, orange (`warning`) for waiting, grey (`neutral`) otherwise. Shipments: pending grey,
 grinding orange, refining blue, completed green. Grinding queue: waiting orange, partly ground blue, ground green.
-A machine's grinding history has a status column: "grinding" blue, "finished" green. Sidebar items
+A machine's grinding history has a status column: "grinding" blue, "finished" green. The summary cards
+(`KpiTile`, `tone`) colour only their icon circle with the same meanings: waiting orange (bags in
+storage, grinding waiting, refining waiting), in progress blue (grinding, machines running), done
+green (ground today, refined today, all refinings). Sidebar items
 are `text-ink` (the darkest text); the active one stays brand blue.
 
 **Top bar:** logo with the company name (wide screens), sidebar toggle; then language, notifications
@@ -286,10 +289,9 @@ project, machine, user and role added / changed, project and role deleted, settl
 changed / deleted. Saving
 changes to a shipment then goes back to the project's Shipments page.
 
-**Shipment page header:** one card: the shipment number, then "shipment status" and "payment
-status" each with its label and badge, and the PDF button; then client (with the phone), project,
-arrival and bags; then, when there is debt, the red debt box. Text inside each fact is isolated
-(`bdi`) so a Latin name stays aligned with its label in Arabic.
+**Shipment page header:** one card: the shipment number and the PDF button; then client (with the
+phone), project, arrival and bags. It shows no status, payment or debt badge. Text inside each fact is
+isolated (`bdi`) so a Latin name stays aligned with its label in Arabic.
 
 **One shipment (`/shipments/<id>`):** a shipment's number in the project list and in the history
 opens its page (the whole row is a link; the PDF and start-grinding buttons stay separate). The page
@@ -338,7 +340,7 @@ shows under the payment status in the project's list, the history and a client's
 the shipment page header next to its reason. Shipment status, payment status and debt pills share
 one shape and size (icon + word, 28px high): stage pending grey / grinding orange / refining solid blue (white text) /
 completed green; payment complete green with a check, not complete orange with a clock. On the
-shipment page the title and the three labelled statuses sit on one line (wrapping on a phone). Below the payments, a debt section shows the debt in a red box with its reason (or "no debt"),
+shipment page the title and the three labelled statuses sit on one line (wrapping on a phone). Below the payments, a debt section shows the debt in a plain table (amount, reason; or "no debt"),
 with "increase debt" for a
 shipment with debt and "add debt" for one without (shipments edit right): current debt and debt
 after (only when there is debt), the amount to add, the reason. The shipment edit form shows the

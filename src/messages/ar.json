@@ -460,8 +460,6 @@
       "arrivedAt": "تاريخ الوصول",
       "client": "العميل",
       "project": "المشروع",
-      "shipmentStatus": "حالة الشحنة",
-      "paymentStatus": "حالة الدفع",
       "debtLabel": "الدين",
       "addDebt": "زيادة الدين",
       "noDebt": "لا يوجد دين على هذه الشحنة."

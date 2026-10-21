@@ -50,6 +50,7 @@ function FlowCards({ summary }: { summary: MillingSummary }) {
     <section aria-label={t("flow.title")} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <KpiTile
         icon="clock"
+        tone="warning"
         label={t("flow.waiting")}
         value={count(summary.bagsWaiting)}
         detail={isBacklogged(summary.bagsWaiting) ? t("flow.backlog") : t("flow.bags")}
@@ -62,6 +63,7 @@ function FlowCards({ summary }: { summary: MillingSummary }) {
       />
       <KpiTile
         icon="circle-check"
+        tone="success"
         label={t("flow.milledToday")}
         value={count(summary.bagsMilledToday)}
         detail={t("flow.bags")}

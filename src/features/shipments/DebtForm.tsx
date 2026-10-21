@@ -2,14 +2,19 @@ import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
-import { DebtNotice } from "@/components/shipments/ShipmentBadges";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { FormError } from "@/components/ui/FieldError";
 import { Icon } from "@/components/ui/Icon";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
-import { TablePanel } from "@/components/ui/TablePanel";
+import {
+  TablePanel,
+  tableCellClasses,
+  tableEndHeadClasses,
+  tableHeadClasses,
+  tableRowClasses,
+} from "@/components/ui/TablePanel";
 import { TextArea, TextField } from "@/components/ui/TextField";
 import { useCan } from "@/lib/accessContext";
 import { formatMoney } from "@/lib/format";
@@ -123,32 +128,46 @@ export function DebtPanel({
 }) {
   const t = useTranslations("shipments.detail");
   const debtForm = useTranslations("shipments.debtForm");
+  const locale = useLocale();
   const canEdit = useCan()("shipments", "edit");
 
   return (
     <TablePanel title={t("debtLabel")}>
-      <div className="flex flex-wrap items-end justify-between gap-4 p-4">
-        {shipment.debt > 0 ? (
-          <div className="flex min-w-0 flex-1 flex-col gap-3">
-            <DebtNotice label={debtForm("current")} amount={shipment.debt} />
-            <div className="flex flex-col gap-0.5">
-              <span className="text-ink-muted text-[13px] font-bold">{debtForm("notes")}</span>
-              <p dir="auto" className="text-ink text-[15px] font-semibold break-words">
-                {shipment.debtNotes === "" ? "—" : shipment.debtNotes}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <p className="text-ink-muted min-w-0 flex-1 text-[15px] font-semibold">{t("noDebt")}</p>
-        )}
-
-        {canEdit ? (
+      {canEdit ? (
+        <div className="border-line flex justify-end border-b p-4">
           <Button variant="secondary" width="auto" onClick={onAddDebt}>
             <Icon name="plus" />
             {shipment.debt > 0 ? t("addDebt") : debtForm("add")}
           </Button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
+
+      {shipment.debt > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead className="bg-surface-page">
+              <tr className="border-line border-b">
+                <th className={tableEndHeadClasses}>{t("columns.amount")}</th>
+                <th className={tableHeadClasses}>{debtForm("notes")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className={tableRowClasses}>
+                <td className={`${tableCellClasses} text-ink w-40 text-end font-bold`}>
+                  {formatMoney(shipment.debt, locale)}
+                </td>
+                <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
+                  <p dir="auto" className="break-words">
+                    {shipment.debtNotes === "" ? "—" : shipment.debtNotes}
+                  </p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="text-ink-muted p-6 text-[15px] font-semibold">{t("noDebt")}</p>
+      )}
     </TablePanel>
   );
 }

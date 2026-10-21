@@ -107,6 +107,7 @@ export function ShipmentsScreen() {
         <div className="order-last w-full sm:order-none sm:w-auto">
           <KpiTile
             icon="shopping-bag"
+            tone="warning"
             label={t("totalBags")}
             value={formatCount(bagCount(stored), locale)}
           />

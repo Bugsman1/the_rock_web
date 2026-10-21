@@ -85,16 +85,23 @@ export function RefiningScreen() {
       <section aria-label={t("overview.title")} className="grid gap-4 sm:grid-cols-3">
         <KpiTile
           icon="clock"
+          tone="warning"
           label={t("overview.waiting")}
           value={count(total.waiting)}
           detail={t("overview.waitingBags", { bags: count(total.waitingBags) })}
         />
         <KpiTile
           icon="flame"
+          tone="success"
           label={t("overview.refinedToday")}
           value={count(total.refinedToday)}
         />
-        <KpiTile icon="circle-check" label={t("overview.refined")} value={count(total.refined)} />
+        <KpiTile
+          icon="circle-check"
+          tone="success"
+          label={t("overview.refined")}
+          value={count(total.refined)}
+        />
       </section>
 
       <CardGrid>

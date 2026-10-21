@@ -2,6 +2,7 @@ import { useId } from "react";
 import type { ReactNode } from "react";
 import { Icon } from "./Icon";
 import type { IconName } from "./Icon";
+import type { StatusTone } from "./TablePanel";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/cn";
 
@@ -98,19 +99,27 @@ export function FormSection({ title, children }: { title: string; children: Reac
   );
 }
 
+const kpiIconTones: Record<StatusTone, string> = {
+  neutral: "bg-surface-page text-ink-label",
+  active: "bg-brand-50 text-brand-700",
+  success: "bg-success-50 text-success-700",
+  warning: "bg-warning-50 text-warning-700",
+};
+
 type KpiTileProps = {
   icon: IconName;
   label: string;
   value: string;
   detail?: string;
+  tone?: StatusTone;
 };
 
-export function KpiTile({ icon, label, value, detail }: KpiTileProps) {
+export function KpiTile({ icon, label, value, detail, tone = "active" }: KpiTileProps) {
   return (
     <div className="rounded-card shadow-subtle border-line bg-surface flex items-center gap-3 border-[1.5px] py-2.5 ps-3 pe-6">
       <span
         aria-hidden
-        className="bg-brand-50 text-brand-700 inline-flex size-11 shrink-0 items-center justify-center rounded-full"
+        className={`${kpiIconTones[tone]} inline-flex size-11 shrink-0 items-center justify-center rounded-full`}
       >
         <Icon name={icon} />
       </span>

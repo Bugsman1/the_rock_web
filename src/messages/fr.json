@@ -460,8 +460,6 @@
       "arrivedAt": "Arrivée",
       "client": "Client",
       "project": "Projet",
-      "shipmentStatus": "Statut de l'expédition",
-      "paymentStatus": "Statut du paiement",
       "debtLabel": "Dette",
       "addDebt": "Augmenter la dette",
       "noDebt": "Aucune dette sur cette expédition."

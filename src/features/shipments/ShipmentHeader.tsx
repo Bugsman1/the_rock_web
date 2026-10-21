@@ -1,10 +1,5 @@
 import type { ReactNode } from "react";
 import { useLocale, useTranslations } from "use-intl";
-import {
-  DebtBadge,
-  PaymentStatus,
-  ShipmentStatusBadge,
-} from "@/components/shipments/ShipmentBadges";
 import { DetailList } from "@/components/ui/Cards";
 import { PageTitle } from "@/components/ui/PageHeader";
 import { formatCount, formatDateTime } from "@/lib/format";
@@ -62,36 +57,7 @@ export function ShipmentHeader({
   return (
     <section className="rounded-card border-line bg-surface flex flex-col border-[1.5px]">
       <div className="border-line flex flex-wrap items-center justify-between gap-4 border-b p-5">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-          <PageTitle>{t("title", { number: shipment.shipmentNumber })}</PageTitle>
-          <dl className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <div className="flex items-center gap-2">
-              <dt className="text-ink-muted text-[13px] font-semibold">{t("shipmentStatus")}</dt>
-              <dd>
-                <ShipmentStatusBadge status={shipment.stage} />
-              </dd>
-            </div>
-            <div className="flex items-center gap-2">
-              <dt className="text-ink-muted text-[13px] font-semibold">{t("paymentStatus")}</dt>
-              <dd>
-                <PaymentStatus shipment={shipment} />
-              </dd>
-            </div>
-            {shipment.debt > 0 ? (
-              <div className="flex items-center gap-2">
-                <dt className="text-ink-muted text-[13px] font-semibold">{t("debtLabel")}</dt>
-                <dd className="flex flex-wrap items-center gap-2">
-                  <DebtBadge amount={shipment.debt} />
-                  {shipment.debtNotes === "" ? null : (
-                    <span dir="auto" className="text-ink-muted text-[13px] font-semibold">
-                      {shipment.debtNotes}
-                    </span>
-                  )}
-                </dd>
-              </div>
-            ) : null}
-          </dl>
-        </div>
+        <PageTitle>{t("title", { number: shipment.shipmentNumber })}</PageTitle>
         <InvoiceDownload shipment={shipment} />
       </div>
 
