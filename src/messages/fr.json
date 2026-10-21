@@ -661,6 +661,8 @@
   "refining": {
     "title": "Affinage",
     "new": "Nouvelle opération d'affinage",
+    "editTitle": "Modifier l'affinage",
+    "editLabel": "Modifier l'affinage de l'expédition {shipment}",
     "queueTitle": "Broyages en attente d'affinage",
     "queueEmpty": "Aucun broyage terminé n'attend l'affinage.",
     "operationsTitle": "Opérations d'affinage",
@@ -695,7 +697,8 @@
       "workerPlaceholder": "Choisir le responsable",
       "submit": "Enregistrer l'affinage",
       "saving": "Enregistrement de l'affinage",
-      "lossReasonPlaceholder": "Choisir la raison de la perte"
+      "lossReasonPlaceholder": "Choisir la raison de la perte",
+      "saveChanges": "Enregistrer les modifications"
     },
     "errors": {
       "weightInvalid": "Saisissez un poids valide",
@@ -919,6 +922,7 @@
     "grindingFinished": "Broyage terminé",
     "mercuryAdded": "Mercure ajouté",
     "refiningSaved": "Affinage enregistré",
+    "refiningUpdated": "Affinage modifié",
     "resourceAdded": "Ressource ajoutée",
     "stockIncreased": "Quantité augmentée",
     "stockDecreased": "Quantité diminuée",

@@ -206,7 +206,7 @@ describe("RefiningForm", () => {
 
     await user.click(screen.getByRole("button", { name: text.form.submit }));
 
-    expect(await screen.findAllByText(messages.common.validation.required)).toHaveLength(6);
+    expect(await screen.findAllByText(messages.common.validation.required)).toHaveLength(5);
     expect(api.createRefiningOperation).not.toHaveBeenCalled();
   });
 

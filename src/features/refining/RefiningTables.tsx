@@ -1,4 +1,5 @@
 import { useLocale, useTranslations } from "use-intl";
+import { Link } from "@/i18n/navigation";
 import { ActionLink } from "@/components/ui/ActionLink";
 import {
   tableCellClasses,
@@ -119,14 +120,17 @@ function TextCell({ value }: { value: string }) {
 export function RefiningOperationsTable({
   refinings,
   query,
+  editHrefOf,
 }: {
   refinings: readonly RefiningOperation[];
   query: string;
+  editHrefOf: (refining: RefiningOperation) => string | undefined;
 }) {
   const t = useTranslations("refining");
   const common = useTranslations("common");
   const locale = useLocale();
   const quantity = (value: number) => formatQuantity(value, locale);
+  const optionalQuantity = (value: number) => (value > 0 ? quantity(value) : "—");
   const number = `${tableCellClasses} text-ink text-end font-bold`;
   const operations = refinings.filter((operation) =>
     matchesSearch(
@@ -172,39 +176,53 @@ export function RefiningOperationsTable({
           </tr>
         </thead>
         <tbody>
-          {operations.map((operation) => (
-            <tr key={operation.id} className={tableRowClasses}>
-              <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                {formatDateTime(operation.refinedAt, locale)}
-              </td>
-              <td className={`${tableCellClasses} text-ink font-bold`}>
-                {operation.shipmentNumber}
-              </td>
-              <td className={`${tableCellClasses} text-ink font-bold`}>
-                <span dir="auto">{operation.client}</span>
-              </td>
-              <td className={`${tableCellClasses} text-ink font-semibold`}>
-                <span dir="ltr">{operation.grinderCode}</span>
-              </td>
-              <td className={`${tableCellClasses} text-ink font-semibold`}>
-                <span dir="auto">{operation.workerName}</span>
-              </td>
-              <td className={number}>{formatCount(operation.bags, locale)}</td>
-              <td className={number}>{quantity(operation.weightBefore)}</td>
-              <td className={number}>{quantity(operation.weightAfter)}</td>
-              <td className={number}>{quantity(operation.goldWithMaterial)}</td>
-              <td className={number}>{quantity(operation.goldWithoutMaterial)}</td>
-              <td className={number}>{quantity(operation.loss)}</td>
-              <TextCell
-                value={
-                  isLossReasonKey(operation.lossReason)
-                    ? t(`lossReasons.${operation.lossReason}`)
-                    : operation.lossReason
-                }
-              />
-              <TextCell value={operation.notes} />
-            </tr>
-          ))}
+          {operations.map((operation) => {
+            const editHref = editHrefOf(operation);
+
+            return (
+              <tr key={operation.id} className={`${tableRowClasses} relative`}>
+                <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
+                  {formatDateTime(operation.refinedAt, locale)}
+                </td>
+                <td className={`${tableCellClasses} text-ink font-bold`}>
+                  {editHref === undefined ? (
+                    operation.shipmentNumber
+                  ) : (
+                    <Link
+                      href={editHref}
+                      aria-label={t("editLabel", { shipment: operation.shipmentNumber })}
+                      className="after:absolute after:inset-0"
+                    >
+                      {operation.shipmentNumber}
+                    </Link>
+                  )}
+                </td>
+                <td className={`${tableCellClasses} text-ink font-bold`}>
+                  <span dir="auto">{operation.client}</span>
+                </td>
+                <td className={`${tableCellClasses} text-ink font-semibold`}>
+                  <span dir="ltr">{operation.grinderCode}</span>
+                </td>
+                <td className={`${tableCellClasses} text-ink font-semibold`}>
+                  <span dir="auto">{operation.workerName}</span>
+                </td>
+                <td className={number}>{formatCount(operation.bags, locale)}</td>
+                <td className={number}>{quantity(operation.weightBefore)}</td>
+                <td className={number}>{quantity(operation.weightAfter)}</td>
+                <td className={number}>{quantity(operation.goldWithMaterial)}</td>
+                <td className={number}>{optionalQuantity(operation.goldWithoutMaterial)}</td>
+                <td className={number}>{quantity(operation.loss)}</td>
+                <TextCell
+                  value={
+                    isLossReasonKey(operation.lossReason)
+                      ? t(`lossReasons.${operation.lossReason}`)
+                      : operation.lossReason
+                  }
+                />
+                <TextCell value={operation.notes} />
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

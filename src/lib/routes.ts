@@ -157,6 +157,10 @@ export function startRefiningHref(project: string, grindingOperation: string): s
   return `${refiningProjectHref(project)}?${new URLSearchParams({ grinding: grindingOperation })}`;
 }
 
+export function editRefiningHref(project: string, refining: string): string {
+  return `${refiningProjectHref(project)}?${new URLSearchParams({ edit: refining })}`;
+}
+
 export function inventoryProjectHref(project: string, newResource = false): string {
   const base = `${INVENTORY_HREF}/projects/${project}`;
 

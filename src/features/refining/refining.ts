@@ -1,11 +1,18 @@
 import { z } from "zod";
 import type { BackendFieldErrors, FieldErrors } from "@/lib/api/client";
-import { isIsoDate, isSameDay, isTimeValue } from "@/lib/datetime";
-import { toDecimal } from "@/lib/format";
+import {
+  isIsoDate,
+  isSameDay,
+  isTimeValue,
+  nowAsTimeValue,
+  todayAsInputValue,
+} from "@/lib/datetime";
+import { amountOrZero, toDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
 import type { ProjectId } from "@/lib/projects";
 import type { RefiningOperation } from "@/lib/refining";
+import type { Operator } from "@/lib/users";
 
 const TEXT_MAX_LENGTH = 500;
 const WEIGHT_PRECISION = 1000;
@@ -106,7 +113,9 @@ export function createRefiningSchema(messages: {
       weightBefore: weight().positive(messages.weightInvalid),
       weightAfter: weight(),
       goldWithMaterial: weight(),
-      goldWithoutMaterial: weight(),
+      goldWithoutMaterial: z.union([z.nan(), z.number().min(0, messages.weightInvalid)], {
+        error: messages.weightInvalid,
+      }),
       lossReason: z.string(),
       notes: z.string().trim().max(TEXT_MAX_LENGTH),
     })
@@ -153,18 +162,46 @@ export type RefiningTarget = {
   refinedAt: IsoTimestamp;
 };
 
+export function refiningUpdateToApi(values: RefiningValues) {
+  const goldWithoutMaterial = toDecimal(amountOrZero(values.goldWithoutMaterial));
+
+  return {
+    worker: Number(values.workerId),
+    weight_after: toDecimal(values.weightAfter),
+    gold_weight: goldWithoutMaterial,
+    gold_weight_with_mercury: toDecimal(values.goldWithMaterial),
+    gold_weight_without_mercury: goldWithoutMaterial,
+    loss_reason: hasLoss(values) ? values.lossReason : "",
+    notes: values.notes,
+  };
+}
+
 export function refiningToApi(values: RefiningValues, target: RefiningTarget) {
   return {
     grinding_operation: Number(target.grindingOperationId),
-    worker: Number(values.workerId),
     refining_date: target.refinedAt,
     weight_before: toDecimal(values.weightBefore),
-    weight_after: toDecimal(values.weightAfter),
-    gold_weight: toDecimal(values.goldWithoutMaterial),
-    gold_weight_with_mercury: toDecimal(values.goldWithMaterial),
-    gold_weight_without_mercury: toDecimal(values.goldWithoutMaterial),
-    loss_reason: hasLoss(values) ? values.lossReason : "",
-    notes: values.notes,
+    ...refiningUpdateToApi(values),
+  };
+}
+
+export function refiningFormValues(
+  refining: RefiningOperation,
+  workers: readonly Operator[],
+): RefiningValues {
+  const refinedAt = new Date(refining.refinedAt);
+
+  return {
+    workerId: workers.find((worker) => worker.name === refining.workerName)?.id ?? "",
+    date: todayAsInputValue(refinedAt),
+    time: nowAsTimeValue(refinedAt),
+    weightBefore: refining.weightBefore,
+    weightAfter: refining.weightAfter,
+    goldWithMaterial: refining.goldWithMaterial,
+    goldWithoutMaterial:
+      refining.goldWithoutMaterial > 0 ? refining.goldWithoutMaterial : Number.NaN,
+    lossReason: refining.lossReason,
+    notes: refining.notes,
   };
 }
 

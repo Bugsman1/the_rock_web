@@ -11,10 +11,11 @@ import { TextArea, TextField } from "@/components/ui/TextField";
 import { combineDateAndTime } from "@/lib/datetime";
 import { formatCount, formatDateTime, formatQuantity } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
+import type { RefiningOperation } from "@/lib/refining";
 import type { Operator } from "@/lib/users";
-import { createRefiningSchema, lossReasonKeys, refiningLoss } from "./refining";
+import { createRefiningSchema, lossReasonKeys, refiningFormValues, refiningLoss } from "./refining";
 import type { RefiningValues } from "./refining";
-import { createRefiningOperation } from "./refiningApi";
+import { createRefiningOperation, updateRefiningOperation } from "./refiningApi";
 
 const refiningFields: readonly (keyof RefiningValues)[] = [
   "workerId",
@@ -36,6 +37,7 @@ type WeightFieldName = "weightBefore" | "weightAfter" | "goldWithMaterial" | "go
 
 type RefiningFormProps = {
   operation: MillingOperation;
+  refining?: RefiningOperation;
   projectName: string;
   workers: readonly Operator[];
   defaultDate: string;
@@ -46,6 +48,7 @@ type RefiningFormProps = {
 
 export function RefiningForm({
   operation,
+  refining,
   projectName,
   workers,
   defaultDate,
@@ -78,23 +81,25 @@ export function RefiningForm({
     [t, common],
   );
 
-  const { control, register, handleSubmit, formState, setError, trigger } = useForm<RefiningValues>(
-    {
+  const { control, register, handleSubmit, formState, setError, trigger, getValues } =
+    useForm<RefiningValues>({
       mode: "onTouched",
       resolver: zodResolver(schema),
-      defaultValues: {
-        workerId: "",
-        date: defaultDate,
-        time: defaultTime,
-        weightBefore: weightBeforeFromMercury ? mercuryGrams : Number.NaN,
-        weightAfter: Number.NaN,
-        goldWithMaterial: Number.NaN,
-        goldWithoutMaterial: Number.NaN,
-        lossReason: "",
-        notes: "",
-      },
-    },
-  );
+      defaultValues:
+        refining === undefined
+          ? {
+              workerId: "",
+              date: defaultDate,
+              time: defaultTime,
+              weightBefore: weightBeforeFromMercury ? mercuryGrams : Number.NaN,
+              weightAfter: Number.NaN,
+              goldWithMaterial: Number.NaN,
+              goldWithoutMaterial: Number.NaN,
+              lossReason: "",
+              notes: "",
+            }
+          : refiningFormValues(refining, workers),
+    });
 
   const { errors } = formState;
   const [weightBefore, weightAfter, goldWithMaterial, goldWithoutMaterial] = useWatch({
@@ -126,13 +131,13 @@ export function RefiningForm({
       return;
     }
 
-    const result = await createRefiningOperation(values, {
-      grindingOperationId: operation.id,
-      refinedAt,
-    });
+    const result =
+      refining === undefined
+        ? await createRefiningOperation(values, { grindingOperationId: operation.id, refinedAt })
+        : await updateRefiningOperation(refining.id, values);
 
     if (result.ok) {
-      toast(toasts("refiningSaved"));
+      toast(refining === undefined ? toasts("refiningSaved") : toasts("refiningUpdated"));
       setSaved(true);
       onSaved();
       return;
@@ -149,7 +154,11 @@ export function RefiningForm({
     setFailed(result.failed);
   }
 
-  function weightField(name: WeightFieldName, label: string, readOnly = false) {
+  function weightField(
+    name: WeightFieldName,
+    label: string,
+    { readOnly = false, required = true }: { readOnly?: boolean; required?: boolean } = {},
+  ) {
     return (
       <TextField
         id={`refining-${name}`}
@@ -158,7 +167,7 @@ export function RefiningForm({
         step="any"
         inputMode="decimal"
         label={label}
-        required
+        required={required}
         readOnly={readOnly}
         error={errors[name]?.message}
         {...register(name, { valueAsNumber: true })}
@@ -200,8 +209,8 @@ export function RefiningForm({
         <ReadOnlyDateAndTime
           dateLabel={t("fields.date")}
           timeLabel={t("fields.time")}
-          date={defaultDate}
-          time={defaultTime}
+          date={getValues("date")}
+          time={getValues("time")}
         />
         {errors.date === undefined ? null : (
           <div className="sm:col-span-2">
@@ -209,11 +218,13 @@ export function RefiningForm({
           </div>
         )}
 
-        {weightField("weightBefore", t("fields.weightBefore"), weightBeforeFromMercury)}
+        {weightField("weightBefore", t("fields.weightBefore"), {
+          readOnly: weightBeforeFromMercury || refining !== undefined,
+        })}
         {weightField("weightAfter", t("fields.weightAfter"))}
 
         {weightField("goldWithMaterial", t("fields.goldWithMaterial"))}
-        {weightField("goldWithoutMaterial", t("fields.goldWithoutMaterial"))}
+        {weightField("goldWithoutMaterial", t("fields.goldWithoutMaterial"), { required: false })}
         {loss === 0 ? (
           <FieldError id="refining-loss-error" message={lossError} />
         ) : (
@@ -256,8 +267,8 @@ export function RefiningForm({
 
       <DrawerActions
         submitting={formState.isSubmitting || saved}
-        submitIcon="flame"
-        submitLabel={t("form.submit")}
+        submitIcon={refining === undefined ? "flame" : "circle-check"}
+        submitLabel={refining === undefined ? t("form.submit") : t("form.saveChanges")}
         savingLabel={t("form.saving")}
         cancelLabel={common("cancel")}
         onCancel={onCancel}

@@ -411,7 +411,11 @@ as "with / without material". Every weight is entered and shown in grams. The we
 worked out as weight before less weight after (`refiningLoss`), shown read-only; the backend works out and stores the same `loss` itself, and its refusals (not
 enough material) show under that field. When the loss is 0 (`hasLoss`), the loss and its reason
 are hidden, the reason is not required and `loss_reason` is sent empty. A grinding operation counts as refined when a refining
-names its id (`refiningQueue`, oldest first). There is no edit or delete.
+names its id (`refiningQueue`, oldest first). Gold without material is optional (empty is sent as 0
+and shown "—" in the table) so it can be added later: a refining's row opens it in the same form
+(`?edit=<id>`, `editRefiningHref`, refining edit right), pre-filled (`refiningFormValues`, the worker
+found by name), with its date and weight before read-only; it sends `PATCH` with the worker, weight
+after, golds, loss reason and notes only (`refiningUpdateToApi`). There is no delete.
 
 **Mercury and the material stock:** the refining form never shows a stock quantity. The grams
 entered when mercury is added to a grinding are taken from the project's resource marked "used by

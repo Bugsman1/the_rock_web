@@ -661,6 +661,8 @@
   "refining": {
     "title": "التصفية",
     "new": "عملية تصفية جديدة",
+    "editTitle": "تعديل التصفية",
+    "editLabel": "تعديل تصفية الشحنة {shipment}",
     "queueTitle": "عمليات طحن بانتظار التصفية",
     "queueEmpty": "لا توجد عمليات طحن منتهية بانتظار التصفية.",
     "operationsTitle": "عمليات التصفية",
@@ -695,7 +697,8 @@
       "workerPlaceholder": "اختر المسؤول",
       "submit": "تسجيل التصفية",
       "saving": "جارٍ تسجيل التصفية",
-      "lossReasonPlaceholder": "اختر سبب الخسارة"
+      "lossReasonPlaceholder": "اختر سبب الخسارة",
+      "saveChanges": "حفظ التعديلات"
     },
     "errors": {
       "weightInvalid": "أدخل وزنًا صحيحًا",
@@ -919,6 +922,7 @@
     "grindingFinished": "تم إنهاء الطحن",
     "mercuryAdded": "تمت إضافة الزئبق",
     "refiningSaved": "تم حفظ التصفية",
+    "refiningUpdated": "تم حفظ تعديلات التصفية",
     "resourceAdded": "تمت إضافة المورد",
     "stockIncreased": "تمت زيادة الكمية",
     "stockDecreased": "تم إنقاص الكمية",

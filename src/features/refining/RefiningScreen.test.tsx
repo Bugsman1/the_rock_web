@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
@@ -284,5 +284,58 @@ describe("RefiningScreen", () => {
     expect(panel(text.operationsTitle).getByRole("alert")).toHaveTextContent(
       messages.errors.forbidden.description,
     );
+  });
+
+  it("opens a refining from its row to add the gold without material later", async () => {
+    let sent: unknown;
+    server.use(
+      http.get(`${API}/refining-operations/`, () =>
+        page([{ ...refined, gold_weight: "0.000", gold_weight_without_mercury: "0.000" }]),
+      ),
+      http.patch(`${API}/refining-operations/9/`, async ({ request }) => {
+        sent = await request.json();
+        return HttpResponse.json(refined);
+      }),
+    );
+    openAt("/fr/refining/projects/3");
+    const user = userEvent.setup();
+
+    const row = await screen.findByRole("link", {
+      name: text.editLabel.replace("{shipment}", "SH-3"),
+    });
+    expect(row).toHaveAttribute("href", "/fr/refining/projects/3?edit=9");
+    await user.click(row);
+
+    const dialog = within(await screen.findByRole("dialog", { name: text.editTitle }));
+    expect(dialog.getByLabelText(text.fields.worker)).toHaveValue("4");
+    expect(dialog.getByLabelText(text.fields.weightBefore)).toHaveAttribute("readonly");
+    expect(dialog.getByLabelText(text.fields.goldWithoutMaterial)).toHaveValue(null);
+
+    await user.type(dialog.getByLabelText(text.fields.goldWithoutMaterial), "14.3");
+    await user.click(dialog.getByRole("button", { name: text.form.saveChanges }));
+
+    await waitFor(() => {
+      expect(sent).toEqual({
+        worker: 4,
+        weight_after: "118.250",
+        gold_weight: "14.300",
+        gold_weight_with_mercury: "20.000",
+        gold_weight_without_mercury: "14.300",
+        loss_reason: "arghawa",
+        notes: "",
+      });
+    });
+  });
+
+  it("lists the refinings without opening them for a role that cannot edit refining", async () => {
+    openAt("/fr/refining/projects/3", {
+      superuser: false,
+      rights: rightsFromApi([{ module: "refining", can_view: true }]),
+    });
+
+    expect(await screen.findByText("SH-3")).toBeVisible();
+    expect(
+      screen.queryByRole("link", { name: text.editLabel.replace("{shipment}", "SH-3") }),
+    ).not.toBeInTheDocument();
   });
 });

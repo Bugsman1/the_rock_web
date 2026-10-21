@@ -12,7 +12,8 @@ import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { formatCount } from "@/lib/format";
 import { isInService } from "@/lib/projects";
 import { requireProject } from "@/lib/projectsApi";
-import { REFINING_HREF, refiningProjectHref } from "@/lib/routes";
+import type { RefiningOperation } from "@/lib/refining";
+import { editRefiningHref, REFINING_HREF, refiningProjectHref } from "@/lib/routes";
 import { getOperators } from "@/lib/users";
 import { queueOfProject, refiningQueue, refiningsOfProject, refiningSummary } from "./refining";
 import { getRefiningData } from "./refiningApi";
@@ -31,22 +32,39 @@ export async function refiningLoader() {
 }
 
 export async function refiningProjectLoader({ params, request }: LoaderFunctionArgs) {
-  const grinding = new URL(request.url).searchParams.get("grinding");
+  const search = new URL(request.url).searchParams;
+  const grinding = search.get("grinding");
+  const editId = search.get("edit");
   const [project, data] = await Promise.all([
     requireProject(params.project ?? ""),
     getRefiningData(),
   ]);
   const refinings = data.operations.ok ? data.operations.data : [];
+  const projectRefinings = refiningsOfProject(refinings, project.id);
   const queue = queueOfProject(refiningQueue(data.grindings, refinings), project.id);
   const selected = queue.find((operation) => operation.id === grinding);
-  const workers = selected === undefined ? [] : await getOperators(project.id, "refining");
+  const grindingOf = (refining: RefiningOperation) =>
+    data.grindings.find((operation) => operation.id === refining.grindingOperationId);
+  const editingRefining = projectRefinings.find((refining) => refining.id === editId);
+  const editingGrinding = editingRefining === undefined ? undefined : grindingOf(editingRefining);
+  const workers =
+    selected === undefined && editingGrinding === undefined
+      ? []
+      : await getOperators(project.id, "refining");
 
   return {
     project,
     operations: data.operations,
     queue,
-    refinings: refiningsOfProject(refinings, project.id),
+    refinings: projectRefinings,
+    editableIds: projectRefinings
+      .filter((refining) => grindingOf(refining) !== undefined)
+      .map((refining) => refining.id),
     selected,
+    editing:
+      editingRefining === undefined || editingGrinding === undefined
+        ? undefined
+        : { refining: editingRefining, grinding: editingGrinding },
     workers,
   };
 }
@@ -110,13 +128,16 @@ export function RefiningScreen() {
 }
 
 export function RefiningProjectScreen() {
-  const { project, operations, queue, refinings, selected, workers } =
+  const { project, operations, queue, refinings, editableIds, selected, editing, workers } =
     useLoaderData<typeof refiningProjectLoader>();
   const t = useTranslations("refining");
   const errors = useTranslations("errors");
   const common = useTranslations("common");
   const { close } = useRouteDrawer(refiningProjectHref(project.id));
-  const refining = useCan()("refining", "add") ? selected : undefined;
+  const can = useCan();
+  const refining = can("refining", "add") ? selected : undefined;
+  const canEdit = can("refining", "edit");
+  const edited = canEdit ? editing : undefined;
   const now = new Date();
   const [queueQuery, setQueueQuery] = useState("");
   const [operationsQuery, setOperationsQuery] = useState("");
@@ -153,7 +174,15 @@ export function RefiningProjectScreen() {
         }
       >
         {operations.ok ? (
-          <RefiningOperationsTable refinings={refinings} query={operationsQuery} />
+          <RefiningOperationsTable
+            refinings={refinings}
+            query={operationsQuery}
+            editHrefOf={(operation) =>
+              canEdit && editableIds.includes(operation.id)
+                ? editRefiningHref(project.id, operation.id)
+                : undefined
+            }
+          />
         ) : (
           <PanelError
             message={errors(`${errorKind(operations.status)}.description`)}
@@ -172,6 +201,27 @@ export function RefiningProjectScreen() {
           <RefiningForm
             key={refining.id}
             operation={refining}
+            projectName={project.name}
+            workers={workers}
+            defaultDate={todayAsInputValue(now)}
+            defaultTime={nowAsTimeValue(now)}
+            onCancel={close}
+            onSaved={close}
+          />
+        )}
+      </Drawer>
+
+      <Drawer
+        open={edited !== undefined}
+        title={t("editTitle")}
+        closeLabel={common("close")}
+        onClose={close}
+      >
+        {edited === undefined ? null : (
+          <RefiningForm
+            key={edited.refining.id}
+            operation={edited.grinding}
+            refining={edited.refining}
             projectName={project.name}
             workers={workers}
             defaultDate={todayAsInputValue(now)}

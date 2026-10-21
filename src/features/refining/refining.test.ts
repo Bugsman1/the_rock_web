@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { toDecimal } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
 import type { RefiningOperation } from "@/lib/refining";
 import {
@@ -9,7 +10,9 @@ import {
   refiningsOfProject,
   refiningSummary,
   refiningToApi,
+  refiningFormValues,
   refiningLoss,
+  refiningUpdateToApi,
 } from "./refining";
 import type { RefiningValues } from "./refining";
 
@@ -137,7 +140,7 @@ describe("createRefiningSchema", () => {
     expect(errorsOf(values)).toEqual({});
   });
 
-  it("requires the worker and the weights", () => {
+  it("requires the worker and the weights, but not yet the gold without material", () => {
     expect(
       errorsOf({
         ...values,
@@ -150,8 +153,8 @@ describe("createRefiningSchema", () => {
       workerId: "required",
       weightBefore: "required",
       goldWithMaterial: "required",
-      goldWithoutMaterial: "required",
     });
+    expect(errorsOf({ ...values, goldWithoutMaterial: Number.NaN })).toEqual({});
   });
 
   it("asks the loss reason only when there is a loss", () => {
@@ -229,5 +232,31 @@ describe("refiningLoss", () => {
 
   it("waits until both weights are entered", () => {
     expect(refiningLoss(120.5, Number.NaN)).toBeUndefined();
+  });
+});
+
+describe("editing a refining", () => {
+  const saved = refining("3");
+
+  it("sends only what can change after the refining was recorded, an empty gold as 0", () => {
+    expect(refiningUpdateToApi({ ...values, goldWithoutMaterial: Number.NaN })).toEqual({
+      worker: Number(values.workerId),
+      weight_after: toDecimal(values.weightAfter),
+      gold_weight: "0.000",
+      gold_weight_with_mercury: toDecimal(values.goldWithMaterial),
+      gold_weight_without_mercury: "0.000",
+      loss_reason: values.lossReason,
+      notes: values.notes,
+    });
+  });
+
+  it("fills the form with the refining, its worker found by name and no gold yet left empty", () => {
+    const form = refiningFormValues({ ...saved, workerName: "Aicha", goldWithoutMaterial: 0 }, [
+      { id: "4", name: "Aicha" },
+    ]);
+
+    expect(form.workerId).toBe("4");
+    expect(form.goldWithoutMaterial).toBeNaN();
+    expect(form.weightAfter).toBe(saved.weightAfter);
   });
 });
