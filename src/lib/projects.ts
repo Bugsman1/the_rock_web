@@ -117,7 +117,7 @@ export function projectErrorsFromApi(errors: BackendFieldErrors): FieldErrors<ke
 
 const GRINDER_CODE = /^P(\d+)-(\d+)$/;
 
-export function grinderCode(project: ProjectId, number: number): string {
+function grinderCode(project: ProjectId, number: number): string {
   return `P${project}-${number}`;
 }
 

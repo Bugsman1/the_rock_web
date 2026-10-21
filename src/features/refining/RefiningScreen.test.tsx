@@ -165,6 +165,8 @@ describe("RefiningScreen", () => {
     const queue = panel(text.queueTitle);
 
     expect(queue.getByText("SH-2")).toBeVisible();
+    expect(queue.getByText(text.machineNumber.replace("{number}", "2"))).toBeVisible();
+    expect(queue.queryByText("P3-2")).toBeNull();
     expect(queue.queryByText("SH-1")).toBeNull();
     expect(queue.queryByText("SH-3")).toBeNull();
     expect(
@@ -207,7 +209,7 @@ describe("RefiningScreen", () => {
       "07/10/2026 09:30",
       "SH-3",
       "Client SH-3",
-      "P3-2",
+      text.machineNumber.replace("{number}", "2"),
       "Aicha",
       "4",
       "120,5",
@@ -269,6 +271,20 @@ describe("RefiningScreen", () => {
     );
 
     expect(panel(text.queueTitle).getByText(messages.common.noMatch)).toBeVisible();
+    expect(panel(text.operationsTitle).getByText("SH-3")).toBeVisible();
+  });
+
+  it("finds a refining by its machine number", async () => {
+    const user = userEvent.setup();
+    openAt("/fr/refining/projects/3");
+
+    await user.type(
+      await screen.findByLabelText(
+        messages.common.searchIn.replace("{list}", text.operationsTitle),
+      ),
+      text.machineNumber.replace("{number}", "2"),
+    );
+
     expect(panel(text.operationsTitle).getByText("SH-3")).toBeVisible();
   });
 

@@ -5,7 +5,7 @@ import type { DataColumn } from "@/components/ui/DataTable";
 import { useCan } from "@/lib/accessContext";
 import { formatCount, formatDateTime, formatQuantity } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
-import { grinderCode } from "@/lib/projects";
+import { parseGrinderCode } from "@/lib/projects";
 import type { RefiningOperation } from "@/lib/refining";
 import { startRefiningHref } from "@/lib/routes";
 import { matchesSearch } from "@/lib/search";
@@ -22,14 +22,12 @@ export function RefiningQueueTable({
   const common = useTranslations("common");
   const locale = useLocale();
   const canStart = useCan()("refining", "add");
+  const machineName = (machine: number) =>
+    t("machineNumber", { number: formatCount(machine, locale) });
   const operations = queue.filter((operation) =>
     matchesSearch(
       {
-        texts: [
-          operation.shipmentNumber,
-          operation.client,
-          grinderCode(operation.project, operation.machine),
-        ],
+        texts: [operation.shipmentNumber, operation.client, machineName(operation.machine)],
         phone: "",
       },
       query,
@@ -53,9 +51,7 @@ export function RefiningQueueTable({
       key: "machine",
       header: t("fields.machine"),
       className: "text-ink font-semibold",
-      cell: (operation) => (
-        <span dir="ltr">{grinderCode(operation.project, operation.machine)}</span>
-      ),
+      cell: (operation) => machineName(operation.machine),
     },
     {
       key: "bags",
@@ -125,13 +121,20 @@ export function RefiningOperationsTable({
   const locale = useLocale();
   const quantity = (value: number) => formatQuantity(value, locale);
   const optionalQuantity = (value: number) => (value > 0 ? quantity(value) : "—");
+  const machineName = (code: string) => {
+    const machine = parseGrinderCode(code);
+
+    return machine === undefined
+      ? code
+      : t("machineNumber", { number: formatCount(machine.number, locale) });
+  };
   const operations = refinings.filter((operation) =>
     matchesSearch(
       {
         texts: [
           operation.shipmentNumber,
           operation.client,
-          operation.grinderCode,
+          machineName(operation.grinderCode),
           operation.workerName,
         ],
         phone: "",
@@ -175,7 +178,7 @@ export function RefiningOperationsTable({
       key: "machine",
       header: t("fields.machine"),
       className: "text-ink font-semibold",
-      cell: (operation) => <span dir="ltr">{operation.grinderCode}</span>,
+      cell: (operation) => machineName(operation.grinderCode),
     },
     {
       key: "worker",
