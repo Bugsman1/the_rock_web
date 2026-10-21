@@ -402,10 +402,10 @@ grinding).
 (`grinding_operation`, also returned in responses). The form first shows the grinding read-only (shipment, client,
 project, machine, operator, bags ground, start, end). A refining always covers exactly the bags of its
 grinding (no bags input; the backend sets `bags_count` itself). Form fields: worker, date, weight
-before and after, gold with material and gold without material (without ≤ with, without ≤ weight
-before), loss reason (one of the fixed reasons, "no loss" not offered, stored as a key such as `arghawa` and shown
-in the reader's language; older free-text reasons are shown as typed) and notes. There is no "extracted gold" input: `gold_weight` is sent equal
-to the gold without material. The backend's `gold_weight_with_mercury` / `_without_mercury` are shown
+before and after, gold with material and gold without material (without strictly less than with, checked
+as soon as either is typed; without ≤ weight before), loss reason (one of the fixed reasons, "no loss" not offered, stored as a key such as `arghawa` and shown
+in the reader's language; older free-text reasons are shown as typed) and notes. There is no "extracted gold": no input and no column in the refinings table;
+`gold_weight` is still sent, equal to the gold without material. The backend's `gold_weight_with_mercury` / `_without_mercury` are shown
 as "with / without material". Every weight is entered and shown in grams. The weight before is filled with the grams of mercury added to the grinding and is read-only (the backend sets `weight_before` from the grinding's `mercury_quantity`); only a grinding recorded before mercury quantities (quantity 0) lets it be typed. A read-only input is shaded (`fieldClasses`). The loss is not typed: it is
 worked out as weight before less weight after (`refiningLoss`), shown read-only; the backend works out and stores the same `loss` itself, and its refusals (not
 enough material) show under that field. When the loss is 0 (`hasLoss`), the loss and its reason

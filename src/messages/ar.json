@@ -682,7 +682,6 @@
       "worker": "المسؤول",
       "weightBefore": "وزن المادة قبل التصفية (غ)",
       "weightAfter": "وزن المادة بعد التصفية (غ)",
-      "gold": "الذهب المستخرج (غ)",
       "goldWithMaterial": "الذهب مع المادة (غ)",
       "goldWithoutMaterial": "الذهب بدون المادة (غ)",
       "loss": "الخسارة (غ)",
@@ -702,7 +701,7 @@
       "weightInvalid": "أدخل وزنًا صحيحًا",
       "weightAfterTooHigh": "لا يمكن أن يتجاوز وزن المادة قبل التصفية",
       "goldTooHeavy": "لا يمكن أن يزن الذهب أكثر من المادة المصفّاة",
-      "withoutMaterialTooHeavy": "لا يمكن أن يزن الذهب بدون المادة أكثر منه مع المادة"
+      "withoutMaterialTooHeavy": "يجب أن يكون الذهب بدون المادة أقل من الذهب مع المادة"
     },
     "lossReasons": {
       "normalShortage": "نقص عادي",

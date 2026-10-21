@@ -17,7 +17,6 @@ export type RefiningOperation = {
   refinedAt: IsoTimestamp;
   weightBefore: number;
   weightAfter: number;
-  gold: number;
   goldWithMaterial: number;
   goldWithoutMaterial: number;
   loss: number;
@@ -41,7 +40,6 @@ export function refiningOperationFromApi(
     refinedAt: operation.refining_date ?? operation.created_at,
     weightBefore: fromDecimal(operation.weight_before ?? "0"),
     weightAfter: fromDecimal(operation.weight_after),
-    gold: fromDecimal(operation.gold_weight),
     goldWithMaterial: fromDecimal(operation.gold_weight_with_mercury ?? "0"),
     goldWithoutMaterial: fromDecimal(operation.gold_weight_without_mercury ?? "0"),
     loss: fromDecimal(operation.loss),

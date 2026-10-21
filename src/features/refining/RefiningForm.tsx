@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
@@ -78,27 +78,35 @@ export function RefiningForm({
     [t, common],
   );
 
-  const { control, register, handleSubmit, formState, setError } = useForm<RefiningValues>({
-    mode: "onTouched",
-    resolver: zodResolver(schema),
-    defaultValues: {
-      workerId: "",
-      date: defaultDate,
-      time: defaultTime,
-      weightBefore: weightBeforeFromMercury ? mercuryGrams : Number.NaN,
-      weightAfter: Number.NaN,
-      goldWithMaterial: Number.NaN,
-      goldWithoutMaterial: Number.NaN,
-      lossReason: "",
-      notes: "",
+  const { control, register, handleSubmit, formState, setError, trigger } = useForm<RefiningValues>(
+    {
+      mode: "onTouched",
+      resolver: zodResolver(schema),
+      defaultValues: {
+        workerId: "",
+        date: defaultDate,
+        time: defaultTime,
+        weightBefore: weightBeforeFromMercury ? mercuryGrams : Number.NaN,
+        weightAfter: Number.NaN,
+        goldWithMaterial: Number.NaN,
+        goldWithoutMaterial: Number.NaN,
+        lossReason: "",
+        notes: "",
+      },
     },
-  });
+  );
 
   const { errors } = formState;
-  const [weightBefore, weightAfter] = useWatch({
+  const [weightBefore, weightAfter, goldWithMaterial, goldWithoutMaterial] = useWatch({
     control,
-    name: ["weightBefore", "weightAfter"],
+    name: ["weightBefore", "weightAfter", "goldWithMaterial", "goldWithoutMaterial"],
   });
+
+  useEffect(() => {
+    if (Number.isFinite(goldWithoutMaterial)) {
+      void trigger("goldWithoutMaterial");
+    }
+  }, [goldWithMaterial, goldWithoutMaterial, trigger]);
   const loss = refiningLoss(weightBefore, weightAfter);
 
   async function onSubmit(values: RefiningValues) {

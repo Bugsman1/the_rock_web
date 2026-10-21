@@ -164,7 +164,6 @@ export function RefiningOperationsTable({
             <th className={tableEndHeadClasses}>{t("fields.bags")}</th>
             <th className={tableEndHeadClasses}>{t("fields.weightBefore")}</th>
             <th className={tableEndHeadClasses}>{t("fields.weightAfter")}</th>
-            <th className={tableEndHeadClasses}>{t("fields.gold")}</th>
             <th className={tableEndHeadClasses}>{t("fields.goldWithMaterial")}</th>
             <th className={tableEndHeadClasses}>{t("fields.goldWithoutMaterial")}</th>
             <th className={tableEndHeadClasses}>{t("fields.loss")}</th>
@@ -193,9 +192,6 @@ export function RefiningOperationsTable({
               <td className={number}>{formatCount(operation.bags, locale)}</td>
               <td className={number}>{quantity(operation.weightBefore)}</td>
               <td className={number}>{quantity(operation.weightAfter)}</td>
-              <td className={`${tableCellClasses} text-brand-700 text-end font-bold`}>
-                {quantity(operation.gold)}
-              </td>
               <td className={number}>{quantity(operation.goldWithMaterial)}</td>
               <td className={number}>{quantity(operation.goldWithoutMaterial)}</td>
               <td className={number}>{quantity(operation.loss)}</td>

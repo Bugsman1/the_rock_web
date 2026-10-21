@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { IntlProvider } from "use-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -60,13 +60,13 @@ function readOnly(label: string) {
   return within(field);
 }
 
-async function fillRequired(before: string, after: string, gold: string) {
+async function fillRequired(before: string, after: string, goldWithout: string) {
   const user = userEvent.setup();
   await user.selectOptions(screen.getByLabelText(fields.worker), "4");
   await user.type(screen.getByLabelText(fields.weightBefore), before);
   await user.type(screen.getByLabelText(fields.weightAfter), after);
-  await user.type(screen.getByLabelText(fields.goldWithMaterial), gold);
-  await user.type(screen.getByLabelText(fields.goldWithoutMaterial), gold);
+  await user.type(screen.getByLabelText(fields.goldWithMaterial), String(Number(goldWithout) + 1));
+  await user.type(screen.getByLabelText(fields.goldWithoutMaterial), goldWithout);
   await user.selectOptions(screen.getByLabelText(fields.lossReason), "arghawa");
   return user;
 }
@@ -233,5 +233,23 @@ describe("RefiningForm", () => {
     await user.click(screen.getByRole("button", { name: text.form.submit }));
 
     expect(await screen.findByText(messages.common.saveFailed)).toBeVisible();
+  });
+
+  it("says at once that the gold without material must be less than with it", async () => {
+    renderForm();
+    const user = userEvent.setup();
+
+    await user.type(screen.getByLabelText(fields.goldWithMaterial), "20");
+    await user.type(screen.getByLabelText(fields.goldWithoutMaterial), "20");
+    expect(await screen.findByText(text.errors.withoutMaterialTooHeavy)).toBeVisible();
+
+    await user.clear(screen.getByLabelText(fields.goldWithMaterial));
+    await user.type(screen.getByLabelText(fields.goldWithMaterial), "25");
+    await waitFor(() => {
+      expect(screen.queryByText(text.errors.withoutMaterialTooHeavy)).not.toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: text.form.submit }));
+    expect(api.createRefiningOperation).not.toHaveBeenCalled();
   });
 });

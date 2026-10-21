@@ -131,15 +131,18 @@ export function createRefiningSchema(messages: {
           message: messages.goldTooHeavy,
         });
       }
-
-      if (values.goldWithoutMaterial > values.goldWithMaterial) {
-        context.addIssue({
-          code: "custom",
-          path: ["goldWithoutMaterial"],
-          message: messages.withoutMaterialTooHeavy,
-        });
-      }
-    });
+    })
+    .refine(
+      (values) =>
+        !Number.isFinite(values.goldWithoutMaterial) ||
+        !Number.isFinite(values.goldWithMaterial) ||
+        values.goldWithoutMaterial < values.goldWithMaterial,
+      {
+        path: ["goldWithoutMaterial"],
+        message: messages.withoutMaterialTooHeavy,
+        when: () => true,
+      },
+    );
 }
 
 export type RefiningValues = z.infer<ReturnType<typeof createRefiningSchema>>;

@@ -66,7 +66,6 @@ function refining(grindingOperationId: string): RefiningOperation {
     refinedAt: "2026-10-13T09:00:00Z",
     weightBefore: 10,
     weightAfter: 9,
-    gold: 2,
     goldWithMaterial: 0,
     goldWithoutMaterial: 0,
     loss: 0,
@@ -169,8 +168,11 @@ describe("createRefiningSchema", () => {
     });
   });
 
-  it("refuses gold without material heavier than with it and negative values", () => {
+  it("refuses gold without material equal to or heavier than with it, and negative values", () => {
     expect(errorsOf({ ...values, goldWithoutMaterial: 25 })).toEqual({
+      goldWithoutMaterial: "without too heavy",
+    });
+    expect(errorsOf({ ...values, goldWithoutMaterial: values.goldWithMaterial })).toEqual({
       goldWithoutMaterial: "without too heavy",
     });
     expect(errorsOf({ ...values, goldWithMaterial: -1 })).toEqual({

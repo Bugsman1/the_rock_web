@@ -40,7 +40,6 @@ describe("refiningOperationFromApi", () => {
       refinedAt: "2026-10-12T09:30:00Z",
       weightBefore: 120.5,
       weightAfter: 118.25,
-      gold: 14.3,
       goldWithMaterial: 20,
       goldWithoutMaterial: 14.3,
       loss: 0.5,

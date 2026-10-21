@@ -682,7 +682,6 @@
       "worker": "Responsable",
       "weightBefore": "Poids avant affinage (g)",
       "weightAfter": "Poids après affinage (g)",
-      "gold": "Or extrait (g)",
       "goldWithMaterial": "Or avec matière (g)",
       "goldWithoutMaterial": "Or sans matière (g)",
       "loss": "Perte (g)",
@@ -702,7 +701,7 @@
       "weightInvalid": "Saisissez un poids valide",
       "weightAfterTooHigh": "Ne peut pas dépasser le poids avant affinage",
       "goldTooHeavy": "L'or ne peut pas peser plus que la matière affinée",
-      "withoutMaterialTooHeavy": "L'or sans matière ne peut pas peser plus que l'or avec matière"
+      "withoutMaterialTooHeavy": "L'or sans matière doit être inférieur à l'or avec matière"
     },
     "lossReasons": {
       "normalShortage": "Manque normal",

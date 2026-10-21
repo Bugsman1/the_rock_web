@@ -44,7 +44,6 @@ describe("getRefiningOperations", () => {
     const operations = await getRefiningOperations();
 
     expect(operations.map((operation) => operation.id)).toEqual(["5", "6"]);
-    expect(operations[0]?.gold).toBe(14.3);
     expect(requests[0]?.searchParams.get("ordering")).toBe("-refining_date");
   });
 });
