@@ -124,6 +124,7 @@ describe("shipments in grinding", () => {
         client: shipment.client,
         bags: shipment.bags,
         remainingBags: shipment.bags - 1.5,
+        arrivedAt: shipment.arrivedAt,
       },
     ]);
   });

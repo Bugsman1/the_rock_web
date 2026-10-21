@@ -1,4 +1,7 @@
+import { useLocale } from "use-intl";
 import { cn } from "@/lib/cn";
+import { combineDateAndTime } from "@/lib/datetime";
+import { formatDate, formatTime } from "@/lib/format";
 
 type ReadOnlyFieldProps = {
   label: string;
@@ -21,5 +24,29 @@ export function ReadOnlyField({ label, value, emphasis = false }: ReadOnlyFieldP
         </span>
       </p>
     </div>
+  );
+}
+
+type ReadOnlyDateAndTimeProps = {
+  dateLabel: string;
+  timeLabel: string;
+  date: string;
+  time: string;
+};
+
+export function ReadOnlyDateAndTime({
+  dateLabel,
+  timeLabel,
+  date,
+  time,
+}: ReadOnlyDateAndTimeProps) {
+  const locale = useLocale();
+  const at = combineDateAndTime(date, time);
+
+  return (
+    <>
+      <ReadOnlyField label={dateLabel} value={at === undefined ? "—" : formatDate(at, locale)} />
+      <ReadOnlyField label={timeLabel} value={at === undefined ? "—" : formatTime(at, locale)} />
+    </>
   );
 }

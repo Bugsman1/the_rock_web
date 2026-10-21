@@ -1,14 +1,13 @@
 import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
 import { useToast } from "@/components/ui/Toast";
-import { DateField } from "@/components/ui/DateField";
 import { DrawerActions } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
-import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
+import { FieldError, FormError } from "@/components/ui/FieldError";
+import { ReadOnlyDateAndTime, ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
-import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
+import { TextArea, TextField } from "@/components/ui/TextField";
 import { cn } from "@/lib/cn";
 import { combineDateAndTime } from "@/lib/datetime";
 import { formatCount } from "@/lib/format";
@@ -95,10 +94,13 @@ export function OperationForm({
           machineUnavailable: t("errors.machineUnavailable"),
           dateInvalid: common("validation.dateInvalid"),
           timeInvalid: common("validation.timeInvalid"),
+          startBeforeArrival: t("errors.startBeforeArrival"),
         },
         {
           remainingBagsOf: (number) =>
             shipments.find((shipment) => shipment.shipmentNumber === number)?.remainingBags,
+          arrivedAtOf: (number) =>
+            shipments.find((shipment) => shipment.shipmentNumber === number)?.arrivedAt,
           isMachineIdle: (machine) => idleMachines.some((item) => item.number === machine),
         },
       ),
@@ -241,36 +243,17 @@ export function OperationForm({
           )}
         </div>
 
-        <Controller
-          control={control}
-          name="startDate"
-          render={({ field }) => (
-            <DateField
-              id="operation-start-date"
-              label={t("startDate")}
-              required
-              pickerLabel={common("openCalendar")}
-              placeholder={common("datePlaceholder")}
-              error={errors.startDate?.message}
-              {...field}
-            />
-          )}
+        <ReadOnlyDateAndTime
+          dateLabel={t("startDate")}
+          timeLabel={t("startTime")}
+          date={startDate}
+          time={startTime}
         />
-
-        <Controller
-          control={control}
-          name="startTime"
-          render={({ field }) => (
-            <TimeField
-              id="operation-start-time"
-              label={t("startTime")}
-              required
-              placeholder={common("timePlaceholder")}
-              error={errors.startTime?.message}
-              {...field}
-            />
-          )}
-        />
+        {errors.startTime === undefined ? null : (
+          <div className="sm:col-span-2">
+            <FieldError id="operation-start-error" message={errors.startTime.message} />
+          </div>
+        )}
 
         <div className="sm:col-span-2">
           <Select

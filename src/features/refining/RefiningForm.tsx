@@ -1,14 +1,13 @@
 import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
 import { useToast } from "@/components/ui/Toast";
-import { DateField } from "@/components/ui/DateField";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { FieldError, FormError } from "@/components/ui/FieldError";
-import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
+import { ReadOnlyDateAndTime, ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
-import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
+import { TextArea, TextField } from "@/components/ui/TextField";
 import { combineDateAndTime } from "@/lib/datetime";
 import { formatCount, formatDateTime, formatQuantity } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
@@ -184,36 +183,17 @@ export function RefiningForm({
           {...register("workerId")}
         />
 
-        <Controller
-          control={control}
-          name="date"
-          render={({ field }) => (
-            <DateField
-              id="refining-date"
-              label={t("fields.date")}
-              required
-              pickerLabel={common("openCalendar")}
-              placeholder={common("datePlaceholder")}
-              error={errors.date?.message}
-              {...field}
-            />
-          )}
+        <ReadOnlyDateAndTime
+          dateLabel={t("fields.date")}
+          timeLabel={t("fields.time")}
+          date={defaultDate}
+          time={defaultTime}
         />
-
-        <Controller
-          control={control}
-          name="time"
-          render={({ field }) => (
-            <TimeField
-              id="refining-time"
-              label={t("fields.time")}
-              required
-              placeholder={common("timePlaceholder")}
-              error={errors.time?.message}
-              {...field}
-            />
-          )}
-        />
+        {errors.date === undefined ? null : (
+          <div className="sm:col-span-2">
+            <FieldError id="refining-date-error" message={errors.date.message} />
+          </div>
+        )}
 
         {weightField("weightBefore", t("fields.weightBefore"), weightBeforeFromMercury)}
         {weightField("weightAfter", t("fields.weightAfter"))}

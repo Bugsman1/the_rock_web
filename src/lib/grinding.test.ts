@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  createNewOperationSchema,
   activeOperationOf,
   estimatedEnd,
   idleMachines,
@@ -170,5 +171,42 @@ describe("operationFromApi", () => {
 
   it("skips an operation whose grinder code it cannot read", () => {
     expect(operationFromApi({ ...apiOperation, grinder_code: "G-7" })).toEqual([]);
+  });
+});
+
+describe("createNewOperationSchema", () => {
+  const messages = {
+    required: "required",
+    bagsInvalid: "bags",
+    bagsOverCapacity: "capacity",
+    bagsTooMany: "too many",
+    machineUnavailable: "machine",
+    dateInvalid: "date",
+    timeInvalid: "time",
+    startBeforeArrival: "before arrival",
+  };
+  const schema = createNewOperationSchema(messages, {
+    remainingBagsOf: () => 10,
+    arrivedAtOf: () => "2026-10-08T08:00:00Z",
+    isMachineIdle: () => true,
+  });
+  const values = {
+    shipmentNumber: "SH-1",
+    machine: "7",
+    bags: 2,
+    startDate: "2026-10-08",
+    startTime: "08:00",
+    operatorId: "4",
+    notes: "",
+  };
+
+  it("lets a grinding start once its shipment has arrived", () => {
+    expect(schema.safeParse(values).success).toBe(true);
+  });
+
+  it("refuses a grinding that starts before its shipment arrived", () => {
+    expect(schema.safeParse({ ...values, startTime: "07:59" }).error?.issues).toEqual([
+      expect.objectContaining({ path: ["startTime"], message: "before arrival" }),
+    ]);
   });
 });

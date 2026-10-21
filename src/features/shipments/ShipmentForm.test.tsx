@@ -1,6 +1,7 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { formatDate, formatTime } from "@/lib/format";
 import messages from "@/messages/ar.json";
 import { form, renderForm, typeNoTransportCost } from "./shipmentFormTesting";
 
@@ -131,44 +132,17 @@ describe("ShipmentForm", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it("starts with the arrival time given by the page and checks a typed one", async () => {
-    const user = userEvent.setup();
+  it("records the arrival at the time the page gives, with no way to change it", () => {
     renderForm();
 
-    const time = screen.getByLabelText(form.arrivalTime);
-    expect(time).toHaveValue("08:30");
-
-    await user.clear(time);
-    await user.type(time, "25");
-    await user.tab();
-
-    expect(await screen.findByText(messages.common.validation.timeInvalid)).toBeVisible();
-  });
-
-  it("shows the arrival date day first and reads a typed one back", async () => {
-    const user = userEvent.setup();
-    renderForm();
-
-    const arrivalDate = screen.getByLabelText(form.arrivalDate);
-
-    expect(arrivalDate).toHaveValue("07/10/2026");
-
-    await user.clear(arrivalDate);
-    await user.type(arrivalDate, "30092026");
-
-    expect(arrivalDate).toHaveValue("30/09/2026");
-  });
-
-  it("rejects an impossible arrival date", async () => {
-    const user = userEvent.setup();
-    renderForm();
-
-    const arrivalDate = screen.getByLabelText(form.arrivalDate);
-    await user.clear(arrivalDate);
-    await user.type(arrivalDate, "31022026");
-    await user.tab();
-
-    expect(await screen.findByText(messages.common.validation.dateInvalid)).toBeVisible();
+    expect(screen.queryByLabelText(form.arrivalDate)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(form.arrivalTime)).not.toBeInTheDocument();
+    expect(screen.getByText(form.arrivalDate).nextSibling).toHaveTextContent(
+      formatDate("2026-10-07T08:30:00.000Z", "ar"),
+    );
+    expect(screen.getByText(form.arrivalTime).nextSibling).toHaveTextContent(
+      formatTime("2026-10-07T08:30:00.000Z", "ar"),
+    );
   });
 
   it("offers the three transport methods", () => {

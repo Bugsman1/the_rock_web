@@ -28,6 +28,7 @@ const shipments: OperationShipment[] = [
     client: "Mariem",
     bags: 14,
     remainingBags: 10,
+    arrivedAt: "2026-10-07T08:00:00.000Z",
   },
   {
     id: "53",
@@ -35,6 +36,7 @@ const shipments: OperationShipment[] = [
     client: "Abderrahmane",
     bags: 6,
     remainingBags: 1,
+    arrivedAt: "2026-10-07T08:00:00.000Z",
   },
 ];
 
@@ -255,5 +257,42 @@ describe("OperationForm", () => {
     });
     expect(api.startOperation).not.toHaveBeenCalled();
     expect(onSaved).toHaveBeenCalled();
+  });
+
+  it("shows the start it records and refuses one before the shipment arrived", async () => {
+    const user = userEvent.setup();
+    inFrench(
+      <OperationForm
+        projectName="Zouerate 1"
+        shipments={[
+          {
+            id: "52",
+            shipmentNumber: "SH-1052",
+            client: "Mariem",
+            bags: 14,
+            remainingBags: 10,
+            arrivedAt: "2026-10-09T08:00:00.000Z",
+          },
+        ]}
+        idleMachines={idleMachines}
+        operators={[{ id: "emp-1", name: "Ahmed" }]}
+        defaultShipmentNumber="SH-1052"
+        defaultMachine={7}
+        defaultDate="2026-10-08"
+        defaultTime="08:00"
+        onSaved={onSaved}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByLabelText(form.startTime)).not.toBeInTheDocument();
+    expect(screen.getByText(form.startTime).nextSibling).toHaveTextContent("08:00");
+
+    await user.type(screen.getByLabelText(form.bags), "2");
+    await user.selectOptions(screen.getByLabelText(form.operator), "emp-1");
+    await user.click(screen.getByRole("button", { name: form.submit }));
+
+    expect(await screen.findByText(form.errors.startBeforeArrival)).toBeVisible();
+    expect(api.startOperation).not.toHaveBeenCalled();
   });
 });

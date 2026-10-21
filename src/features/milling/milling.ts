@@ -110,6 +110,7 @@ export function operationShipments(
     client: shipment.client,
     bags: shipment.bags,
     remainingBags: remainingBags(shipment, operations),
+    arrivedAt: shipment.arrivedAt,
   }));
 }
 

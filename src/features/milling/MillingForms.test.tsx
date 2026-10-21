@@ -19,7 +19,7 @@ beforeEach(() => {
   api.endOperation.mockResolvedValue({ ok: true });
 });
 
-async function openEndMilling(access: Access = allRights) {
+async function openEndMilling(access: Access = allRights, defaultTime = "12:30") {
   const router = createMemoryRouter(
     [
       {
@@ -31,7 +31,7 @@ async function openEndMilling(access: Access = allRights) {
             closeLabel={messages.common.close}
             operation={running}
             defaultDate="2026-10-08"
-            defaultTime="12:30"
+            defaultTime={defaultTime}
           />
         ),
       },
@@ -48,12 +48,16 @@ async function openEndMilling(access: Access = allRights) {
 }
 
 describe("ending a milling operation", () => {
-  it("rejects an end before the start", async () => {
-    const { user } = await openEndMilling();
+  it("shows the end time it records, with no way to change it", async () => {
+    await openEndMilling();
 
-    const time = screen.getByLabelText(end.endTime);
-    await user.clear(time);
-    await user.type(time, "0500");
+    expect(screen.queryByLabelText(end.endTime)).not.toBeInTheDocument();
+    expect(screen.getByText(end.endTime).nextSibling).toHaveTextContent("12:30");
+  });
+
+  it("refuses an end before the start, such as a wrong clock", async () => {
+    const { user } = await openEndMilling(allRights, "05:00");
+
     await user.click(screen.getByRole("button", { name: end.submit }));
 
     expect(await screen.findByText(end.errors.endBeforeStart)).toBeVisible();

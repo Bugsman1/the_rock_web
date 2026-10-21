@@ -1,11 +1,10 @@
-import { Controller, useWatch } from "react-hook-form";
+import { useWatch } from "react-hook-form";
 import type { UseFormReturn } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
 import { FormSection } from "@/components/ui/Cards";
-import { DateField } from "@/components/ui/DateField";
-import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
+import { ReadOnlyDateAndTime, ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
-import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
+import { TextArea, TextField } from "@/components/ui/TextField";
 import { BAG_STEP } from "@/lib/grinding";
 import { formatMoney } from "@/lib/format";
 import type { Project } from "@/lib/projects";
@@ -22,42 +21,17 @@ type ShipmentForm = UseFormReturn<NewShipmentValues>;
 
 export function ShipmentArrivalFields({ form }: { form: ShipmentForm }) {
   const t = useTranslations("shipments.form");
-  const common = useTranslations("common");
   const transports = useTranslations("shipments.transportMethods");
-  const { control, register, formState } = form;
+  const { register, formState, getValues } = form;
   const { errors } = formState;
 
   return (
     <FormSection title={t("sections.shipment")}>
-      <Controller
-        control={control}
-        name="arrivalDate"
-        render={({ field }) => (
-          <DateField
-            id="arrivalDate"
-            label={t("arrivalDate")}
-            required
-            pickerLabel={common("openCalendar")}
-            placeholder={common("datePlaceholder")}
-            error={errors.arrivalDate?.message}
-            {...field}
-          />
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="arrivalTime"
-        render={({ field }) => (
-          <TimeField
-            id="arrivalTime"
-            label={t("arrivalTime")}
-            required
-            placeholder={common("timePlaceholder")}
-            error={errors.arrivalTime?.message}
-            {...field}
-          />
-        )}
+      <ReadOnlyDateAndTime
+        dateLabel={t("arrivalDate")}
+        timeLabel={t("arrivalTime")}
+        date={getValues("arrivalDate")}
+        time={getValues("arrivalTime")}
       />
 
       <TextField

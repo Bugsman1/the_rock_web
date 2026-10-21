@@ -219,6 +219,7 @@ function StartGrindingDrawer({
             client: shipment.customerName,
             bags: shipment.bagCount,
             remainingBags: shipment.remainingBags,
+            arrivedAt: shipment.arrivedAt,
           }))}
           idleMachines={grinding.idle}
           operators={grinding.operators}

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { ApiSchema } from "./api/client";
-import { addHours, isIsoDate, isTimeValue } from "./datetime";
+import { addHours, combineDateAndTime, isIsoDate, isTimeValue } from "./datetime";
 import { fromDecimal } from "./format";
 import type { IsoTimestamp } from "./format";
 import { isInService, parseGrinderCode } from "./projects";
@@ -44,6 +44,7 @@ export type OperationShipment = {
   client: string;
   bags: number;
   remainingBags: number;
+  arrivedAt: IsoTimestamp;
 };
 
 export const CAPACITY_BAGS = 2;
@@ -175,6 +176,7 @@ export function operationFromApi(
 
 type NewOperationRules = {
   remainingBagsOf: (shipmentNumber: string) => number | undefined;
+  arrivedAtOf: (shipmentNumber: string) => IsoTimestamp | undefined;
   isMachineIdle: (machine: number) => boolean;
 };
 
@@ -187,6 +189,7 @@ export function createNewOperationSchema(
     machineUnavailable: string;
     dateInvalid: string;
     timeInvalid: string;
+    startBeforeArrival: string;
   },
   rules: NewOperationRules,
 ) {
@@ -217,6 +220,21 @@ export function createNewOperationSchema(
 
       if (remaining !== undefined && values.bags > remaining) {
         context.addIssue({ code: "custom", path: ["bags"], message: messages.bagsTooMany });
+      }
+
+      const arrivedAt = rules.arrivedAtOf(values.shipmentNumber);
+      const startedAt = combineDateAndTime(values.startDate, values.startTime);
+
+      if (
+        arrivedAt !== undefined &&
+        startedAt !== undefined &&
+        Date.parse(startedAt) < Date.parse(arrivedAt)
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["startTime"],
+          message: messages.startBeforeArrival,
+        });
       }
     });
 }

@@ -447,6 +447,13 @@ total and the final amount due; "edit the amounts" (shipments edit right) change
 (`PATCH`, the customer and shipments stay); "delete" (shipments delete right) frees its shipments
 for another settlement.
 
+**Dates follow the events:** the new shipment's arrival, a grinding's start (start and edit
+forms), its end and a refining's date are never typed: each form shows the date and time it was
+opened read-only (`ReadOnlyDateAndTime`) and saves exactly that; an edit shows the recorded
+arrival or start read-only. A grinding cannot start before its shipment arrived
+(`startBeforeArrival`, from `OperationShipment.arrivedAt`) nor end before it started
+(`endBeforeStart`); both show under the read-only time (a wrong clock). Payment dates stay typed.
+
 **Number inputs:** every number field starts empty (no `0` or other pre-filled value); the user types it, `0` included. They have no up / down arrows (`app.css` hides the browser's spin buttons). The new-machine form only hints the next free number.
 
 **Inventory resources (`/api/v1/resources/`, `/resource-history/`):** per-project materials

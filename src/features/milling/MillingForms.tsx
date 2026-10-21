@@ -1,16 +1,16 @@
 import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { useRevalidator } from "react-router";
 import { useTranslations } from "use-intl";
 import { useToast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
-import { DateField } from "@/components/ui/DateField";
 import { OperationForm } from "@/components/grinding/OperationForm";
 import { Drawer, DrawerActions, useRouteDrawer } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
+import { FieldError, FormError } from "@/components/ui/FieldError";
 import { Icon } from "@/components/ui/Icon";
-import { TextArea, TimeField } from "@/components/ui/TextField";
+import { ReadOnlyDateAndTime } from "@/components/ui/ReadOnlyField";
+import { TextArea } from "@/components/ui/TextField";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { combineDateAndTime, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
@@ -67,7 +67,7 @@ function EndMillingForm({
     [t, common, startedAt],
   );
 
-  const { control, register, handleSubmit, formState, setError } = useForm<EndMillingValues>({
+  const { register, handleSubmit, formState, setError } = useForm<EndMillingValues>({
     mode: "onTouched",
     resolver: zodResolver(schema),
     defaultValues: {
@@ -109,36 +109,17 @@ function EndMillingForm({
   return (
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Controller
-          control={control}
-          name="endDate"
-          render={({ field }) => (
-            <DateField
-              id="end-date"
-              label={t("endDate")}
-              required
-              pickerLabel={common("openCalendar")}
-              placeholder={common("datePlaceholder")}
-              error={errors.endDate?.message}
-              {...field}
-            />
-          )}
+        <ReadOnlyDateAndTime
+          dateLabel={t("endDate")}
+          timeLabel={t("endTime")}
+          date={defaultDate}
+          time={defaultTime}
         />
-
-        <Controller
-          control={control}
-          name="endTime"
-          render={({ field }) => (
-            <TimeField
-              id="end-time"
-              label={t("endTime")}
-              required
-              placeholder={common("timePlaceholder")}
-              error={errors.endTime?.message}
-              {...field}
-            />
-          )}
-        />
+        {errors.endTime === undefined ? null : (
+          <div className="sm:col-span-2">
+            <FieldError id="end-time-error" message={errors.endTime.message} />
+          </div>
+        )}
 
         <div className="sm:col-span-2">
           <TextArea id="end-notes" label={t("notes")} rows={2} {...register("notes")} />
