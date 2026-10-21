@@ -184,6 +184,10 @@ describe("ShipmentScreen", () => {
     expect(header).toHaveTextContent(messages.shipments.debtForm.notes);
     expect(row).toHaveTextContent(formatMoney(350, "fr"));
     expect(row).toHaveTextContent("Avance sur le prochain voyage");
+    expect(debt.getByRole("columnheader", { name: messages.shipments.debtForm.notes })).toHaveClass(
+      "text-center",
+    );
+    expect(debt.getByText("Avance sur le prochain voyage")).toHaveClass("text-center");
     expect(debt.getByRole("button", { name: detail.addDebt })).toBeVisible();
   });
 

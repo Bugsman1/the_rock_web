@@ -340,7 +340,8 @@ shows under the payment status in the project's list, the history and a client's
 the shipment page header next to its reason. Shipment status, payment status and debt pills share
 one shape and size (icon + word, 28px high): stage pending grey / grinding orange / refining solid blue (white text) /
 completed green; payment complete green with a check, not complete orange with a clock. On the
-shipment page the title and the three labelled statuses sit on one line (wrapping on a phone). Below the payments, a debt section shows the debt in a plain table (amount, reason; or "no debt"),
+shipment page the title and the three labelled statuses sit on one line (wrapping on a phone). Below the payments, a debt section shows the debt in a plain table (amount, reason centred under its heading and
+wrapping when long; or "no debt"),
 with "increase debt" for a
 shipment with debt and "add debt" for one without (shipments edit right): current debt and debt
 after (only when there is debt), the amount to add, the reason. The shipment edit form shows the

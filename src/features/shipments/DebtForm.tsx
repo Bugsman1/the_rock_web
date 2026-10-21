@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/TablePanel";
 import { TextArea, TextField } from "@/components/ui/TextField";
 import { useCan } from "@/lib/accessContext";
+import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/format";
 import { createDebtSchema, debtAfter } from "./shipmentPayments";
 import type { ShipmentDetail } from "./shipments";
@@ -148,7 +149,7 @@ export function DebtPanel({
             <thead className="bg-surface-page">
               <tr className="border-line border-b">
                 <th className={tableEndHeadClasses}>{t("columns.amount")}</th>
-                <th className={tableHeadClasses}>{debtForm("notes")}</th>
+                <th className={cn(tableHeadClasses, "text-center")}>{debtForm("notes")}</th>
               </tr>
             </thead>
             <tbody>
@@ -156,8 +157,10 @@ export function DebtPanel({
                 <td className={`${tableCellClasses} text-ink w-40 text-end font-bold`}>
                   {formatMoney(shipment.debt, locale)}
                 </td>
-                <td className={`${tableCellClasses} text-ink-muted font-semibold`}>
-                  <p dir="auto" className="break-words">
+                <td
+                  className={cn(tableCellClasses, "text-ink-muted font-semibold whitespace-normal")}
+                >
+                  <p dir="auto" className="text-center break-words">
                     {shipment.debtNotes === "" ? "—" : shipment.debtNotes}
                   </p>
                 </td>
