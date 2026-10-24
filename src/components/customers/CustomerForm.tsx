@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "use-intl";
 import { Controller, useForm } from "react-hook-form";
 import { useToast } from "@/components/ui/Toast";
 import { DrawerActions } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
+import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { TextField } from "@/components/ui/TextField";
 import { createCustomerSchema } from "@/lib/customers";
@@ -26,7 +26,7 @@ export function CustomerForm({ customer, initialName = "", onSaved, onCancel }: 
   const toasts = useTranslations("toasts");
   const toast = useToast();
   const locale = useLocale();
-  const [failed, setFailed] = useState(false);
+  const saveFailure = useSaveFailure();
 
   const schema = useMemo(
     () =>
@@ -46,7 +46,11 @@ export function CustomerForm({ customer, initialName = "", onSaved, onCancel }: 
   const { errors } = formState;
 
   async function onSubmit(values: CustomerValues) {
-    setFailed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
 
     const phoneTaken = t("form.errors.phoneTaken");
     const result =
@@ -68,7 +72,7 @@ export function CustomerForm({ customer, initialName = "", onSaved, onCancel }: 
       setError("phone", { message: result.fieldErrors.phone });
     }
 
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   return (
@@ -106,10 +110,11 @@ export function CustomerForm({ customer, initialName = "", onSaved, onCancel }: 
         <ReadOnlyField label={t("fields.addedAt")} value={formatDate(customer.addedAt, locale)} />
       )}
 
-      {failed ? <FormError message={common("saveFailed")} /> : null}
+      <SaveFailureMessage failure={saveFailure.failure} />
 
       <DrawerActions
         dirty={formState.isDirty}
+        locked={saveFailure.unknown}
         submitting={formState.isSubmitting}
         submitIcon={customer === undefined ? "plus" : "circle-check"}
         submitLabel={customer === undefined ? t("form.create") : t("form.submit")}

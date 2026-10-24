@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { useLoaderData } from "react-router";
+import { redirect, useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { CardGrid, KpiTile, LinkCard, StatGrid } from "@/components/ui/Cards";
 import { PageLayout, PageTitle } from "@/components/ui/PageHeader";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
-import { PanelError, TablePanel } from "@/components/ui/TablePanel";
+import { TablePanel } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
-import { errorKind } from "@/lib/api/client";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
+import { defaultLocale, isLocale } from "@/i18n/locales";
+import { localizedHref } from "@/i18n/navigation";
 import { formatCount } from "@/lib/format";
 import { isInService } from "@/lib/projects";
 import { requireProject } from "@/lib/projectsApi";
@@ -20,14 +21,20 @@ import { getRefiningData } from "./refiningApi";
 import { RefiningForm } from "./RefiningForm";
 import { RefiningQueueTable, RefiningOperationsTable } from "./RefiningTables";
 
-export async function refiningLoader() {
+export async function refiningLoader({ params }: LoaderFunctionArgs) {
   const data = await getRefiningData();
-  const refinings = data.operations.ok ? data.operations.data : [];
+  const inService = data.projects.filter(isInService);
+  const [onlyProject] = inService;
+
+  if (inService.length === 1 && onlyProject !== undefined) {
+    const locale = isLocale(params.locale) ? params.locale : defaultLocale;
+    throw redirect(localizedHref(locale, refiningProjectHref(onlyProject.id)));
+  }
 
   return {
-    projects: data.projects.filter(isInService),
-    queue: refiningQueue(data.grindings, refinings),
-    refinings,
+    projects: inService,
+    queue: refiningQueue(data.grindings, data.refinings),
+    refinings: data.refinings,
   };
 }
 
@@ -39,9 +46,8 @@ export async function refiningProjectLoader({ params, request }: LoaderFunctionA
     requireProject(params.project ?? ""),
     getRefiningData(),
   ]);
-  const refinings = data.operations.ok ? data.operations.data : [];
-  const projectRefinings = refiningsOfProject(refinings, project.id);
-  const queue = queueOfProject(refiningQueue(data.grindings, refinings), project.id);
+  const projectRefinings = refiningsOfProject(data.refinings, project.id);
+  const queue = queueOfProject(refiningQueue(data.grindings, data.refinings), project.id);
   const selected = queue.find((operation) => operation.id === grinding);
   const grindingOf = (refining: RefiningOperation) =>
     data.grindings.find((operation) => operation.id === refining.grindingOperationId);
@@ -54,7 +60,7 @@ export async function refiningProjectLoader({ params, request }: LoaderFunctionA
 
   return {
     project,
-    operations: data.operations,
+    hasOtherProjects: data.projects.filter(isInService).length > 1,
     queue,
     refinings: projectRefinings,
     editableIds: projectRefinings
@@ -135,10 +141,9 @@ export function RefiningScreen() {
 }
 
 export function RefiningProjectScreen() {
-  const { project, operations, queue, refinings, editableIds, selected, editing, workers } =
+  const { project, hasOtherProjects, queue, refinings, editableIds, selected, editing, workers } =
     useLoaderData<typeof refiningProjectLoader>();
   const t = useTranslations("refining");
-  const errors = useTranslations("errors");
   const common = useTranslations("common");
   const { close } = useRouteDrawer(refiningProjectHref(project.id));
   const can = useCan();
@@ -151,7 +156,7 @@ export function RefiningProjectScreen() {
 
   return (
     <PageLayout
-      backHref={REFINING_HREF}
+      {...(hasOtherProjects ? { backHref: REFINING_HREF } : {})}
       backLabel={common("back")}
       title={common("projectTitle", { name: project.name })}
     >
@@ -169,33 +174,22 @@ export function RefiningProjectScreen() {
 
       <TablePanel
         title={t("operationsTitle")}
-        search={
-          operations.ok
-            ? {
-                label: common("searchIn", { list: t("operationsTitle") }),
-                placeholder: common("searchList"),
-                value: operationsQuery,
-                onChange: setOperationsQuery,
-              }
-            : undefined
-        }
+        search={{
+          label: common("searchIn", { list: t("operationsTitle") }),
+          placeholder: common("searchList"),
+          value: operationsQuery,
+          onChange: setOperationsQuery,
+        }}
       >
-        {operations.ok ? (
-          <RefiningOperationsTable
-            refinings={refinings}
-            query={operationsQuery}
-            editHrefOf={(operation) =>
-              canEdit && editableIds.includes(operation.id)
-                ? editRefiningHref(project.id, operation.id)
-                : undefined
-            }
-          />
-        ) : (
-          <PanelError
-            message={errors(`${errorKind(operations.status)}.description`)}
-            code={errors("status", { status: String(operations.status) })}
-          />
-        )}
+        <RefiningOperationsTable
+          refinings={refinings}
+          query={operationsQuery}
+          editHrefOf={(operation) =>
+            canEdit && editableIds.includes(operation.id)
+              ? editRefiningHref(project.id, operation.id)
+              : undefined
+          }
+        />
       </TablePanel>
 
       <Drawer

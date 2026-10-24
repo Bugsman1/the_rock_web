@@ -74,7 +74,7 @@ export function MillingProjectScreen() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <BackLink href={MILLING_HREF} label={common("back")} />
+        {data.projects.length > 1 ? <BackLink href={MILLING_HREF} label={common("back")} /> : null}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <PageTitle>{common("projectTitle", { name: project.name })}</PageTitle>
           {canStart ? (

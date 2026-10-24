@@ -35,7 +35,7 @@ describe("Drawer", () => {
 
 const discard = messages.common.discard;
 
-function showActions(dirty: boolean, onCancel = vi.fn()) {
+function showActions(dirty: boolean, onCancel = vi.fn(), locked = false) {
   render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
       <DrawerActions
@@ -46,6 +46,7 @@ function showActions(dirty: boolean, onCancel = vi.fn()) {
         cancelLabel="Annuler"
         onCancel={onCancel}
         dirty={dirty}
+        locked={locked}
       />
     </IntlProvider>,
   );
@@ -84,5 +85,16 @@ describe("DrawerActions", () => {
     await user.click(screen.getByRole("button", { name: discard.confirm }));
 
     expect(onCancel).toHaveBeenCalled();
+  });
+
+  it("offers only to close a form whose last save has an unknown outcome", async () => {
+    const { onCancel, user } = showActions(true, vi.fn(), true);
+
+    expect(screen.queryByRole("button", { name: "Enregistrer" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Annuler" }));
+
+    expect(onCancel).toHaveBeenCalled();
+    expect(screen.queryByText(discard.question)).not.toBeInTheDocument();
   });
 });

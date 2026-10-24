@@ -1,5 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MillingOperation } from "@/lib/grinding";
@@ -36,17 +37,26 @@ const grinding: MillingOperation = {
 
 function renderForm(operation: MillingOperation = grinding) {
   return render(
-    <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <RefiningForm
-        operation={operation}
-        projectName="Zouérat 1"
-        workers={[{ id: "4", name: "Aicha" }]}
-        defaultDate="2026-10-12"
-        defaultTime="09:30"
-        onSaved={onSaved}
-        onCancel={vi.fn()}
-      />
-    </IntlProvider>,
+    <RouterProvider
+      router={createMemoryRouter([
+        {
+          path: "*",
+          element: (
+            <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
+              <RefiningForm
+                operation={operation}
+                projectName="Zouérat 1"
+                workers={[{ id: "4", name: "Aicha" }]}
+                defaultDate="2026-10-12"
+                defaultTime="09:30"
+                onSaved={onSaved}
+                onCancel={vi.fn()}
+              />
+            </IntlProvider>
+          ),
+        },
+      ])}
+    />,
   );
 }
 

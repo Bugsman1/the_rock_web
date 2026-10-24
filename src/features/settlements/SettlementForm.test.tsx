@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import messages from "@/messages/fr.json";
@@ -24,24 +25,33 @@ const empty: NewSettlementValues = {
 
 function renderForm(defaultValues: NewSettlementValues = empty) {
   render(
-    <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <SettlementForm
-        defaultValues={defaultValues}
-        shipments={[
-          shipmentRecord({ id: "1", shipmentNumber: "SHP-00001" }),
-          shipmentRecord({
-            id: "2",
-            shipmentNumber: "SHP-00002",
-            status: "grinding",
-            stage: "grinding",
-          }),
-        ]}
-        submitLabel={text.form.submit}
-        savedMessage={messages.toasts.settlementAdded}
-        onSave={onSave}
-        onCancel={vi.fn()}
-      />
-    </IntlProvider>,
+    <RouterProvider
+      router={createMemoryRouter([
+        {
+          path: "*",
+          element: (
+            <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
+              <SettlementForm
+                defaultValues={defaultValues}
+                shipments={[
+                  shipmentRecord({ id: "1", shipmentNumber: "SHP-00001" }),
+                  shipmentRecord({
+                    id: "2",
+                    shipmentNumber: "SHP-00002",
+                    status: "grinding",
+                    stage: "grinding",
+                  }),
+                ]}
+                submitLabel={text.form.submit}
+                savedMessage={messages.toasts.settlementAdded}
+                onSave={onSave}
+                onCancel={vi.fn()}
+              />
+            </IntlProvider>
+          ),
+        },
+      ])}
+    />,
   );
 
   return userEvent.setup();

@@ -1,12 +1,27 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import { useNavigation, useRevalidator } from "react-router";
 import { useTranslations } from "use-intl";
 import { ConnectionBanner } from "@/components/ui/ConnectionBanner";
 import { ToastProvider } from "@/components/ui/Toast";
 import type { Access } from "@/lib/access";
+import { isConnectionLost, subscribeToConnection } from "@/lib/api/connection";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
+
+function useRevalidateOnReconnect() {
+  const lost = useSyncExternalStore(subscribeToConnection, isConnectionLost);
+  const wasLost = useRef(lost);
+  const { revalidate } = useRevalidator();
+
+  useEffect(() => {
+    if (wasLost.current && !lost) {
+      void revalidate();
+    }
+
+    wasLost.current = lost;
+  }, [lost, revalidate]);
+}
 
 type AppShellProps = {
   access: Access;
@@ -22,6 +37,7 @@ export function AppShell({ access, userName, roleName, children }: AppShellProps
   const mainRef = useRef<HTMLElement>(null);
   const navigation = useNavigation();
   const revalidator = useRevalidator();
+  useRevalidateOnReconnect();
   const loading = navigation.state !== "idle" || revalidator.state !== "idle";
 
   return (

@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { DrawerActions } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
+import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { Icon } from "@/components/ui/Icon";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { DataTable } from "@/components/ui/DataTable";
@@ -32,7 +32,7 @@ export function DebtForm({
   const toasts = useTranslations("toasts");
   const toast = useToast();
   const locale = useLocale();
-  const [failed, setFailed] = useState(false);
+  const saveFailure = useSaveFailure();
   const schema = useMemo(() => createDebtSchema({ amountInvalid: t("amountInvalid") }), [t]);
   const { control, register, handleSubmit, formState, setError } = useForm<DebtValues>({
     mode: "onTouched",
@@ -43,7 +43,11 @@ export function DebtForm({
   const amount = useWatch({ control, name: "amount" });
 
   async function onSubmit(values: DebtValues) {
-    setFailed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
 
     const result = await addDebt(shipment.id, values);
 
@@ -60,7 +64,7 @@ export function DebtForm({
       setError("notes", { message: result.fieldErrors.notes });
     }
 
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   return (
@@ -100,10 +104,11 @@ export function DebtForm({
         </div>
       </div>
 
-      {failed ? <FormError message={common("saveFailed")} /> : null}
+      <SaveFailureMessage failure={saveFailure.failure} />
 
       <DrawerActions
         dirty={formState.isDirty}
+        locked={saveFailure.unknown}
         submitting={formState.isSubmitting}
         submitIcon="plus"
         submitLabel={shipment.debt > 0 ? t("submit") : t("add")}

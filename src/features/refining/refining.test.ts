@@ -51,6 +51,7 @@ function grinding(overrides: Partial<MillingOperation>): MillingOperation {
     estimatedEndAt: "2026-10-12T18:00:00Z",
     notes: "",
     endedAt: "2026-10-12T18:00:00Z",
+    mercury: { addedAt: "2026-10-12T08:00:00Z", byName: "Aicha", quantity: 120 },
     ...overrides,
   };
 }
@@ -110,6 +111,24 @@ describe("refining summary", () => {
 });
 
 describe("refiningQueue", () => {
+  it("offers a grinding that ended, has its mercury and is not refined", () => {
+    expect(refiningQueue([grinding({ id: "ready" })], []).map((operation) => operation.id)).toEqual(
+      ["ready"],
+    );
+  });
+
+  it("leaves out a grinding that has not ended", () => {
+    expect(refiningQueue([grinding({ endedAt: undefined })], [])).toEqual([]);
+  });
+
+  it("leaves out a grinding whose mercury was not added", () => {
+    expect(refiningQueue([grinding({ mercury: undefined })], [])).toEqual([]);
+  });
+
+  it("leaves out a grinding that already has a refining", () => {
+    expect(refiningQueue([grinding({ id: "done" })], [refining("done")])).toEqual([]);
+  });
+
   it("keeps the finished grinding operations not yet refined, oldest first", () => {
     const operations = [
       grinding({ id: "running", endedAt: undefined }),

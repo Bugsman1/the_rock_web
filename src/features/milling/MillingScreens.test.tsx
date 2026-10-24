@@ -62,12 +62,19 @@ const runningOperation = {
   ...stamps,
 };
 
+const zouerat = { id: 3, name: "Zouérat 1", site: "zouerat", status: "active", ...stamps };
+
+const withTwoProjects = () =>
+  server.use(
+    http.get(`${API}/projects/`, () =>
+      page([zouerat, { id: 4, name: "Sfariyat 1", site: "sfariyat", status: "active", ...stamps }]),
+    ),
+  );
+
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 beforeEach(() => {
   server.use(
-    http.get(`${API}/projects/`, () =>
-      page([{ id: 3, name: "Zouérat 1", site: "zouerat", status: "active", ...stamps }]),
-    ),
+    http.get(`${API}/projects/`, () => page([zouerat])),
     http.get(`${API}/grinders/`, () =>
       page([
         { id: 7, project: 3, code: "P3-1", status: "active", ...stamps },
@@ -93,7 +100,7 @@ function openAt(path: string, access: Access = allRights) {
   const router = createMemoryRouter(
     [
       {
-        path: "/fr",
+        path: "/:locale",
         children: [
           { path: "milling", loader: millingLoader, element: <MillingScreen /> },
           {
@@ -161,7 +168,26 @@ describe("endOperation", () => {
 });
 
 describe("milling screens", () => {
+  it("opens the only project of a user who sees one, with no way back to the cards", async () => {
+    openAt("/fr/milling");
+
+    expect(await screen.findByRole("heading", { name: /Zouérat 1/ })).toBeVisible();
+    expect(screen.getByRole("heading", { name: text.project.queueTitle })).toBeVisible();
+    expect(screen.queryByRole("link", { name: messages.common.back })).not.toBeInTheDocument();
+  });
+
+  it("leads back to the cards from a project when the user sees several", async () => {
+    withTwoProjects();
+    openAt("/fr/milling/projects/3");
+
+    expect(await screen.findByRole("link", { name: messages.common.back })).toHaveAttribute(
+      "href",
+      "/fr/milling",
+    );
+  });
+
   it("sums the machines and bags of every project", async () => {
+    withTwoProjects();
     openAt("/fr/milling");
 
     expect(await screen.findByRole("heading", { name: /Zouérat 1/ })).toBeVisible();
@@ -173,6 +199,7 @@ describe("milling screens", () => {
   });
 
   it("shows the bags waiting, grinding and ground today, and the machines running", async () => {
+    withTwoProjects();
     openAt("/fr/milling");
 
     const flow = within(await screen.findByRole("region", { name: text.flow.title }));
@@ -189,6 +216,7 @@ describe("milling screens", () => {
 
   it("marks a backlog once 50 bags are waiting", async () => {
     server.use(http.get(`${API}/shipments/`, () => page([shipment(4, "pending", 50)])));
+    withTwoProjects();
     openAt("/fr/milling");
 
     const flow = within(await screen.findByRole("region", { name: text.flow.title }));

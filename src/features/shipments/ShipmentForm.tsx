@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
 import { Drawer, DrawerActions } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
+import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { useToast } from "@/components/ui/Toast";
 import { useReplace } from "@/i18n/navigation";
 import type { Customer } from "@/lib/customers";
@@ -112,7 +112,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
   const common = useTranslations("common");
   const replace = useReplace();
   const locale = useLocale();
-  const [failed, setFailed] = useState(false);
+  const saveFailure = useSaveFailure();
   const [saved, setSaved] = useState<{ id: string; debtFailed: boolean }>();
   const toasts = useTranslations("toasts");
   const toast = useToast();
@@ -147,7 +147,11 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
   const newCustomer = useNewCustomer(form, customers);
 
   async function onSubmit(values: NewShipmentValues) {
-    setFailed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
 
     const phoneTaken = (name: string) => t("errors.phoneTaken", { name });
 
@@ -182,7 +186,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
       }
     }
 
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   return (
@@ -201,10 +205,11 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
         />
         <DestinationFields form={form} projects={projects} />
 
-        {failed ? <FormError message={common("saveFailed")} /> : null}
+        <SaveFailureMessage failure={saveFailure.failure} />
 
         <DrawerActions
           dirty={formState.isDirty}
+          locked={saveFailure.unknown}
           submitting={formState.isSubmitting}
           submitIcon={mode.kind === "edit" ? "circle-check" : "plus"}
           submitLabel={mode.kind === "edit" ? t("saveChanges") : t("submit")}

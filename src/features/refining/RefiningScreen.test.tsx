@@ -1,148 +1,44 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { setupServer } from "msw/node";
-import { createMemoryRouter, RouterProvider } from "react-router";
-import { IntlProvider } from "use-intl";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { noAccess, rightsFromApi } from "@/lib/access";
+import { describe, expect, it } from "vitest";
+import { rightsFromApi } from "@/lib/access";
 import type { Access } from "@/lib/access";
-import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
 import {
-  RefiningProjectScreen,
-  refiningProjectLoader,
-  RefiningScreen,
-  refiningLoader,
-} from "./RefiningScreen";
+  API,
+  openAt,
+  page,
+  panel,
+  refined,
+  serveRefiningApi,
+  server,
+  text,
+  withTwoProjects,
+} from "./refiningTesting";
 
-const allRights: Access = { ...noAccess, superuser: true };
-
-const API = `${window.location.origin}/api/v1`;
-const server = setupServer();
-const text = messages.refining;
-
-const stamps = {
-  is_active: true,
-  created_at: "2026-10-01T08:00:00Z",
-  updated_at: "2026-10-01T08:00:00Z",
-};
-
-const page = (results: readonly object[]) => HttpResponse.json({ count: results.length, results });
-
-const grinding = (id: number, shipment: string, code: string, endTime: string | null) => ({
-  id,
-  shipment_number: shipment,
-  customer_name: `Client ${shipment}`,
-  grinder_code: code,
-  project_name: "Zouérat 1",
-  bags_count: 4,
-  start_time: "2026-10-05T06:00:00Z",
-  end_time: endTime,
-  operator_name: "Ahmed",
-  grinding_cost: "60000",
-  notes: "",
-  created_at: "2026-10-05T06:00:00Z",
-  updated_at: "2026-10-05T06:00:00Z",
-});
-
-const refined = {
-  id: 9,
-  grinding_operation: 3,
-  shipment_number: "SH-3",
-  customer_name: "Client SH-3",
-  grinder_code: "P3-2",
-  project_name: "Zouérat 1",
-  worker_name: "Aicha",
-  bags_count: 4,
-  refining_date: "2026-10-07T09:30:00Z",
-  weight_before: "120.500",
-  weight_after: "118.250",
-  weight_loss: "2.250",
-  gold_weight: "14.300",
-  gold_weight_with_mercury: "20.000",
-  gold_weight_without_mercury: "14.300",
-  loss: "0.500",
-  loss_reason: "arghawa",
-  notes: "",
-  created_at: "2026-10-07T10:00:00Z",
-  updated_at: "2026-10-07T10:00:00Z",
-};
-
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
-beforeEach(() => {
-  server.use(
-    http.get(`${API}/projects/`, () =>
-      page([{ id: 3, name: "Zouérat 1", site: "zouerat", status: "active", ...stamps }]),
-    ),
-    http.get(`${API}/projects/3/`, () =>
-      HttpResponse.json({ id: 3, name: "Zouérat 1", site: "zouerat", status: "active", ...stamps }),
-    ),
-    http.get(`${API}/grinding-operations/`, () =>
-      page([
-        grinding(1, "SH-1", "P3-1", null),
-        grinding(2, "SH-2", "P3-2", "2026-10-05T18:00:00Z"),
-        grinding(3, "SH-3", "P3-2", "2026-10-05T18:00:00Z"),
-      ]),
-    ),
-    http.get(`${API}/refining-operations/`, () => page([refined])),
-    http.get(`${API}/operators/`, ({ request }) =>
-      HttpResponse.json(
-        new URL(request.url).searchParams.get("project") === "3" ? [{ id: 4, name: "Aicha" }] : [],
-      ),
-    ),
-    http.get(`${API}/resources/`, () =>
-      page([
-        {
-          id: 7,
-          project: 3,
-          project_name: "Zouérat 1",
-          name: "Mercure",
-          initial_quantity: "500.000",
-          current_quantity: "95.000",
-          ...stamps,
-        },
-      ]),
-    ),
-  );
-});
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
-
-function openAt(path: string, access: Access = allRights) {
-  const router = createMemoryRouter(
-    [
-      { path: "/fr/refining", loader: refiningLoader, element: <RefiningScreen /> },
-      {
-        path: "/fr/refining/projects/:project",
-        loader: refiningProjectLoader,
-        element: <RefiningProjectScreen />,
-      },
-    ],
-    { initialEntries: [path] },
-  );
-
-  render(
-    <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <AccessContext value={access}>
-        <RouterProvider router={router} />
-      </AccessContext>
-    </IntlProvider>,
-  );
-}
-
-function panel(title: string) {
-  const section = screen.getByRole("heading", { name: title }).closest("section");
-
-  if (section === null) {
-    throw new Error(`no panel ${title}`);
-  }
-
-  return within(section);
-}
+serveRefiningApi();
 
 describe("RefiningScreen", () => {
+  it("opens the only project of a user who sees one, with no way back to the cards", async () => {
+    openAt("/fr/refining");
+
+    expect(await screen.findByRole("heading", { name: text.queueTitle })).toBeVisible();
+    expect(screen.queryByRole("link", { name: messages.common.back })).not.toBeInTheDocument();
+  });
+
+  it("leads back to the cards from a project when the user sees several", async () => {
+    withTwoProjects();
+    openAt("/fr/refining/projects/3");
+
+    expect(await screen.findByRole("link", { name: messages.common.back })).toHaveAttribute(
+      "href",
+      "/fr/refining",
+    );
+  });
+
   it("sums what waits for refining and what was refined, then a card per project, with no loss", async () => {
+    withTwoProjects();
     openAt("/fr/refining");
 
     const summary = within(await screen.findByRole("region", { name: text.overview.title }));
@@ -151,10 +47,11 @@ describe("RefiningScreen", () => {
     );
     expect(summary.getByText(text.overview.refined).nextElementSibling).toHaveTextContent("1");
     expect(summary.getByText(text.overview.refinedToday).nextElementSibling).toHaveTextContent("0");
-    expect(screen.getByRole("link", { name: messages.common.openProject })).toHaveAttribute(
-      "href",
-      "/fr/refining/projects/3",
-    );
+    expect(
+      screen
+        .getAllByRole("link", { name: messages.common.openProject })
+        .map((link) => link.getAttribute("href")),
+    ).toEqual(["/fr/refining/projects/3", "/fr/refining/projects/4"]);
     expect(screen.queryByText(/perte/i)).toBeNull();
   });
 
@@ -169,6 +66,7 @@ describe("RefiningScreen", () => {
     expect(queue.queryByText("P3-2")).toBeNull();
     expect(queue.queryByText("SH-1")).toBeNull();
     expect(queue.queryByText("SH-3")).toBeNull();
+    expect(queue.queryByText("SH-4")).toBeNull();
     expect(
       queue.getByRole("link", { name: "Démarrer l'affinage de l'expédition SH-2" }),
     ).toHaveAttribute("href", "/fr/refining/projects/3?grinding=2");
@@ -286,20 +184,6 @@ describe("RefiningScreen", () => {
     );
 
     expect(panel(text.operationsTitle).getByText("SH-3")).toBeVisible();
-  });
-
-  it("keeps the queue and explains refused operations inside their panel", async () => {
-    server.use(
-      http.get(`${API}/refining-operations/`, () => new HttpResponse(null, { status: 403 })),
-    );
-    openAt("/fr/refining/projects/3");
-
-    await screen.findByRole("heading", { name: text.queueTitle });
-
-    expect(panel(text.queueTitle).getByText("SH-2")).toBeVisible();
-    expect(panel(text.operationsTitle).getByRole("alert")).toHaveTextContent(
-      messages.errors.forbidden.description,
-    );
   });
 
   it("opens a refining from its row to add the gold without material later", async () => {

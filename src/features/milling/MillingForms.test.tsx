@@ -4,6 +4,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { rightsFromApi } from "@/lib/access";
 import type { Access } from "@/lib/access";
+import type { MillingOperation } from "@/lib/grinding";
 import messages from "@/messages/fr.json";
 import { EndMillingAction } from "./MillingForms";
 import { allRights, inFrench, running } from "./millingTesting";
@@ -14,22 +15,35 @@ vi.mock("./millingApi", () => api);
 
 const end = messages.milling.end;
 
+const mercured: MillingOperation = {
+  ...running,
+  mercury: { addedAt: "2026-10-08T07:00:00.000Z", byName: "Aicha", quantity: 120 },
+};
+
+const machineLoader = vi.fn(() => null);
+
 beforeEach(() => {
   api.endOperation.mockReset();
   api.endOperation.mockResolvedValue({ ok: true });
+  machineLoader.mockClear();
 });
 
-async function openEndMilling(access: Access = allRights, defaultTime = "12:30") {
+async function openEndMilling(
+  access: Access = allRights,
+  defaultTime = "12:30",
+  operation: MillingOperation = mercured,
+) {
   const router = createMemoryRouter(
     [
       {
         path: "/",
+        loader: machineLoader,
         element: (
           <EndMillingAction
             label="Terminer"
             title={end.title}
             closeLabel={messages.common.close}
-            operation={running}
+            operation={operation}
             defaultDate="2026-10-08"
             defaultTime={defaultTime}
           />
@@ -42,7 +56,7 @@ async function openEndMilling(access: Access = allRights, defaultTime = "12:30")
   const user = userEvent.setup();
 
   inFrench(<RouterProvider router={router} />, access);
-  await user.click(screen.getByRole("button", { name: "Terminer" }));
+  await user.click(await screen.findByRole("button", { name: "Terminer" }));
 
   return { user, router };
 }
@@ -71,7 +85,7 @@ describe("ending a milling operation", () => {
 
     await waitFor(() => {
       expect(api.endOperation).toHaveBeenCalledWith(
-        running,
+        mercured,
         { endDate: "2026-10-08", endTime: "12:30", notes: "" },
         "2026-10-08T12:30:00.000Z",
       );
@@ -80,6 +94,24 @@ describe("ending a milling operation", () => {
     expect(`${router.state.location.pathname}${router.state.location.search}`).toBe(
       "/fr/refining/projects/3?grinding=42",
     );
+  });
+
+  it("ends a grinding without mercury and reloads the machine instead of opening its refining", async () => {
+    const { user, router } = await openEndMilling(allRights, "12:30", running);
+    expect(machineLoader).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", { name: end.submit }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    expect(api.endOperation).toHaveBeenCalledWith(
+      running,
+      { endDate: "2026-10-08", endTime: "12:30", notes: "" },
+      "2026-10-08T12:30:00.000Z",
+    );
+    await waitFor(() => expect(machineLoader).toHaveBeenCalledTimes(2));
+    expect(router.state.location.pathname).toBe("/");
   });
 
   it("stays on the machine when the role may not start the refining", async () => {

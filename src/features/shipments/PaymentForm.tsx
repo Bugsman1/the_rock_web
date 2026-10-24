@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
 import { useToast } from "@/components/ui/Toast";
 import { DateField } from "@/components/ui/DateField";
 import { DrawerActions } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
+import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
 import { combineDateAndTime, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
@@ -33,7 +33,7 @@ export function PaymentForm({ shipmentId, amountLeft, onSaved, onCancel }: Payme
   const toasts = useTranslations("toasts");
   const toast = useToast();
   const locale = useLocale();
-  const [failed, setFailed] = useState(false);
+  const saveFailure = useSaveFailure();
 
   const schema = useMemo(
     () =>
@@ -66,12 +66,16 @@ export function PaymentForm({ shipmentId, amountLeft, onSaved, onCancel }: Payme
   const leftAfter = amountLeftAfter(amountLeft, amount);
 
   async function onSubmit(values: PaymentValues) {
-    setFailed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
 
     const paidAt = combineDateAndTime(values.date, values.time);
 
     if (paidAt === undefined) {
-      setFailed(true);
+      saveFailure.fail();
       return;
     }
 
@@ -89,7 +93,7 @@ export function PaymentForm({ shipmentId, amountLeft, onSaved, onCancel }: Payme
       }
     }
 
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   return (
@@ -165,10 +169,11 @@ export function PaymentForm({ shipmentId, amountLeft, onSaved, onCancel }: Payme
         </div>
       </div>
 
-      {failed ? <FormError message={common("saveFailed")} /> : null}
+      <SaveFailureMessage failure={saveFailure.failure} />
 
       <DrawerActions
         dirty={formState.isDirty}
+        locked={saveFailure.unknown}
         submitting={formState.isSubmitting}
         submitIcon="plus"
         submitLabel={t("submit")}

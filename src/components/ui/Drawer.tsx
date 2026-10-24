@@ -105,6 +105,7 @@ type DrawerActionsProps = {
   cancelLabel: string;
   onCancel: () => void;
   dirty: boolean;
+  locked?: boolean;
   sticky?: boolean;
 };
 
@@ -116,6 +117,7 @@ export function DrawerActions({
   cancelLabel,
   onCancel,
   dirty,
+  locked = false,
   sticky = true,
 }: DrawerActionsProps) {
   const t = useTranslations("common.discard");
@@ -141,7 +143,7 @@ export function DrawerActions({
 
   return (
     <div className={barClasses}>
-      {submitting ? (
+      {locked ? null : submitting ? (
         <div className="w-50">
           <LoadingDots label={savingLabel} />
         </div>
@@ -155,7 +157,7 @@ export function DrawerActions({
       <Button
         variant="secondary"
         width="auto"
-        onClick={dirty ? () => setConfirming(true) : onCancel}
+        onClick={dirty && !locked ? () => setConfirming(true) : onCancel}
         disabled={submitting}
       >
         {cancelLabel}

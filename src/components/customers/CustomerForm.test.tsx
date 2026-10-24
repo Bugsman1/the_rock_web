@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Customer } from "@/lib/customers";
@@ -36,16 +37,26 @@ const ahmed: Customer = {
   addedAt: "2026-09-01T08:00:00Z",
 };
 
-function renderForm(customer?: Customer, initialName?: string) {
+function renderForm(customer?: Customer, initialName?: string, loader?: () => null) {
   return render(
-    <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <CustomerForm
-        customer={customer}
-        initialName={initialName}
-        onSaved={onSaved}
-        onCancel={vi.fn()}
-      />
-    </IntlProvider>,
+    <RouterProvider
+      router={createMemoryRouter([
+        {
+          path: "*",
+          ...(loader === undefined ? {} : { loader }),
+          element: (
+            <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
+              <CustomerForm
+                customer={customer}
+                initialName={initialName}
+                onSaved={onSaved}
+                onCancel={vi.fn()}
+              />
+            </IntlProvider>
+          ),
+        },
+      ])}
+    />,
   );
 }
 
@@ -159,6 +170,85 @@ describe("CustomerForm when adding", () => {
     await user.click(screen.getByRole("button", { name: messages.customers.form.create }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(messages.common.saveFailed);
+    expect(onSaved).not.toHaveBeenCalled();
+  });
+
+  it("shows the server's message when it belongs to no field", async () => {
+    createCustomerMock.mockResolvedValue({
+      ok: false,
+      fieldErrors: {},
+      failed: true,
+      message: "Ce client est archivé.",
+    });
+    renderForm();
+
+    await replace(fields.name, "Sidi");
+    const user = await replace(fields.phone, "46109325");
+    await user.click(screen.getByRole("button", { name: messages.customers.form.create }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Ce client est archivé.");
+  });
+
+  it("reloads the page data after the server refuses, keeping what was typed", async () => {
+    const pageLoader = vi.fn(() => null);
+    createCustomerMock.mockResolvedValue({
+      ok: false,
+      fieldErrors: { phone: messages.customers.form.errors.phoneTaken },
+      failed: false,
+    });
+    renderForm(undefined, undefined, pageLoader);
+    await screen.findByLabelText(fields.name);
+    expect(pageLoader).toHaveBeenCalledTimes(1);
+
+    await replace(fields.name, "Sidi");
+    const user = await replace(fields.phone, "22411830");
+    await user.click(screen.getByRole("button", { name: messages.customers.form.create }));
+
+    await waitFor(() => expect(pageLoader).toHaveBeenCalledTimes(2));
+    expect(screen.getByText(messages.customers.form.errors.phoneTaken)).toBeVisible();
+    expect(screen.getByLabelText(fields.name)).toHaveValue("Sidi");
+    expect(createCustomerMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not reload or send again when the outcome of the save is unknown", async () => {
+    const pageLoader = vi.fn(() => null);
+    createCustomerMock.mockResolvedValue({
+      ok: false,
+      fieldErrors: {},
+      failed: true,
+      unknown: true,
+    });
+    renderForm(undefined, undefined, pageLoader);
+    await screen.findByLabelText(fields.name);
+
+    await replace(fields.name, "Sidi");
+    const user = await replace(fields.phone, "46109325");
+    await user.click(screen.getByRole("button", { name: messages.customers.form.create }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(messages.common.saveUnknown);
+    expect(pageLoader).toHaveBeenCalledTimes(1);
+    expect(createCustomerMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not send again when the outcome of the save is unknown", async () => {
+    createCustomerMock.mockResolvedValue({
+      ok: false,
+      fieldErrors: {},
+      failed: true,
+      unknown: true,
+    });
+    renderForm();
+
+    await replace(fields.name, "Sidi");
+    const user = await replace(fields.phone, "46109325");
+    await user.click(screen.getByRole("button", { name: messages.customers.form.create }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(messages.common.saveUnknown);
+    expect(
+      screen.queryByRole("button", { name: messages.customers.form.create }),
+    ).not.toBeInTheDocument();
+    await user.keyboard("{Enter}");
+    expect(createCustomerMock).toHaveBeenCalledTimes(1);
     expect(onSaved).not.toHaveBeenCalled();
   });
 });

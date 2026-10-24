@@ -24,7 +24,12 @@ export function refiningQueue(
   const refined = new Set(refinings.map((refining) => refining.grindingOperationId));
 
   return grindings
-    .filter((grinding) => grinding.endedAt !== undefined && !refined.has(grinding.id))
+    .filter(
+      (grinding) =>
+        grinding.endedAt !== undefined &&
+        grinding.mercury !== undefined &&
+        !refined.has(grinding.id),
+    )
     .sort((a, b) => (a.endedAt ?? "").localeCompare(b.endedAt ?? ""));
 }
 

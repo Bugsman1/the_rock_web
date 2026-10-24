@@ -62,9 +62,18 @@ function rightBox(right: keyof typeof text.rights, module: keyof typeof text.mod
 
 function renderForm(role?: RoleDetails) {
   return render(
-    <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <RoleForm role={role} onSaved={onSaved} onCancel={vi.fn()} />
-    </IntlProvider>,
+    <RouterProvider
+      router={createMemoryRouter([
+        {
+          path: "*",
+          element: (
+            <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
+              <RoleForm role={role} onSaved={onSaved} onCancel={vi.fn()} />
+            </IntlProvider>
+          ),
+        },
+      ])}
+    />,
   );
 }
 

@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
 import { OperationForm } from "@/components/grinding/OperationForm";
 import { Drawer, DrawerActions, useRouteDrawer } from "@/components/ui/Drawer";
-import { FieldError, FormError } from "@/components/ui/FieldError";
+import { FieldError, SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { Icon } from "@/components/ui/Icon";
 import { ReadOnlyDateAndTime } from "@/components/ui/ReadOnlyField";
 import { TextArea } from "@/components/ui/TextField";
@@ -49,7 +49,7 @@ function EndMillingForm({
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
   const toast = useToast();
-  const [failed, setFailed] = useState(false);
+  const saveFailure = useSaveFailure();
   const [saved, setSaved] = useState(false);
   const startedAt = operation.startedAt;
 
@@ -82,7 +82,11 @@ function EndMillingForm({
   async function onSubmit(values: EndMillingValues) {
     const endedAt = combineDateAndTime(values.endDate, values.endTime);
 
-    setFailed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
 
     if (endedAt === undefined) {
       return;
@@ -103,7 +107,7 @@ function EndMillingForm({
       }
     }
 
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   return (
@@ -126,10 +130,11 @@ function EndMillingForm({
         </div>
       </div>
 
-      {failed ? <FormError message={common("saveFailed")} /> : null}
+      <SaveFailureMessage failure={saveFailure.failure} />
 
       <DrawerActions
         dirty={formState.isDirty}
+        locked={saveFailure.unknown}
         submitting={formState.isSubmitting || saved}
         submitIcon="circle-check"
         submitLabel={t("submit")}
@@ -159,7 +164,7 @@ export function EndMillingAction({
   const canRefine = useCan()("refining", "add");
 
   function onSaved() {
-    if (canRefine) {
+    if (canRefine && formProps.operation.mercury !== undefined) {
       replace(startRefiningHref(formProps.operation.project, formProps.operation.id));
       return;
     }

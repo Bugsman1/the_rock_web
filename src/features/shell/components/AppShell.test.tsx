@@ -1,10 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { modules, rightsFromApi } from "@/lib/access";
 import type { Access, Module } from "@/lib/access";
+import { reportConnectionFailure, reportResponse } from "@/lib/api/connection";
 import { readSession, saveSession } from "@/lib/api/session";
 import messages from "@/messages/fr.json";
 import { AppShell } from "./AppShell";
@@ -177,5 +178,36 @@ describe("AppShell", () => {
 
     expect(readSession()).toBeUndefined();
     expect(screen.getByText("login page")).toBeInTheDocument();
+  });
+
+  it("reloads the page data once the connection comes back", async () => {
+    const loader = vi.fn(() => null);
+    const router = createMemoryRouter(
+      [
+        {
+          path: "/fr/*",
+          loader,
+          element: (
+            <AppShell access={everything} userName="Sidi" roleName="manager">
+              <p>page</p>
+            </AppShell>
+          ),
+        },
+      ],
+      { initialEntries: ["/fr/shipments"] },
+    );
+    render(
+      <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
+        <RouterProvider router={router} />
+      </IntlProvider>,
+    );
+    await screen.findByText("page");
+    expect(loader).toHaveBeenCalledTimes(1);
+
+    act(() => reportConnectionFailure());
+    expect(loader).toHaveBeenCalledTimes(1);
+
+    act(() => reportResponse(200));
+    await waitFor(() => expect(loader).toHaveBeenCalledTimes(2));
   });
 });

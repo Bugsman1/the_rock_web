@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
 import { useToast } from "@/components/ui/Toast";
 import { DrawerActions } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
+import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { TextArea, TextField } from "@/components/ui/TextField";
@@ -48,7 +48,7 @@ export function ResourceForm({ project, existing, onSaved, onCancel }: ResourceF
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
   const toast = useToast();
-  const [failed, setFailed] = useState(false);
+  const saveFailure = useSaveFailure();
   const kinds = availableKinds(existing);
 
   const schema = useMemo(
@@ -74,7 +74,11 @@ export function ResourceForm({ project, existing, onSaved, onCancel }: ResourceF
   const kind = useWatch({ control, name: "kind" });
 
   async function onSubmit(values: ResourceValues) {
-    setFailed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
 
     const result = await createResource(values);
 
@@ -90,7 +94,7 @@ export function ResourceForm({ project, existing, onSaved, onCancel }: ResourceF
       }
     }
 
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   return (
@@ -123,10 +127,11 @@ export function ResourceForm({ project, existing, onSaved, onCancel }: ResourceF
         {...register("initialQuantity", { valueAsNumber: true })}
       />
 
-      {failed ? <FormError message={common("saveFailed")} /> : null}
+      <SaveFailureMessage failure={saveFailure.failure} />
 
       <DrawerActions
         dirty={formState.isDirty}
+        locked={saveFailure.unknown}
         submitting={formState.isSubmitting}
         submitIcon="plus"
         submitLabel={t("form.create")}
@@ -151,7 +156,7 @@ export function ResourceChangeForm({ resource, type, onSaved, onCancel }: Resour
   const toasts = useTranslations("toasts");
   const toast = useToast();
   const locale = useLocale();
-  const [failed, setFailed] = useState(false);
+  const saveFailure = useSaveFailure();
   const available = type === "decrease" ? resource.currentQuantity : undefined;
 
   const schema = useMemo(
@@ -180,7 +185,11 @@ export function ResourceChangeForm({ resource, type, onSaved, onCancel }: Resour
   const after = quantityAfterChange(resource.currentQuantity, type, quantity);
 
   async function onSubmit(values: ResourceChangeValues) {
-    setFailed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
 
     const result = await changeResourceQuantity(resource.id, type, values);
 
@@ -196,7 +205,7 @@ export function ResourceChangeForm({ resource, type, onSaved, onCancel }: Resour
       }
     }
 
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   return (
@@ -239,10 +248,11 @@ export function ResourceChangeForm({ resource, type, onSaved, onCancel }: Resour
         </div>
       </div>
 
-      {failed ? <FormError message={common("saveFailed")} /> : null}
+      <SaveFailureMessage failure={saveFailure.failure} />
 
       <DrawerActions
         dirty={formState.isDirty}
+        locked={saveFailure.unknown}
         submitting={formState.isSubmitting}
         submitIcon={type === "increase" ? "plus" : "minus"}
         submitLabel={t(`form.${type}Submit`)}

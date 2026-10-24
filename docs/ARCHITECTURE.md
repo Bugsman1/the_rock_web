@@ -78,7 +78,7 @@ All declared in `src/app/router.tsx` (`routes`). Under `/:locale/` (`ar` or `fr`
 | `shipments/:shipment` (`shipmentHref`)                                                           | `ShipmentScreen` (`shipmentLoader`): payments, invoice, edit                                                                                                                 |
 | `shipments/projects/:project` (`?grind=`)                                                        | `ProjectStorageScreen` (`projectStorageLoader`)                                                                                                                              |
 | `shipments/projects/:project/history`                                                            | `ShipmentHistoryScreen` (`projectShipmentsLoader`)                                                                                                                           |
-| `milling` (`?site=`)                                                                             | `MillingScreen` (`millingLoader`)                                                                                                                                            |
+| `milling` (`?site=`)                                                                             | `MillingScreen` (`millingLoader`); a user who sees one project in service goes straight to it                                                                                |
 | `milling/projects/:project` (`?operation=new&shipment=&machine=`)                                | `MillingProjectScreen` (`millingProjectLoader`)                                                                                                                              |
 | `milling/projects/:project/machines/:machine` (`?edit=1`, `editMillingOperationHref`)            | `MachineDetailScreen` (`machineLoader`): the running grinding, its edit drawer, the history                                                                                  |
 | `customers` (`?q=&page=&new=1&edit=`)                                                            | `CustomersScreen` (`customersLoader`)                                                                                                                                        |
@@ -89,7 +89,7 @@ All declared in `src/app/router.tsx` (`routes`). Under `/:locale/` (`ar` or `fr`
 | `settlements/:settlement` (`?edit=1`, `?delete=1`, `settlementHref`)                             | `SettlementScreen` (`settlementLoader`): totals, PDF, edit amounts, delete                                                                                                   |
 | `users` (`?q=&page=&new=1&edit=`)                                                                | `UsersScreen` (`usersLoader`): search by name, email or phone on the server                                                                                                  |
 | `users/roles` (`?new=1&edit=&delete=`)                                                           | `RolesScreen` (`rolesLoader`): roles, their sections and rights; delete only when no user has it                                                                             |
-| `refining`                                                                                       | `RefiningScreen` (`refiningLoader`): figures and project cards                                                                                                               |
+| `refining`                                                                                       | `RefiningScreen` (`refiningLoader`): figures and project cards; a user who sees one project in service goes straight to it                                                   |
 | `refining/projects/:project` (`?grinding=`, `refiningProjectHref`, `startRefiningHref`)          | `RefiningProjectScreen` (`refiningProjectLoader`)                                                                                                                            |
 | `inventory`                                                                                      | `InventoryScreen` (`inventoryLoader`): one card per project                                                                                                                  |
 | `inventory/projects/:project` (`?new=resource`)                                                  | `InventoryProjectScreen` (`inventoryProjectLoader`): the project's resources as cards, Mercury first                                                                         |
@@ -126,23 +126,45 @@ refinings on Inventory, the clients on Shipments). The signed-in layout puts the
 `AccessContext` (`lib/accessContext.ts`); screens ask `useCan()(module, right)` and hide every add,
 edit, delete and start button, and the drawer they open, that the role lacks. Inventory increase /
 decrease need the add right (they are POSTs). Ending a grinding opens the
-refining form only for a role that may add refinings; otherwise it stays on the machine.
+refining form only for a role that may add refinings and only when its mercury was added; otherwise
+the drawer closes and the machine page reloads.
 
 **Error page:** a page whose data fails to load shows `PageError` (in `PageStates.tsx`) inside the shell:
 "not found" for a 404 (bad id, or an endpoint the backend does not have), "no permission" for a
 403, "connection impossible, check your connection and try again" for a 502 / 503 / 504 (no code
 shown), otherwise "something went wrong", with the HTTP error code shown, with "try again" (reloads the data) and "back to home". The same page covers a failure of
-the signed-in layout itself. Inventory and Refining load their lists with `tryLoad` (`lib/api/client.ts`): a refused or
-failed list shows `PanelError` (reason + code) inside its panel, and the page keeps its title,
-queue and "new" button.
+the signed-in layout itself. Inventory loads its lists with `tryLoad` (`lib/api/client.ts`): a refused or
+failed list shows `PanelError` (reason + code) inside its panel, and the page keeps its title and
+"new" button. Refining never does: without the refinings it cannot tell which grindings are already
+refined, so a failed refinings list shows the error page (no figures, no queue, no new or edit form)
+until "try again" loads it. When an error page appears it drops any pending message
+(`useDismissToast`).
 
 **Lost connection:** every request through `apiClient` (and login / token renewal in `api/auth.ts`)
 goes through `connectedFetch`: it fails at once while the browser is offline and otherwise stops after
 15 seconds. When the signed-in layout cannot reach the server, it shows the connection error page
 instead of sending the user to login, so a reload while offline keeps the session. A request that fails or times out never throws: the
 client answers it with a 503, so a page shows the connection error above instead of loading
-forever, a form shows "save failed", and `ConnectionBanner` shows the red bar until the next answer
-from the server or the browser is back online.
+forever, and `ConnectionBanner` shows the red bar until the next answer from the server or the
+browser is back online. When the connection comes back, `AppShell` reloads the page's data
+(`useRevalidateOnReconnect`).
+
+**Save outcome (`saveOutcome`):** a 400 puts the backend's messages on the fields the form maps;
+any other message of a 4xx (`non_field_errors`, `detail`, a field the form does not show) is shown in
+the backend's own words above the buttons (`SaveFailureMessage`); a 5xx never shows its body, only
+"save failed". These are definite refusals: the user can correct and save again. A 502 / 503 / 504,
+a timeout or a lost connection is an **unknown outcome** (`unknown: true`): the request may have been
+saved. The form says so (`common.saveUnknown`), hides its save button and ignores Enter
+(`DrawerActions locked`, `useSaveFailure`), so the user can only close it and check the list (reloaded
+on reconnect) before trying again. This does not prevent duplicates: the backend has no idempotency
+key, so a user who opens the form again and saves can still create the same record twice.
+
+**Reload after a refusal:** after a definite refusal (not an unknown outcome) `useSaveFailure`
+reloads the page's data (`revalidate`, which reruns the page's loaders; there is no narrower
+refresh), keeping what was typed and the backend's message, and never sends the save again. If the
+reloaded data no longer has the record the form was for (another user refined, ended or deleted it),
+its drawer closes and a red message says the data changed (`common.recordChanged`, 4 seconds). If the
+reload fails, the error page shows instead.
 
 **Page skeleton:** while the data of another page is loading, the shell shows a skeleton shaped
 like that page (`skeletonShapeFor(pathname)`: `form`, `table`, `detail` or `cards`) and replaces it
@@ -166,7 +188,7 @@ Ported from `the_rock`, merged to save files:
 | `Drawer.tsx`           | `Drawer`, `DrawerActions`, `DrawerDeleteActions` (delete / cancel with "deleting": project, role, settlement), `useRouteDrawer(closeHref)`                                                                                                     |
 | `ConnectionBanner.tsx` | Red bar with a wifi-off icon while the connection is lost (`role="alert"`), above the top bar and on the login page                                                                                                                            |
 | `PdfPreview.tsx`       | `usePdfPreview(load)` (loads a PDF in the chosen language, keeps its blob URL), `PdfPreviewDialog` (print, download, close)                                                                                                                    |
-| `FieldError.tsx`       | `FieldError`, `FormError` (the "save failed" alert)                                                                                                                                                                                            |
+| `FieldError.tsx`       | `FieldError`, `FormError`, `useSaveFailure` + `SaveFailureMessage` (save failed / backend message / unknown outcome)                                                                                                                           |
 | `LoadingDots.tsx`      | `LoadingDots`, `PageSkeleton({ label, shape })`                                                                                                                                                                                                |
 
 Others: `ActionLink`, `Button`, `buttonClasses` (primary, secondary, danger), `ButtonLink`, `Checkbox`, `Combobox`, `DateField`,
@@ -217,7 +239,7 @@ Others: `ActionLink`, `Button`, `buttonClasses` (primary, secondary, danger), `B
 | `shipments` | `shipments.ts` (transport cost, schema, mapping, field errors), `shipmentStorage.ts` (storage = shipments `pending` or in `grinding` with bags left, `remainingBags`, client bags), `shipmentHistory.ts` (history filter, `completedShipments`), `shipmentPayments.ts` (payment and debt schemas and mapping), `shipmentsApi.ts` (create: finds or creates the client by phone, returns the new id; `getInvoice`: the transport invoice PDF and its file name, `attachmentFileName`), `ShipmentsScreens.tsx` (overview), `ProjectStorageScreen.tsx` (project list with the start-grinding drawer), `ShipmentHistoryScreen.tsx` (history), `InvoiceDownload.tsx` (PDF button), `NewShipmentScreen.tsx` (screen and loader), `ShipmentForm.tsx` (`ShipmentForm` in create or edit mode: `NewShipmentForm`, `EditShipmentForm`) with `ShipmentClientFields.tsx` (client fields, `useNewCustomer`, `NewCustomerDrawer`) and `ShipmentFormSections.tsx` (arrival, transport cost, destination), `InvoicePreview.tsx` (`useInvoicePreview` on `usePdfPreview`, `SavedShipment`), `ShipmentScreen.tsx` (one shipment: payments, invoice, edit) with `ShipmentHeader.tsx`, `PaymentForm.tsx`, `DebtForm.tsx`; form tests share `shipmentFormTesting.tsx` | Starting grinding goes to the project's grinding page                                                 |
 | `milling`   | `milling.ts` (queue, `operationShipments`, summaries, end and mercury schemas), `millingApi.ts` (data, end, `markMercuryAdded`), `MillingScreens.tsx` (overview), `MillingProjectScreen.tsx` + `MachineList.tsx` + `MillingQueueTable.tsx` (project), `MachineScreen.tsx` + `MachineHistoryTable.tsx` (machine), `MillingForms.tsx` (end, `EditOperationDrawer`), `MercuryForm.tsx` (`MercuryStatus` and its quantity form); tests share `millingTesting.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | See below                                                                                             |
 
-| `refining` | `refining.ts` (`refiningQueue`, `refiningSummary`, `queueOfProject`, `refiningsOfProject`, `refiningLoss`, schema, mapping, field errors), `refiningApi.ts` (`getRefiningData`, create), `RefiningScreen.tsx` (overview with figures and project cards; project page with queue, operations table, drawer), `RefiningTables.tsx` (queue and operations tables), `RefiningForm.tsx` | Every API field is in the form and the table |
+| `refining` | `refining.ts` (`refiningQueue`, `refiningSummary`, `queueOfProject`, `refiningsOfProject`, `refiningLoss`, schema, mapping, field errors), `refiningApi.ts` (`getRefiningData`, create), `RefiningScreen.tsx` (overview with figures and project cards; project page with queue, operations table, drawer), `RefiningTables.tsx` (queue and operations tables), `RefiningForm.tsx`; tests share `refiningTesting.tsx` | Every API field is in the form and the table |
 | `settlements` | `settlements.ts` (type, mapping, `settleableShipments` (completed and not settled), `settleableShipmentsOfProject`, `projectSettlementSummary`, `customerOfShipment` (by phone: the shipment API gives no customer id), `projectsOfShipments`, amounts and new-settlement schemas, mapping to the API, field errors), `settlementsApi.ts` (page, a customer's settlements, get, create, update amounts, delete, PDF), `SettlementsScreen.tsx` (project cards), `SettlementProjectScreen.tsx` (one project), `SettlementTables.tsx` (`SettlementTable`, `WaitingShipmentsTable`), `NewSettlementScreen.tsx` (customer, project, form), `SettlementForm.tsx` (shipments to tick and amounts; new and edit), `SettlementScreen.tsx` (one settlement, totals, edit drawer), `SettlementActions.tsx` (`SettlementPdf`, `DeleteSettlementDrawer`); tests share `settlementsTesting.tsx` | See "Final settlement" below |
 | `inventory` | `resources.ts` (types, kinds mercury / water / fuel with `kindNamed`, `availableKinds`, schemas, `quantityAfterChange`, mapping, field errors), `resourcesApi.ts` (list, get, create, increase / decrease, history page), `InventoryScreens.tsx` (projects, project cards), `ResourceScreen.tsx` (resource page and history), `InventoryForms.tsx` (resource, quantity change); tests share `inventoryTesting.tsx` | Inventory module. A project holds only mercury, water and fuel, each once: a new resource picks one of the types it does not have yet (saved as that code, shown translated), and "new resource" disappears once it has all three; mercury is the refining material. A saved resource's type is read from its name (`kindNamed`: the backend's English, French and Arabic spellings, ignoring case, accents, Arabic diacritics and tatweel); any other resource on the server is left out of the app (`resourceFromApi` gives nothing, its page is not found). Resources are never renamed. Once added, its page opens |
 
@@ -281,7 +303,9 @@ on the file) with "print" (the browser's print of that PDF), "download" (saved u
 number) and close (frees the file). `useModalDialog` (from `Drawer.tsx`) opens and closes it, and closes any dialog removed from the page while still open (leaving the page with a drawer open), so it never stays stuck on top of the next page (seen in Safari).
 
 **Saved message (`components/ui/Toast.tsx`):** `AppShell` wraps the app in `ToastProvider`, anchored
-on the page area; `useToast()(message)` shows a green box with a check for 1.5 seconds, at the top
+on the page area; `useToast()(message)` shows a green box with a check for 1.5 seconds
+(`useToast()(message, "danger")`: red with a refresh icon for 4 seconds, used only for
+`common.recordChanged`), at the top
 of the page area and centered on it, in the top layer (`popover`) so an open drawer cannot cover it. It waits while the router is loading
 (`busy`: a navigation or revalidation in progress, from `AppShell`), so it appears only once the
 page has its new data and the form or drawer has closed; `useToast` sets the message inside a
@@ -368,8 +392,9 @@ goes to the project's Grinding page. That list (`openShipments`) holds every shi
 not yet completed, oldest arrival first, each with "bags left of total" and its stage; "start
 grinding" shows only while bags are left. The project cards and the page's counts use only the
 shipments with bags left (`storedShipments`). A user who sees only one project in service
-(a project-scoped role: `/projects/` returns only theirs) goes straight from Shipments to that
-project's page (`shipmentsLoader` redirects), which then has no back link. Each finished
+(a project-scoped role: `/projects/` returns only theirs) goes straight from Shipments, Grinding
+and Refining to that project's page (`shipmentsLoader`, `millingLoader` and `refiningLoader`
+redirect), which then has no back link. Each finished
 grinding operation then waits on the Refining page until it is refined. Shipments history lists
 only the `completed` shipments (`completedShipments`), with no status column.
 
@@ -390,9 +415,9 @@ machine page; a role that can edit grinding clicks it, a drawer asks the grams o
 (required, at least 100 g, `MERCURY_MIN_GRAMS`, `createMercurySchema`), and the app sends
 `PATCH …/grinding-operations/{id}/ {mercury_added: true, mercury_quantity}` (`markMercuryAdded`).
 The backend takes that quantity from the project's Mercury stock (a `taken` history line); no
-Mercury or not enough is shown on the quantity field in the app's own words (any `mercury_quantity`
-refusal), and a refused `mercury_added` (grinding finished, mercury already added) above the buttons;
-the backend's own text is not shown because it has no Arabic or French translations yet.
+Mercury or not enough is shown on the quantity field (any `mercury_quantity` refusal), and a refused
+`mercury_added` (grinding finished, mercury already added) above the buttons, both in the backend's
+own words.
 It then shows "mercury added" (green); the machine page gives the grams, the time and who, and the
 history its time. The quantity cannot be changed afterwards. The
 backend makes this final: it cannot be undone and is refused on a finished grinding. Operators offered:
@@ -403,7 +428,8 @@ and the refining takes exactly the bags of the grinding. The backend stores ship
 **Refining pages:** `/refining` shows three figures (grindings waiting for refining with their
 bags, refined today, all refinings: `refiningSummary`) and a card per project in service with the
 same figures, opening `/refining/projects/<id>`. Nothing about the loss is shown there (admin only).
-The project page has the waiting grindings and the refinings of that project only (`queueOfProject`,
+A grinding waits for refining once it has ended, its mercury was added and it has no refining yet
+(`refiningQueue`). The project page has the waiting grindings and the refinings of that project only (`queueOfProject`,
 `refiningsOfProject`; a refining's project is read from its `grinder_code`), without a project
 column, and the refining drawer (`startRefiningHref(project, grinding)`, also opened after finishing a
 grinding).
@@ -537,5 +563,10 @@ name: only the app limits a project to those three.
   grinding fields), not from a running server; regenerate with `npm run api:generate` once that
   version is deployed.
 - The notifications bell does nothing yet.
+- No idempotency on create / action requests: after an unknown outcome a repeated save can duplicate
+  the record. Smallest backend change: accept an `Idempotency-Key` header (a UUID the app generates
+  once per form) on POST and action endpoints, store (user, endpoint, key) → status and body for
+  24 h, and answer a repeat with the stored response (409 while the first is still running); the app
+  would then resend the same key instead of locking the form.
 - The production bundle is one file over 500 KB; split by route.
 - `/forgot-password` link has no page (same as in `the_rock`).

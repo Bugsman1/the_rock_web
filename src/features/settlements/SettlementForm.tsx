@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "use-intl";
 import { FormSection } from "@/components/ui/Cards";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { DrawerActions } from "@/components/ui/Drawer";
-import { FieldError, FormError } from "@/components/ui/FieldError";
+import { FieldError, SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { DataTable } from "@/components/ui/DataTable";
 import { TextField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
@@ -114,7 +114,7 @@ export function SettlementForm({
   const t = useTranslations("settlements");
   const common = useTranslations("common");
   const toast = useToast();
-  const [failed, setFailed] = useState(false);
+  const saveFailure = useSaveFailure();
   const [saved, setSaved] = useState(false);
 
   const schema = useMemo(
@@ -136,7 +136,11 @@ export function SettlementForm({
   const { errors } = formState;
 
   async function onSubmit(values: NewSettlementValues) {
-    setFailed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
 
     const result = await onSave(values);
 
@@ -152,7 +156,7 @@ export function SettlementForm({
       }
     }
 
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   function amountField(name: "grindingCostPerBag" | "refiningCostPerGram" | "debt") {
@@ -203,10 +207,11 @@ export function SettlementForm({
         />
       </FormSection>
 
-      {failed ? <FormError message={common("saveFailed")} /> : null}
+      <SaveFailureMessage failure={saveFailure.failure} />
 
       <DrawerActions
         dirty={formState.isDirty}
+        locked={saveFailure.unknown}
         submitting={formState.isSubmitting || saved}
         submitIcon="receipt"
         submitLabel={submitLabel}

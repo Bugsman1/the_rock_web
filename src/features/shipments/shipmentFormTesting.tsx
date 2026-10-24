@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import messages from "@/messages/ar.json";
 import type { Customer } from "@/lib/customers";
@@ -34,18 +35,29 @@ export const projects: readonly Project[] = [
 
 export function renderForm(defaultProject?: string) {
   return render(
-    <IntlProvider locale="ar" messages={messages} timeZone="Africa/Nouakchott">
-      <NewShipmentForm
-        defaultArrivalDate="2026-10-07"
-        defaultArrivalTime="08:30"
-        customers={customers}
-        projects={projects}
-        defaultProject={defaultProject}
-        backHref={
-          defaultProject === undefined ? "/shipments" : `/shipments/projects/${defaultProject}`
-        }
-      />
-    </IntlProvider>,
+    <RouterProvider
+      router={createMemoryRouter([
+        {
+          path: "*",
+          element: (
+            <IntlProvider locale="ar" messages={messages} timeZone="Africa/Nouakchott">
+              <NewShipmentForm
+                defaultArrivalDate="2026-10-07"
+                defaultArrivalTime="08:30"
+                customers={customers}
+                projects={projects}
+                defaultProject={defaultProject}
+                backHref={
+                  defaultProject === undefined
+                    ? "/shipments"
+                    : `/shipments/projects/${defaultProject}`
+                }
+              />
+            </IntlProvider>
+          ),
+        },
+      ])}
+    />,
   );
 }
 

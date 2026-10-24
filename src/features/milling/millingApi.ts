@@ -33,19 +33,14 @@ function endErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof EndMill
   };
 }
 
-type MercuryRefusal = keyof MercuryValues | "closed";
-
-function mercuryErrorsFromApi(errors: BackendFieldErrors): FieldErrors<MercuryRefusal> {
-  return {
-    ...(errors.mercury_quantity === undefined ? {} : { quantity: errors.mercury_quantity }),
-    ...(errors.mercury_added === undefined ? {} : { closed: errors.mercury_added }),
-  };
+function mercuryErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof MercuryValues> {
+  return errors.mercury_quantity === undefined ? {} : { quantity: errors.mercury_quantity };
 }
 
 export async function markMercuryAdded(
   operationId: string,
   values: MercuryValues,
-): Promise<SaveResult<MercuryRefusal>> {
+): Promise<SaveResult<keyof MercuryValues>> {
   const { response, error } = await apiClient.PATCH("/api/v1/grinding-operations/{id}/", {
     params: { path: { id: Number(operationId) } },
     body: { mercury_added: true, mercury_quantity: toDecimal(values.quantity) },

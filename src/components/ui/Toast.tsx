@@ -12,9 +12,22 @@ import { Icon } from "./Icon";
 
 const TOAST_DURATION_MS = 1500;
 
+const WARNING_DURATION_MS = 4000;
+
 const TOAST_TOP_GAP = 16;
 
-const ToastContext = createContext<(message: string) => void>(() => undefined);
+type ToastTone = "success" | "danger";
+
+type ShowToast = (message: string, tone?: ToastTone) => void;
+
+const ToastContext = createContext<ShowToast>(() => undefined);
+
+const DismissToastContext = createContext<() => void>(() => undefined);
+
+const toneStyles = {
+  success: { className: "bg-success-700", icon: "circle-check", duration: TOAST_DURATION_MS },
+  danger: { className: "bg-danger-700", icon: "refresh", duration: WARNING_DURATION_MS },
+} as const;
 
 type ToastAnchor = RefObject<HTMLElement | null>;
 
@@ -32,7 +45,15 @@ function placeOver(toast: HTMLElement, anchor: ToastAnchor) {
   toast.style.insetInlineStart = `${rtl ? window.innerWidth - center : center}px`;
 }
 
-function Toast({ message, anchor }: { message: string; anchor: ToastAnchor }) {
+function Toast({
+  message,
+  tone,
+  anchor,
+}: {
+  message: string;
+  tone: ToastTone;
+  anchor: ToastAnchor;
+}) {
   const toastRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,9 +75,9 @@ function Toast({ message, anchor }: { message: string; anchor: ToastAnchor }) {
       ref={toastRef}
       popover="manual"
       role="status"
-      className="rounded-card bg-success-700 text-ink-inverted shadow-card fixed inset-auto m-0 h-fit w-fit -translate-x-1/2 items-center gap-3 px-6 py-3.5 text-[16px] font-bold rtl:translate-x-1/2 [&:popover-open]:flex"
+      className={`rounded-card ${toneStyles[tone].className} text-ink-inverted shadow-card fixed inset-auto m-0 h-fit w-fit -translate-x-1/2 items-center gap-3 px-6 py-3.5 text-[16px] font-bold rtl:translate-x-1/2 [&:popover-open]:flex`}
     >
-      <Icon name="circle-check" className="h-6 w-6" />
+      <Icon name={toneStyles[tone].icon} className="h-6 w-6" />
       {message}
     </div>
   );
@@ -69,32 +90,40 @@ type ToastProviderProps = {
 };
 
 export function ToastProvider({ anchor, busy = false, children }: ToastProviderProps) {
-  const [shown, setShown] = useState<{ message: string; key: number }>();
-  const show = useCallback(
-    (message: string) => startTransition(() => setShown({ message, key: Date.now() })),
+  const [shown, setShown] = useState<{ message: string; tone: ToastTone; key: number }>();
+  const show = useCallback<ShowToast>(
+    (message, tone = "success") =>
+      startTransition(() => setShown({ message, tone, key: Date.now() })),
     [],
   );
+  const dismiss = useCallback(() => startTransition(() => setShown(undefined)), []);
 
   useEffect(() => {
     if (shown === undefined || busy) {
       return;
     }
 
-    const timer = setTimeout(() => setShown(undefined), TOAST_DURATION_MS);
+    const timer = setTimeout(() => setShown(undefined), toneStyles[shown.tone].duration);
 
     return () => clearTimeout(timer);
   }, [shown, busy]);
 
   return (
     <ToastContext value={show}>
-      {children}
-      {shown === undefined || busy ? null : (
-        <Toast key={shown.key} message={shown.message} anchor={anchor} />
-      )}
+      <DismissToastContext value={dismiss}>
+        {children}
+        {shown === undefined || busy ? null : (
+          <Toast key={shown.key} message={shown.message} tone={shown.tone} anchor={anchor} />
+        )}
+      </DismissToastContext>
     </ToastContext>
   );
 }
 
-export function useToast(): (message: string) => void {
+export function useToast(): ShowToast {
   return use(ToastContext);
+}
+
+export function useDismissToast(): () => void {
+  return use(DismissToastContext);
 }

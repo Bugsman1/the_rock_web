@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import messages from "@/messages/fr.json";
@@ -60,15 +61,24 @@ const projects: readonly Project[] = [
 
 function renderForm(user?: User) {
   return render(
-    <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      <UserForm
-        user={user}
-        projects={projects}
-        roles={roles}
-        onSaved={onSaved}
-        onCancel={vi.fn()}
-      />
-    </IntlProvider>,
+    <RouterProvider
+      router={createMemoryRouter([
+        {
+          path: "*",
+          element: (
+            <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
+              <UserForm
+                user={user}
+                projects={projects}
+                roles={roles}
+                onSaved={onSaved}
+                onCancel={vi.fn()}
+              />
+            </IntlProvider>
+          ),
+        },
+      ])}
+    />,
   );
 }
 

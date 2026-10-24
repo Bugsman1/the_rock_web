@@ -1,4 +1,4 @@
-import { apiClient, saveOutcome, tryLoad } from "@/lib/api/client";
+import { apiClient, saveOutcome } from "@/lib/api/client";
 import type { SaveResult } from "@/lib/api/client";
 import { getGrindingOperations } from "@/lib/grindingApi";
 import { getProjects } from "@/lib/projectsApi";
@@ -7,13 +7,13 @@ import { refiningErrorsFromApi, refiningToApi, refiningUpdateToApi } from "./ref
 import type { RefiningField, RefiningTarget, RefiningValues } from "./refining";
 
 export async function getRefiningData() {
-  const [projects, grindings, operations] = await Promise.all([
+  const [projects, grindings, refinings] = await Promise.all([
     getProjects(),
     getGrindingOperations(),
-    tryLoad(() => getRefiningOperations()),
+    getRefiningOperations(),
   ]);
 
-  return { projects, grindings, operations };
+  return { projects, grindings, refinings };
 }
 
 export async function createRefiningOperation(

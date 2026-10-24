@@ -5,7 +5,7 @@ import { useRevalidator } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { useToast } from "@/components/ui/Toast";
 import { Drawer, DrawerActions } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
+import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { Icon } from "@/components/ui/Icon";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { TextField } from "@/components/ui/TextField";
@@ -28,8 +28,7 @@ function MercuryForm({ operation, onSaved, onCancel }: MercuryFormProps) {
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
   const toast = useToast();
-  const [failed, setFailed] = useState(false);
-  const [closed, setClosed] = useState(false);
+  const saveFailure = useSaveFailure();
   const [saved, setSaved] = useState(false);
 
   const locale = useLocale();
@@ -51,8 +50,11 @@ function MercuryForm({ operation, onSaved, onCancel }: MercuryFormProps) {
   });
 
   async function onSubmit(values: MercuryValues) {
-    setFailed(false);
-    setClosed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
 
     const result = await markMercuryAdded(operation.id, values);
 
@@ -64,11 +66,10 @@ function MercuryForm({ operation, onSaved, onCancel }: MercuryFormProps) {
     }
 
     if (result.fieldErrors.quantity !== undefined) {
-      setError("quantity", { message: t("mercury.notEnoughStock") });
+      setError("quantity", { message: result.fieldErrors.quantity });
     }
 
-    setClosed(result.fieldErrors.closed !== undefined);
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   return (
@@ -92,11 +93,11 @@ function MercuryForm({ operation, onSaved, onCancel }: MercuryFormProps) {
 
       <p className="text-ink-muted -mt-2 text-[13px] font-semibold">{t("mercury.fromStock")}</p>
 
-      {closed ? <FormError message={t("mercury.cannotAdd")} /> : null}
-      {failed ? <FormError message={common("saveFailed")} /> : null}
+      <SaveFailureMessage failure={saveFailure.failure} />
 
       <DrawerActions
         dirty={formState.isDirty}
+        locked={saveFailure.unknown}
         submitting={formState.isSubmitting || saved}
         submitIcon="circle-check"
         submitLabel={t("mercury.submit")}

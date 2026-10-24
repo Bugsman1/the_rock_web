@@ -4,7 +4,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
 import { useToast } from "@/components/ui/Toast";
 import { DrawerActions } from "@/components/ui/Drawer";
-import { FieldError, FormError } from "@/components/ui/FieldError";
+import { FieldError, SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { ReadOnlyDateAndTime, ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { TextArea, TextField } from "@/components/ui/TextField";
@@ -61,7 +61,7 @@ export function RefiningForm({
   const toasts = useTranslations("toasts");
   const toast = useToast();
   const locale = useLocale();
-  const [failed, setFailed] = useState(false);
+  const saveFailure = useSaveFailure();
   const [saved, setSaved] = useState(false);
   const [lossError, setLossError] = useState<string>();
   const mercuryGrams = operation.mercury?.quantity ?? 0;
@@ -121,13 +121,17 @@ export function RefiningForm({
   const loss = refiningLoss(weightBefore, weightAfter);
 
   async function onSubmit(values: RefiningValues) {
-    setFailed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
     setLossError(undefined);
 
     const refinedAt = combineDateAndTime(values.date, values.time);
 
     if (refinedAt === undefined) {
-      setFailed(true);
+      saveFailure.fail();
       return;
     }
 
@@ -151,7 +155,7 @@ export function RefiningForm({
       }
     }
 
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   function weightField(
@@ -263,10 +267,11 @@ export function RefiningForm({
         </div>
       </div>
 
-      {failed ? <FormError message={common("saveFailed")} /> : null}
+      <SaveFailureMessage failure={saveFailure.failure} />
 
       <DrawerActions
         dirty={formState.isDirty}
+        locked={saveFailure.unknown}
         submitting={formState.isSubmitting || saved}
         submitIcon={refining === undefined ? "flame" : "circle-check"}
         submitLabel={refining === undefined ? t("form.submit") : t("form.saveChanges")}

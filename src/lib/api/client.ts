@@ -89,10 +89,23 @@ export type ApiSchema<Name extends keyof components["schemas"]> = Readable<
 
 export type FieldErrors<Field extends string> = Partial<Record<Field, string>>;
 
-export type SaveResult<Field extends string> =
-  { ok: true } | { ok: false; fieldErrors: FieldErrors<Field>; failed: boolean };
+export type SaveFailure<Field extends string> = {
+  ok: false;
+  fieldErrors: FieldErrors<Field>;
+  failed: boolean;
+  message?: string;
+  unknown?: true;
+};
+
+export type SaveResult<Field extends string> = { ok: true } | SaveFailure<Field>;
 
 export const saveFailed = { ok: false, fieldErrors: {}, failed: true } as const;
+
+const saveUnknown = { ok: false, fieldErrors: {}, failed: true, unknown: true } as const;
+
+function isClientError(status: number): boolean {
+  return status >= 400 && status < 500;
+}
 
 export type BackendFieldErrors = Readonly<Record<string, string>>;
 
@@ -121,9 +134,22 @@ export function saveOutcome<Field extends string>(
     return { ok: true };
   }
 
-  const fieldErrors = response.status === 400 ? errorsFromApi(backendFieldErrors(error)) : {};
+  if (isUnreachableStatus(response.status)) {
+    return saveUnknown;
+  }
 
-  return { ok: false, fieldErrors, failed: Object.keys(fieldErrors).length === 0 };
+  const backendErrors = isClientError(response.status) ? backendFieldErrors(error) : {};
+  const fieldErrors = response.status === 400 ? errorsFromApi(backendErrors) : {};
+  const shown = new Set(Object.values(fieldErrors));
+  const unshown = Object.values(backendErrors).filter((message) => !shown.has(message));
+  const message = unshown.length === 0 ? undefined : unshown.join(" ");
+
+  return {
+    ok: false,
+    fieldErrors,
+    failed: message !== undefined || Object.keys(fieldErrors).length === 0,
+    ...(message === undefined ? {} : { message }),
+  };
 }
 
 function currentLocale() {

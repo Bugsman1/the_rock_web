@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslations } from "use-intl";
 import { useToast } from "@/components/ui/Toast";
 import { DrawerActions } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
+import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { PasswordField } from "@/components/ui/PasswordField";
 import { Select } from "@/components/ui/Select";
 import { TextField } from "@/components/ui/TextField";
@@ -30,7 +30,7 @@ export function UserForm({ user, projects, roles: roleChoices, onSaved, onCancel
   const toasts = useTranslations("toasts");
   const toast = useToast();
   const roles = useTranslations("roles");
-  const [failed, setFailed] = useState(false);
+  const saveFailure = useSaveFailure();
   const creating = user === undefined;
 
   const schema = useMemo(
@@ -70,7 +70,11 @@ export function UserForm({ user, projects, roles: roleChoices, onSaved, onCancel
   const projectScoped = roleChoices.some((choice) => choice.id === roleId && choice.projectScoped);
 
   async function onSubmit(values: UserValues) {
-    setFailed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
 
     const result =
       user === undefined
@@ -89,7 +93,7 @@ export function UserForm({ user, projects, roles: roleChoices, onSaved, onCancel
       }
     }
 
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   return (
@@ -172,10 +176,11 @@ export function UserForm({ user, projects, roles: roleChoices, onSaved, onCancel
         {...register("password")}
       />
 
-      {failed ? <FormError message={common("saveFailed")} /> : null}
+      <SaveFailureMessage failure={saveFailure.failure} />
 
       <DrawerActions
         dirty={formState.isDirty}
+        locked={saveFailure.unknown}
         submitting={formState.isSubmitting}
         submitIcon={creating ? "plus" : "circle-check"}
         submitLabel={creating ? t("form.create") : t("form.submit")}

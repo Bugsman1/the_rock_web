@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useTranslations } from "use-intl";
 import { useToast } from "@/components/ui/Toast";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { DrawerActions } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
+import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { DataTable } from "@/components/ui/DataTable";
 import { TextField } from "@/components/ui/TextField";
@@ -44,7 +44,7 @@ export function RoleForm({ role, onSaved, onCancel }: RoleFormProps) {
   const toasts = useTranslations("toasts");
   const toast = useToast();
   const nameOf = useRoleName();
-  const [failed, setFailed] = useState(false);
+  const saveFailure = useSaveFailure();
 
   const schema = useMemo(
     () => createRoleSchema({ required: common("validation.required") }),
@@ -60,7 +60,11 @@ export function RoleForm({ role, onSaved, onCancel }: RoleFormProps) {
   const { errors } = formState;
 
   async function onSubmit(values: RoleValues) {
-    setFailed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
 
     const result =
       role === undefined ? await createRole(values) : await updateRole(role.id, values);
@@ -77,7 +81,7 @@ export function RoleForm({ role, onSaved, onCancel }: RoleFormProps) {
       }
     }
 
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   return (
@@ -141,10 +145,11 @@ export function RoleForm({ role, onSaved, onCancel }: RoleFormProps) {
         <p className="text-ink-muted text-[13px] font-semibold">{t("form.viewHint")}</p>
       </fieldset>
 
-      {failed ? <FormError message={common("saveFailed")} /> : null}
+      <SaveFailureMessage failure={saveFailure.failure} />
 
       <DrawerActions
         dirty={formState.isDirty}
+        locked={saveFailure.unknown}
         submitting={formState.isSubmitting}
         submitIcon={role === undefined ? "plus" : "circle-check"}
         submitLabel={role === undefined ? t("form.create") : t("form.submit")}

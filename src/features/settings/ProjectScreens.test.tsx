@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Grinder, Project } from "@/lib/projects";
@@ -32,9 +33,18 @@ beforeEach(() => {
 
 function inFrench(children: React.ReactNode) {
   return render(
-    <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-      {children}
-    </IntlProvider>,
+    <RouterProvider
+      router={createMemoryRouter([
+        {
+          path: "*",
+          element: (
+            <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
+              {children}
+            </IntlProvider>
+          ),
+        },
+      ])}
+    />,
   );
 }
 

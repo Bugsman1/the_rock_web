@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useLoaderData } from "react-router";
@@ -6,7 +6,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { useToast } from "@/components/ui/Toast";
 import { DrawerActions, useRouteDrawer } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
+import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { PageLayout } from "@/components/ui/PageHeader";
 import { Select } from "@/components/ui/Select";
 import { TextField } from "@/components/ui/TextField";
@@ -42,7 +42,7 @@ export function GrinderForm({
   const toast = useToast();
   const statuses = useTranslations("activityStatuses");
   const locale = useLocale();
-  const [failed, setFailed] = useState(false);
+  const saveFailure = useSaveFailure();
 
   const schema = useMemo(
     () => createGrinderSchema({ numberInvalid: t("form.errors.numberInvalid") }),
@@ -61,7 +61,11 @@ export function GrinderForm({
   const { errors } = formState;
 
   async function onSubmit(values: GrinderValues) {
-    setFailed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
 
     const numberTaken = t("form.errors.numberTaken");
     const result =
@@ -81,7 +85,7 @@ export function GrinderForm({
       }
     }
 
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   return (
@@ -115,10 +119,11 @@ export function GrinderForm({
         {...register("status")}
       />
 
-      {failed ? <FormError message={common("saveFailed")} /> : null}
+      <SaveFailureMessage failure={saveFailure.failure} />
 
       <DrawerActions
         dirty={formState.isDirty}
+        locked={saveFailure.unknown}
         submitting={formState.isSubmitting}
         submitIcon={grinder === undefined ? "plus" : "circle-check"}
         submitLabel={grinder === undefined ? t("form.create") : t("form.submit")}

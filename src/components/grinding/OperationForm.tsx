@@ -4,7 +4,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
 import { useToast } from "@/components/ui/Toast";
 import { DrawerActions } from "@/components/ui/Drawer";
-import { FieldError, FormError } from "@/components/ui/FieldError";
+import { FieldError, SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { ReadOnlyDateAndTime, ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { TextArea, TextField } from "@/components/ui/TextField";
@@ -69,7 +69,7 @@ export function OperationForm({
   const toast = useToast();
   const locale = useLocale();
   const count = (value: number) => formatCount(value, locale);
-  const [failed, setFailed] = useState(false);
+  const saveFailure = useSaveFailure();
   const [saved, setSaved] = useState(false);
   const findMachineNumber = (machine: number) =>
     idleMachines.find((item) => item.number === machine);
@@ -150,14 +150,18 @@ export function OperationForm({
     startedAt === undefined || bagCount === 0 ? undefined : estimatedEnd(startedAt, bagCount);
 
   async function onSubmit(values: NewOperationValues) {
-    setFailed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
 
     const startedAt = combineDateAndTime(values.startDate, values.startTime);
     const target = findShipment(values.shipmentNumber);
     const machine = findMachineNumber(Number(values.machine));
 
     if (startedAt === undefined || target === undefined || machine === undefined) {
-      setFailed(true);
+      saveFailure.fail();
       return;
     }
 
@@ -180,7 +184,7 @@ export function OperationForm({
       }
     }
 
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   return (
@@ -270,10 +274,11 @@ export function OperationForm({
 
       <EstimatedEnd estimate={estimate} />
 
-      {failed ? <FormError message={common("saveFailed")} /> : null}
+      <SaveFailureMessage failure={saveFailure.failure} />
 
       <DrawerActions
         dirty={formState.isDirty}
+        locked={saveFailure.unknown}
         submitting={formState.isSubmitting || saved}
         submitIcon={operation === undefined ? "player-play" : "circle-check"}
         submitLabel={operation === undefined ? t("submit") : t("saveChanges")}

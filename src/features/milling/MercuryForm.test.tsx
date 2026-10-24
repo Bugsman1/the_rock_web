@@ -73,7 +73,7 @@ describe("mercury added to a grinding", () => {
     expect(api.markMercuryAdded).not.toHaveBeenCalled();
   });
 
-  it("says in the reader's language when the project's mercury stock is too low", async () => {
+  it("shows the backend's reason under the quantity when the stock is too low", async () => {
     api.markMercuryAdded.mockResolvedValue({
       ok: false,
       fieldErrors: { quantity: "This project has no mercury in stock." },
@@ -84,22 +84,24 @@ describe("mercury added to a grinding", () => {
     await user.type(screen.getByLabelText(mercury.quantity), "500");
     await user.click(screen.getByRole("button", { name: mercury.submit }));
 
-    expect(await screen.findByText(mercury.notEnoughStock)).toBeVisible();
-    expect(screen.queryByText("This project has no mercury in stock.")).not.toBeInTheDocument();
+    expect(await screen.findByText("This project has no mercury in stock.")).toBeVisible();
   });
 
   it("says when the grinding can no longer take mercury", async () => {
     api.markMercuryAdded.mockResolvedValue({
       ok: false,
-      fieldErrors: { closed: "The grinding is finished; mercury can no longer be added." },
-      failed: false,
+      fieldErrors: {},
+      failed: true,
+      message: "The grinding is finished; mercury can no longer be added.",
     });
     const user = await openMercuryForm();
 
     await user.type(screen.getByLabelText(mercury.quantity), "150");
     await user.click(screen.getByRole("button", { name: mercury.submit }));
 
-    expect(await screen.findByText(mercury.cannotAdd)).toBeVisible();
+    expect(
+      await screen.findByText("The grinding is finished; mercury can no longer be added."),
+    ).toBeVisible();
   });
 
   it("shows an added mercury with no way to take it back", () => {

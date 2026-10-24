@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useLoaderData } from "react-router";
@@ -6,7 +6,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useTranslations } from "use-intl";
 import { useToast } from "@/components/ui/Toast";
 import { DrawerActions, useRouteDrawer } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
+import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { PageLayout } from "@/components/ui/PageHeader";
 import { Select } from "@/components/ui/Select";
 import { TextField } from "@/components/ui/TextField";
@@ -28,7 +28,7 @@ export function ProjectForm({ item: project, onSaved, onCancel }: FormProps<Proj
   const toast = useToast();
   const sites = useTranslations("sites");
   const statuses = useTranslations("activityStatuses");
-  const [failed, setFailed] = useState(false);
+  const saveFailure = useSaveFailure();
 
   const schema = useMemo(
     () => createProjectSchema({ required: common("validation.required") }),
@@ -48,7 +48,11 @@ export function ProjectForm({ item: project, onSaved, onCancel }: FormProps<Proj
   const { errors } = formState;
 
   async function onSubmit(values: ProjectValues) {
-    setFailed(false);
+    if (saveFailure.unknown) {
+      return;
+    }
+
+    saveFailure.clear();
 
     const result =
       project === undefined ? await createProject(values) : await updateProject(project.id, values);
@@ -65,7 +69,7 @@ export function ProjectForm({ item: project, onSaved, onCancel }: FormProps<Proj
       }
     }
 
-    setFailed(result.failed);
+    saveFailure.report(result);
   }
 
   return (
@@ -97,10 +101,11 @@ export function ProjectForm({ item: project, onSaved, onCancel }: FormProps<Proj
         {...register("status")}
       />
 
-      {failed ? <FormError message={common("saveFailed")} /> : null}
+      <SaveFailureMessage failure={saveFailure.failure} />
 
       <DrawerActions
         dirty={formState.isDirty}
+        locked={saveFailure.unknown}
         submitting={formState.isSubmitting}
         submitIcon={project === undefined ? "plus" : "circle-check"}
         submitLabel={project === undefined ? t("form.create") : t("form.submit")}

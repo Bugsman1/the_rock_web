@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   isRouteErrorResponse,
   useLocation,
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Icon } from "@/components/ui/Icon";
 import { PageSkeleton } from "@/components/ui/LoadingDots";
+import { useDismissToast } from "@/components/ui/Toast";
 import type { SkeletonShape } from "@/components/ui/LoadingDots";
 import { errorKind } from "@/lib/api/client";
 import { hasSession } from "@/lib/api/session";
@@ -75,6 +77,9 @@ export function PageError() {
   const signedIn = hasSession(new Date());
   const status = isRouteErrorResponse(error) ? error.status : undefined;
   const kind = errorKind(status);
+  const dismissToast = useDismissToast();
+
+  useEffect(() => dismissToast(), [dismissToast]);
 
   return (
     <div className="flex justify-center px-4 py-12">

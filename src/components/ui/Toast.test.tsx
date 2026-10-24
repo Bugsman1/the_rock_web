@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { createMemoryRouter, Outlet, RouterProvider, useNavigation } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ToastProvider, useToast } from "./Toast";
+import { ToastProvider, useDismissToast, useToast } from "./Toast";
 
 function SaveButton() {
   const toast = useToast();
@@ -38,7 +38,68 @@ describe("ToastProvider", () => {
     });
     expect(screen.queryByRole("status", { hidden: true })).toBeNull();
   });
+
+  it("leaves a warning up long enough to be read", () => {
+    vi.useFakeTimers();
+    render(
+      <ToastProvider anchor={{ current: null }}>
+        <WarnButton />
+      </ToastProvider>,
+    );
+
+    act(() => {
+      screen.getByRole("button", { name: "Warn" }).click();
+    });
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+    expect(screen.getByRole("status", { hidden: true })).toHaveTextContent("Changed");
+
+    act(() => {
+      vi.advanceTimersByTime(2500);
+    });
+    expect(screen.queryByRole("status", { hidden: true })).toBeNull();
+  });
+
+  it("drops the message when asked, such as when an error page replaces the page", () => {
+    render(
+      <ToastProvider anchor={{ current: null }}>
+        <WarnButton />
+        <DismissButton />
+      </ToastProvider>,
+    );
+
+    act(() => {
+      screen.getByRole("button", { name: "Warn" }).click();
+    });
+    expect(screen.getByRole("status", { hidden: true })).toBeInTheDocument();
+
+    act(() => {
+      screen.getByRole("button", { name: "Dismiss" }).click();
+    });
+    expect(screen.queryByRole("status", { hidden: true })).toBeNull();
+  });
 });
+
+function WarnButton() {
+  const toast = useToast();
+
+  return (
+    <button type="button" onClick={() => toast("Changed", "danger")}>
+      Warn
+    </button>
+  );
+}
+
+function DismissButton() {
+  const dismiss = useDismissToast();
+
+  return (
+    <button type="button" onClick={dismiss}>
+      Dismiss
+    </button>
+  );
+}
 
 function SaveAndLeave({ onSaved }: { onSaved: () => void }) {
   const toast = useToast();

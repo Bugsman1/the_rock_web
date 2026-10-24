@@ -1,9 +1,10 @@
-import { useLoaderData } from "react-router";
+import { redirect, useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { CardGrid, KpiTile, LinkCard, StatGrid } from "@/components/ui/Cards";
 import { PageTitle } from "@/components/ui/PageHeader";
-import { Link } from "@/i18n/navigation";
+import { defaultLocale, isLocale } from "@/i18n/locales";
+import { Link, localizedHref } from "@/i18n/navigation";
 import { cn } from "@/lib/cn";
 import { formatCount } from "@/lib/format";
 import { isSiteKey, siteKeys } from "@/lib/projects";
@@ -82,10 +83,17 @@ function siteFilterOf(value: string | null): SiteFilter {
   return value !== null && isSiteKey(value) ? value : "all";
 }
 
-export async function millingLoader({ request }: LoaderFunctionArgs) {
+export async function millingLoader({ params, request }: LoaderFunctionArgs) {
   const site = new URL(request.url).searchParams.get("site");
+  const data = await getMillingData();
+  const [onlyProject] = data.projects;
 
-  return { site: siteFilterOf(site), data: await getMillingData() };
+  if (data.projects.length === 1 && onlyProject !== undefined) {
+    const locale = isLocale(params.locale) ? params.locale : defaultLocale;
+    throw redirect(localizedHref(locale, millingProjectHref(onlyProject.id)));
+  }
+
+  return { site: siteFilterOf(site), data };
 }
 
 function SiteFilterNav({ current, sites }: { current: SiteFilter; sites: readonly SiteFilter[] }) {

@@ -140,6 +140,55 @@ describe("saveOutcome", () => {
       failed: true,
     });
   });
+
+  it("shows the backend's message for errors that belong to no form field", () => {
+    expect(
+      saveOutcome(
+        new Response(null, { status: 400 }),
+        { full_name: ["Required."], non_field_errors: ["The machine is busy."] },
+        toForm,
+      ),
+    ).toEqual({
+      ok: false,
+      fieldErrors: { name: "Required." },
+      failed: true,
+      message: "The machine is busy.",
+    });
+  });
+
+  it("shows the backend's message when it refuses the action", () => {
+    expect(
+      saveOutcome(
+        new Response(null, { status: 403 }),
+        { detail: "You do not have permission." },
+        toForm,
+      ),
+    ).toEqual({
+      ok: false,
+      fieldErrors: {},
+      failed: true,
+      message: "You do not have permission.",
+    });
+  });
+
+  it("never shows the body of a server error", () => {
+    expect(
+      saveOutcome(
+        new Response(null, { status: 500 }),
+        { detail: "Traceback (most recent…" },
+        toForm,
+      ),
+    ).toEqual({ ok: false, fieldErrors: {}, failed: true });
+  });
+
+  it.each([502, 503, 504])("treats a %i as an outcome that is not known", (status) => {
+    expect(saveOutcome(new Response(null, { status }), undefined, toForm)).toEqual({
+      ok: false,
+      fieldErrors: {},
+      failed: true,
+      unknown: true,
+    });
+  });
 });
 
 describe("unwrap", () => {
