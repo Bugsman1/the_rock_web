@@ -60,16 +60,23 @@ export function customersHref(params: ListPageParams = {}): string {
   return listPageHref(CUSTOMERS_HREF, params);
 }
 
-export function customerHref(customer: string, drawer?: { debt: string } | { addDebt: true }) {
+export function customerHref(
+  customer: string,
+  drawer?: { debt: string; action?: string } | { addDebt: true },
+) {
   const path = `${CUSTOMERS_HREF}/${customer}`;
 
   if (drawer === undefined) {
     return path;
   }
 
-  const query = "debt" in drawer ? `debt=${encodeURIComponent(drawer.debt)}` : "new=1";
+  if (!("debt" in drawer)) {
+    return `${path}?new=1`;
+  }
 
-  return `${path}?${query}`;
+  const debt = `debt=${encodeURIComponent(drawer.debt)}`;
+
+  return `${path}?${drawer.action === undefined ? debt : `${debt}&action=${drawer.action}`}`;
 }
 
 export function usersHref(params: ListPageParams = {}): string {

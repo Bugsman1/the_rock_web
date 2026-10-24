@@ -1,11 +1,13 @@
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
+import { ActionLink } from "@/components/ui/ActionLink";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
+import type { IconName } from "@/components/ui/Icon";
 import { PageLayout } from "@/components/ui/PageHeader";
 import { TablePanel } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
@@ -13,9 +15,10 @@ import { notFound } from "@/lib/api/client";
 import { getCustomer } from "@/lib/customersApi";
 import { formatDate, formatMoney } from "@/lib/format";
 import { CUSTOMERS_HREF, customerHref } from "@/lib/routes";
-import type { CustomerDebt } from "./debts";
+import { debtActions, isDebtAction } from "./debts";
+import type { CustomerDebt, DebtAction } from "./debts";
 import { getCustomerDebts, getDebtHistory } from "./debtsApi";
-import { DebtDetails, DebtStatusBadge } from "./DebtDetails";
+import { DebtActionForm, DebtDetails, DebtStatusBadge } from "./DebtDetails";
 import { NewDebtForm } from "./DebtForms";
 
 export async function customerLoader({ params, request }: LoaderFunctionArgs) {
@@ -28,17 +31,38 @@ export async function customerLoader({ params, request }: LoaderFunctionArgs) {
   const search = new URL(request.url).searchParams;
   const debts = await getCustomerDebts(customer.id);
   const opened = debts.find((debt) => debt.id === search.get("debt"));
+  const action = search.get("action");
+  const chosen =
+    opened !== undefined && isDebtAction(action) && debtActions(opened).includes(action)
+      ? action
+      : undefined;
 
   return {
     customer,
     debts,
-    opened:
-      opened === undefined ? undefined : { debt: opened, history: await getDebtHistory(opened.id) },
+    acting:
+      opened === undefined || chosen === undefined ? undefined : { debt: opened, action: chosen },
+    viewing:
+      opened === undefined || chosen !== undefined
+        ? undefined
+        : { debt: opened, history: await getDebtHistory(opened.id) },
     adding: search.get("new") === "1",
   };
 }
 
-function DebtTable({ customerId, debts }: { customerId: string; debts: readonly CustomerDebt[] }) {
+const actionIcons: Record<DebtAction, IconName> = {
+  increase: "plus",
+  decrease: "minus",
+  payOff: "circle-check",
+};
+
+type DebtTableProps = {
+  customerId: string;
+  debts: readonly CustomerDebt[];
+  canChange: boolean;
+};
+
+function DebtTable({ customerId, debts, canChange }: DebtTableProps) {
   const t = useTranslations("customers.debts");
   const locale = useLocale();
   const money = (amount: number) => formatMoney(amount, locale);
@@ -84,6 +108,33 @@ function DebtTable({ customerId, debts }: { customerId: string; debts: readonly 
     },
   ];
 
+  if (canChange) {
+    columns.push({
+      key: "actions",
+      header: t("columns.actions"),
+      hideHeader: true,
+      align: "end",
+      interactive: true,
+      cell: (debt) => (
+        <div className="flex flex-wrap justify-end gap-2">
+          {debtActions(debt).map((action) => (
+            <ActionLink
+              key={action}
+              href={customerHref(customerId, { debt: debt.id, action })}
+              icon={actionIcons[action]}
+              ariaLabel={t("actions.label", {
+                action: t(`actions.${action}`),
+                debt: debt.description,
+              })}
+            >
+              {t(`actions.${action}`)}
+            </ActionLink>
+          ))}
+        </div>
+      ),
+    });
+  }
+
   return (
     <DataTable
       columns={columns}
@@ -96,7 +147,7 @@ function DebtTable({ customerId, debts }: { customerId: string; debts: readonly 
 }
 
 export function CustomerScreen() {
-  const { customer, debts, opened, adding } = useLoaderData<typeof customerLoader>();
+  const { customer, debts, acting, viewing, adding } = useLoaderData<typeof customerLoader>();
   const t = useTranslations("customers.debts");
   const common = useTranslations("common");
   const { close } = useRouteDrawer(customerHref(customer.id));
@@ -118,17 +169,33 @@ export function CustomerScreen() {
       }
     >
       <TablePanel title={t("title")}>
-        <DebtTable customerId={customer.id} debts={debts} />
+        <DebtTable customerId={customer.id} debts={debts} canChange={canAdd} />
       </TablePanel>
 
       <Drawer
-        open={opened !== undefined}
-        title={opened?.debt.description ?? ""}
+        open={viewing !== undefined}
+        title={viewing?.debt.description ?? ""}
         closeLabel={common("close")}
         onClose={close}
       >
-        {opened === undefined ? null : (
-          <DebtDetails key={opened.debt.id} debt={opened.debt} history={opened.history} />
+        {viewing === undefined ? null : (
+          <DebtDetails key={viewing.debt.id} debt={viewing.debt} history={viewing.history} />
+        )}
+      </Drawer>
+
+      <Drawer
+        open={acting !== undefined && canAdd}
+        title={acting === undefined ? "" : t(`form.${acting.action}Title`)}
+        closeLabel={common("close")}
+        onClose={close}
+      >
+        {acting === undefined ? null : (
+          <DebtActionForm
+            key={`${acting.debt.id}-${acting.action}`}
+            debt={acting.debt}
+            action={acting.action}
+            onDone={close}
+          />
         )}
       </Drawer>
 

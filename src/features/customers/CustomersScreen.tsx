@@ -72,7 +72,7 @@ function CustomerTable({ customers, query, page }: CustomerTableProps) {
       header: t("fields.debt"),
       align: "end",
       className: "text-ink font-bold",
-      cell: (customer) => formatMoney(customer.debt, locale),
+      cell: (customer) => (customer.debt === undefined ? "—" : formatMoney(customer.debt, locale)),
     });
   }
 

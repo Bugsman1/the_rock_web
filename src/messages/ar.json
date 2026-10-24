@@ -145,7 +145,8 @@
         "total": "الإجمالي",
         "paid": "المدفوع",
         "remaining": "المتبقي",
-        "status": "الحالة"
+        "status": "الحالة",
+        "actions": "الإجراءات"
       },
       "status": {
         "open": "مفتوح",
@@ -165,13 +166,14 @@
       },
       "actions": {
         "increase": "زيادة",
-        "decrease": "تخفيض",
-        "payOff": "تم الدفع بالكامل"
+        "decrease": "تسديد",
+        "payOff": "تم الدفع بالكامل",
+        "label": "{action}: {debt}"
       },
       "form": {
         "newTitle": "دين جديد",
         "increaseTitle": "زيادة الدين",
-        "decreaseTitle": "تخفيض الدين",
+        "decreaseTitle": "تسديد الدين",
         "payOffTitle": "تسديد الدين بالكامل",
         "description": "الوصف",
         "amount": "المبلغ",

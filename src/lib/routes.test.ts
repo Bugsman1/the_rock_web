@@ -39,6 +39,9 @@ describe("customerHref", () => {
   it("links a client's page, one of their debts or a new debt", () => {
     expect(customerHref("7")).toBe("/customers/7");
     expect(customerHref("7", { debt: "12" })).toBe("/customers/7?debt=12");
+    expect(customerHref("7", { debt: "12", action: "increase" })).toBe(
+      "/customers/7?debt=12&action=increase",
+    );
     expect(customerHref("7", { addDebt: true })).toBe("/customers/7?new=1");
   });
 });

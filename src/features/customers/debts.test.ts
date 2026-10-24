@@ -4,11 +4,12 @@ import {
   createIncreaseSchema,
   createNewDebtSchema,
   createPaymentSchema,
+  debtActions,
   debtFromApi,
   debtHistoryFromApi,
   increaseErrorsFromApi,
   increaseToApi,
-  isPaidOff,
+  isDebtAction,
   newDebtErrorsFromApi,
   newDebtToApi,
   paymentErrorsFromApi,
@@ -92,9 +93,15 @@ describe("debtFromApi", () => {
     });
   });
 
-  it("knows a debt that is fully paid", () => {
-    expect(isPaidOff(debtFromApi(apiDebt))).toBe(false);
-    expect(isPaidOff(debtFromApi({ ...apiDebt, status: "paid" }))).toBe(true);
+  it("offers every action on an open debt and only an increase on a paid one", () => {
+    expect(debtActions(debtFromApi(apiDebt))).toEqual(["increase", "decrease", "payOff"]);
+    expect(debtActions(debtFromApi({ ...apiDebt, status: "paid" }))).toEqual(["increase"]);
+  });
+
+  it("accepts only the known actions from the address", () => {
+    expect(isDebtAction("payOff")).toBe(true);
+    expect(isDebtAction("delete")).toBe(false);
+    expect(isDebtAction(null)).toBe(false);
   });
 });
 

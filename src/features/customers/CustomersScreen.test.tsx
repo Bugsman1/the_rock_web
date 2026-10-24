@@ -100,6 +100,15 @@ describe("CustomersScreen", () => {
     expect(fatima).toBe("0");
   });
 
+  it("shows a dash, never a wrong number, when the server sends no debt", async () => {
+    answerList(1, [{ ...apiCustomers[0], debt_remaining: undefined }]);
+    openAt("/fr/customers");
+
+    const [ahmed] = await shownRows();
+
+    expect(ahmed?.querySelector("td:nth-child(4)")).toHaveTextContent("—");
+  });
+
   it("lists the customers of the page with the total and an edit link that keeps the list", async () => {
     answerList(52, apiCustomers);
     openAt("/fr/customers?q=a&page=2");

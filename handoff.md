@@ -101,8 +101,9 @@
 ## Customer debts (done, not committed yet)
 
 - API types regenerated from backend `fcef4e0` (2026-10-24); `debts` added to the role modules.
-- Client page `/customers/<id>` (debts view right): debts table; a debt drawer with summary,
-  history and Increase / Decrease / Paid in full; "Add debt". Debt forms send an `Idempotency-Key`.
+- Client page `/customers/<id>` (debts view right): debts table whose rows end with Increase /
+  Decrease / Paid in full (`?debt=<id>&action=…` opens the form in a drawer); clicking a row opens
+  the debt with its history (`?debt=<id>`); "Add debt". Debt forms send an `Idempotency-Key`.
 - The clients list shows each customer's remaining debt (`debt_remaining`, backend `d593fe3`) to
   roles that can view debts.
 - The debt drawer's history comes from `/customer-debts/{id}/history/` (backend `f5ab0c2` fixed its

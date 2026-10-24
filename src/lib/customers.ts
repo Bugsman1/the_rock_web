@@ -9,7 +9,7 @@ export type Customer = {
   name: string;
   phone: string;
   addedAt: IsoTimestamp;
-  debt: number;
+  debt: number | undefined;
 };
 
 const NAME_MAX_LENGTH = 120;
@@ -66,13 +66,19 @@ export function matchCustomer(
     : { kind: "phoneTaken", owner };
 }
 
+function knownAmount(value: string): number | undefined {
+  const amount = fromDecimal(value);
+
+  return Number.isFinite(amount) ? amount : undefined;
+}
+
 export function customerFromApi(customer: ApiSchema<"Customer">): Customer {
   return {
     id: String(customer.id),
     name: customer.full_name,
     phone: formatPhone(customer.phone),
     addedAt: customer.created_at,
-    debt: fromDecimal(customer.debt_remaining),
+    debt: knownAmount(customer.debt_remaining),
   };
 }
 

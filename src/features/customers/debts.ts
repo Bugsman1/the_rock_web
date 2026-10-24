@@ -53,8 +53,16 @@ export function debtHistoryFromApi(entry: ApiSchema<"DebtHistoryEntry">): DebtHi
   };
 }
 
-export function isPaidOff(debt: CustomerDebt): boolean {
-  return debt.status === "paid";
+export type DebtAction = "increase" | "decrease" | "payOff";
+
+const everyAction: readonly DebtAction[] = ["increase", "decrease", "payOff"];
+
+export function isDebtAction(value: string | null): value is DebtAction {
+  return everyAction.some((action) => action === value);
+}
+
+export function debtActions(debt: CustomerDebt): readonly DebtAction[] {
+  return debt.status === "paid" ? ["increase"] : everyAction;
 }
 
 function amountSchema(amountInvalid: string) {

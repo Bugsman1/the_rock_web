@@ -136,12 +136,16 @@ function openAt(path: string, access: Access = allRights) {
 
 const money = (amount: number) => formatMoney(amount, "fr").replace(/\s/g, " ");
 
+function actionLabel(action: "increase" | "decrease" | "payOff", debt: string) {
+  return text.actions.label.replace("{action}", text.actions[action]).replace("{debt}", debt);
+}
+
 async function openedDebt() {
   return within(await screen.findByRole("dialog", { name: "Avance en espèces" }));
 }
 
 describe("CustomerScreen", () => {
-  it("shows the client and each debt with its amounts and status", async () => {
+  it("shows the client and each debt with its amounts, status and actions", async () => {
     openAt("/fr/customers/7");
 
     expect(await screen.findByRole("heading", { name: "Ahmed" })).toBeVisible();
@@ -156,15 +160,16 @@ describe("CustomerScreen", () => {
       "href",
       "/fr/customers/7?debt=12",
     );
+    expect(
+      screen.getByRole("link", { name: actionLabel("payOff", "Avance en espèces") }),
+    ).toHaveAttribute("href", "/fr/customers/7?debt=12&action=payOff");
   });
 
-  it("opens a debt with its history and the balance after each line", async () => {
+  it("opens a debt's history from its row, with the balance after each line", async () => {
     openAt("/fr/customers/7?debt=12");
-
     const dialog = await openedDebt();
 
     expect(dialog.getByText(text.history.created)).toBeVisible();
-    expect(dialog.getByText("Premier versement")).toBeVisible();
     const payment = dialog.getByText("Premier versement").closest("tr");
     if (payment === null) throw new Error("no payment line");
 
@@ -173,12 +178,14 @@ describe("CustomerScreen", () => {
     expect(payment).toHaveTextContent("Aicha");
   });
 
-  it("increases a debt with its reason, sent once under its own key, then reloads its history", async () => {
+  it("increases a debt from its row, sent once under its own key, then closes", async () => {
     const user = userEvent.setup();
-    openAt("/fr/customers/7?debt=12");
-    const dialog = await openedDebt();
+    openAt("/fr/customers/7");
 
-    await user.click(dialog.getByRole("button", { name: text.actions.increase }));
+    await user.click(
+      await screen.findByRole("link", { name: actionLabel("increase", "Avance en espèces") }),
+    );
+    const dialog = within(await screen.findByRole("dialog", { name: text.form.increaseTitle }));
     await user.type(dialog.getByLabelText(text.form.amount, { exact: false }), "5000");
     await user.type(dialog.getByLabelText(text.form.reason, { exact: false }), "Gasoil");
     await user.click(dialog.getByRole("button", { name: text.form.increase }));
@@ -189,16 +196,19 @@ describe("CustomerScreen", () => {
       body: { debt: 12, amount: "5000", reason: "Gasoil" },
     });
     expect(posted[0]?.key).toMatch(/^[0-9a-f-]{36}$/);
-    await waitFor(() => expect(historyLoads).toBe(2));
-    expect(dialog.getByRole("button", { name: text.actions.increase })).toBeVisible();
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: text.form.increaseTitle }),
+      ).not.toBeInTheDocument();
+    });
+    expect(historyLoads).toBe(0);
   });
 
   it("decreases a debt but never by more than what is left", async () => {
     const user = userEvent.setup();
-    openAt("/fr/customers/7?debt=12");
-    const dialog = await openedDebt();
+    openAt("/fr/customers/7?debt=12&action=decrease");
+    const dialog = within(await screen.findByRole("dialog", { name: text.form.decreaseTitle }));
 
-    await user.click(dialog.getByRole("button", { name: text.actions.decrease }));
     await user.type(dialog.getByLabelText(text.form.amount, { exact: false }), "30001");
     await user.click(dialog.getByRole("button", { name: text.form.decrease }));
 
@@ -221,10 +231,9 @@ describe("CustomerScreen", () => {
 
   it("records the whole remaining amount when the debt is paid in full", async () => {
     const user = userEvent.setup();
-    openAt("/fr/customers/7?debt=12");
-    const dialog = await openedDebt();
+    openAt("/fr/customers/7?debt=12&action=payOff");
+    const dialog = within(await screen.findByRole("dialog", { name: text.form.payOffTitle }));
 
-    await user.click(dialog.getByRole("button", { name: text.actions.payOff }));
     expect(dialog.getByText(money(30000))).toBeVisible();
     await user.type(dialog.getByLabelText(text.form.notes), "Soldé en espèces");
     await user.click(dialog.getByRole("button", { name: text.form.payOff }));
@@ -237,13 +246,14 @@ describe("CustomerScreen", () => {
   });
 
   it("offers only an increase on a debt that is fully paid", async () => {
-    openAt("/fr/customers/7?debt=13");
+    openAt("/fr/customers/7?debt=13&action=decrease");
 
-    const dialog = within(await screen.findByRole("dialog", { name: "Pièces" }));
-
-    expect(dialog.getByRole("button", { name: text.actions.increase })).toBeVisible();
-    expect(dialog.queryByRole("button", { name: text.actions.decrease })).toBeNull();
-    expect(dialog.queryByRole("button", { name: text.actions.payOff })).toBeNull();
+    expect(
+      await screen.findByRole("link", { name: actionLabel("increase", "Pièces") }),
+    ).toBeVisible();
+    expect(screen.queryByRole("link", { name: actionLabel("decrease", "Pièces") })).toBeNull();
+    expect(screen.queryByRole("link", { name: actionLabel("payOff", "Pièces") })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: text.form.decreaseTitle })).not.toBeInTheDocument();
   });
 
   it("adds a debt with its description and amount", async () => {
@@ -274,9 +284,10 @@ describe("CustomerScreen", () => {
       ]),
     });
 
-    const dialog = await openedDebt();
-
-    expect(dialog.queryByRole("button", { name: text.actions.increase })).toBeNull();
+    expect(await openedDebt()).toBeTruthy();
+    expect(
+      screen.queryByRole("link", { name: actionLabel("increase", "Avance en espèces") }),
+    ).toBeNull();
     expect(screen.queryByRole("link", { name: text.add })).toBeNull();
   });
 });

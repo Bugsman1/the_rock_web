@@ -145,7 +145,8 @@
         "total": "Total",
         "paid": "Payé",
         "remaining": "Reste à payer",
-        "status": "Statut"
+        "status": "Statut",
+        "actions": "Actions"
       },
       "status": {
         "open": "Ouverte",
@@ -166,7 +167,8 @@
       "actions": {
         "increase": "Augmenter",
         "decrease": "Diminuer",
-        "payOff": "Payée en totalité"
+        "payOff": "Payée en totalité",
+        "label": "{action} : {debt}"
       },
       "form": {
         "newTitle": "Nouvelle dette",
