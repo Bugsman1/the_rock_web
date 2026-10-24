@@ -187,7 +187,7 @@ Ported from `the_rock`, merged to save files:
 | `TablePanel.tsx`       | `TablePanel` (a titled card; its header holds the list's search: a local filter, or a server search field via `{ field }`), `StatusBadge`, `PanelError`                                                                                        |
 | `DataTable.tsx`        | `DataTable` — every table of the app: columns (heading, alignment, cell), rows, empty message, optional row link (`rowLink` column, `interactive` cells stay clickable) and total row; the table classes and `TableTotalRow` are private to it |
 | `SearchField.tsx`      | `SearchField`, `DelayedSearchField` (puts the query in the URL after 350 ms: Clients, Users)                                                                                                                                                   |
-| `Drawer.tsx`           | `Drawer`, `DrawerActions`, `DrawerDeleteActions` (delete / cancel with "deleting": project, role, settlement), `useRouteDrawer(closeHref)`                                                                                                     |
+| `Drawer.tsx`           | `Drawer` (`wide` for the debt history), `DrawerActions`, `DrawerDeleteActions` (delete / cancel with "deleting": project, role, settlement), `useRouteDrawer(closeHref)`                                                                       |
 | `ConnectionBanner.tsx` | Red bar with a wifi-off icon while the connection is lost (`role="alert"`), above the top bar and on the login page                                                                                                                            |
 | `PdfPreview.tsx`       | `usePdfPreview(load)` (loads a PDF in the chosen language, keeps its blob URL), `PdfPreviewDialog` (print, download, close)                                                                                                                    |
 | `FieldError.tsx`       | `FieldError`, `FormError`, `useSaveFailure` + `SaveFailureMessage` (save failed / backend message / unknown outcome)                                                                                                                           |
@@ -520,13 +520,13 @@ name: only the app limits a project to those three.
 shipments (cash advance, fuel, parts…); shipment debts stay on each shipment. A role that can view
 debts opens a client from the clients list (`/customers/<id>`, guarded by `canOpen`): name, phone and
 a table of their debts (note, date and time, total, paid, remaining, status open / partly paid orange,
-paid green). For a role with the debts add right each row ends with its actions under an "Actions" header (`debtActions`):
+paid green). For a role with the debts add right each row ends with its actions, centred under an "Actions" header (`debtActions`):
 Increase, Decrease and Paid in full, or only Increase on a paid debt (it reopens it). An action
 opens its form in a drawer (`?debt=<id>&action=<increase|decrease|payOff>`, checked with
 `isDebtAction` and `debtActions`): Increase asks an amount and a reason (`/debt-increases/`),
 Decrease a payment of at most what is left with optional notes (`/debt-payments/`), Paid in full
 shows the whole remaining amount read-only with notes. Clicking the row opens the debt
-(`?debt=<id>`): total, paid, remaining, status and its history from
+in a wide drawer (`Drawer wide`, `?debt=<id>`): total, paid, remaining, status and its history from
 `/customer-debts/{id}/history/` (creation, increases and payments by date, with amount, note and the
 balance after it as the backend computed it; date, operation and note wrap so the table fits the
 drawer without scrolling). "Add debt" asks an amount, then a note

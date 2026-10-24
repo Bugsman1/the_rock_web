@@ -112,10 +112,10 @@ function DebtTable({ customerId, debts, canChange }: DebtTableProps) {
     columns.push({
       key: "actions",
       header: t("columns.actions"),
-      align: "end",
+      align: "center",
       interactive: true,
       cell: (debt) => (
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="flex flex-wrap justify-center gap-2">
           {debtActions(debt).map((action) => (
             <ActionLink
               key={action}
@@ -173,6 +173,7 @@ export function CustomerScreen() {
 
       <Drawer
         open={viewing !== undefined}
+        wide
         title={viewing?.debt.description ?? ""}
         closeLabel={common("close")}
         onClose={close}

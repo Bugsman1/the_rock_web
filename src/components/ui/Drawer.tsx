@@ -14,6 +14,7 @@ type DrawerProps = {
   title: string;
   closeLabel: string;
   onClose: () => void;
+  wide?: boolean;
   children: ReactNode;
 };
 
@@ -63,7 +64,7 @@ export function useModalDialog(open: boolean) {
   return dialogRef;
 }
 
-export function Drawer({ open, title, closeLabel, onClose, children }: DrawerProps) {
+export function Drawer({ open, title, closeLabel, onClose, wide = false, children }: DrawerProps) {
   const dialogRef = useModalDialog(open);
   const titleId = useId();
 
@@ -76,7 +77,10 @@ export function Drawer({ open, title, closeLabel, onClose, children }: DrawerPro
           onClose();
         }
       }}
-      className="bg-surface text-ink shadow-card fixed inset-y-0 start-auto end-0 m-0 h-dvh max-h-none w-full max-w-xl overflow-y-auto p-0 backdrop:bg-neutral-900/40"
+      className={cn(
+        "bg-surface text-ink shadow-card fixed inset-y-0 start-auto end-0 m-0 h-dvh max-h-none w-full overflow-y-auto p-0 backdrop:bg-neutral-900/40",
+        wide ? "max-w-4xl" : "max-w-xl",
+      )}
     >
       <div className="flex min-h-full flex-col">
         <header className="border-line bg-surface sticky top-0 z-10 flex items-center justify-between gap-3 border-b-[1.5px] px-6 py-4">
