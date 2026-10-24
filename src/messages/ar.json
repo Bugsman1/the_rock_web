@@ -122,7 +122,7 @@
       "name": "اسم العميل",
       "phone": "الهاتف",
       "addedAt": "تاريخ الإضافة",
-      "debt": "الدين",
+      "debt": "الدين الحالي",
       "action": "إجراء"
     },
     "form": {
@@ -140,7 +140,7 @@
       "add": "إضافة دين",
       "empty": "لا توجد ديون لهذا العميل.",
       "columns": {
-        "description": "الوصف",
+        "description": "ملاحظة",
         "date": "التاريخ",
         "total": "الإجمالي",
         "paid": "المدفوع",
@@ -159,7 +159,6 @@
         "amount": "المبلغ",
         "note": "ملاحظة",
         "balance": "الرصيد",
-        "by": "بواسطة",
         "created": "تسجيل الدين",
         "increase": "زيادة",
         "payment": "دفعة"
@@ -175,7 +174,7 @@
         "increaseTitle": "زيادة الدين",
         "decreaseTitle": "تسديد الدين",
         "payOffTitle": "تسديد الدين بالكامل",
-        "description": "الوصف",
+        "description": "ملاحظة",
         "amount": "المبلغ",
         "reason": "السبب",
         "notes": "ملاحظات",

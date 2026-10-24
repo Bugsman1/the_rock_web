@@ -107,7 +107,7 @@
 - The clients list shows each customer's remaining debt (`debt_remaining`, backend `d593fe3`) to
   roles that can view debts.
 - The debt drawer's history comes from `/customer-debts/{id}/history/` (backend `f5ab0c2` fixed its
-  schema), with the balance after each line and who recorded it.
+  schema), with the balance after each line.
 
 ## Backend gaps from the audit
 

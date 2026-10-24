@@ -88,7 +88,6 @@ describe("debtFromApi", () => {
       date: "2026-10-03T10:00:00Z",
       amount: 15000,
       text: "Premier versement",
-      byName: "",
       balance: 35000,
     });
   });

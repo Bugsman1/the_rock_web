@@ -163,19 +163,19 @@ export function NewDebtForm({
     >
       <RecordedNow />
       <TextField
+        id="debt-amount"
+        label={t("amount")}
+        {...amountInputProps}
+        error={errors.amount?.message}
+        {...register("amount", { valueAsNumber: true })}
+      />
+      <TextField
         id="debt-description"
         label={t("description")}
         required
         maxLength={200}
         error={errors.description?.message}
         {...register("description")}
-      />
-      <TextField
-        id="debt-amount"
-        label={t("amount")}
-        {...amountInputProps}
-        error={errors.amount?.message}
-        {...register("amount", { valueAsNumber: true })}
       />
       <DebtFormEnd
         saveFailure={saveFailure}

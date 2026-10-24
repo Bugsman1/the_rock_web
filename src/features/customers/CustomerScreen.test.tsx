@@ -8,7 +8,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { noAccess, rightsFromApi } from "@/lib/access";
 import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
-import { formatMoney } from "@/lib/format";
+import { formatDateTime, formatMoney } from "@/lib/format";
 import messages from "@/messages/fr.json";
 import { CustomerScreen, customerLoader } from "./CustomerScreen";
 
@@ -156,6 +156,8 @@ describe("CustomerScreen", () => {
     expect(row).toHaveTextContent(money(20000));
     expect(row).toHaveTextContent(money(30000));
     expect(row).toHaveTextContent(text.status.partially_paid);
+    expect(row).toHaveTextContent(formatDateTime("2026-10-01T08:00:00Z", "fr"));
+    expect(screen.getByRole("columnheader", { name: text.columns.actions })).toBeVisible();
     expect(screen.getByRole("link", { name: "Avance en espèces" })).toHaveAttribute(
       "href",
       "/fr/customers/7?debt=12",
@@ -175,7 +177,7 @@ describe("CustomerScreen", () => {
 
     expect(payment).toHaveTextContent(`−${money(20000)}`);
     expect(payment).toHaveTextContent(money(30000));
-    expect(payment).toHaveTextContent("Aicha");
+    expect(dialog.queryByText("Aicha")).not.toBeInTheDocument();
   });
 
   it("increases a debt from its row, sent once under its own key, then closes", async () => {
@@ -256,10 +258,16 @@ describe("CustomerScreen", () => {
     expect(screen.queryByRole("dialog", { name: text.form.decreaseTitle })).not.toBeInTheDocument();
   });
 
-  it("adds a debt with its description and amount", async () => {
+  it("adds a debt with its amount first, then its note", async () => {
     const user = userEvent.setup();
     openAt("/fr/customers/7?new=1");
     const dialog = within(await screen.findByRole("dialog", { name: text.form.newTitle }));
+
+    expect(
+      dialog
+        .getByLabelText(text.form.amount, { exact: false })
+        .compareDocumentPosition(dialog.getByLabelText(text.form.description, { exact: false })),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
 
     await user.click(dialog.getByRole("button", { name: text.form.create }));
     expect(await dialog.findByText(messages.common.validation.required)).toBeVisible();

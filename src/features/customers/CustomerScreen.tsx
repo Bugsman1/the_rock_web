@@ -13,7 +13,7 @@ import { TablePanel } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
 import { notFound } from "@/lib/api/client";
 import { getCustomer } from "@/lib/customersApi";
-import { formatDate, formatMoney } from "@/lib/format";
+import { formatDateTime, formatMoney } from "@/lib/format";
 import { CUSTOMERS_HREF, customerHref } from "@/lib/routes";
 import { debtActions, isDebtAction } from "./debts";
 import type { CustomerDebt, DebtAction } from "./debts";
@@ -78,7 +78,7 @@ function DebtTable({ customerId, debts, canChange }: DebtTableProps) {
       key: "date",
       header: t("columns.date"),
       className: "text-ink-muted font-semibold",
-      cell: (debt) => formatDate(debt.incurredAt, locale),
+      cell: (debt) => formatDateTime(debt.incurredAt, locale),
     },
     {
       key: "total",
@@ -112,7 +112,6 @@ function DebtTable({ customerId, debts, canChange }: DebtTableProps) {
     columns.push({
       key: "actions",
       header: t("columns.actions"),
-      hideHeader: true,
       align: "end",
       interactive: true,
       cell: (debt) => (

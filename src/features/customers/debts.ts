@@ -11,7 +11,6 @@ export type DebtHistoryEntry = {
   date: IsoTimestamp;
   amount: number;
   text: string;
-  byName: string;
   balance: number;
 };
 
@@ -48,7 +47,6 @@ export function debtHistoryFromApi(entry: ApiSchema<"DebtHistoryEntry">): DebtHi
     date: entry.date,
     amount: fromDecimal(entry.amount),
     text: entry.text,
-    byName: entry.created_by_name ?? "",
     balance: fromDecimal(entry.balance),
   };
 }

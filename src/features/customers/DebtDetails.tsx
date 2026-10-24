@@ -29,13 +29,13 @@ function DebtHistory({ entries }: { entries: readonly DebtHistoryEntry[] }) {
     {
       key: "date",
       header: columns("date"),
-      className: "text-ink-muted font-semibold",
+      className: "text-ink-muted font-semibold whitespace-normal",
       cell: (entry) => formatDateTime(entry.date, locale),
     },
     {
       key: "type",
       header: t("type"),
-      className: "text-ink font-bold",
+      className: "text-ink font-bold whitespace-normal",
       cell: (entry) => t(entry.type),
     },
     {
@@ -49,7 +49,7 @@ function DebtHistory({ entries }: { entries: readonly DebtHistoryEntry[] }) {
     {
       key: "note",
       header: t("note"),
-      className: "text-ink-muted max-w-64 font-semibold",
+      className: "text-ink-muted font-semibold whitespace-normal",
       cell: (entry) => (
         <p dir="auto" className="break-words">
           {entry.text}
@@ -62,12 +62,6 @@ function DebtHistory({ entries }: { entries: readonly DebtHistoryEntry[] }) {
       align: "end",
       className: "text-ink font-bold",
       cell: (entry) => formatMoney(entry.balance, locale),
-    },
-    {
-      key: "by",
-      header: t("by"),
-      className: "text-ink-muted font-semibold",
-      cell: (entry) => <span dir="auto">{entry.byName}</span>,
     },
   ];
 

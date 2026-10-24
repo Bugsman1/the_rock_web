@@ -122,7 +122,7 @@
       "name": "Nom du client",
       "phone": "Téléphone",
       "addedAt": "Date d'ajout",
-      "debt": "Dette",
+      "debt": "Dette actuelle",
       "action": "Action"
     },
     "form": {
@@ -140,7 +140,7 @@
       "add": "Ajouter une dette",
       "empty": "Aucune dette pour ce client.",
       "columns": {
-        "description": "Description",
+        "description": "Note",
         "date": "Date",
         "total": "Total",
         "paid": "Payé",
@@ -159,7 +159,6 @@
         "amount": "Montant",
         "note": "Note",
         "balance": "Solde",
-        "by": "Par",
         "created": "Dette enregistrée",
         "increase": "Augmentation",
         "payment": "Paiement"
@@ -175,7 +174,7 @@
         "increaseTitle": "Augmenter la dette",
         "decreaseTitle": "Diminuer la dette",
         "payOffTitle": "Dette payée en totalité",
-        "description": "Description",
+        "description": "Note",
         "amount": "Montant",
         "reason": "Raison",
         "notes": "Notes",
