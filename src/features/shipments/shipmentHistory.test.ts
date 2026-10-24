@@ -5,8 +5,8 @@ import {
   completedShipments,
   emptyHistoryFilter,
   filterShipments,
+  historyClients,
   isFilterActive,
-  matchesQuery,
 } from "./shipmentHistory";
 
 describe("history", () => {
@@ -55,61 +55,56 @@ describe("history", () => {
 
     it("keeps the shipments between both dates, both days included", () => {
       expect(
-        numbers(filterShipments(records, { from: "2026-09-10", to: "2026-09-20", query: "" })),
+        numbers(
+          filterShipments(records, { from: "2026-09-10", to: "2026-09-20", clientPhone: "" }),
+        ),
       ).toEqual(["SH-1002", "SH-1001"]);
     });
 
     it("accepts an open-ended range", () => {
-      expect(numbers(filterShipments(records, { from: "2026-09-15", to: "", query: "" }))).toEqual([
-        "SH-1003",
-        "SH-1002",
-      ]);
-      expect(numbers(filterShipments(records, { from: "", to: "2026-09-15", query: "" }))).toEqual([
-        "SH-1001",
-      ]);
+      expect(
+        numbers(filterShipments(records, { from: "2026-09-15", to: "", clientPhone: "" })),
+      ).toEqual(["SH-1003", "SH-1002"]);
+      expect(
+        numbers(filterShipments(records, { from: "", to: "2026-09-15", clientPhone: "" })),
+      ).toEqual(["SH-1001"]);
     });
 
     it("ignores a date that is still being typed", () => {
-      expect(filterShipments(records, { from: "12/09", to: "", query: "" })).toHaveLength(3);
+      expect(filterShipments(records, { from: "12/09", to: "", clientPhone: "" })).toHaveLength(3);
     });
 
-    it("combines the dates and the search", () => {
+    it("keeps only the chosen client's shipments, whatever the phone's spacing", () => {
       expect(
-        numbers(filterShipments(records, { from: "2026-09-01", to: "2026-10-31", query: "أحمد" })),
-      ).toEqual(["SH-1003", "SH-1001"]);
+        numbers(filterShipments(records, { from: "", to: "", clientPhone: "22411830" })),
+      ).toEqual(["SH-1001"]);
+    });
+
+    it("combines the client and the dates", () => {
+      const clientPhone = "+222 22 33 44 55";
+
+      expect(
+        numbers(filterShipments(records, { from: "2026-09-25", to: "", clientPhone })),
+      ).toEqual(["SH-1003"]);
     });
   });
 
-  describe("matchesQuery", () => {
-    const [first] = records;
-    if (first === undefined) throw new Error("expected a record");
-
-    it("finds a client by part of the name", () => {
-      expect(matchesQuery(first, "ولد")).toBe(true);
-    });
-
-    it("finds a shipment by its number, ignoring case", () => {
-      expect(matchesQuery(first, "sh-1001")).toBe(true);
-    });
-
-    it("finds a phone typed with or without spaces", () => {
-      expect(matchesQuery(first, "4118")).toBe(true);
-      expect(matchesQuery(first, "41 18 30")).toBe(true);
-    });
-
-    it("rejects an unrelated search", () => {
-      expect(matchesQuery(first, "Fatima")).toBe(false);
+  describe("historyClients", () => {
+    it("lists each client once, by name", () => {
+      expect(historyClients(records)).toEqual([
+        { name: "Fatima", phone: "+222 22 33 44 55" },
+        { name: "محمد ولد أحمد", phone: "+222 22 41 18 30" },
+      ]);
     });
   });
 
   describe("isFilterActive", () => {
-    it("is off for the empty filter and a blank search", () => {
+    it("is off for the empty filter", () => {
       expect(isFilterActive(emptyHistoryFilter)).toBe(false);
-      expect(isFilterActive({ from: "", to: "", query: "  " })).toBe(false);
     });
 
     it("is on as soon as one filter is set", () => {
-      expect(isFilterActive({ from: "2026-09-01", to: "", query: "" })).toBe(true);
+      expect(isFilterActive({ from: "2026-09-01", to: "", clientPhone: "" })).toBe(true);
     });
   });
 });

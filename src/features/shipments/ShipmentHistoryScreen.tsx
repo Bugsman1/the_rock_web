@@ -3,12 +3,12 @@ import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { DebtBadge, PaymentStatus } from "@/components/shipments/ShipmentBadges";
+import { Combobox } from "@/components/ui/Combobox";
 import { DateField } from "@/components/ui/DateField";
 import { Icon } from "@/components/ui/Icon";
 import { BackLink, PageTitle } from "@/components/ui/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
-import { TextField } from "@/components/ui/TextField";
 import { formatCount, formatDateTime } from "@/lib/format";
 import { requireProject } from "@/lib/projectsApi";
 import { shipmentHref, shipmentsProjectHref } from "@/lib/routes";
@@ -19,6 +19,7 @@ import {
   completedShipments,
   emptyHistoryFilter,
   filterShipments,
+  historyClients,
   isFilterActive,
 } from "./shipmentHistory";
 import type { HistoryFilter } from "./shipmentHistory";
@@ -42,7 +43,9 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
   const common = useTranslations("common");
   const locale = useLocale();
   const [filter, setFilter] = useState<HistoryFilter>(emptyHistoryFilter);
+  const [clientText, setClientText] = useState("");
   const results = filterShipments(records, filter);
+  const bags = results.reduce((total, record) => total + record.bagCount, 0);
 
   const columns: DataColumn<ShipmentRecord>[] = [
     {
@@ -109,18 +112,31 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
     setFilter((current) => ({ ...current, ...changes }));
   }
 
+  function typeClient(text: string) {
+    setClientText(text);
+    update({ clientPhone: "" });
+  }
+
+  function clearFilters() {
+    setFilter(emptyHistoryFilter);
+    setClientText("");
+  }
+
   return (
     <div className="rounded-card shadow-subtle border-line bg-surface flex flex-col border-[1.5px]">
       <div className="border-line grid gap-4 border-b-[1.5px] p-4 md:grid-cols-[2fr_1fr_1fr]">
-        <TextField
-          id="historySearch"
-          type="search"
-          icon="search"
-          label={common("search")}
-          placeholder={t("searchPlaceholder")}
-          autoComplete="off"
-          value={filter.query}
-          onChange={(event) => update({ query: event.target.value })}
+        <Combobox
+          id="historyClient"
+          label={t("columns.client")}
+          placeholder={t("allClients")}
+          value={clientText}
+          options={historyClients(records).map((client) => ({
+            value: client.phone,
+            label: client.name,
+            hint: client.phone,
+          }))}
+          onChange={typeClient}
+          onSelect={(option) => update({ clientPhone: option.value })}
         />
         <DateField
           id="historyFrom"
@@ -142,12 +158,17 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
 
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
         <p role="status" className="text-ink-muted text-[14px] font-semibold">
-          {t("count", { count: formatCount(results.length, locale) })}
+          {filter.clientPhone === ""
+            ? t("count", { count: formatCount(results.length, locale) })
+            : t("clientCount", {
+                shipments: formatCount(results.length, locale),
+                bags: formatCount(bags, locale),
+              })}
         </p>
         {isFilterActive(filter) ? (
           <button
             type="button"
-            onClick={() => setFilter(emptyHistoryFilter)}
+            onClick={clearFilters}
             className="text-brand-700 hover:text-brand-800 inline-flex cursor-pointer items-center gap-1.5 text-[14px] font-semibold"
           >
             <Icon name="x" className="h-4 w-4" />
@@ -166,10 +187,7 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
           total={{
             label: common("total"),
             column: "bags",
-            value: formatCount(
-              results.reduce((total, record) => total + record.bagCount, 0),
-              locale,
-            ),
+            value: formatCount(bags, locale),
           }}
         />
       </div>

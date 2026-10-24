@@ -90,6 +90,14 @@
   service straight to that project's page, like Shipments and Settlements; the project page then has
   no back link.
 
+## Shipments history filter and clients list (done, not committed yet)
+
+- Shipments history: client picker (`historyClients`, matched by phone) + arrival date from / to,
+  combined; with a client chosen the count shows that client's shipments and bags.
+- Clients: the client page (`CustomerScreen`, route `customers/:customer`, `customerHref`,
+  `DebtNotice`, `customers.detail` texts) was deleted; the list shows name, phone, date added and
+  edit only. The user will say later what to add.
+
 ## Open backend gaps (from the audit)
 
 - A1: the backend doesn't check whether a machine is already busy.

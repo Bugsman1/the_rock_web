@@ -28,7 +28,6 @@ const pageShapes: readonly (readonly [RegExp, SkeletonShape])[] = [
   [/^\/settings\/(profile|projects\/\d+)$/, "detail"],
   [/^\/milling\/projects\/\d+\/machines\/\d+$/, "detail"],
   [/^\/(shipments|settlements)\/\d+$/, "detail"],
-  [/^\/customers\/\d+$/, "table"],
 ];
 
 const singleProjectSections = /^\/(shipments|settlements|milling|refining)$/;

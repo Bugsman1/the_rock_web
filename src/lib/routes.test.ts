@@ -14,7 +14,6 @@ import {
   settingsProjectHref,
   shipmentsHistoryHref,
   newShipmentHref,
-  customerHref,
   shipmentHref,
   shipmentsProjectHref,
   startGrindingHref,
@@ -73,7 +72,6 @@ describe("shipments routes", () => {
     expect(newShipmentHref()).toBe("/shipments/new");
     expect(newShipmentHref("3")).toBe("/shipments/new?project=3");
     expect(shipmentHref("52")).toBe("/shipments/52");
-    expect(customerHref("7")).toBe("/customers/7");
     expect(shipmentsHistoryHref("3")).toBe("/shipments/projects/3/history");
   });
 });

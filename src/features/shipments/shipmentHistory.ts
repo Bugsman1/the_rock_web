@@ -1,28 +1,38 @@
 import { isIsoDate } from "@/lib/datetime";
-import { matchesSearch } from "@/lib/search";
+import { isSamePhone } from "@/lib/phone";
 import type { ShipmentRecord } from "@/lib/shipments";
 
 export type HistoryFilter = {
   from: string;
   to: string;
-  query: string;
+  clientPhone: string;
 };
 
-export const emptyHistoryFilter: HistoryFilter = { from: "", to: "", query: "" };
+export type HistoryClient = {
+  name: string;
+  phone: string;
+};
+
+export const emptyHistoryFilter: HistoryFilter = { from: "", to: "", clientPhone: "" };
 
 export function isFilterActive(filter: HistoryFilter): boolean {
-  return filter.from !== "" || filter.to !== "" || filter.query.trim() !== "";
+  return filter.from !== "" || filter.to !== "" || filter.clientPhone !== "";
+}
+
+export function historyClients(records: readonly ShipmentRecord[]): readonly HistoryClient[] {
+  return records
+    .reduce<HistoryClient[]>(
+      (clients, record) =>
+        clients.some((client) => isSamePhone(client.phone, record.phone))
+          ? clients
+          : [...clients, { name: record.customerName, phone: record.phone }],
+      [],
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function arrivalDay(record: ShipmentRecord): string {
   return record.arrivedAt.slice(0, 10);
-}
-
-export function matchesQuery(record: ShipmentRecord, query: string): boolean {
-  return matchesSearch(
-    { texts: [record.customerName, record.shipmentNumber], phone: record.phone },
-    query,
-  );
 }
 
 export function filterShipments(
@@ -35,7 +45,7 @@ export function filterShipments(
   return records
     .filter((record) => from === undefined || arrivalDay(record) >= from)
     .filter((record) => to === undefined || arrivalDay(record) <= to)
-    .filter((record) => matchesQuery(record, filter.query))
+    .filter((record) => filter.clientPhone === "" || isSamePhone(record.phone, filter.clientPhone))
     .sort((a, b) => b.arrivedAt.localeCompare(a.arrivedAt));
 }
 

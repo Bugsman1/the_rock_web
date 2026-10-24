@@ -43,26 +43,6 @@ export function DebtBadge({ amount }: { amount: number }) {
   );
 }
 
-export function DebtNotice({ label, amount }: { label: string; amount: number }) {
-  const locale = useLocale();
-
-  if (amount <= 0) {
-    return null;
-  }
-
-  return (
-    <div
-      role="note"
-      className="rounded-card border-danger-300 bg-danger-50 text-danger-700 flex items-center gap-4 border-[1.5px] px-5 py-4"
-    >
-      <div className="flex flex-col">
-        <span className="text-[14px] font-bold">{label}</span>
-        <span className="text-[26px] leading-tight font-bold">{formatMoney(amount, locale)}</span>
-      </div>
-    </div>
-  );
-}
-
 const stageStyles: Record<ShipmentStage, { classes: string; icon: IconName }> = {
   pending: { classes: "border-line-strong bg-surface-page text-ink-label", icon: "clock" },
   grinding: { classes: "border-warning-300 bg-warning-50 text-warning-700", icon: "mill" },

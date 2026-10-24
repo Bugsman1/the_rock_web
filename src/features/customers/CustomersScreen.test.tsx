@@ -66,13 +66,13 @@ async function shownNames() {
 }
 
 describe("CustomersScreen", () => {
-  it("lists the customers of the page with the total and an edit link that keeps the list", async () => {
+  it("lists the customers of the page with the total and an edit link that keeps the list, with no client page to open", async () => {
     answerList(52, apiCustomers);
     openAt("/fr/customers?q=a&page=2");
 
     expect(await shownNames()).toEqual(["Ahmed", "Fatima"]);
     expect(screen.getByText("Clients : 52")).toBeVisible();
-    expect(screen.getByRole("link", { name: "Ahmed" })).toHaveAttribute("href", "/fr/customers/1");
+    expect(screen.queryByRole("link", { name: "Ahmed" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Modifier Fatima" })).toHaveAttribute(
       "href",
       "/fr/customers?q=a&page=2&edit=2",

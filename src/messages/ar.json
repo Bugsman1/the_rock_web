@@ -133,22 +133,6 @@
         "phoneTaken": "هذا الرقم مسجل لعميل آخر"
       },
       "newTitle": "عميل جديد"
-    },
-    "detail": {
-      "shipmentsTitle": "الشحنات المستلمة من هذا العميل",
-      "noShipments": "لم تصل من هذا العميل أي شحنة بعد.",
-      "shipments": "عدد الشحنات",
-      "bags": "مجموع الأكياس",
-      "leftToPay": "الباقي للدفع",
-      "columns": {
-        "shipment": "رقم الشحنة",
-        "arrivedAt": "تاريخ الوصول",
-        "project": "المشروع",
-        "bags": "الأكياس",
-        "status": "الحالة",
-        "payment": "حالة الدفع"
-      },
-      "debt": "مجموع ديون العميل"
     }
   },
   "sites": {
@@ -422,10 +406,11 @@
     "history": {
       "open": "السجل",
       "title": "سجل الشحنات · {project}",
-      "searchPlaceholder": "العميل أو الهاتف أو رقم الشحنة",
+      "allClients": "كل العملاء",
       "from": "من",
       "to": "إلى",
       "count": "عدد الشحنات: {count}",
+      "clientCount": "الشحنات: {shipments} · الأكياس: {bags}",
       "clear": "مسح التصفية",
       "empty": "لا توجد شحنات مطابقة لهذه التصفية.",
       "columns": {

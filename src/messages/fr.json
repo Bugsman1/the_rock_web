@@ -133,22 +133,6 @@
         "phoneTaken": "Ce numéro appartient déjà à un autre client"
       },
       "newTitle": "Nouveau client"
-    },
-    "detail": {
-      "shipmentsTitle": "Expéditions reçues de ce client",
-      "noShipments": "Aucune expédition reçue de ce client pour le moment.",
-      "shipments": "Expéditions",
-      "bags": "Total des sacs",
-      "leftToPay": "Reste à payer",
-      "columns": {
-        "shipment": "N° d'expédition",
-        "arrivedAt": "Date d'arrivée",
-        "project": "Projet",
-        "bags": "Sacs",
-        "status": "Statut",
-        "payment": "Statut du paiement"
-      },
-      "debt": "Dettes du client au total"
     }
   },
   "sites": {
@@ -422,10 +406,11 @@
     "history": {
       "open": "Historique",
       "title": "Historique des expéditions · {project}",
-      "searchPlaceholder": "Client, téléphone ou n° d'expédition",
+      "allClients": "Tous les clients",
       "from": "Du",
       "to": "Au",
       "count": "Expéditions : {count}",
+      "clientCount": "Expéditions : {shipments} · Sacs : {bags}",
       "clear": "Effacer les filtres",
       "empty": "Aucune expédition ne correspond à ces filtres.",
       "columns": {

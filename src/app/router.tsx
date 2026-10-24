@@ -2,12 +2,7 @@ import { Outlet, redirect, useLoaderData } from "react-router";
 import type { Params, RouteObject } from "react-router";
 import { useLocale } from "use-intl";
 import { LoginScreen } from "@/features/auth";
-import {
-  CustomerScreen,
-  customerLoader,
-  CustomersScreen,
-  customersLoader,
-} from "@/features/customers";
+import { CustomersScreen, customersLoader } from "@/features/customers";
 import {
   InventoryProjectScreen,
   inventoryProjectLoader,
@@ -137,7 +132,6 @@ function SignedInLayout() {
 
 const sectionRoutes: RouteObject[] = [
   { path: "customers", loader: customersLoader, element: <CustomersScreen /> },
-  { path: "customers/:customer", loader: customerLoader, element: <CustomerScreen /> },
   { path: "settlements", loader: settlementsLoader, element: <SettlementsScreen /> },
   { path: "settlements/new", loader: newSettlementLoader, element: <NewSettlementScreen /> },
   {

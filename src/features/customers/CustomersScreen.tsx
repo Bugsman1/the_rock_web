@@ -17,7 +17,7 @@ import { parsePageNumber } from "@/lib/api/pagination";
 import type { Customer } from "@/lib/customers";
 import { getCustomer, getCustomerPage } from "@/lib/customersApi";
 import { formatCount, formatDate } from "@/lib/format";
-import { customerHref, customersHref } from "@/lib/routes";
+import { customersHref } from "@/lib/routes";
 
 export async function customersLoader({ request }: LoaderFunctionArgs) {
   const params = new URL(request.url).searchParams;
@@ -43,12 +43,10 @@ function CustomerTable({ customers, query, page }: CustomerTableProps) {
   const locale = useLocale();
   const can = useCan();
   const canEdit = can("customers", "edit");
-  const canOpen = can("shipments", "view");
   const columns: DataColumn<Customer>[] = [
     {
       key: "name",
       header: t("fields.name"),
-      rowLink: true,
       className: "text-ink font-bold",
       cell: (customer) => <span dir="auto">{customer.name}</span>,
     },
@@ -91,9 +89,6 @@ function CustomerTable({ customers, query, page }: CustomerTableProps) {
       rows={customers}
       rowKey={(customer) => customer.id}
       empty={query === "" ? t("empty") : t("noResults")}
-      {...(canOpen
-        ? { rowLink: (customer: Customer) => ({ href: customerHref(customer.id) }) }
-        : {})}
     />
   );
 }

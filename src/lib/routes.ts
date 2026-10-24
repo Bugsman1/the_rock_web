@@ -60,10 +60,6 @@ export function customersHref(params: ListPageParams = {}): string {
   return listPageHref(CUSTOMERS_HREF, params);
 }
 
-export function customerHref(customer: string): string {
-  return `${CUSTOMERS_HREF}/${customer}`;
-}
-
 export function usersHref(params: ListPageParams = {}): string {
   return listPageHref(USERS_HREF, params);
 }
