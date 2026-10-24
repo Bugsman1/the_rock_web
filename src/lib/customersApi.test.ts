@@ -22,6 +22,7 @@ function apiCustomer(id: number, phone: string) {
     id,
     full_name: "Fatima",
     phone,
+    debt_remaining: "2500.00",
     is_active: true,
     created_at: "2026-10-02T08:00:00Z",
     updated_at: "2026-10-02T08:00:00Z",
@@ -73,7 +74,13 @@ describe("getCustomerPage", () => {
     expect(requested?.searchParams.get("ordering")).toBe("-created_at");
     expect(page).toEqual({
       items: [
-        { id: "7", name: "Fatima", phone: "+222 36 52 07 14", addedAt: "2026-10-02T08:00:00Z" },
+        {
+          id: "7",
+          name: "Fatima",
+          phone: "+222 36 52 07 14",
+          addedAt: "2026-10-02T08:00:00Z",
+          debt: 2500,
+        },
       ],
       total: 26,
       page: 2,

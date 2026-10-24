@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ApiSchema, BackendFieldErrors, FieldErrors } from "./api/client";
+import { fromDecimal } from "./format";
 import type { IsoTimestamp } from "./format";
 import { formatPhone, isSamePhone, isValidPhone, phoneToApi } from "./phone";
 
@@ -8,6 +9,7 @@ export type Customer = {
   name: string;
   phone: string;
   addedAt: IsoTimestamp;
+  debt: number;
 };
 
 const NAME_MAX_LENGTH = 120;
@@ -70,6 +72,7 @@ export function customerFromApi(customer: ApiSchema<"Customer">): Customer {
     name: customer.full_name,
     phone: formatPhone(customer.phone),
     addedAt: customer.created_at,
+    debt: fromDecimal(customer.debt_remaining),
   };
 }
 

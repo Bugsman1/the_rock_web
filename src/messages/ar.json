@@ -122,6 +122,7 @@
       "name": "اسم العميل",
       "phone": "الهاتف",
       "addedAt": "تاريخ الإضافة",
+      "debt": "الدين",
       "action": "إجراء"
     },
     "form": {
@@ -133,6 +134,59 @@
         "phoneTaken": "هذا الرقم مسجل لعميل آخر"
       },
       "newTitle": "عميل جديد"
+    },
+    "debts": {
+      "title": "الديون",
+      "add": "إضافة دين",
+      "empty": "لا توجد ديون لهذا العميل.",
+      "columns": {
+        "description": "الوصف",
+        "date": "التاريخ",
+        "total": "الإجمالي",
+        "paid": "المدفوع",
+        "remaining": "المتبقي",
+        "status": "الحالة"
+      },
+      "status": {
+        "open": "مفتوح",
+        "partially_paid": "مدفوع جزئيًا",
+        "paid": "مدفوع"
+      },
+      "history": {
+        "title": "السجل",
+        "type": "العملية",
+        "amount": "المبلغ",
+        "note": "ملاحظة",
+        "balance": "الرصيد",
+        "by": "بواسطة",
+        "created": "تسجيل الدين",
+        "increase": "زيادة",
+        "payment": "دفعة"
+      },
+      "actions": {
+        "increase": "زيادة",
+        "decrease": "تخفيض",
+        "payOff": "تم الدفع بالكامل"
+      },
+      "form": {
+        "newTitle": "دين جديد",
+        "increaseTitle": "زيادة الدين",
+        "decreaseTitle": "تخفيض الدين",
+        "payOffTitle": "تسديد الدين بالكامل",
+        "description": "الوصف",
+        "amount": "المبلغ",
+        "reason": "السبب",
+        "notes": "ملاحظات",
+        "date": "التاريخ",
+        "time": "الوقت",
+        "amountInvalid": "أدخل مبلغًا أكبر من 0",
+        "amountTooHigh": "لا يمكن أن يتجاوز المبلغ المتبقي ({amount})",
+        "create": "إضافة الدين",
+        "increase": "حفظ الزيادة",
+        "decrease": "حفظ الدفعة",
+        "payOff": "تأكيد الدفع الكامل",
+        "saving": "جارٍ الحفظ"
+      }
     }
   },
   "sites": {
@@ -291,6 +345,7 @@
         "refining": "التصفية",
         "inventory": "المخزون",
         "customers": "العملاء",
+        "debts": "الديون",
         "settlements": "التسوية النهائية",
         "accounts": "المستخدمون والصلاحيات",
         "locations": "المشاريع والآلات"
@@ -935,6 +990,10 @@
     "roleDeleted": "تم حذف الدور",
     "settlementAdded": "تم حفظ التسوية الجديدة",
     "settlementUpdated": "تم حفظ تعديلات التسوية",
-    "settlementDeleted": "تم حذف التسوية"
+    "settlementDeleted": "تم حذف التسوية",
+    "customerDebtAdded": "تمت إضافة الدين",
+    "customerDebtIncreased": "تمت زيادة الدين",
+    "customerDebtDecreased": "تم تسجيل الدفعة",
+    "customerDebtPaidOff": "تم تسديد الدين بالكامل"
   }
 }

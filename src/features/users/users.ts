@@ -136,6 +136,7 @@ export function createRoleSchema(messages: { required: string }) {
       refining: moduleRightsSchema,
       inventory: moduleRightsSchema,
       customers: moduleRightsSchema,
+      debts: moduleRightsSchema,
       settlements: moduleRightsSchema,
       accounts: moduleRightsSchema,
       locations: moduleRightsSchema,

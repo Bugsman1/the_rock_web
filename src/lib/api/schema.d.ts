@@ -75,7 +75,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/customers/": {
+    "/api/v1/customer-debts/": {
         parameters: {
             query?: never;
             header?: never;
@@ -83,15 +83,111 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
+         * @description Customers' debts (cash advances, fuel, spare parts, …), apart from their shipments.
+         *     Each keeps its increases and payments; its balance and status follow them. Debts are
+         *     global, like customers: not limited to a project.
          */
-        get: operations["customers_list"];
+        get: operations["customer_debts_list"];
         put?: never;
         /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
+         * @description Customers' debts (cash advances, fuel, spare parts, …), apart from their shipments.
+         *     Each keeps its increases and payments; its balance and status follow them. Debts are
+         *     global, like customers: not limited to a project.
          */
+        post: operations["customer_debts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer-debts/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Customers' debts (cash advances, fuel, spare parts, …), apart from their shipments.
+         *     Each keeps its increases and payments; its balance and status follow them. Debts are
+         *     global, like customers: not limited to a project.
+         */
+        get: operations["customer_debts_retrieve"];
+        /**
+         * @description Customers' debts (cash advances, fuel, spare parts, …), apart from their shipments.
+         *     Each keeps its increases and payments; its balance and status follow them. Debts are
+         *     global, like customers: not limited to a project.
+         */
+        put: operations["customer_debts_update"];
+        post?: never;
+        /**
+         * @description Customers' debts (cash advances, fuel, spare parts, …), apart from their shipments.
+         *     Each keeps its increases and payments; its balance and status follow them. Debts are
+         *     global, like customers: not limited to a project.
+         */
+        delete: operations["customer_debts_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Customers' debts (cash advances, fuel, spare parts, …), apart from their shipments.
+         *     Each keeps its increases and payments; its balance and status follow them. Debts are
+         *     global, like customers: not limited to a project.
+         */
+        patch: operations["customer_debts_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/customer-debts/{id}/approve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Approves the debt (needs the debts module's approve permission): records who and
+         *     when; its original amount can no longer be changed.
+         */
+        post: operations["customer_debts_approve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customer-debts/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The debt's history, oldest first: its creation, increases and payments, each with
+         *     the remaining balance after it.
+         */
+        get: operations["customer_debts_history_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
+        get: operations["customers_list"];
+        put?: never;
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         post: operations["customers_create"];
         delete?: never;
         options?: never;
@@ -106,29 +202,129 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["customers_retrieve"];
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         put: operations["customers_update"];
         post?: never;
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         delete: operations["customers_destroy"];
         options?: never;
         head?: never;
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         patch: operations["customers_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/debt-increases/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Amounts added to debts, each with its date and reason. Each write recomputes the
+         *     debt's balance; lowering or deleting one may not take the total below what was paid.
+         */
+        get: operations["debt_increases_list"];
+        put?: never;
+        /**
+         * @description Amounts added to debts, each with its date and reason. Each write recomputes the
+         *     debt's balance; lowering or deleting one may not take the total below what was paid.
+         */
+        post: operations["debt_increases_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/debt-increases/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Amounts added to debts, each with its date and reason. Each write recomputes the
+         *     debt's balance; lowering or deleting one may not take the total below what was paid.
+         */
+        get: operations["debt_increases_retrieve"];
+        /**
+         * @description Amounts added to debts, each with its date and reason. Each write recomputes the
+         *     debt's balance; lowering or deleting one may not take the total below what was paid.
+         */
+        put: operations["debt_increases_update"];
+        post?: never;
+        /**
+         * @description Amounts added to debts, each with its date and reason. Each write recomputes the
+         *     debt's balance; lowering or deleting one may not take the total below what was paid.
+         */
+        delete: operations["debt_increases_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Amounts added to debts, each with its date and reason. Each write recomputes the
+         *     debt's balance; lowering or deleting one may not take the total below what was paid.
+         */
+        patch: operations["debt_increases_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/debt-payments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The payments (installments) of debts, each with its date and notes. Each write
+         *     recomputes the debt's balance and status; a payment may not exceed what is left.
+         */
+        get: operations["debt_payments_list"];
+        put?: never;
+        /**
+         * @description The payments (installments) of debts, each with its date and notes. Each write
+         *     recomputes the debt's balance and status; a payment may not exceed what is left.
+         */
+        post: operations["debt_payments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/debt-payments/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The payments (installments) of debts, each with its date and notes. Each write
+         *     recomputes the debt's balance and status; a payment may not exceed what is left.
+         */
+        get: operations["debt_payments_retrieve"];
+        /**
+         * @description The payments (installments) of debts, each with its date and notes. Each write
+         *     recomputes the debt's balance and status; a payment may not exceed what is left.
+         */
+        put: operations["debt_payments_update"];
+        post?: never;
+        /**
+         * @description The payments (installments) of debts, each with its date and notes. Each write
+         *     recomputes the debt's balance and status; a payment may not exceed what is left.
+         */
+        delete: operations["debt_payments_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description The payments (installments) of debts, each with its date and notes. Each write
+         *     recomputes the debt's balance and status; a payment may not exceed what is left.
+         */
+        patch: operations["debt_payments_partial_update"];
         trace?: never;
     };
     "/api/v1/grinders/": {
@@ -138,26 +334,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["grinders_list"];
         put?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         post: operations["grinders_create"];
         delete?: never;
         options?: never;
@@ -172,48 +352,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["grinders_retrieve"];
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         put: operations["grinders_update"];
         post?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         delete: operations["grinders_destroy"];
         options?: never;
         head?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         patch: operations["grinders_partial_update"];
         trace?: never;
     };
@@ -224,26 +372,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["grinding_operations_list"];
         put?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         post: operations["grinding_operations_create"];
         delete?: never;
         options?: never;
@@ -258,48 +390,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["grinding_operations_retrieve"];
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         put: operations["grinding_operations_update"];
         post?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         delete: operations["grinding_operations_destroy"];
         options?: never;
         head?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         patch: operations["grinding_operations_partial_update"];
         trace?: never;
     };
@@ -331,26 +431,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["projects_list"];
         put?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         post: operations["projects_create"];
         delete?: never;
         options?: never;
@@ -365,48 +449,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["projects_retrieve"];
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         put: operations["projects_update"];
         post?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         delete: operations["projects_destroy"];
         options?: never;
         head?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         patch: operations["projects_partial_update"];
         trace?: never;
     };
@@ -417,26 +469,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["refining_operations_list"];
         put?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         post: operations["refining_operations_create"];
         delete?: never;
         options?: never;
@@ -451,48 +487,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["refining_operations_retrieve"];
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         put: operations["refining_operations_update"];
         post?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         delete: operations["refining_operations_destroy"];
         options?: never;
         head?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         patch: operations["refining_operations_partial_update"];
         trace?: never;
     };
@@ -545,26 +549,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["resources_list"];
         put?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         post: operations["resources_create"];
         delete?: never;
         options?: never;
@@ -579,48 +567,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["resources_retrieve"];
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         put: operations["resources_update"];
         post?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         delete: operations["resources_destroy"];
         options?: never;
         head?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         patch: operations["resources_partial_update"];
         trace?: never;
     };
@@ -633,15 +589,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         post: operations["resources_decrease_create"];
         delete?: never;
         options?: never;
@@ -658,15 +606,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         post: operations["resources_increase_create"];
         delete?: never;
         options?: never;
@@ -681,16 +621,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["role_permissions_list"];
         put?: never;
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         post: operations["role_permissions_create"];
         delete?: never;
         options?: never;
@@ -705,24 +639,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["role_permissions_retrieve"];
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         put: operations["role_permissions_update"];
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         patch: operations["role_permissions_partial_update"];
         trace?: never;
     };
@@ -733,16 +658,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["roles_list"];
         put?: never;
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         post: operations["roles_create"];
         delete?: never;
         options?: never;
@@ -757,28 +676,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["roles_retrieve"];
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         put: operations["roles_update"];
         post?: never;
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         delete: operations["roles_destroy"];
         options?: never;
         head?: never;
-        /**
-         * @description Mixin for DRF viewsets/ModelViewSet that writes an AuditLog entry
-         *     for every create, update and destroy (soft delete) action.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         patch: operations["roles_partial_update"];
         trace?: never;
     };
@@ -983,26 +890,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["shipments_list"];
         put?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         post: operations["shipments_create"];
         delete?: never;
         options?: never;
@@ -1017,48 +908,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["shipments_retrieve"];
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         put: operations["shipments_update"];
         post?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         delete: operations["shipments_destroy"];
         options?: never;
         head?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         patch: operations["shipments_partial_update"];
         trace?: never;
     };
@@ -1109,26 +968,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["users_list"];
         put?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         post: operations["users_create"];
         delete?: never;
         options?: never;
@@ -1143,48 +986,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         get: operations["users_retrieve"];
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         put: operations["users_update"];
         post?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         delete: operations["users_destroy"];
         options?: never;
         head?: never;
-        /**
-         * @description Mixin for DRF viewsets that limits project-scoped users (supervisors) to
-         *     the records of their own project, and stops them from creating or moving a
-         *     record into another project.
-         *
-         *     `project_lookup` is the ORM path from the viewset's model to its Project
-         *     ("project" by default, "pk" for the Project viewset itself). Must be listed
-         *     before `AuditLogMixin` so its perform_create/perform_update run first.
-         */
+        /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         patch: operations["users_partial_update"];
         trace?: never;
     };
@@ -1209,6 +1020,8 @@ export interface components {
             id: $Read<number>;
             full_name: string;
             phone: string;
+            /** Format: decimal */
+            debt_remaining: $Read<string>;
             is_active: $Read<boolean>;
             /**
              * أنشئت في
@@ -1218,6 +1031,146 @@ export interface components {
             /** Format: date-time */
             updated_at: $Read<string>;
         };
+        CustomerDebt: {
+            id: $Read<number>;
+            customer: number;
+            customer_name: $Read<string>;
+            customer_phone: $Read<string>;
+            description: string;
+            /**
+             * Debt date
+             * Format: date-time
+             */
+            incurred_at?: string;
+            /** Format: decimal */
+            original_amount: string;
+            /** Format: decimal */
+            increased_amount: $Read<string>;
+            /** Format: decimal */
+            total_amount: $Read<string>;
+            /** Format: decimal */
+            paid_amount: $Read<string>;
+            /** Format: decimal */
+            remaining_amount: $Read<string>;
+            status: $Read<components["schemas"]["DebtStatusEnum"]>;
+            /** Format: date-time */
+            approved_at: $Read<string | null>;
+            approved_by_name: $Read<string | null>;
+            increases: $Read<components["schemas"]["DebtIncreaseSummary"][]>;
+            payments: $Read<components["schemas"]["DebtPaymentSummary"][]>;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /**
+         * @description One line of a debt's history: its creation, an increase or a payment, with the
+         *     remaining balance after it.
+         */
+        DebtHistoryEntry: {
+            type: components["schemas"]["TypeEnum"];
+            /** @description The debt's, the increase's or the payment's id. */
+            id: number;
+            /** Format: date-time */
+            date: string;
+            /** Format: decimal */
+            amount: string;
+            text: string;
+            created_by_name: string | null;
+            /** Format: date-time */
+            recorded_at: string;
+            /** Format: decimal */
+            balance: string;
+        };
+        /**
+         * @description An increase or a payment of a debt: fixed to its debt, dated after it and not in the
+         *     future.
+         */
+        DebtIncrease: {
+            id: $Read<number>;
+            debt: number;
+            debt_description: $Read<string>;
+            customer: $Read<number>;
+            customer_name: $Read<string>;
+            /** Format: decimal */
+            amount: string;
+            /**
+             * Increase date
+             * Format: date-time
+             */
+            increased_at?: string;
+            reason: string;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /** @description An increase as listed on its debt. */
+        DebtIncreaseSummary: {
+            id: $Read<number>;
+            /** Format: decimal */
+            amount: $Read<string>;
+            /**
+             * Increase date
+             * Format: date-time
+             */
+            increased_at: $Read<string>;
+            reason: $Read<string>;
+        };
+        /**
+         * @description An increase or a payment of a debt: fixed to its debt, dated after it and not in the
+         *     future.
+         */
+        DebtPayment: {
+            id: $Read<number>;
+            debt: number;
+            debt_description: $Read<string>;
+            customer: $Read<number>;
+            customer_name: $Read<string>;
+            /** Format: decimal */
+            amount: string;
+            /**
+             * Payment date
+             * Format: date-time
+             */
+            paid_at?: string;
+            notes?: string;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /** @description A payment as listed on its debt. */
+        DebtPaymentSummary: {
+            id: $Read<number>;
+            /** Format: decimal */
+            amount: $Read<string>;
+            /**
+             * Payment date
+             * Format: date-time
+             */
+            paid_at: $Read<string>;
+            notes: $Read<string>;
+        };
+        /**
+         * @description * `open` - Open
+         *     * `partially_paid` - Partially paid
+         *     * `paid` - Fully paid
+         * @enum {string}
+         */
+        DebtStatusEnum: "open" | "partially_paid" | "paid";
         Grinder: {
             id: $Read<number>;
             project: number;
@@ -1309,12 +1262,28 @@ export interface components {
          *     * `refining` - Refining
          *     * `inventory` - Inventory
          *     * `settlements` - Settlements
+         *     * `debts` - Customer debts
          * @enum {string}
          */
-        ModuleEnum: "accounts" | "locations" | "customers" | "shipments" | "grinding" | "refining" | "inventory" | "settlements";
+        ModuleEnum: "accounts" | "locations" | "customers" | "shipments" | "grinding" | "refining" | "inventory" | "settlements" | "debts";
         Operator: {
             id: $Read<number>;
             name: $Read<string>;
+        };
+        PaginatedCustomerDebtList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["CustomerDebt"][];
         };
         PaginatedCustomerList: {
             /** @example 123 */
@@ -1330,6 +1299,36 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Customer"][];
+        };
+        PaginatedDebtIncreaseList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["DebtIncrease"][];
+        };
+        PaginatedDebtPaymentList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["DebtPayment"][];
         };
         PaginatedGrinderList: {
             /** @example 123 */
@@ -1530,7 +1529,99 @@ export interface components {
             id?: $Read<number>;
             full_name?: string;
             phone?: string;
+            /** Format: decimal */
+            debt_remaining?: $Read<string>;
             is_active?: $Read<boolean>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        PatchedCustomerDebt: {
+            id?: $Read<number>;
+            customer?: number;
+            customer_name?: $Read<string>;
+            customer_phone?: $Read<string>;
+            description?: string;
+            /**
+             * Debt date
+             * Format: date-time
+             */
+            incurred_at?: string;
+            /** Format: decimal */
+            original_amount?: string;
+            /** Format: decimal */
+            increased_amount?: $Read<string>;
+            /** Format: decimal */
+            total_amount?: $Read<string>;
+            /** Format: decimal */
+            paid_amount?: $Read<string>;
+            /** Format: decimal */
+            remaining_amount?: $Read<string>;
+            status?: $Read<components["schemas"]["DebtStatusEnum"]>;
+            /** Format: date-time */
+            approved_at?: $Read<string | null>;
+            approved_by_name?: $Read<string | null>;
+            increases?: $Read<components["schemas"]["DebtIncreaseSummary"][]>;
+            payments?: $Read<components["schemas"]["DebtPaymentSummary"][]>;
+            created_by_name?: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        /**
+         * @description An increase or a payment of a debt: fixed to its debt, dated after it and not in the
+         *     future.
+         */
+        PatchedDebtIncrease: {
+            id?: $Read<number>;
+            debt?: number;
+            debt_description?: $Read<string>;
+            customer?: $Read<number>;
+            customer_name?: $Read<string>;
+            /** Format: decimal */
+            amount?: string;
+            /**
+             * Increase date
+             * Format: date-time
+             */
+            increased_at?: string;
+            reason?: string;
+            created_by_name?: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        /**
+         * @description An increase or a payment of a debt: fixed to its debt, dated after it and not in the
+         *     future.
+         */
+        PatchedDebtPayment: {
+            id?: $Read<number>;
+            debt?: number;
+            debt_description?: $Read<string>;
+            customer?: $Read<number>;
+            customer_name?: $Read<string>;
+            /** Format: decimal */
+            amount?: string;
+            /**
+             * Payment date
+             * Format: date-time
+             */
+            paid_at?: string;
+            notes?: string;
+            created_by_name?: $Read<string | null>;
             /**
              * أنشئت في
              * Format: date-time
@@ -1745,7 +1836,7 @@ export interface components {
              * Format: date-time
              */
             invoiced_at?: $Read<string | null>;
-            customer?: $Write<number>;
+            customer?: number;
             customer_name?: $Read<string>;
             customer_phone?: $Read<string>;
             /** Format: date-time */
@@ -2058,7 +2149,7 @@ export interface components {
              * Format: date-time
              */
             invoiced_at: $Read<string | null>;
-            customer: $Write<number>;
+            customer: number;
             customer_name: $Read<string>;
             customer_phone: $Read<string>;
             /** Format: date-time */
@@ -2194,6 +2285,13 @@ export interface components {
          * @enum {string}
          */
         TransportMethodEnum: "truck" | "hilux" | "other";
+        /**
+         * @description * `created` - created
+         *     * `increase` - increase
+         *     * `payment` - payment
+         * @enum {string}
+         */
+        TypeEnum: "created" | "increase" | "payment";
         User: {
             id: $Read<number>;
             /**
@@ -2290,6 +2388,224 @@ export interface operations {
             };
         };
     };
+    customer_debts_list: {
+        parameters: {
+            query?: {
+                customer?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+                /**
+                 * @description * `open` - Open
+                 *     * `partially_paid` - Partially paid
+                 *     * `paid` - Fully paid
+                 */
+                status?: "open" | "paid" | "partially_paid";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCustomerDebtList"];
+                };
+            };
+        };
+    };
+    customer_debts_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerDebt"];
+                "application/x-www-form-urlencoded": components["schemas"]["CustomerDebt"];
+                "multipart/form-data": components["schemas"]["CustomerDebt"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerDebt"];
+                };
+            };
+        };
+    };
+    customer_debts_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this customer debt. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerDebt"];
+                };
+            };
+        };
+    };
+    customer_debts_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this customer debt. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerDebt"];
+                "application/x-www-form-urlencoded": components["schemas"]["CustomerDebt"];
+                "multipart/form-data": components["schemas"]["CustomerDebt"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerDebt"];
+                };
+            };
+        };
+    };
+    customer_debts_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this customer debt. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    customer_debts_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this customer debt. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCustomerDebt"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedCustomerDebt"];
+                "multipart/form-data": components["schemas"]["PatchedCustomerDebt"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerDebt"];
+                };
+            };
+        };
+    };
+    customer_debts_approve_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this customer debt. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerDebt"];
+                };
+            };
+        };
+    };
+    customer_debts_history_list: {
+        parameters: {
+            query?: {
+                customer?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+                /**
+                 * @description * `open` - Open
+                 *     * `partially_paid` - Partially paid
+                 *     * `paid` - Fully paid
+                 */
+                status?: "open" | "paid" | "partially_paid";
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this customer debt. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebtHistoryEntry"][];
+                };
+            };
+        };
+    };
     customers_list: {
         parameters: {
             query?: {
@@ -2321,7 +2637,10 @@ export interface operations {
     customers_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2442,6 +2761,320 @@ export interface operations {
             };
         };
     };
+    debt_increases_list: {
+        parameters: {
+            query?: {
+                debt?: number;
+                debt__customer?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedDebtIncreaseList"];
+                };
+            };
+        };
+    };
+    debt_increases_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DebtIncrease"];
+                "application/x-www-form-urlencoded": components["schemas"]["DebtIncrease"];
+                "multipart/form-data": components["schemas"]["DebtIncrease"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebtIncrease"];
+                };
+            };
+        };
+    };
+    debt_increases_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this debt increase. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebtIncrease"];
+                };
+            };
+        };
+    };
+    debt_increases_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this debt increase. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DebtIncrease"];
+                "application/x-www-form-urlencoded": components["schemas"]["DebtIncrease"];
+                "multipart/form-data": components["schemas"]["DebtIncrease"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebtIncrease"];
+                };
+            };
+        };
+    };
+    debt_increases_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this debt increase. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    debt_increases_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this debt increase. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedDebtIncrease"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedDebtIncrease"];
+                "multipart/form-data": components["schemas"]["PatchedDebtIncrease"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebtIncrease"];
+                };
+            };
+        };
+    };
+    debt_payments_list: {
+        parameters: {
+            query?: {
+                debt?: number;
+                debt__customer?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedDebtPaymentList"];
+                };
+            };
+        };
+    };
+    debt_payments_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DebtPayment"];
+                "application/x-www-form-urlencoded": components["schemas"]["DebtPayment"];
+                "multipart/form-data": components["schemas"]["DebtPayment"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebtPayment"];
+                };
+            };
+        };
+    };
+    debt_payments_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this debt payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebtPayment"];
+                };
+            };
+        };
+    };
+    debt_payments_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this debt payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DebtPayment"];
+                "application/x-www-form-urlencoded": components["schemas"]["DebtPayment"];
+                "multipart/form-data": components["schemas"]["DebtPayment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebtPayment"];
+                };
+            };
+        };
+    };
+    debt_payments_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this debt payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    debt_payments_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this debt payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedDebtPayment"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedDebtPayment"];
+                "multipart/form-data": components["schemas"]["PatchedDebtPayment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebtPayment"];
+                };
+            };
+        };
+    };
     grinders_list: {
         parameters: {
             query?: {
@@ -2480,7 +3113,10 @@ export interface operations {
     grinders_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2637,7 +3273,10 @@ export interface operations {
     grinding_operations_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2821,7 +3460,10 @@ export interface operations {
     projects_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -2979,7 +3621,10 @@ export interface operations {
     refining_operations_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3194,7 +3839,10 @@ export interface operations {
     resources_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3318,7 +3966,10 @@ export interface operations {
     resources_decrease_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 /** @description A unique integer value identifying this resource. */
                 id: number;
@@ -3346,7 +3997,10 @@ export interface operations {
     resources_increase_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 /** @description A unique integer value identifying this resource. */
                 id: number;
@@ -3383,8 +4037,9 @@ export interface operations {
                  *     * `refining` - Refining
                  *     * `inventory` - Inventory
                  *     * `settlements` - Settlements
+                 *     * `debts` - Customer debts
                  */
-                module?: "accounts" | "customers" | "grinding" | "inventory" | "locations" | "refining" | "settlements" | "shipments";
+                module?: "accounts" | "customers" | "debts" | "grinding" | "inventory" | "locations" | "refining" | "settlements" | "shipments";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -3414,7 +4069,10 @@ export interface operations {
     role_permissions_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3546,7 +4204,10 @@ export interface operations {
     roles_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3701,7 +4362,10 @@ export interface operations {
     settlements_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -3880,7 +4544,10 @@ export interface operations {
     shipment_debts_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -4033,7 +4700,10 @@ export interface operations {
     shipment_payments_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -4202,7 +4872,10 @@ export interface operations {
     shipments_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -4405,7 +5078,10 @@ export interface operations {
     users_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };

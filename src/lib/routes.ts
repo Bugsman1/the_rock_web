@@ -60,6 +60,18 @@ export function customersHref(params: ListPageParams = {}): string {
   return listPageHref(CUSTOMERS_HREF, params);
 }
 
+export function customerHref(customer: string, drawer?: { debt: string } | { addDebt: true }) {
+  const path = `${CUSTOMERS_HREF}/${customer}`;
+
+  if (drawer === undefined) {
+    return path;
+  }
+
+  const query = "debt" in drawer ? `debt=${encodeURIComponent(drawer.debt)}` : "new=1";
+
+  return `${path}?${query}`;
+}
+
 export function usersHref(params: ListPageParams = {}): string {
   return listPageHref(USERS_HREF, params);
 }

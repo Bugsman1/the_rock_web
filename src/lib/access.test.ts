@@ -75,6 +75,12 @@ describe("can", () => {
 });
 
 describe("canOpen", () => {
+  it("opens a client's page only to a role that can view debts", () => {
+    expect(canOpen(access(["customers"]), "/customers")).toBe(true);
+    expect(canOpen(access(["customers"]), "/customers/7")).toBe(false);
+    expect(canOpen(access(["customers", "debts"]), "/customers/7")).toBe(true);
+  });
+
   it("opens a section to a role that can view its module", () => {
     expect(canOpen(refiner, "/refining")).toBe(true);
     expect(canOpen(refiner, "/inventory")).toBe(false);

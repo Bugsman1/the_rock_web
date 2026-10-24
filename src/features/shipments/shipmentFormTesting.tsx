@@ -15,16 +15,24 @@ export const mohamed: Customer = {
   name: "محمد ولد أحمد",
   phone: "+222 22 41 18 30",
   addedAt: "2026-06-12T09:20:00Z",
+  debt: 0,
 };
 
 export const customers: Customer[] = [
   mohamed,
-  { id: "c-2", name: "فاطمة بنت سيدي", phone: "+222 36 52 07 14", addedAt: "2026-06-18T11:05:00Z" },
+  {
+    id: "c-2",
+    name: "فاطمة بنت سيدي",
+    phone: "+222 36 52 07 14",
+    addedAt: "2026-06-18T11:05:00Z",
+    debt: 0,
+  },
   {
     id: "c-3",
     name: "سيدي ولد إبراهيم",
     phone: "+222 46 10 93 25",
     addedAt: "2026-07-03T08:40:00Z",
+    debt: 0,
   },
 ];
 

@@ -21,6 +21,7 @@ export const modules = [
   "refining",
   "inventory",
   "customers",
+  "debts",
   "settlements",
   "accounts",
   "locations",
@@ -45,6 +46,7 @@ export function emptyRights(): Rights {
     refining: noRights,
     inventory: noRights,
     customers: noRights,
+    debts: noRights,
     settlements: noRights,
     accounts: noRights,
     locations: noRights,
@@ -100,6 +102,7 @@ const openToEveryone: readonly string[] = [SETTINGS_PROFILE_HREF, SETTINGS_LANGU
 const formPages: readonly (readonly [RegExp, Module, Right])[] = [
   [/^\/shipments\/new$/, "shipments", "add"],
   [/^\/settlements\/new$/, "settlements", "add"],
+  [/^\/customers\/\d+$/, "debts", "view"],
   [/^\/settings\/projects\/new$/, "locations", "add"],
   [/^\/settings\/projects\/\d+\/edit$/, "locations", "edit"],
   [/^\/settings\/projects\/\d+\/machines\/new$/, "locations", "add"],

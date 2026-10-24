@@ -18,6 +18,7 @@ describe("shipment payments", () => {
     number: "SHP-00052",
     invoice_number: null,
     invoiced_at: null,
+    customer: 4,
     customer_name: "Sidi",
     customer_phone: "+222 46 10 93 25",
     arrival_date: "2026-10-10T08:30:00Z",

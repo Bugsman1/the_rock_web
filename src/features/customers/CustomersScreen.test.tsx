@@ -8,6 +8,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { noAccess, rightsFromApi } from "@/lib/access";
 import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
+import { formatMoney } from "@/lib/format";
 import messages from "@/messages/fr.json";
 import { CustomersScreen, customersLoader } from "./CustomersScreen";
 
@@ -21,8 +22,8 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 const apiCustomers = [
-  { id: 1, full_name: "Ahmed", phone: "+222 22 41 18 30" },
-  { id: 2, full_name: "Fatima", phone: "+222 36 52 07 14" },
+  { id: 1, full_name: "Ahmed", phone: "+222 22 41 18 30", debt_remaining: "40000.00" },
+  { id: 2, full_name: "Fatima", phone: "+222 36 52 07 14", debt_remaining: "0.00" },
 ].map((customer) => ({
   ...customer,
   is_active: true,
@@ -58,21 +59,54 @@ function openAt(path: string, access: Access = allRights) {
   return router;
 }
 
-async function shownNames() {
+async function shownRows() {
   const table = await screen.findByRole("table");
   const [, ...rows] = within(table).getAllByRole("row");
 
-  return rows.map((row) => within(row).getAllByRole("cell")[0]?.textContent);
+  return rows;
+}
+
+async function shownNames() {
+  return (await shownRows()).map((row) => within(row).getAllByRole("cell")[0]?.textContent);
 }
 
 describe("CustomersScreen", () => {
-  it("lists the customers of the page with the total and an edit link that keeps the list, with no client page to open", async () => {
+  it("opens no client page for a role that cannot see debts", async () => {
+    answerList(2, apiCustomers);
+    openAt("/fr/customers", {
+      superuser: false,
+      rights: rightsFromApi([{ module: "customers", can_view: true }]),
+    });
+
+    expect(await shownNames()).toEqual(["Ahmed", "Fatima"]);
+    expect(screen.queryByRole("link", { name: "Ahmed" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("columnheader", { name: messages.customers.fields.debt }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows each customer's remaining debt from the backend", async () => {
+    answerList(2, apiCustomers);
+    openAt("/fr/customers");
+
+    const [ahmed, fatima] = (await shownRows()).map((row) =>
+      row.querySelector("td:nth-child(4)")?.textContent?.replace(/\s/g, " "),
+    );
+
+    expect(
+      screen.getByRole("columnheader", { name: messages.customers.fields.debt }),
+    ).toBeVisible();
+    expect(ahmed).toBe(formatMoney(40000, "fr").replace(/\s/g, " "));
+    expect(fatima).toBe("0");
+  });
+
+  it("lists the customers of the page with the total and an edit link that keeps the list", async () => {
     answerList(52, apiCustomers);
     openAt("/fr/customers?q=a&page=2");
 
     expect(await shownNames()).toEqual(["Ahmed", "Fatima"]);
     expect(screen.getByText("Clients : 52")).toBeVisible();
-    expect(screen.queryByRole("link", { name: "Ahmed" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ahmed" })).toHaveAttribute("href", "/fr/customers/1");
     expect(screen.getByRole("link", { name: "Modifier Fatima" })).toHaveAttribute(
       "href",
       "/fr/customers?q=a&page=2&edit=2",

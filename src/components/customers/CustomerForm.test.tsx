@@ -35,6 +35,7 @@ const ahmed: Customer = {
   name: "Ahmed",
   phone: "+222 22 41 18 30",
   addedAt: "2026-09-01T08:00:00Z",
+  debt: 0,
 };
 
 function renderForm(customer?: Customer, initialName?: string, loader?: () => null) {

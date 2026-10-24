@@ -21,6 +21,7 @@ const pageShapes: readonly (readonly [RegExp, SkeletonShape])[] = [
   [/^\/(shipments|settlements)\/new$/, "form"],
   [/^\/settings\/projects\/(new|\d+\/edit|\d+\/machines\/(new|\d+))$/, "form"],
   [/^\/(customers|users|users\/roles)$/, "table"],
+  [/^\/customers\/\d+$/, "table"],
   [/^\/settlements\/projects\/\d+$/, "table"],
   [/^\/refining\/projects\/\d+$/, "table"],
   [/^\/inventory\/(projects|resources)\/\d+$/, "table"],

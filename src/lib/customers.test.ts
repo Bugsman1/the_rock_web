@@ -11,8 +11,8 @@ import {
 import type { Customer } from "./customers";
 
 const customers: Customer[] = [
-  { id: "1", name: "Ahmed", phone: "+222 22 41 18 30", addedAt: "2026-09-01T08:00:00Z" },
-  { id: "2", name: "Fatima", phone: "+222 36 52 07 14", addedAt: "2026-10-02T08:00:00Z" },
+  { id: "1", name: "Ahmed", phone: "+222 22 41 18 30", addedAt: "2026-09-01T08:00:00Z", debt: 0 },
+  { id: "2", name: "Fatima", phone: "+222 36 52 07 14", addedAt: "2026-10-02T08:00:00Z", debt: 0 },
 ];
 
 describe("createCustomerSchema", () => {
@@ -57,6 +57,7 @@ describe("customerFromApi", () => {
         id: 7,
         full_name: "محمد ولد أحمد",
         phone: "+222 22 41 18 30",
+        debt_remaining: "1500.50",
         is_active: true,
         created_at: "2026-06-12T09:20:00Z",
         updated_at: "2026-06-12T09:20:00Z",
@@ -66,6 +67,7 @@ describe("customerFromApi", () => {
       name: "محمد ولد أحمد",
       phone: "+222 22 41 18 30",
       addedAt: "2026-06-12T09:20:00Z",
+      debt: 1500.5,
     });
   });
 });
@@ -100,6 +102,7 @@ describe("matchCustomer", () => {
     name: "Sidi Salem",
     phone: "+222 46 10 93 25",
     addedAt: "2026-10-01T08:00:00Z",
+    debt: 0,
   };
 
   it("uses the client who has this phone and this name", () => {

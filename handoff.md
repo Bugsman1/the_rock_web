@@ -98,10 +98,17 @@
   `DebtNotice`, `customers.detail` texts) was deleted; the list shows name, phone, date added and
   edit only. The user will say later what to add.
 
-## Open backend gaps (from the audit)
+## Customer debts (done, not committed yet)
 
-- A1: the backend doesn't check whether a machine is already busy.
-- A2: the backend doesn't lock the bag-limit check.
-- A3: the backend doesn't validate `start_time`.
-- A4: settlements accept shipments that aren't finished.
-- No idempotency keys.
+- API types regenerated from backend `fcef4e0` (2026-10-24); `debts` added to the role modules.
+- Client page `/customers/<id>` (debts view right): debts table; a debt drawer with summary,
+  history and Increase / Decrease / Paid in full; "Add debt". Debt forms send an `Idempotency-Key`.
+- The clients list shows each customer's remaining debt (`debt_remaining`, backend `d593fe3`) to
+  roles that can view debts.
+- The debt drawer's history comes from `/customer-debts/{id}/history/` (backend `f5ab0c2` fixed its
+  schema), with the balance after each line and who recorded it.
+
+## Backend gaps from the audit
+
+- A1–A4 are fixed in backend `main` (busy machine, bag-limit lock, start time, completed-only
+  settlements), and idempotency keys exist for creates. Only the debt forms send them so far.

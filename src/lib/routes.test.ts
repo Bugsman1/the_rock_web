@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  customerHref,
   customersHref,
   editProjectHref,
   grinderHref,
@@ -31,6 +32,14 @@ describe("isWithinHref", () => {
   it("does not match a section that only starts with the same letters", () => {
     expect(isWithinHref("/shipments-old", "/shipments")).toBe(false);
     expect(isWithinHref("/", "/shipments")).toBe(false);
+  });
+});
+
+describe("customerHref", () => {
+  it("links a client's page, one of their debts or a new debt", () => {
+    expect(customerHref("7")).toBe("/customers/7");
+    expect(customerHref("7", { debt: "12" })).toBe("/customers/7?debt=12");
+    expect(customerHref("7", { addDebt: true })).toBe("/customers/7?new=1");
   });
 });
 

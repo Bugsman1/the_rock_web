@@ -100,7 +100,13 @@ describe("shipments to settle", () => {
 
   it("finds the customer of a shipment by phone, spaces or not", () => {
     const customers = [
-      { id: "7", name: "Ahmed", phone: "+222 22 41 18 30", addedAt: "2026-10-01T08:00:00Z" },
+      {
+        id: "7",
+        name: "Ahmed",
+        phone: "+222 22 41 18 30",
+        addedAt: "2026-10-01T08:00:00Z",
+        debt: 0,
+      },
     ];
 
     expect(customerOfShipment(customers, { phone: "+22222411830" })?.id).toBe("7");
