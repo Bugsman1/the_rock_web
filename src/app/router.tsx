@@ -104,11 +104,16 @@ async function loadSignedInUser({ params }: { params: Params }) {
 
   return data === undefined
     ? toLogin
-    : { access: accessFromApi(data), userName: displayName(data), roleName: data.role?.name ?? "" };
+    : {
+        access: accessFromApi(data),
+        userName: displayName(data),
+        roleName: data.role?.name ?? "",
+        projectScoped: data.role?.is_project_scoped ?? false,
+      };
 }
 
 function SignedInLayout() {
-  const { access, userName, roleName } = useLoaderData<typeof loadSignedInUser>();
+  const { access, userName, roleName, projectScoped } = useLoaderData<typeof loadSignedInUser>();
   const locale = useLocale();
   const pathname = usePathname();
   const nextPathname = useNextPathname();
@@ -120,7 +125,11 @@ function SignedInLayout() {
   return (
     <AccessContext value={access}>
       <AppShell access={access} userName={userName} roleName={roleName}>
-        {nextPathname === undefined ? <Outlet /> : <LoadingPage pathname={nextPathname} />}
+        {nextPathname === undefined ? (
+          <Outlet />
+        ) : (
+          <LoadingPage pathname={nextPathname} projectScoped={projectScoped} />
+        )}
       </AppShell>
     </AccessContext>
   );

@@ -167,7 +167,9 @@ its drawer closes and a red message says the data changed (`common.recordChanged
 reload fails, the error page shows instead.
 
 **Page skeleton:** while the data of another page is loading, the shell shows a skeleton shaped
-like that page (`skeletonShapeFor(pathname)`: `form`, `table`, `detail` or `cards`) and replaces it
+like that page (`skeletonShapeFor(pathname, projectScoped)`: `form`, `table`, `detail` or `cards`;
+for a role limited to one project, `is_project_scoped` from `/auth/me/`, Shipments, Settlements,
+Grinding and Refining draw the `table` of the project page they redirect to) and replaces it
 in the same render as the backend's answer. It never shows when only the query changes (search,
 page, drawer). The first load of the app shows the same skeleton.
 

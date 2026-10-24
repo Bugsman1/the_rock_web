@@ -278,4 +278,14 @@ describe("skeletonShapeFor", () => {
     expect(skeletonShapeFor("/ar/shipments")).toBe("cards");
     expect(skeletonShapeFor("/ar/settings")).toBe("cards");
   });
+
+  it("draws the project list for a role limited to one project, which opens its project directly", () => {
+    expect(skeletonShapeFor("/ar/shipments", true)).toBe("table");
+    expect(skeletonShapeFor("/ar/settlements", true)).toBe("table");
+    expect(skeletonShapeFor("/fr/milling", true)).toBe("table");
+    expect(skeletonShapeFor("/ar/refining", true)).toBe("table");
+    expect(skeletonShapeFor("/ar/inventory", true)).toBe("cards");
+    expect(skeletonShapeFor("/ar/settings", true)).toBe("cards");
+    expect(skeletonShapeFor("/ar/milling/projects/3/machines/7", true)).toBe("detail");
+  });
 });

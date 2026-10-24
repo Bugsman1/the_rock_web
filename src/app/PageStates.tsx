@@ -31,17 +31,31 @@ const pageShapes: readonly (readonly [RegExp, SkeletonShape])[] = [
   [/^\/customers\/\d+$/, "table"],
 ];
 
-export function skeletonShapeFor(pathname: string): SkeletonShape {
+const singleProjectSections = /^\/(shipments|settlements|milling|refining)$/;
+
+export function skeletonShapeFor(pathname: string, projectScoped = false): SkeletonShape {
   const [, , ...rest] = pathname.split("/");
   const page = `/${rest.join("/")}`;
+
+  if (projectScoped && singleProjectSections.test(page)) {
+    return "table";
+  }
 
   return pageShapes.find(([pattern]) => pattern.test(page))?.[1] ?? "cards";
 }
 
-export function LoadingPage({ pathname }: { pathname: string }) {
+export function LoadingPage({
+  pathname,
+  projectScoped = false,
+}: {
+  pathname: string;
+  projectScoped?: boolean;
+}) {
   const common = useTranslations("common");
 
-  return <PageSkeleton label={common("loading")} shape={skeletonShapeFor(pathname)} />;
+  return (
+    <PageSkeleton label={common("loading")} shape={skeletonShapeFor(pathname, projectScoped)} />
+  );
 }
 
 export function useNextPathname(): string | undefined {
