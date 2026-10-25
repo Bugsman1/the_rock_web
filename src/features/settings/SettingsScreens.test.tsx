@@ -54,6 +54,7 @@ const zouerat = { id: 3, name: "Zouérat 1", site: "zouerat", status: "active", 
 
 function viewing(viewable: readonly Module[]): Access {
   return {
+    userId: "",
     superuser: false,
     rights: rightsFromApi(viewable.map((module) => ({ module, can_view: true }))),
   };

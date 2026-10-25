@@ -5,6 +5,7 @@ import { navGroupsFor, sectionHrefs } from "./navigation";
 
 function viewing(viewable: readonly Module[]): Access {
   return {
+    userId: "",
     superuser: false,
     rights: rightsFromApi(viewable.map((module) => ({ module, can_view: true }))),
   };

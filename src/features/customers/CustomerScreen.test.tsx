@@ -285,6 +285,7 @@ describe("CustomerScreen", () => {
 
   it("shows a view-only role the debts with no way to change them", async () => {
     openAt("/fr/customers/7?debt=12", {
+      userId: "",
       superuser: false,
       rights: rightsFromApi([
         { module: "customers", can_view: true },

@@ -4,6 +4,7 @@ import type { Access, Module } from "./access";
 
 function access(viewable: readonly Module[], superuser = false): Access {
   return {
+    userId: "",
     superuser,
     rights: rightsFromApi(viewable.map((module) => ({ module, can_view: true }))),
   };
@@ -93,6 +94,7 @@ describe("canOpen", () => {
   it("opens a form page only to a role that may add or edit there", () => {
     const viewer = access(["shipments", "locations"]);
     const writer: Access = {
+      userId: "",
       superuser: false,
       rights: rightsFromApi([
         { module: "shipments", can_view: true, can_add: true },
@@ -111,6 +113,7 @@ describe("canOpen", () => {
     expect(
       canOpen(
         {
+          userId: "",
           superuser: false,
           rights: rightsFromApi([{ module: "settlements", can_view: true, can_add: true }]),
         },

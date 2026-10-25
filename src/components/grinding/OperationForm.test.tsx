@@ -4,6 +4,9 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import messages from "@/messages/fr.json";
+import { noAccess } from "@/lib/access";
+import type { Access } from "@/lib/access";
+import { AccessContext } from "@/lib/accessContext";
 import type { MillingOperation, OperationShipment } from "@/lib/grinding";
 import { OperationForm } from "./OperationForm";
 
@@ -46,7 +49,10 @@ const idleMachines = [
   { grinderId: "g10", project: "3", number: 10, inMaintenance: false },
 ];
 
-function inFrench(children: React.ReactNode) {
+const admin: Access = { ...noAccess, userId: "1", superuser: true };
+const supervisor: Access = { ...noAccess, userId: "9" };
+
+function inFrench(children: React.ReactNode, access: Access = admin) {
   return render(
     <RouterProvider
       router={createMemoryRouter([
@@ -54,7 +60,7 @@ function inFrench(children: React.ReactNode) {
           path: "*",
           element: (
             <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-              {children}
+              <AccessContext value={access}>{children}</AccessContext>
             </IntlProvider>
           ),
         },
@@ -63,7 +69,10 @@ function inFrench(children: React.ReactNode) {
   );
 }
 
-function renderNewOperation(defaults: { shipment?: string; machine?: number } = {}) {
+function renderNewOperation(
+  defaults: { shipment?: string; machine?: number } = {},
+  access: Access = admin,
+) {
   return inFrench(
     <OperationForm
       projectName="Zouerate 1"
@@ -77,6 +86,7 @@ function renderNewOperation(defaults: { shipment?: string; machine?: number } = 
       onSaved={onSaved}
       onCancel={vi.fn()}
     />,
+    access,
   );
 }
 
@@ -245,6 +255,23 @@ describe("OperationForm", () => {
     expect(onSaved).toHaveBeenCalled();
   });
 
+  it("records a non-admin as the operator without asking", async () => {
+    const user = userEvent.setup();
+    renderNewOperation({ shipment: "SH-1052", machine: 7 }, supervisor);
+
+    expect(screen.queryByLabelText(form.operator)).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(form.bags), "2");
+    await user.click(screen.getByRole("button", { name: form.submit }));
+
+    await waitFor(() => {
+      expect(api.startOperation).toHaveBeenCalledWith(
+        expect.objectContaining({ operatorId: "9" }),
+        expect.anything(),
+      );
+    });
+  });
+
   it("shows the backend's error on its field and stays open", async () => {
     api.startOperation.mockResolvedValue({
       ok: false,
@@ -312,6 +339,50 @@ describe("OperationForm", () => {
     });
     expect(api.startOperation).not.toHaveBeenCalled();
     expect(onSaved).toHaveBeenCalled();
+  });
+
+  it("records a non-admin who edits a running operation as its operator", async () => {
+    const user = userEvent.setup();
+    inFrench(
+      <OperationForm
+        operation={{
+          id: "42",
+          project: "3",
+          machine: 7,
+          shipmentNumber: "SH-1052",
+          client: "Mariem",
+          bags: 1.5,
+          operatorName: "Ahmed",
+          startedAt: "2026-10-08T06:00:00.000Z",
+          estimatedEndAt: "2026-10-08T10:30:00.000Z",
+          notes: "",
+        }}
+        projectName="Zouerate 1"
+        shipments={shipments}
+        idleMachines={idleMachines}
+        operators={[{ id: "emp-1", name: "Ahmed" }]}
+        defaultShipmentNumber="SH-1052"
+        defaultMachine={7}
+        defaultDate="2026-10-08"
+        defaultTime="06:00"
+        onSaved={onSaved}
+        onCancel={vi.fn()}
+      />,
+      supervisor,
+    );
+
+    expect(screen.queryByLabelText(form.operator)).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText(form.machine), "10");
+    await user.click(screen.getByRole("button", { name: form.saveChanges }));
+
+    await waitFor(() => {
+      expect(api.updateOperation).toHaveBeenCalledWith(
+        "42",
+        expect.objectContaining({ machine: "10", operatorId: "9" }),
+        expect.anything(),
+      );
+    });
   });
 
   it("shows the start it records and refuses one before the shipment arrived", async () => {

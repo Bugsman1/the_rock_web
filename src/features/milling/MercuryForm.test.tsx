@@ -116,6 +116,7 @@ describe("mercury added to a grinding", () => {
 
   it("shows a view-only role the status without a button", () => {
     showMercury(running, {
+      userId: "",
       superuser: false,
       rights: rightsFromApi([{ module: "grinding", can_view: true }]),
     });

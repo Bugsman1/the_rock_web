@@ -127,6 +127,7 @@ describe("SettlementScreen", () => {
 
   it("offers no edit or delete to a role that can only view settlements", async () => {
     openAt("/fr/settlements/4?edit=1", {
+      userId: "",
       superuser: false,
       rights: rightsFromApi([{ module: "settlements", can_view: true }]),
     });

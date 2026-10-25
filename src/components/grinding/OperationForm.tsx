@@ -8,6 +8,7 @@ import { FieldError, SaveFailureMessage, useSaveFailure } from "@/components/ui/
 import { ReadOnlyDateAndTime, ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { TextArea, TextField } from "@/components/ui/TextField";
+import { useAccess } from "@/lib/accessContext";
 import { combineDateAndTime } from "@/lib/datetime";
 import { formatCount } from "@/lib/format";
 import { BAG_STEP, CAPACITY_BAGS, createNewOperationSchema, estimatedEnd } from "@/lib/grinding";
@@ -71,6 +72,7 @@ export function OperationForm({
   const count = (value: number) => formatCount(value, locale);
   const saveFailure = useSaveFailure();
   const [saved, setSaved] = useState(false);
+  const { superuser, userId } = useAccess();
   const findMachineNumber = (machine: number) =>
     idleMachines.find((item) => item.number === machine);
 
@@ -119,8 +121,9 @@ export function OperationForm({
         bags: operation?.bags ?? Number.NaN,
         startDate: defaultDate,
         startTime: defaultTime,
-        operatorId:
-          operators.find((operator) => operator.name === operation?.operatorName)?.id ?? "",
+        operatorId: superuser
+          ? (operators.find((operator) => operator.name === operation?.operatorName)?.id ?? "")
+          : userId,
         notes: operation?.notes ?? "",
       },
     });
@@ -255,17 +258,19 @@ export function OperationForm({
           </div>
         )}
 
-        <div className="sm:col-span-2">
-          <Select
-            id="operation-operator"
-            label={t("operator")}
-            required
-            placeholder={t("operatorPlaceholder")}
-            options={operators.map((operator) => ({ value: operator.id, label: operator.name }))}
-            error={errors.operatorId?.message}
-            {...register("operatorId")}
-          />
-        </div>
+        {superuser ? (
+          <div className="sm:col-span-2">
+            <Select
+              id="operation-operator"
+              label={t("operator")}
+              required
+              placeholder={t("operatorPlaceholder")}
+              options={operators.map((operator) => ({ value: operator.id, label: operator.name }))}
+              error={errors.operatorId?.message}
+              {...register("operatorId")}
+            />
+          </div>
+        ) : null}
 
         <div className="sm:col-span-2">
           <TextArea id="operation-notes" label={t("notes")} rows={2} {...register("notes")} />

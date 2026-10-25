@@ -69,14 +69,16 @@ export function rightsFromApi(permissions: readonly ApiSchema<"RoleModulePermiss
 }
 
 export type Access = {
+  userId: string;
   superuser: boolean;
   rights: Rights;
 };
 
-export const noAccess: Access = { superuser: false, rights: emptyRights() };
+export const noAccess: Access = { userId: "", superuser: false, rights: emptyRights() };
 
 export function accessFromApi(me: ApiSchema<"Me">): Access {
   return {
+    userId: String(me.id),
     superuser: me.is_superuser ?? false,
     rights: rightsFromApi(me.role?.permissions ?? []),
   };

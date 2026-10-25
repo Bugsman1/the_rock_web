@@ -136,6 +136,7 @@ describe("RefiningScreen", () => {
 
   it("shows a view-only role every refining but no way to start one", async () => {
     const viewer: Access = {
+      userId: "",
       superuser: false,
       rights: rightsFromApi([{ module: "refining", can_view: true }]),
     };
@@ -229,6 +230,7 @@ describe("RefiningScreen", () => {
 
   it("lists the refinings without opening them for a role that cannot edit refining", async () => {
     openAt("/fr/refining/projects/3", {
+      userId: "",
       superuser: false,
       rights: rightsFromApi([{ module: "refining", can_view: true }]),
     });

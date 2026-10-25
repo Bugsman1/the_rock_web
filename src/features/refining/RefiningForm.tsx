@@ -8,6 +8,7 @@ import { FieldError, SaveFailureMessage, useSaveFailure } from "@/components/ui/
 import { ReadOnlyDateAndTime, ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { TextArea, TextField } from "@/components/ui/TextField";
+import { useAccess } from "@/lib/accessContext";
 import { combineDateAndTime } from "@/lib/datetime";
 import { formatCount, formatDateTime, formatQuantity } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
@@ -64,6 +65,7 @@ export function RefiningForm({
   const saveFailure = useSaveFailure();
   const [saved, setSaved] = useState(false);
   const [lossError, setLossError] = useState<string>();
+  const { superuser, userId } = useAccess();
   const mercuryGrams = operation.mercury?.quantity ?? 0;
   const weightBeforeFromMercury = mercuryGrams > 0;
 
@@ -88,7 +90,7 @@ export function RefiningForm({
       defaultValues:
         refining === undefined
           ? {
-              workerId: "",
+              workerId: superuser ? "" : userId,
               date: defaultDate,
               time: defaultTime,
               weightBefore: weightBeforeFromMercury ? mercuryGrams : Number.NaN,
@@ -98,7 +100,10 @@ export function RefiningForm({
               lossReason: "",
               notes: "",
             }
-          : refiningFormValues(refining, workers),
+          : {
+              ...refiningFormValues(refining, workers),
+              ...(superuser ? {} : { workerId: userId }),
+            },
     });
 
   const { errors } = formState;
@@ -200,15 +205,17 @@ export function RefiningForm({
           value={operation.endedAt === undefined ? "—" : formatDateTime(operation.endedAt, locale)}
         />
 
-        <Select
-          id="refining-worker"
-          label={t("fields.worker")}
-          required
-          placeholder={t("form.workerPlaceholder")}
-          options={workers.map((worker) => ({ value: worker.id, label: worker.name }))}
-          error={errors.workerId?.message}
-          {...register("workerId")}
-        />
+        {superuser ? (
+          <Select
+            id="refining-worker"
+            label={t("fields.worker")}
+            required
+            placeholder={t("form.workerPlaceholder")}
+            options={workers.map((worker) => ({ value: worker.id, label: worker.name }))}
+            error={errors.workerId?.message}
+            {...register("workerId")}
+          />
+        ) : null}
 
         <ReadOnlyDateAndTime
           dateLabel={t("fields.date")}

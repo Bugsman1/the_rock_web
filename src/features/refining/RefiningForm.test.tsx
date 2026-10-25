@@ -3,6 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { noAccess } from "@/lib/access";
+import type { Access } from "@/lib/access";
+import { AccessContext } from "@/lib/accessContext";
 import type { MillingOperation } from "@/lib/grinding";
 import messages from "@/messages/fr.json";
 import { RefiningForm } from "./RefiningForm";
@@ -35,7 +38,9 @@ const grinding: MillingOperation = {
   endedAt: "2026-10-12T18:00:00Z",
 };
 
-function renderForm(operation: MillingOperation = grinding) {
+const admin: Access = { ...noAccess, userId: "1", superuser: true };
+
+function renderForm(operation: MillingOperation = grinding, access: Access = admin) {
   return render(
     <RouterProvider
       router={createMemoryRouter([
@@ -43,15 +48,17 @@ function renderForm(operation: MillingOperation = grinding) {
           path: "*",
           element: (
             <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-              <RefiningForm
-                operation={operation}
-                projectName="Zouérat 1"
-                workers={[{ id: "4", name: "Aicha" }]}
-                defaultDate="2026-10-12"
-                defaultTime="09:30"
-                onSaved={onSaved}
-                onCancel={vi.fn()}
-              />
+              <AccessContext value={access}>
+                <RefiningForm
+                  operation={operation}
+                  projectName="Zouérat 1"
+                  workers={[{ id: "4", name: "Aicha" }]}
+                  defaultDate="2026-10-12"
+                  defaultTime="09:30"
+                  onSaved={onSaved}
+                  onCancel={vi.fn()}
+                />
+              </AccessContext>
             </IntlProvider>
           ),
         },
@@ -139,6 +146,25 @@ describe("RefiningForm", () => {
       }),
       { grindingOperationId: "5", refinedAt: expect.stringMatching(/^2026-10-12T/) },
     );
+  });
+
+  it("records a non-admin as the responsible worker without asking", async () => {
+    const user = userEvent.setup();
+    renderForm(grinding, { ...noAccess, userId: "9" });
+
+    expect(screen.queryByLabelText(fields.worker)).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(fields.weightBefore), "10");
+    await user.type(screen.getByLabelText(fields.weightAfter), "10");
+    await user.type(screen.getByLabelText(fields.goldWithMaterial), "2");
+    await user.click(screen.getByRole("button", { name: text.form.submit }));
+
+    await waitFor(() => {
+      expect(api.createRefiningOperation).toHaveBeenCalledWith(
+        expect.objectContaining({ workerId: "9" }),
+        expect.anything(),
+      );
+    });
   });
 
   it("works out the loss from the weights, without asking it", async () => {

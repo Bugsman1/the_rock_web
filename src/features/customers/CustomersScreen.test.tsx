@@ -74,6 +74,7 @@ describe("CustomersScreen", () => {
   it("opens no client page for a role that cannot see debts", async () => {
     answerList(2, apiCustomers);
     openAt("/fr/customers", {
+      userId: "",
       superuser: false,
       rights: rightsFromApi([{ module: "customers", can_view: true }]),
     });
@@ -125,6 +126,7 @@ describe("CustomersScreen", () => {
   it("shows a view-only role the customers with no way to add or edit them", async () => {
     answerList(52, apiCustomers);
     openAt("/fr/customers?new=1", {
+      userId: "",
       superuser: false,
       rights: rightsFromApi([{ module: "customers", can_view: true }]),
     });

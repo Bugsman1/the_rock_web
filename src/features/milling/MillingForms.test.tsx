@@ -116,6 +116,7 @@ describe("ending a milling operation", () => {
 
   it("stays on the machine when the role may not start the refining", async () => {
     const { user, router } = await openEndMilling({
+      userId: "",
       superuser: false,
       rights: rightsFromApi([
         { module: "grinding", can_view: true, can_edit: true },

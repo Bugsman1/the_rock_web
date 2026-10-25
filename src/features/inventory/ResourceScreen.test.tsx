@@ -90,6 +90,7 @@ describe("ResourceScreen", () => {
 
   it("shows a view-only role the resource and its history with no way to change it", async () => {
     openAt("/fr/inventory/resources/2?action=increase", {
+      userId: "",
       superuser: false,
       rights: rightsFromApi([{ module: "inventory", can_view: true }]),
     });

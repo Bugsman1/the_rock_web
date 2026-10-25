@@ -5,7 +5,11 @@ import type { Access, Module, Right } from "./access";
 export const AccessContext = createContext<Access>(noAccess);
 
 export function useCan(): (module: Module, right: Right) => boolean {
-  const access = use(AccessContext);
+  const access = useAccess();
 
   return (module, right) => can(access, module, right);
+}
+
+export function useAccess(): Access {
+  return use(AccessContext);
 }

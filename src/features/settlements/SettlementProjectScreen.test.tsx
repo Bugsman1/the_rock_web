@@ -86,6 +86,7 @@ describe("SettlementProjectScreen", () => {
   it("offers no settling to a role that can only view settlements", async () => {
     answerShipments();
     openAt("/fr/settlements/projects/3", {
+      userId: "",
       superuser: false,
       rights: rightsFromApi([{ module: "settlements", can_view: true }]),
     });

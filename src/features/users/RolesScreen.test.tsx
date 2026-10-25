@@ -216,6 +216,7 @@ describe("RolesScreen", () => {
 
   it("shows a view-only role the roles with no way to change them", async () => {
     openAt("/fr/users/roles?delete=5", {
+      userId: "",
       superuser: false,
       rights: rightsFromApi([{ module: "accounts", can_view: true }]),
     });
