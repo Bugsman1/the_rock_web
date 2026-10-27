@@ -563,6 +563,7 @@
       "button": "Sacs d'essai",
       "title": "Sacs d'essai · expédition {number}",
       "field": "Nombre de sacs d'essai",
+      "invalid": "Saisissez 0 ou des sacs entiers ou des demi-sacs : 0,5, 1, 1,5…",
       "leftAfter": "Sacs actuels ensuite",
       "tooMany": "Les sacs d'essai doivent être moins nombreux que les sacs de l'expédition ({total})",
       "submit": "Enregistrer les sacs d'essai",

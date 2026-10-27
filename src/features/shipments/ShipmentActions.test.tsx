@@ -164,6 +164,27 @@ describe("test bags", () => {
     );
   });
 
+  it("clears the test bags with 0, putting them back into the current bags", async () => {
+    answer([firstPayment], "350.00", { bags_count: 8.5, test_bags_count: 1.5 });
+    let sent: unknown;
+    server.use(
+      http.patch(`${API}/shipments/52/`, async ({ request }) => {
+        sent = await request.json();
+        return HttpResponse.json({});
+      }),
+    );
+    openShipment();
+    const { user, dialog } = await openTestBags();
+
+    const field = dialog.getByLabelText(testBags.field);
+    expect(field).toHaveValue(1.5);
+    await user.clear(field);
+    await user.type(field, "0");
+    await user.click(dialog.getByRole("button", { name: testBags.submit }));
+
+    await waitFor(() => expect(sent).toEqual({ bags_count: 10, test_bags_count: 0 }));
+  });
+
   it("refuses as many test bags as the shipment has, and sends nothing", async () => {
     answer([firstPayment]);
     let sent = false;

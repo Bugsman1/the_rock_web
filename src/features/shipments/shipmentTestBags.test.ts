@@ -7,16 +7,17 @@ import {
 } from "./shipmentTestBags";
 
 describe("test bags", () => {
-  const schema = createTestBagsSchema({ bagCountInvalid: "bags", tooMany: "too many" }, 10);
+  const schema = createTestBagsSchema({ invalid: "bags", tooMany: "too many" }, 10);
 
   function errorOf(testBags: number) {
     return schema.safeParse({ testBags }).error?.issues.map((issue) => issue.message);
   }
 
-  it("takes whole or half bags, fewer than the shipment's bags", () => {
+  it("takes 0, whole or half bags, fewer than the shipment's bags", () => {
+    expect(errorOf(0)).toBeUndefined();
     expect(errorOf(1.5)).toBeUndefined();
     expect(errorOf(9.5)).toBeUndefined();
-    expect(errorOf(0)).toEqual(["bags"]);
+    expect(errorOf(-0.5)).toEqual(["bags"]);
     expect(errorOf(1.3)).toEqual(["bags"]);
     expect(errorOf(Number.NaN)).toEqual(["bags"]);
     expect(errorOf(10)).toEqual(["too many"]);
@@ -24,6 +25,7 @@ describe("test bags", () => {
 
   it("gives the bags left to grind once the test bags are set", () => {
     expect(bagsLeftAfterTest(10, 1.5)).toBe(8.5);
+    expect(bagsLeftAfterTest(10, 0)).toBe(10);
     expect(bagsLeftAfterTest(10, 10)).toBeUndefined();
     expect(bagsLeftAfterTest(10, Number.NaN)).toBeUndefined();
   });
@@ -33,6 +35,7 @@ describe("test bags", () => {
       bags_count: 8.5,
       test_bags_count: 1.5,
     });
+    expect(testBagsToApi(10, { testBags: 0 })).toEqual({ bags_count: 10, test_bags_count: 0 });
   });
 
   it("shows the backend's refusal of either count on the test bags", () => {

@@ -394,7 +394,7 @@ its bags are refined (recomputed on every grinding or refining write). The app s
 refined yet) and completed. Shipments also carry `ground_bags`, `refined_bags`, `is_ground` and
 `is_refined`, and `bags_count` cannot go below the bags already in grinding (400 on the bags).
 
-**Cancelled shipments and test bags (backend `6bdb946`, `0018_shipment_test_bags_charged`):** the
+**Cancelled shipments and test bags (backend `6bdb946` and `f6d1eec`):** the
 shipment page has "test bags" and "cancel shipment" above its first section, for a role with the
 shipments edit right while the shipment is neither completed nor cancelled (`isInProgress`).
 "Cancel shipment" opens a small centred popup (`Dialog`) with an optional reason; confirming
@@ -404,7 +404,7 @@ grinding queue (`isInStorage`, `millingShipments` take pending and grinding only
 history, and its page shows "cancelled", when, by whom and the reason. Test bags are set after the
 shipment is created, from the "test bags" popup: they are taken out of the current bags, so it
 `PATCH`es `bags_count` = total − test and `test_bags_count` together (`testBagsToApi`), and the
-total stays the same. Whole or half bags, at least 0.5 (the backend refuses 0) and fewer than the
+total stays the same. 0 (clears them), whole or half bags, and fewer than the
 total; the backend refuses fewer current bags than are already in grinding (its message on the
 field). The first section shows current bags, test bags and total bags. Transport is charged on the
 total (current + test), as the backend does: the record's `transportTotal`, the edit form's
@@ -623,9 +623,6 @@ Editing, deleting and approving a debt are not in the app.
 - `schema.d.ts` was generated (2026-10-27) from GitHub `main` `ee051b3` with
   `manage.py spectacular` (shipment cancel and test bags, mercury additions, customer `debt_total`),
   not from a running server; regenerate with `npm run api:generate` once that version is deployed.
-- Test bags are charged transport only from backend migration `0018_shipment_test_bags_charged`
-  (not yet pushed): deploy it before this frontend, or the app's transport total counts test bags
-  the backend does not.
 - Settlements still offer only completed shipments; the backend now also settles cancelled ones.
 - A shipment waiting for its gold without material is held back by the app only; the backend still
   accepts it when its id is sent.

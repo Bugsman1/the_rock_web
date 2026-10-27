@@ -24,7 +24,6 @@ type TestBagsDialogProps = {
 
 function TestBagsForm({ shipment, onClose, onSaved }: Omit<TestBagsDialogProps, "open">) {
   const t = useTranslations("shipments.testBags");
-  const form = useTranslations("shipments.form");
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
   const toast = useToast();
@@ -36,12 +35,12 @@ function TestBagsForm({ shipment, onClose, onSaved }: Omit<TestBagsDialogProps, 
     () =>
       createTestBagsSchema(
         {
-          bagCountInvalid: form("errors.bagCountInvalid"),
+          invalid: t("invalid"),
           tooMany: t("tooMany", { total: formatCount(total, locale) }),
         },
         total,
       ),
-    [form, t, total, locale],
+    [t, total, locale],
   );
 
   const { control, register, handleSubmit, formState, setError } = useForm<TestBagsValues>({
@@ -79,7 +78,7 @@ function TestBagsForm({ shipment, onClose, onSaved }: Omit<TestBagsDialogProps, 
       <TextField
         id="test-bags"
         type="number"
-        min={BAG_STEP}
+        min={0}
         step={BAG_STEP}
         inputMode="decimal"
         label={t("field")}
