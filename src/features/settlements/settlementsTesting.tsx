@@ -7,6 +7,7 @@ import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
 import { noAccess } from "@/lib/access";
 import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
+import type { RefiningOperation } from "@/lib/refining";
 import type { ShipmentRecord } from "@/lib/shipments";
 import messages from "@/messages/fr.json";
 import { NewSettlementScreen, newSettlementLoader } from "./NewSettlementScreen";
@@ -89,6 +90,7 @@ export function shipmentRecord(overrides: Partial<ShipmentRecord>): ShipmentReco
     phone: "+222 22 41 18 30",
     arrivedAt: "2026-10-01T08:00:00Z",
     bagCount: 10,
+    testBags: 0,
     project: "3",
     status: "completed",
     stage: "completed",
@@ -123,6 +125,7 @@ export function serveSettlements() {
           : HttpResponse.json(found);
       }),
       http.get(`${API}/shipments/`, () => page([])),
+      http.get(`${API}/refining-operations/`, () => page([])),
     );
   });
   afterEach(() => server.resetHandlers());
@@ -176,4 +179,49 @@ export function cellsOf(row: HTMLElement | undefined) {
   return within(row)
     .getAllByRole("cell")
     .map((cell) => cell.textContent);
+}
+
+export function refiningOf(shipmentNumber: string, goldWithoutMaterial: number): RefiningOperation {
+  return {
+    id: `${shipmentNumber}-${goldWithoutMaterial}`,
+    grindingOperationId: "1",
+    shipmentNumber,
+    client: "Ahmed",
+    grinderCode: "P3-1",
+    project: "3",
+    projectName: "Zouérat 1",
+    workerName: "Aicha",
+    bags: 2,
+    refinedAt: "2026-10-05T08:00:00Z",
+    weightBefore: 120,
+    weightAfter: 118,
+    goldWithMaterial: 5,
+    goldWithoutMaterial,
+    loss: 2,
+    lossReason: "normalShortage",
+    notes: "",
+  };
+}
+
+export function apiRefiningOf(id: number, shipmentNumber: string, goldWithoutMaterial: string) {
+  return {
+    id,
+    grinding_operation: id,
+    shipment_number: shipmentNumber,
+    customer_name: "Ahmed",
+    grinder_code: "P3-1",
+    project_name: "Zouérat 1",
+    worker_name: "Aicha",
+    bags_count: 2,
+    refining_date: "2026-10-05T08:00:00Z",
+    weight_before: "120.000",
+    weight_after: "118.000",
+    gold_weight: goldWithoutMaterial,
+    gold_weight_with_mercury: "5.000",
+    gold_weight_without_mercury: goldWithoutMaterial,
+    loss: "2.000",
+    loss_reason: "normalShortage",
+    notes: "",
+    ...stamps,
+  };
 }

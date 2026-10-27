@@ -90,7 +90,9 @@ export function refiningLoss(weightBefore: number, weightAfter: number): number 
 }
 
 export function hasLoss(weights: { weightBefore: number; weightAfter: number }): boolean {
-  return refiningLoss(weights.weightBefore, weights.weightAfter) !== 0;
+  const loss = refiningLoss(weights.weightBefore, weights.weightAfter);
+
+  return loss === undefined || loss > 0;
 }
 
 export function createRefiningSchema(messages: {
@@ -98,7 +100,6 @@ export function createRefiningSchema(messages: {
   dateInvalid: string;
   timeInvalid: string;
   weightInvalid: string;
-  weightAfterTooHigh: string;
   goldTooHeavy: string;
   withoutMaterialTooHeavy: string;
 }) {
@@ -129,13 +130,6 @@ export function createRefiningSchema(messages: {
       message: messages.required,
       when: () => true,
     })
-    .refine(
-      (values) =>
-        !Number.isFinite(values.weightAfter) ||
-        !Number.isFinite(values.weightBefore) ||
-        values.weightAfter <= values.weightBefore,
-      { path: ["weightAfter"], message: messages.weightAfterTooHigh, when: () => true },
-    )
     .superRefine((values, context) => {
       if (values.goldWithoutMaterial > values.weightBefore) {
         context.addIssue({

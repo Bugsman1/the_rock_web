@@ -16,6 +16,7 @@ import {
   settlementHref,
   settlementsProjectHref,
 } from "@/lib/routes";
+import { getRefiningOperations } from "@/lib/refiningApi";
 import { getShipments } from "@/lib/shipmentsApi";
 import { SettlementForm } from "./SettlementForm";
 import { projectsOfShipments, settleableShipments } from "./settlements";
@@ -23,12 +24,13 @@ import type { NewSettlementValues } from "./settlements";
 import { createSettlement, getSettlements } from "./settlementsApi";
 
 async function loadCustomerShipments(customerId: string, projectParam: string | null) {
-  const [shipments, settlements, projects] = await Promise.all([
+  const [shipments, settlements, projects, refinings] = await Promise.all([
     getShipments({ customer: customerId }),
     getSettlements({ customer: customerId }),
     getProjects(),
+    getRefiningOperations(),
   ]);
-  const open = settleableShipments(shipments, settlements);
+  const open = settleableShipments(shipments, settlements, refinings);
   const projectIds = projectsOfShipments(open);
   const project =
     projectIds.find((id) => id === projectParam) ??

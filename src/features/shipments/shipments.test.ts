@@ -8,6 +8,7 @@ import {
   shipmentToApi,
   newShipmentToApi,
   transportTotal,
+  transportedBags,
   createNewShipmentSchema,
   remainingToPay,
 } from "./shipments";
@@ -194,6 +195,27 @@ describe("backend form", () => {
           .safeParse({ ...edited, bagCount: 10 })
           .error?.issues.map((issue) => [issue.path.join("."), issue.message]),
       ).toEqual([["bagFare", "below paid"]]);
+    });
+
+    it("counts the test bags in the transport, so moving bags to test keeps it paid", () => {
+      const messages = {
+        required: "required",
+        bagCountInvalid: "bags",
+        phoneInvalid: "phone",
+        dateInvalid: "date",
+        timeInvalid: "time",
+        amountInvalid: "amount",
+        passengerCountInvalid: "passengers",
+        passengerFareRequired: "fare required",
+        paymentTooHigh: "too high",
+        totalBelowPaid: "below paid",
+      };
+      const edited = { ...values, bagCount: 10, currentPayment: Number.NaN };
+
+      expect(createNewShipmentSchema(messages, 3000, 6).safeParse(edited).success).toBe(true);
+      expect(createNewShipmentSchema(messages, 3000).safeParse(edited).success).toBe(false);
+      expect(transportedBags(10, 6)).toBe(16);
+      expect(transportedBags(Number.NaN, 1.5)).toBe(1.5);
     });
 
     it("leaves the rest of the transport total to pay", () => {

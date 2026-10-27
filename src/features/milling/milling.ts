@@ -251,3 +251,16 @@ export function createMercurySchema(messages: { required: string; quantityTooLow
 }
 
 export type MercuryValues = z.infer<ReturnType<typeof createMercurySchema>>;
+
+export function createMercuryAdditionSchema(messages: { quantityInvalid: string }) {
+  return z.object({
+    quantity: z.number({ error: messages.quantityInvalid }).positive(messages.quantityInvalid),
+    notes: z.string().trim().max(500),
+  });
+}
+
+export type MercuryAdditionValues = z.infer<ReturnType<typeof createMercuryAdditionSchema>>;
+
+export function mercuryTotalAfter(total: number, quantity: number): number | undefined {
+  return Number.isFinite(quantity) && quantity > 0 ? total + quantity : undefined;
+}

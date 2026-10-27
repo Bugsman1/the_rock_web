@@ -16,7 +16,9 @@ import { formatCount, formatDateTime, formatMoney } from "@/lib/format";
 import { findProject, isInService } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
 import { shipmentsProjectHref } from "@/lib/routes";
-import { amountLeftToPay } from "@/lib/shipments";
+import { amountLeftToPay, isInProgress } from "@/lib/shipments";
+import { CancelShipmentDialog } from "./CancelShipmentDialog";
+import { TestBagsDialog } from "./TestBagsDialog";
 import { EditShipmentForm } from "./ShipmentForm";
 import type { ShipmentDetail, ShipmentPayment } from "./shipments";
 import { getShipment } from "./shipmentsApi";
@@ -120,17 +122,35 @@ export function ShipmentScreen() {
   const t = useTranslations("shipments.detail");
   const payment = useTranslations("shipments.paymentForm");
   const debtTitle = useTranslations("shipments.debtForm");
+  const cancel = useTranslations("shipments.cancel");
+  const testBags = useTranslations("shipments.testBags");
   const common = useTranslations("common");
   const canEdit = useCan()("shipments", "edit");
   const revalidator = useRevalidator();
   const replace = useReplace();
   const [adding, setAdding] = useState(false);
   const [addingDebt, setAddingDebt] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [settingTestBags, setSettingTestBags] = useState(false);
   const projectName = findProject(projects, shipment.project)?.name ?? "—";
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <BackLink href={shipmentsProjectHref(shipment.project)} label={common("back")} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <BackLink href={shipmentsProjectHref(shipment.project)} label={common("back")} />
+        {canEdit && isInProgress(shipment) ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="secondary" width="auto" onClick={() => setSettingTestBags(true)}>
+              <Icon name="packages" />
+              {testBags("button")}
+            </Button>
+            <Button variant="danger" width="auto" onClick={() => setCancelling(true)}>
+              <Icon name="x" />
+              {cancel("button")}
+            </Button>
+          </div>
+        ) : null}
+      </div>
 
       <ShipmentHeader shipment={shipment} projectName={projectName} />
 
@@ -151,6 +171,27 @@ export function ShipmentScreen() {
           <ShipmentDetails shipment={shipment} projectName={projectName} />
         )}
       </div>
+
+      <TestBagsDialog
+        shipment={shipment}
+        open={settingTestBags}
+        onClose={() => setSettingTestBags(false)}
+        onSaved={() => {
+          setSettingTestBags(false);
+          void revalidator.revalidate();
+        }}
+      />
+
+      <CancelShipmentDialog
+        shipmentId={shipment.id}
+        shipmentNumber={shipment.shipmentNumber}
+        open={cancelling}
+        onClose={() => setCancelling(false)}
+        onCancelled={() => {
+          setCancelling(false);
+          void revalidator.revalidate();
+        }}
+      />
 
       <Drawer
         open={addingDebt}

@@ -88,6 +88,22 @@ describe("ResourceScreen", () => {
     ]);
   });
 
+  it("shows more mercury returned than taken as a surplus, not a loss", async () => {
+    server.use(
+      http.get(`${API}/resource-history/`, () =>
+        page([
+          { ...returned, quantity: "125.000", quantity_after: "505.000", loss: "-5.000" },
+          taken,
+          initial,
+        ]),
+      ),
+    );
+    openAt("/fr/inventory/resources/2");
+
+    expect(await screen.findByRole("heading", { name: "Mercure" })).toBeVisible();
+    expect(cellsOf(screen.getAllByRole("row")[1])[5]).toBe(text.surplus.replace("{quantity}", "5"));
+  });
+
   it("shows a view-only role the resource and its history with no way to change it", async () => {
     openAt("/fr/inventory/resources/2?action=increase", {
       userId: "",

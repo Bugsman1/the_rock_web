@@ -66,7 +66,7 @@ export function RefiningForm({
   const [saved, setSaved] = useState(false);
   const [lossError, setLossError] = useState<string>();
   const { superuser, userId } = useAccess();
-  const mercuryGrams = operation.mercury?.quantity ?? 0;
+  const mercuryGrams = operation.mercury?.total ?? 0;
   const weightBeforeFromMercury = mercuryGrams > 0;
 
   const schema = useMemo(
@@ -76,7 +76,6 @@ export function RefiningForm({
         dateInvalid: common("validation.dateInvalid"),
         timeInvalid: common("validation.timeInvalid"),
         weightInvalid: t("errors.weightInvalid"),
-        weightAfterTooHigh: t("errors.weightAfterTooHigh"),
         goldTooHeavy: t("errors.goldTooHeavy"),
         withoutMaterialTooHeavy: t("errors.withoutMaterialTooHeavy"),
       }),
@@ -117,12 +116,6 @@ export function RefiningForm({
       void trigger("goldWithoutMaterial");
     }
   }, [goldWithMaterial, goldWithoutMaterial, trigger]);
-
-  useEffect(() => {
-    if (Number.isFinite(weightAfter)) {
-      void trigger("weightAfter");
-    }
-  }, [weightBefore, weightAfter, trigger]);
   const loss = refiningLoss(weightBefore, weightAfter);
 
   async function onSubmit(values: RefiningValues) {
@@ -238,6 +231,15 @@ export function RefiningForm({
         {weightField("goldWithoutMaterial", t("fields.goldWithoutMaterial"), { required: false })}
         {loss === 0 ? (
           <FieldError id="refining-loss-error" message={lossError} />
+        ) : loss !== undefined && loss < 0 ? (
+          <div className="flex flex-col gap-1.5">
+            <ReadOnlyField
+              label={t("fields.surplus")}
+              value={`+${formatQuantity(-loss, locale)}`}
+              emphasis
+            />
+            <FieldError id="refining-loss-error" message={lossError} />
+          </div>
         ) : (
           <>
             <div className="flex flex-col gap-1.5">

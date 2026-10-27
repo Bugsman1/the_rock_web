@@ -107,7 +107,13 @@ describe("mercury added to a grinding", () => {
   it("shows an added mercury with no way to take it back", () => {
     showMercury({
       ...running,
-      mercury: { addedAt: "2026-10-08T07:00:00.000Z", byName: "Aicha", quantity: 12.5 },
+      mercury: {
+        addedAt: "2026-10-08T07:00:00.000Z",
+        byName: "Aicha",
+        quantity: 12.5,
+        total: 12.5,
+        additions: [],
+      },
     });
 
     expect(screen.getByText(mercury.added)).toBeVisible();

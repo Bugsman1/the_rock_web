@@ -1,14 +1,16 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
-import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest";
 import { PageError } from "@/app/PageStates";
 import { ToastProvider } from "@/components/ui/Toast";
 import { noAccess } from "@/lib/access";
 import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
+import type { MillingOperation } from "@/lib/grinding";
 import messages from "@/messages/fr.json";
 import {
   RefiningProjectScreen,
@@ -16,6 +18,7 @@ import {
   RefiningScreen,
   refiningLoader,
 } from "./RefiningScreen";
+import { RefiningForm } from "./RefiningForm";
 
 const allRights: Access = { ...noAccess, superuser: true };
 
@@ -52,6 +55,8 @@ const grinding = (
   mercury_added_at: mercuryAddedAt,
   mercury_added_by_name: "Ahmed",
   mercury_quantity: "120.000",
+  mercury_additions: [],
+  total_mercury_quantity: "120.000",
   notes: "",
   created_at: "2026-10-05T06:00:00Z",
   updated_at: "2026-10-05T06:00:00Z",
@@ -177,4 +182,75 @@ export function panel(title: string) {
   }
 
   return within(section);
+}
+
+export const grindingToRefine: MillingOperation = {
+  id: "5",
+  project: "3",
+  machine: 2,
+  shipmentNumber: "SH-1052",
+  client: "Mariem",
+  bags: 4,
+  operatorName: "Ahmed",
+  startedAt: "2026-10-12T06:00:00Z",
+  estimatedEndAt: "2026-10-12T18:00:00Z",
+  notes: "",
+  endedAt: "2026-10-12T18:00:00Z",
+};
+
+export const refiningAdmin: Access = { ...noAccess, userId: "1", superuser: true };
+
+export function renderRefiningForm(
+  operation: MillingOperation = grindingToRefine,
+  access: Access = refiningAdmin,
+  onSaved: () => void = vi.fn(),
+) {
+  return render(
+    <RouterProvider
+      router={createMemoryRouter([
+        {
+          path: "*",
+          element: (
+            <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
+              <AccessContext value={access}>
+                <RefiningForm
+                  operation={operation}
+                  projectName="Zouérat 1"
+                  workers={[{ id: "4", name: "Aicha" }]}
+                  defaultDate="2026-10-12"
+                  defaultTime="09:30"
+                  onSaved={onSaved}
+                  onCancel={vi.fn()}
+                />
+              </AccessContext>
+            </IntlProvider>
+          ),
+        },
+      ])}
+    />,
+  );
+}
+
+export function readOnlyField(label: string) {
+  const field = screen.getByText(label).parentElement;
+
+  if (field === null) {
+    throw new Error(`no field for ${label}`);
+  }
+
+  return within(field);
+}
+
+export async function fillRefiningForm(before: string, after: string, goldWithout: string) {
+  const user = userEvent.setup();
+  await user.selectOptions(screen.getByLabelText(text.fields.worker), "4");
+  await user.type(screen.getByLabelText(text.fields.weightBefore), before);
+  await user.type(screen.getByLabelText(text.fields.weightAfter), after);
+  await user.type(
+    screen.getByLabelText(text.fields.goldWithMaterial),
+    String(Number(goldWithout) + 1),
+  );
+  await user.type(screen.getByLabelText(text.fields.goldWithoutMaterial), goldWithout);
+  await user.selectOptions(screen.getByLabelText(text.fields.lossReason), "arghawa");
+  return user;
 }

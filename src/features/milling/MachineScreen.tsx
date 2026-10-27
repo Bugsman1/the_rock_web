@@ -23,6 +23,7 @@ import {
 import { activeOperationOf, machineStatus } from "@/lib/grinding";
 import { findMachine, operationHistory } from "./milling";
 import { getMillingData } from "./millingApi";
+import { MercuryAdditionsList } from "./MercuryAdditions";
 import { MercuryStatus } from "./MercuryForm";
 import { EditOperationDrawer, EndMillingAction } from "./MillingForms";
 import { MachineStatusLabel } from "./MillingScreens";
@@ -85,11 +86,18 @@ export function MachineDetailScreen() {
               value:
                 operation.mercury === undefined
                   ? t("mercury.notYet")
-                  : t("mercury.addedOn", {
-                      quantity: formatQuantity(operation.mercury.quantity, locale),
-                      date: formatDateTime(operation.mercury.addedAt, locale),
-                      name: operation.mercury.byName,
-                    }),
+                  : t(
+                      operation.mercury.additions.length === 0
+                        ? "mercury.addedOn"
+                        : "mercury.totalWithExtra",
+                      {
+                        quantity: formatQuantity(operation.mercury.quantity, locale),
+                        total: formatQuantity(operation.mercury.total, locale),
+                        first: formatQuantity(operation.mercury.quantity, locale),
+                        date: formatDateTime(operation.mercury.addedAt, locale),
+                        name: operation.mercury.byName,
+                      },
+                    ),
             },
             {
               label: t("machine.notes"),
@@ -97,6 +105,7 @@ export function MachineDetailScreen() {
             },
           ]}
         />
+        <MercuryAdditionsList additions={operation.mercury?.additions ?? []} />
         <div>
           <MercuryStatus operation={operation} />
         </div>

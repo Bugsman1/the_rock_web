@@ -32,11 +32,25 @@ export type MillingOperation = {
   mercury?: MercuryAdded;
 };
 
+export type MercuryAddition = {
+  id: string;
+  quantity: number;
+  addedAt: IsoTimestamp;
+  byName: string;
+  notes: string;
+};
+
 type MercuryAdded = {
   addedAt: IsoTimestamp;
   byName: string;
   quantity: number;
+  total: number;
+  additions: readonly MercuryAddition[];
 };
+
+export function canAddMercury(operation: MillingOperation): boolean {
+  return operation.mercury !== undefined && operation.endedAt === undefined;
+}
 
 export type OperationShipment = {
   id: string;
@@ -168,6 +182,14 @@ export function operationFromApi(
               addedAt: mercuryAddedAt,
               byName: operation.mercury_added_by_name,
               quantity: fromDecimal(operation.mercury_quantity ?? "0"),
+              total: fromDecimal(operation.total_mercury_quantity),
+              additions: operation.mercury_additions.map((addition) => ({
+                id: String(addition.id),
+                quantity: fromDecimal(addition.quantity),
+                addedAt: addition.created_at,
+                byName: addition.created_by_name ?? "",
+                notes: addition.notes ?? "",
+              })),
             },
           }),
     },

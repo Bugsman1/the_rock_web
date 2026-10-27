@@ -21,7 +21,6 @@ const messages = {
   dateInvalid: "date",
   timeInvalid: "time",
   weightInvalid: "weight",
-  weightAfterTooHigh: "after too high",
   goldTooHeavy: "gold too heavy",
   withoutMaterialTooHeavy: "without too heavy",
 };
@@ -51,7 +50,13 @@ function grinding(overrides: Partial<MillingOperation>): MillingOperation {
     estimatedEndAt: "2026-10-12T18:00:00Z",
     notes: "",
     endedAt: "2026-10-12T18:00:00Z",
-    mercury: { addedAt: "2026-10-12T08:00:00Z", byName: "Aicha", quantity: 120 },
+    mercury: {
+      addedAt: "2026-10-12T08:00:00Z",
+      byName: "Aicha",
+      quantity: 120,
+      total: 120,
+      additions: [],
+    },
     ...overrides,
   };
 }
@@ -179,15 +184,13 @@ describe("createRefiningSchema", () => {
   it("asks the loss reason only when there is a loss", () => {
     expect(errorsOf({ ...values, lossReason: "" })).toEqual({ lossReason: "required" });
     expect(errorsOf({ ...values, weightAfter: 120.5, lossReason: "" })).toEqual({});
+    expect(errorsOf({ ...values, weightAfter: 125, lossReason: "" })).toEqual({});
   });
 
-  it("refuses more weight after than before and more gold than material, all in grams", () => {
+  it("takes more weight after than before, a surplus, but never more gold than material", () => {
     expect(
       errorsOf({ ...values, weightBefore: 1, weightAfter: 2, goldWithoutMaterial: 2 }),
-    ).toEqual({
-      weightAfter: "after too high",
-      goldWithoutMaterial: "gold too heavy",
-    });
+    ).toEqual({ goldWithoutMaterial: "gold too heavy" });
   });
 
   it("refuses gold without material equal to or heavier than with it, and negative values", () => {
@@ -222,13 +225,15 @@ describe("refiningToApi", () => {
     });
   });
 
-  it("sends no loss reason when nothing was lost", () => {
-    expect(
-      refiningToApi(
-        { ...values, weightAfter: 120.5 },
-        { grindingOperationId: "5", refinedAt: "2026-10-12T09:30:00.000Z" },
-      ).loss_reason,
-    ).toBe("");
+  it("sends no loss reason when nothing was lost or more came back", () => {
+    for (const weightAfter of [120.5, 125]) {
+      expect(
+        refiningToApi(
+          { ...values, weightAfter },
+          { grindingOperationId: "5", refinedAt: "2026-10-12T09:30:00.000Z" },
+        ).loss_reason,
+      ).toBe("");
+    }
   });
 });
 

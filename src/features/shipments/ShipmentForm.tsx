@@ -27,7 +27,7 @@ import {
 
 type ShipmentFormMode =
   | { kind: "create"; backHref: string }
-  | { kind: "edit"; shipmentId: string; paid: number; onSaved: () => void };
+  | { kind: "edit"; shipmentId: string; paid: number; testBags: number; onSaved: () => void };
 
 type ShipmentFormProps = {
   defaultValues: NewShipmentValues;
@@ -101,6 +101,7 @@ export function EditShipmentForm({
         kind: "edit",
         shipmentId: shipment.id,
         paid: shipment.paid,
+        testBags: shipment.testBags,
         onSaved,
       }}
     />
@@ -117,6 +118,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
   const toasts = useTranslations("toasts");
   const toast = useToast();
   const paid = mode.kind === "edit" ? mode.paid : 0;
+  const testBags = mode.kind === "edit" ? mode.testBags : 0;
 
   const schema = useMemo(
     () =>
@@ -134,8 +136,9 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
           totalBelowPaid: t("errors.totalBelowPaid", { paid: formatMoney(paid, locale) }),
         },
         paid,
+        testBags,
       ),
-    [t, common, paid, locale],
+    [t, common, paid, testBags, locale],
   );
 
   const form = useForm<NewShipmentValues>({
@@ -201,6 +204,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
         <TransportCostFields
           form={form}
           paid={mode.kind === "edit" ? mode.paid : undefined}
+          testBags={testBags}
           showDebt={mode.kind === "create"}
         />
         <DestinationFields form={form} projects={projects} />

@@ -48,6 +48,7 @@ const stageStyles: Record<ShipmentStage, { classes: string; icon: IconName }> = 
   grinding: { classes: "border-warning-300 bg-warning-50 text-warning-700", icon: "mill" },
   refining: { classes: "border-brand-600 bg-brand-600 text-ink-inverted", icon: "flame" },
   completed: { classes: "border-success-300 bg-success-50 text-success-700", icon: "circle-check" },
+  cancelled: { classes: "border-danger-300 bg-danger-50 text-danger-700", icon: "x" },
 };
 
 export function ShipmentStatusBadge({ status }: { status: ShipmentStage }) {

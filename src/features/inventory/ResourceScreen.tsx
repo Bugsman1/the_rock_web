@@ -117,9 +117,17 @@ function HistoryTable({ changes, showsLoss }: HistoryTableProps) {
             key: "loss",
             header: t("fields.loss"),
             align: "end" as const,
-            className: "text-danger-700 font-bold",
-            cell: (change: ResourceChange) =>
-              change.loss === undefined ? "—" : quantity(change.loss),
+            className: "font-bold",
+            cell: ({ loss }: ResourceChange) =>
+              loss === undefined ? (
+                "—"
+              ) : loss < 0 ? (
+                <span className="text-success-700">
+                  {t("surplus", { quantity: quantity(-loss) })}
+                </span>
+              ) : (
+                <span className="text-danger-700">{quantity(loss)}</span>
+              ),
           },
         ]
       : []),

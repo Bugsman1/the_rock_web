@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { amountLeftToPay } from "@/lib/shipments";
 import type { ShipmentRecord } from "@/lib/shipments";
 import {
-  completedShipments,
+  finishedShipments,
   emptyHistoryFilter,
   filterShipments,
   historyClients,
@@ -23,6 +23,7 @@ describe("history", () => {
       phone,
       arrivedAt,
       bagCount: 10,
+      testBags: 0,
       project: "zouerate1",
       status: "completed",
       stage: "completed",
@@ -117,6 +118,7 @@ describe("payment and history", () => {
     phone: "+222 22 33 44 55",
     arrivedAt: "2026-10-01T00:00:00Z",
     bagCount: 10,
+    testBags: 0,
     project: "3",
     status: "completed",
     stage: "completed",
@@ -133,13 +135,14 @@ describe("payment and history", () => {
     expect(amountLeftToPay({ ...base, paid: 1200 })).toBe(0);
   });
 
-  it("keeps only the completed shipments", () => {
+  it("keeps only the completed and the cancelled shipments", () => {
     const records: ShipmentRecord[] = [
       base,
       { ...base, id: "2", status: "pending" },
       { ...base, id: "3", status: "grinding" },
+      { ...base, id: "4", status: "cancelled", stage: "cancelled" },
     ];
 
-    expect(completedShipments(records).map((record) => record.id)).toEqual(["1"]);
+    expect(finishedShipments(records).map((record) => record.id)).toEqual(["1", "4"]);
   });
 });

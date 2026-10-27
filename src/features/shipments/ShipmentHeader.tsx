@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
 import { useLocale, useTranslations } from "use-intl";
+import { ShipmentStatusBadge } from "@/components/shipments/ShipmentBadges";
 import { DetailList } from "@/components/ui/Cards";
 import { PageTitle } from "@/components/ui/PageHeader";
+import { cn } from "@/lib/cn";
 import { formatCount, formatDateTime } from "@/lib/format";
+import { totalBags } from "@/lib/shipments";
 import { InvoiceDownload } from "./InvoiceDownload";
 import type { ShipmentDetail } from "./shipments";
 
@@ -35,9 +38,17 @@ export function ShipmentDetails({
   );
 }
 
-function HeaderFact({ label, children }: { label: string; children: ReactNode }) {
+function HeaderFact({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="flex min-w-0 flex-col gap-0.5">
+    <div className={cn("flex min-w-0 flex-col gap-0.5", className)}>
       <dt className="text-ink-muted text-[13px] font-semibold">{label}</dt>
       <dd className="text-ink text-start text-[15px] font-bold break-words">{children}</dd>
     </div>
@@ -57,7 +68,10 @@ export function ShipmentHeader({
   return (
     <section className="rounded-card border-line bg-surface flex flex-col border-[1.5px]">
       <div className="border-line flex flex-wrap items-center justify-between gap-4 border-b p-5">
-        <PageTitle>{t("title", { number: shipment.shipmentNumber })}</PageTitle>
+        <div className="flex flex-wrap items-center gap-3">
+          <PageTitle>{t("title", { number: shipment.shipmentNumber })}</PageTitle>
+          {shipment.cancellation === undefined ? null : <ShipmentStatusBadge status="cancelled" />}
+        </div>
         <InvoiceDownload shipment={shipment} />
       </div>
 
@@ -72,7 +86,28 @@ export function ShipmentHeader({
         </HeaderFact>
         <HeaderFact label={t("project")}>{projectName}</HeaderFact>
         <HeaderFact label={t("arrivedAt")}>{formatDateTime(shipment.arrivedAt, locale)}</HeaderFact>
-        <HeaderFact label={t("bags")}>{formatCount(shipment.bagCount, locale)}</HeaderFact>
+        <HeaderFact label={t("currentBags")}>{formatCount(shipment.bagCount, locale)}</HeaderFact>
+        <HeaderFact label={t("testBags")}>{formatCount(shipment.testBags, locale)}</HeaderFact>
+        <HeaderFact label={t("totalBags")}>{formatCount(totalBags(shipment), locale)}</HeaderFact>
+        {shipment.cancellation === undefined ? null : (
+          <>
+            <HeaderFact label={t("cancelledAt")}>
+              <span className="block text-start">
+                {formatDateTime(shipment.cancellation.cancelledAt, locale)}
+              </span>
+              <span className="text-ink-muted block text-start text-[13px] font-semibold">
+                <bdi>{shipment.cancellation.byName}</bdi>
+              </span>
+            </HeaderFact>
+            {shipment.cancellation.reason === "" ? null : (
+              <HeaderFact label={t("cancelReason")} className="sm:col-span-2 lg:col-span-4">
+                <span dir="auto" className="block text-start">
+                  {shipment.cancellation.reason}
+                </span>
+              </HeaderFact>
+            )}
+          </>
+        )}
       </dl>
     </section>
   );

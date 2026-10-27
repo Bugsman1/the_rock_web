@@ -16,6 +16,7 @@ import { getProjects, requireProject } from "@/lib/projectsApi";
 import { isInService } from "@/lib/projects";
 import { newSettlementHref, SETTLEMENTS_HREF, settlementsProjectHref } from "@/lib/routes";
 import { matchesSearch } from "@/lib/search";
+import { getRefiningOperations } from "@/lib/refiningApi";
 import { getShipments } from "@/lib/shipmentsApi";
 import { settleableShipmentsOfProject } from "./settlements";
 import { getSettlementPage, getSettlements } from "./settlementsApi";
@@ -26,13 +27,15 @@ export async function settlementProjectLoader({ params, request }: LoaderFunctio
   const query = (search.get("q") ?? "").trim();
   const page = parsePageNumber(search.get("page"));
   const project = await requireProject(params.project ?? "");
-  const [projects, shipments, settlements, settlementPage, customers] = await Promise.all([
-    getProjects(),
-    getShipments({ project: project.id }),
-    getSettlements({ project: project.id }),
-    getSettlementPage(query, page, project.id),
-    getCustomerChoices(),
-  ]);
+  const [projects, shipments, settlements, settlementPage, customers, refinings] =
+    await Promise.all([
+      getProjects(),
+      getShipments({ project: project.id }),
+      getSettlements({ project: project.id }),
+      getSettlementPage(query, page, project.id),
+      getCustomerChoices(),
+      getRefiningOperations(),
+    ]);
 
   return {
     project,
@@ -40,7 +43,7 @@ export async function settlementProjectLoader({ params, request }: LoaderFunctio
     page,
     settlementPage,
     customers,
-    waiting: settleableShipmentsOfProject(shipments, settlements, project.id),
+    waiting: settleableShipmentsOfProject(shipments, settlements, refinings, project.id),
     hasOtherProjects: projects.filter(isInService).length > 1,
   };
 }

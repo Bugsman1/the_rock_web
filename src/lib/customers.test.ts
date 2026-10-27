@@ -57,6 +57,7 @@ describe("customerFromApi", () => {
         id: 7,
         full_name: "محمد ولد أحمد",
         phone: "+222 22 41 18 30",
+        debt_total: "2000.00",
         debt_remaining: "1500.50",
         is_active: true,
         created_at: "2026-06-12T09:20:00Z",

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createNewOperationSchema,
   activeOperationOf,
+  canAddMercury,
   estimatedEnd,
   idleMachines,
   machinesFromGrinders,
@@ -126,6 +127,8 @@ describe("operationFromApi", () => {
     grinding_cost: "60000.00",
     mercury_added_at: null,
     mercury_added_by_name: "",
+    mercury_additions: [],
+    total_mercury_quantity: "0.000",
     notes: "",
     created_at: "2026-10-08T06:00:00Z",
     updated_at: "2026-10-08T06:00:00Z",
@@ -160,13 +163,67 @@ describe("operationFromApi", () => {
       mercury_added_at: "2026-10-08T07:00:00.000Z",
       mercury_added_by_name: "Aicha",
       mercury_quantity: "12.500",
+      total_mercury_quantity: "12.500",
     });
 
     expect(operation?.mercury).toEqual({
       addedAt: "2026-10-08T07:00:00.000Z",
       byName: "Aicha",
       quantity: 12.5,
+      total: 12.5,
+      additions: [],
     });
+  });
+
+  it("keeps each extra mercury apart from the first quantity, with the total of both", () => {
+    const [operation] = operationFromApi({
+      ...apiOperation,
+      mercury_added_at: "2026-10-08T07:00:00.000Z",
+      mercury_added_by_name: "Aicha",
+      mercury_quantity: "120.000",
+      total_mercury_quantity: "150.500",
+      mercury_additions: [
+        {
+          id: 3,
+          grinding_operation: 5,
+          quantity: "30.500",
+          notes: "Pas assez",
+          created_by_name: "Sidi",
+          created_at: "2026-10-08T09:00:00Z",
+        },
+      ],
+    });
+
+    expect(operation?.mercury).toMatchObject({
+      quantity: 120,
+      total: 150.5,
+      additions: [
+        {
+          id: "3",
+          quantity: 30.5,
+          addedAt: "2026-10-08T09:00:00Z",
+          byName: "Sidi",
+          notes: "Pas assez",
+        },
+      ],
+    });
+  });
+
+  it("takes more mercury only while the grinding runs and once its first mercury is in", () => {
+    const [running] = operationFromApi(apiOperation);
+    const [withMercury] = operationFromApi({
+      ...apiOperation,
+      mercury_added_at: "2026-10-08T07:00:00.000Z",
+    });
+    const [ended] = operationFromApi({
+      ...apiOperation,
+      mercury_added_at: "2026-10-08T07:00:00.000Z",
+      end_time: "2026-10-08T12:00:00.000Z",
+    });
+
+    expect(
+      [running, withMercury, ended].map((op) => op !== undefined && canAddMercury(op)),
+    ).toEqual([false, true, false]);
   });
 
   it("skips an operation whose grinder code it cannot read", () => {

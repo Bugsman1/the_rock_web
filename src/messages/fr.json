@@ -443,7 +443,8 @@
       "pending": "En attente",
       "grinding": "Broyage en cours",
       "refining": "En affinage",
-      "completed": "Terminée"
+      "completed": "Terminée",
+      "cancelled": "Annulée"
     },
     "noClients": "Aucun client pour le moment.",
     "project": {
@@ -475,7 +476,8 @@
         "phone": "Téléphone",
         "arrivedAt": "Date d'arrivée",
         "bags": "Sacs",
-        "notes": "Notes"
+        "notes": "Notes",
+        "status": "Statut"
       }
     },
     "payment": {
@@ -507,13 +509,17 @@
       "paid": "Payé",
       "left": "Reste à payer",
       "addPayment": "Ajouter un versement",
-      "bags": "Sacs",
+      "currentBags": "Sacs actuels",
+      "testBags": "Sacs d'essai",
+      "totalBags": "Total des sacs",
       "arrivedAt": "Arrivée",
       "client": "Client",
       "project": "Projet",
       "debtLabel": "Dette",
       "addDebt": "Augmenter la dette",
-      "noDebt": "Aucune dette sur cette expédition."
+      "noDebt": "Aucune dette sur cette expédition.",
+      "cancelledAt": "Annulée le",
+      "cancelReason": "Motif de l'annulation"
     },
     "paymentForm": {
       "title": "Nouveau versement",
@@ -543,6 +549,24 @@
       "saving": "Enregistrement de la dette",
       "amountInvalid": "Saisissez un montant supérieur à 0.",
       "add": "Ajouter une dette"
+    },
+    "cancel": {
+      "button": "Annuler l'expédition",
+      "title": "Annuler l'expédition {number}",
+      "question": "Cette expédition ne pourra plus être broyée ni affinée, et l'annulation est définitive.",
+      "reason": "Motif de l'annulation",
+      "confirm": "Annuler l'expédition",
+      "cancelling": "Annulation…",
+      "keep": "Retour"
+    },
+    "testBags": {
+      "button": "Sacs d'essai",
+      "title": "Sacs d'essai · expédition {number}",
+      "field": "Nombre de sacs d'essai",
+      "leftAfter": "Sacs actuels ensuite",
+      "tooMany": "Les sacs d'essai doivent être moins nombreux que les sacs de l'expédition ({total})",
+      "submit": "Enregistrer les sacs d'essai",
+      "saving": "Enregistrement"
     }
   },
   "milling": {
@@ -703,7 +727,16 @@
       "submit": "Ajouter le mercure",
       "saving": "Enregistrement",
       "addedOn": "{quantity} g · {date} · {name}",
-      "notYet": "Pas encore ajouté"
+      "notYet": "Pas encore ajouté",
+      "extraTitle": "Mercure supplémentaire",
+      "extraQuantity": "Quantité supplémentaire (g)",
+      "extraNotes": "Note",
+      "totalNow": "Total de mercure actuel (g)",
+      "totalAfter": "Total après l'ajout (g)",
+      "extraSubmit": "Ajouter ce mercure",
+      "quantityInvalid": "Saisissez une quantité supérieure à 0",
+      "totalWithExtra": "{total} g au total · première quantité {first} g · {date} · {name}",
+      "extraLine": "+{quantity} g · {date} · {name}"
     }
   },
   "refining": {
@@ -735,6 +768,7 @@
       "goldWithMaterial": "Or avec matière (g)",
       "goldWithoutMaterial": "Or sans matière (g)",
       "loss": "Perte (g)",
+      "surplus": "Surplus (g)",
       "lossReason": "Raison de la perte",
       "notes": "Notes",
       "operator": "Opérateur du broyage",
@@ -750,7 +784,6 @@
     },
     "errors": {
       "weightInvalid": "Saisissez un poids valide",
-      "weightAfterTooHigh": "Ne peut pas dépasser le poids avant affinage",
       "goldTooHeavy": "L'or ne peut pas peser plus que la matière affinée",
       "withoutMaterialTooHeavy": "L'or sans matière doit être inférieur à l'or avec matière"
     },
@@ -795,7 +828,7 @@
       "quantity": "Quantité",
       "quantityBefore": "Quantité avant",
       "quantityAfter": "Quantité après",
-      "loss": "Perte",
+      "loss": "Perte / surplus",
       "note": "Note",
       "changedAt": "Date",
       "changeType": "Type",
@@ -834,7 +867,8 @@
       "water": "Eau",
       "fuel": "Essence"
     },
-    "historyEmpty": "Aucun mouvement sur cette ressource pour le moment."
+    "historyEmpty": "Aucun mouvement sur cette ressource pour le moment.",
+    "surplus": "+{quantity} surplus"
   },
   "errors": {
     "notFound": {
@@ -995,6 +1029,9 @@
     "customerDebtAdded": "Dette ajoutée",
     "customerDebtIncreased": "Dette augmentée",
     "customerDebtDecreased": "Paiement enregistré",
-    "customerDebtPaidOff": "Dette payée en totalité"
+    "customerDebtPaidOff": "Dette payée en totalité",
+    "shipmentCancelled": "Expédition annulée",
+    "testBagsSaved": "Sacs d'essai enregistrés",
+    "mercuryExtraAdded": "Mercure supplémentaire ajouté"
   }
 }

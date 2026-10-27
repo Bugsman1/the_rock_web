@@ -5,6 +5,7 @@ import type { IsoTimestamp } from "@/lib/format";
 import type { Customer } from "@/lib/customers";
 import { formatPhone, isSamePhone } from "@/lib/phone";
 import type { ProjectId } from "@/lib/projects";
+import type { RefiningOperation } from "@/lib/refining";
 import type { ShipmentRecord } from "@/lib/shipments";
 
 const DEBT_DESCRIPTION_MAX_LENGTH = 200;
@@ -71,23 +72,39 @@ export function settlementFromApi(settlement: ApiSchema<"Settlement">): Settleme
   };
 }
 
+export function shipmentsAwaitingGold(
+  refinings: readonly RefiningOperation[],
+): ReadonlySet<string> {
+  return new Set(
+    refinings
+      .filter((refining) => refining.goldWithoutMaterial <= 0)
+      .map((refining) => refining.shipmentNumber),
+  );
+}
+
 export function settleableShipments(
   shipments: readonly ShipmentRecord[],
   settlements: readonly Settlement[],
+  refinings: readonly RefiningOperation[],
 ): readonly ShipmentRecord[] {
   const settled = new Set(settlements.flatMap((settlement) => settlement.shipmentIds));
+  const awaitingGold = shipmentsAwaitingGold(refinings);
 
   return shipments.filter(
-    (shipment) => shipment.status === "completed" && !settled.has(shipment.id),
+    (shipment) =>
+      shipment.status === "completed" &&
+      !settled.has(shipment.id) &&
+      !awaitingGold.has(shipment.shipmentNumber),
   );
 }
 
 export function settleableShipmentsOfProject(
   shipments: readonly ShipmentRecord[],
   settlements: readonly Settlement[],
+  refinings: readonly RefiningOperation[],
   project: ProjectId,
 ): readonly ShipmentRecord[] {
-  return settleableShipments(shipments, settlements)
+  return settleableShipments(shipments, settlements, refinings)
     .filter((shipment) => shipment.project === project)
     .sort((a, b) => a.arrivedAt.localeCompare(b.arrivedAt));
 }
@@ -100,10 +117,11 @@ export type ProjectSettlementSummary = {
 export function projectSettlementSummary(
   shipments: readonly ShipmentRecord[],
   settlements: readonly Settlement[],
+  refinings: readonly RefiningOperation[],
   project: ProjectId,
 ): ProjectSettlementSummary {
   return {
-    waiting: settleableShipmentsOfProject(shipments, settlements, project).length,
+    waiting: settleableShipmentsOfProject(shipments, settlements, refinings, project).length,
     settled: settlements.filter((settlement) => settlement.project === project).length,
   };
 }

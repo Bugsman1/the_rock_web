@@ -9,15 +9,17 @@ import { formatCount } from "@/lib/format";
 import { isInService } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
 import { settlementsProjectHref } from "@/lib/routes";
+import { getRefiningOperations } from "@/lib/refiningApi";
 import { getShipments } from "@/lib/shipmentsApi";
 import { projectSettlementSummary } from "./settlements";
 import { getSettlements } from "./settlementsApi";
 
 export async function settlementsLoader({ params }: LoaderFunctionArgs) {
-  const [projects, shipments, settlements] = await Promise.all([
+  const [projects, shipments, settlements, refinings] = await Promise.all([
     getProjects(),
     getShipments(),
     getSettlements(),
+    getRefiningOperations(),
   ]);
   const inService = projects.filter(isInService);
   const [onlyProject] = inService;
@@ -30,7 +32,7 @@ export async function settlementsLoader({ params }: LoaderFunctionArgs) {
   return {
     projects: inService.map((project) => ({
       project,
-      summary: projectSettlementSummary(shipments, settlements, project.id),
+      summary: projectSettlementSummary(shipments, settlements, refinings, project.id),
     })),
   };
 }

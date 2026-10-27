@@ -95,6 +95,30 @@ describe("routes", () => {
     expect(router.state.location.pathname).toBe("/ar/shipments");
   });
 
+  it("goes from the login page straight to the role's home without showing a page it cannot open", async () => {
+    answerMe("Amadou", "receptionist", ["shipments", "customers", "settlements"]);
+    server.use(
+      http.get(`${window.location.origin}/api/v1/projects/`, () =>
+        HttpResponse.json({ count: 0, results: [] }),
+      ),
+      http.get(`${window.location.origin}/api/v1/shipments/`, () =>
+        HttpResponse.json({ count: 0, results: [] }),
+      ),
+    );
+    const router = openAt("/ar/login");
+    await screen.findByRole("heading", { name: messages.auth.login.title });
+    const shownPaths: string[] = [];
+    router.subscribe((state) => {
+      if (state.navigation.state === "idle") shownPaths.push(state.location.pathname);
+    });
+
+    signIn();
+    await act(() => router.navigate("/ar/dashboard", { replace: true }));
+
+    expect(await screen.findByRole("button", { name: account("Amadou") })).toBeInTheDocument();
+    expect(shownPaths).toEqual(["/ar/shipments"]);
+  });
+
   it("skips the login page when already signed in", async () => {
     signIn();
     answerMe("Sidi Mohamed");

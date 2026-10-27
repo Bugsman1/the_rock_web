@@ -6,6 +6,7 @@ import { formatMoney } from "@/lib/format";
 import messages from "@/messages/fr.json";
 import {
   API,
+  apiRefiningOf,
   apiShipment,
   cellsOf,
   openAt,
@@ -36,6 +37,19 @@ function answerShipments() {
 }
 
 describe("SettlementProjectScreen", () => {
+  it("holds back a finished shipment until its gold without material is entered", async () => {
+    answerShipments();
+    server.use(
+      http.get(`${API}/refining-operations/`, () =>
+        page([apiRefiningOf(1, "SHP-00003", "0.000"), apiRefiningOf(2, "SHP-00003", "1.500")]),
+      ),
+    );
+    openAt("/fr/settlements/projects/3");
+
+    expect(await screen.findByText(text.project.waitingTitle)).toBeVisible();
+    expect(screen.queryByText("SHP-00003")).not.toBeInTheDocument();
+  });
+
   it("lists the project's finished shipments not settled yet, each ready to settle", async () => {
     answerShipments();
     openAt("/fr/settlements/projects/3");

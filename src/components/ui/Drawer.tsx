@@ -101,6 +101,40 @@ export function Drawer({ open, title, closeLabel, onClose, wide = false, childre
   );
 }
 
+type DialogProps = {
+  open: boolean;
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+};
+
+export function Dialog({ open, title, onClose, children }: DialogProps) {
+  const dialogRef = useModalDialog(open);
+  const titleId = useId();
+
+  return (
+    <dialog
+      ref={dialogRef}
+      aria-labelledby={titleId}
+      onClose={() => {
+        if (open) {
+          onClose();
+        }
+      }}
+      className="bg-surface text-ink shadow-card rounded-card m-auto w-[calc(100%-2rem)] max-w-md p-0 backdrop:bg-neutral-900/40"
+    >
+      {open ? (
+        <div className="flex flex-col gap-4 p-6">
+          <h2 id={titleId} className="text-ink text-[18px] font-bold">
+            {title}
+          </h2>
+          {children}
+        </div>
+      ) : null}
+    </dialog>
+  );
+}
+
 type DrawerActionsProps = {
   submitting: boolean;
   submitIcon: IconName;

@@ -14,7 +14,7 @@ import { TextArea } from "@/components/ui/TextField";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { combineDateAndTime, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
-import { idleMachines, machinesOfProject } from "@/lib/grinding";
+import { canAddMercury, idleMachines, machinesOfProject } from "@/lib/grinding";
 import type { Machine, MillingOperation } from "@/lib/grinding";
 import type { Project } from "@/lib/projects";
 import { millingMachineHref, startRefiningHref } from "@/lib/routes";
@@ -22,6 +22,7 @@ import type { Operator } from "@/lib/users";
 import { createEndMillingSchema, millingQueue, operationShipments } from "./milling";
 import type { MillingShipment } from "./milling";
 import type { EndMillingValues } from "./milling";
+import { MercuryAdditionForm } from "./MercuryAdditions";
 import { endOperation } from "./millingApi";
 
 const endMillingFields: readonly (keyof EndMillingValues)[] = ["endDate", "endTime", "notes"];
@@ -214,6 +215,15 @@ export function EditOperationDrawer({
 
   return (
     <Drawer open={open} title={t("editTitle")} closeLabel={common("close")} onClose={close}>
+      {operation.mercury !== undefined && canAddMercury(operation) ? (
+        <div className="mb-6">
+          <MercuryAdditionForm
+            operationId={operation.id}
+            total={operation.mercury.total}
+            onSaved={close}
+          />
+        </div>
+      ) : null}
       <OperationForm
         key={operation.id}
         operation={operation}

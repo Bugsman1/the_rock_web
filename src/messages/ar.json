@@ -443,7 +443,8 @@
       "pending": "في الانتظار",
       "grinding": "قيد الطحن",
       "refining": "قيد التصفية",
-      "completed": "مكتملة"
+      "completed": "مكتملة",
+      "cancelled": "ملغاة"
     },
     "noClients": "لا يوجد عملاء حاليًا.",
     "project": {
@@ -475,7 +476,8 @@
         "phone": "الهاتف",
         "arrivedAt": "تاريخ الوصول",
         "bags": "الأكياس",
-        "notes": "ملاحظات"
+        "notes": "ملاحظات",
+        "status": "الحالة"
       }
     },
     "payment": {
@@ -507,13 +509,17 @@
       "paid": "المدفوع",
       "left": "الباقي",
       "addPayment": "إضافة دفعة",
-      "bags": "الأكياس",
+      "currentBags": "الأكياس الحالية",
+      "testBags": "أكياس التجربة",
+      "totalBags": "إجمالي الأكياس",
       "arrivedAt": "تاريخ الوصول",
       "client": "العميل",
       "project": "المشروع",
       "debtLabel": "الدين",
       "addDebt": "زيادة الدين",
-      "noDebt": "لا يوجد دين على هذه الشحنة."
+      "noDebt": "لا يوجد دين على هذه الشحنة.",
+      "cancelledAt": "تاريخ الإلغاء",
+      "cancelReason": "سبب الإلغاء"
     },
     "paymentForm": {
       "title": "دفعة جديدة",
@@ -543,6 +549,24 @@
       "saving": "جارٍ حفظ الدين",
       "amountInvalid": "أدخل مبلغًا أكبر من 0.",
       "add": "إضافة دين"
+    },
+    "cancel": {
+      "button": "إلغاء الشحنة",
+      "title": "إلغاء الشحنة {number}",
+      "question": "لن تدخل هذه الشحنة الطحن أو التصفية بعد الآن، ولا يمكن التراجع عن الإلغاء.",
+      "reason": "سبب الإلغاء",
+      "confirm": "إلغاء الشحنة",
+      "cancelling": "جارٍ الإلغاء…",
+      "keep": "تراجع"
+    },
+    "testBags": {
+      "button": "أكياس التجربة",
+      "title": "أكياس التجربة · الشحنة {number}",
+      "field": "عدد أكياس التجربة",
+      "leftAfter": "الأكياس الحالية بعدها",
+      "tooMany": "يجب أن تكون أكياس التجربة أقل من أكياس الشحنة ({total})",
+      "submit": "حفظ أكياس التجربة",
+      "saving": "جارٍ الحفظ"
     }
   },
   "milling": {
@@ -703,7 +727,16 @@
       "submit": "إضافة الزئبق",
       "saving": "جارٍ الحفظ",
       "addedOn": "{quantity} غ · {date} · {name}",
-      "notYet": "لم يُضف بعد"
+      "notYet": "لم يُضف بعد",
+      "extraTitle": "زئبق إضافي",
+      "extraQuantity": "كمية الزئبق الإضافية (غ)",
+      "extraNotes": "ملاحظة",
+      "totalNow": "إجمالي الزئبق الآن (غ)",
+      "totalAfter": "الإجمالي بعد الإضافة (غ)",
+      "extraSubmit": "إضافة هذا الزئبق",
+      "quantityInvalid": "أدخل كمية أكبر من 0",
+      "totalWithExtra": "{total} غ إجمالًا · الكمية الأولى {first} غ · {date} · {name}",
+      "extraLine": "+{quantity} غ · {date} · {name}"
     }
   },
   "refining": {
@@ -735,6 +768,7 @@
       "goldWithMaterial": "الذهب مع المادة (غ)",
       "goldWithoutMaterial": "الذهب بدون المادة (غ)",
       "loss": "الخسارة (غ)",
+      "surplus": "الفائض (غ)",
       "lossReason": "سبب الخسارة",
       "notes": "ملاحظات",
       "operator": "عامل الطحن",
@@ -750,7 +784,6 @@
     },
     "errors": {
       "weightInvalid": "أدخل وزنًا صحيحًا",
-      "weightAfterTooHigh": "لا يمكن أن يتجاوز وزن المادة قبل التصفية",
       "goldTooHeavy": "لا يمكن أن يزن الذهب أكثر من المادة المصفّاة",
       "withoutMaterialTooHeavy": "يجب أن يكون الذهب بدون المادة أقل من الذهب مع المادة"
     },
@@ -795,7 +828,7 @@
       "quantity": "الكمية",
       "quantityBefore": "الكمية قبل",
       "quantityAfter": "الكمية بعد",
-      "loss": "الخسارة",
+      "loss": "الخسارة / الفائض",
       "note": "ملاحظة",
       "changedAt": "التاريخ",
       "changeType": "النوع",
@@ -834,7 +867,8 @@
       "water": "الماء",
       "fuel": "البنزين"
     },
-    "historyEmpty": "لا توجد حركات على هذا المورد بعد."
+    "historyEmpty": "لا توجد حركات على هذا المورد بعد.",
+    "surplus": "+{quantity} فائض"
   },
   "errors": {
     "notFound": {
@@ -995,6 +1029,9 @@
     "customerDebtAdded": "تمت إضافة الدين",
     "customerDebtIncreased": "تمت زيادة الدين",
     "customerDebtDecreased": "تم تسجيل الدفعة",
-    "customerDebtPaidOff": "تم تسديد الدين بالكامل"
+    "customerDebtPaidOff": "تم تسديد الدين بالكامل",
+    "shipmentCancelled": "تم إلغاء الشحنة",
+    "testBagsSaved": "تم حفظ أكياس التجربة",
+    "mercuryExtraAdded": "تمت إضافة الزئبق الإضافي"
   }
 }

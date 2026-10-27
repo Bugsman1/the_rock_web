@@ -403,6 +403,58 @@ export interface paths {
         patch: operations["grinding_operations_partial_update"];
         trace?: never;
     };
+    "/api/v1/mercury-additions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Extra mercury added to a grinding when its first quantity was not enough. Each one is
+         *     a record of its own, taken from the project's mercury stock; it is not edited (a mistake
+         *     is deleted, which gives its mercury back, and added again).
+         */
+        get: operations["mercury_additions_list"];
+        put?: never;
+        /**
+         * @description Extra mercury added to a grinding when its first quantity was not enough. Each one is
+         *     a record of its own, taken from the project's mercury stock; it is not edited (a mistake
+         *     is deleted, which gives its mercury back, and added again).
+         */
+        post: operations["mercury_additions_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mercury-additions/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Extra mercury added to a grinding when its first quantity was not enough. Each one is
+         *     a record of its own, taken from the project's mercury stock; it is not edited (a mistake
+         *     is deleted, which gives its mercury back, and added again).
+         */
+        get: operations["mercury_additions_retrieve"];
+        put?: never;
+        post?: never;
+        /**
+         * @description Extra mercury added to a grinding when its first quantity was not enough. Each one is
+         *     a record of its own, taken from the project's mercury stock; it is not edited (a mistake
+         *     is deleted, which gives its mercury back, and added again).
+         */
+        delete: operations["mercury_additions_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/operators/": {
         parameters: {
             query?: never;
@@ -921,6 +973,27 @@ export interface paths {
         patch: operations["shipments_partial_update"];
         trace?: never;
     };
+    "/api/v1/shipments/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Cancels the shipment for good, with an optional reason. It takes no new grinding or
+         *     refining afterwards (its operations already recorded stay, and a running grinding can
+         *     still be ended); its transport charges stay. A completed shipment cannot be cancelled.
+         */
+        post: operations["shipments_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/shipments/{id}/gold/": {
         parameters: {
             query?: never;
@@ -1020,6 +1093,8 @@ export interface components {
             id: $Read<number>;
             full_name: string;
             phone: string;
+            /** Format: decimal */
+            debt_total: $Read<string>;
             /** Format: decimal */
             debt_remaining: $Read<string>;
             is_active: $Read<boolean>;
@@ -1218,6 +1293,8 @@ export interface components {
              * Format: decimal
              */
             mercury_quantity?: string;
+            mercury_additions: $Read<components["schemas"]["MercuryAddition"][]>;
+            total_mercury_quantity: $Read<string>;
             /** Format: decimal */
             grinding_cost?: string;
             notes?: string;
@@ -1252,6 +1329,22 @@ export interface components {
             /** Limited to one project */
             is_project_scoped: $Read<boolean>;
             permissions: $Read<components["schemas"]["RoleModulePermission"][]>;
+        };
+        MercuryAddition: {
+            id: $Read<number>;
+            grinding_operation: number;
+            /**
+             * Mercury quantity (g)
+             * Format: decimal
+             */
+            quantity: string;
+            notes?: string;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
         };
         /**
          * @description * `accounts` - Accounts
@@ -1359,6 +1452,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["GrindingOperation"][];
+        };
+        PaginatedMercuryAdditionList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["MercuryAddition"][];
         };
         PaginatedProjectList: {
             /** @example 123 */
@@ -1530,6 +1638,8 @@ export interface components {
             full_name?: string;
             phone?: string;
             /** Format: decimal */
+            debt_total?: $Read<string>;
+            /** Format: decimal */
             debt_remaining?: $Read<string>;
             is_active?: $Read<boolean>;
             /**
@@ -1677,6 +1787,8 @@ export interface components {
              * Format: decimal
              */
             mercury_quantity?: string;
+            mercury_additions?: $Read<components["schemas"]["MercuryAddition"][]>;
+            total_mercury_quantity?: $Read<string>;
             /** Format: decimal */
             grinding_cost?: string;
             notes?: string;
@@ -1843,6 +1955,8 @@ export interface components {
             arrival_date?: string;
             /** Format: double */
             bags_count?: number;
+            /** Format: double */
+            test_bags_count?: number;
             /** Format: decimal */
             bag_transport_cost_per_bag?: string;
             passengers_count?: number;
@@ -1864,6 +1978,11 @@ export interface components {
             refined_bags?: $Read<number>;
             is_ground?: $Read<boolean>;
             is_refined?: $Read<boolean>;
+            is_cancelled?: $Read<boolean>;
+            /** Format: date-time */
+            cancelled_at?: $Read<string | null>;
+            cancelled_by_name?: $Read<string>;
+            cancellation_reason?: $Read<string>;
             notes?: string;
             created_by_name?: $Read<string | null>;
             /**
@@ -2156,6 +2275,8 @@ export interface components {
             arrival_date: string;
             /** Format: double */
             bags_count: number;
+            /** Format: double */
+            test_bags_count?: number;
             /** Format: decimal */
             bag_transport_cost_per_bag: string;
             passengers_count?: number;
@@ -2177,6 +2298,11 @@ export interface components {
             refined_bags: $Read<number>;
             is_ground: $Read<boolean>;
             is_refined: $Read<boolean>;
+            is_cancelled: $Read<boolean>;
+            /** Format: date-time */
+            cancelled_at: $Read<string | null>;
+            cancelled_by_name: $Read<string>;
+            cancellation_reason: $Read<string>;
             notes?: string;
             created_by_name: $Read<string | null>;
             /**
@@ -2186,6 +2312,10 @@ export interface components {
             created_at: $Read<string>;
             /** Format: date-time */
             updated_at: $Read<string>;
+        };
+        /** @description Input of the cancel action. */
+        ShipmentCancel: {
+            reason?: string;
         };
         ShipmentDebt: {
             id: $Read<number>;
@@ -3394,6 +3524,106 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["GrindingOperation"];
                 };
+            };
+        };
+    };
+    mercury_additions_list: {
+        parameters: {
+            query?: {
+                grinding_operation?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedMercuryAdditionList"];
+                };
+            };
+        };
+    };
+    mercury_additions_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MercuryAddition"];
+                "application/x-www-form-urlencoded": components["schemas"]["MercuryAddition"];
+                "multipart/form-data": components["schemas"]["MercuryAddition"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MercuryAddition"];
+                };
+            };
+        };
+    };
+    mercury_additions_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this mercury addition. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MercuryAddition"];
+                };
+            };
+        };
+    };
+    mercury_additions_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this mercury addition. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -4844,8 +5074,9 @@ export interface operations {
                  *     * `grinding` - In Grinding
                  *     * `refining` - In Refining
                  *     * `completed` - Completed
+                 *     * `cancelled` - Cancelled
                  */
-                status?: "completed" | "grinding" | "pending" | "refining";
+                status?: "cancelled" | "completed" | "grinding" | "pending" | "refining";
                 /**
                  * @description * `truck` - Truck
                  *     * `hilux` - Hilux
@@ -4983,6 +5214,34 @@ export interface operations {
                 "application/json": components["schemas"]["PatchedShipment"];
                 "application/x-www-form-urlencoded": components["schemas"]["PatchedShipment"];
                 "multipart/form-data": components["schemas"]["PatchedShipment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Shipment"];
+                };
+            };
+        };
+    };
+    shipments_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this shipment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ShipmentCancel"];
+                "application/x-www-form-urlencoded": components["schemas"]["ShipmentCancel"];
+                "multipart/form-data": components["schemas"]["ShipmentCancel"];
             };
         };
         responses: {

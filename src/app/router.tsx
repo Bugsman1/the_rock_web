@@ -71,7 +71,7 @@ import {
 import { RolesScreen, rolesLoader, UsersScreen, usersLoader } from "@/features/users";
 import { defaultLocale, isLocale } from "@/i18n/locales";
 import type { Locale } from "@/i18n/locales";
-import { localizedHref, Redirect, usePathname } from "@/i18n/navigation";
+import { localizedHref, pathnameWithoutLocale, Redirect, usePathname } from "@/i18n/navigation";
 import { accessFromApi, canOpen, homeHref } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
 import { apiClient } from "@/lib/api/client";
@@ -90,7 +90,7 @@ function redirectSignedIn({ params }: { params: Params }) {
   return hasSession(new Date()) ? redirect(localizedHref(localeOf(params), DASHBOARD_HREF)) : null;
 }
 
-async function loadSignedInUser({ params }: { params: Params }) {
+async function loadSignedInUser({ params, request }: { params: Params; request: Request }) {
   const toLogin = redirect(localizedHref(localeOf(params), LOGIN_HREF));
   if (!hasSession(new Date())) {
     return toLogin;
@@ -102,14 +102,22 @@ async function loadSignedInUser({ params }: { params: Params }) {
     throw new Response(null, { status: response.status });
   }
 
-  return data === undefined
-    ? toLogin
-    : {
-        access: accessFromApi(data),
-        userName: displayName(data),
-        roleName: data.role?.name ?? "",
-        projectScoped: data.role?.is_project_scoped ?? false,
-      };
+  if (data === undefined) {
+    return toLogin;
+  }
+
+  const access = accessFromApi(data);
+
+  if (!canOpen(access, pathnameWithoutLocale(new URL(request.url).pathname))) {
+    return redirect(localizedHref(localeOf(params), homeHref(access)));
+  }
+
+  return {
+    access,
+    userName: displayName(data),
+    roleName: data.role?.name ?? "",
+    projectScoped: data.role?.is_project_scoped ?? false,
+  };
 }
 
 function SignedInLayout() {

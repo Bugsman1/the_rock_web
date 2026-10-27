@@ -22,6 +22,7 @@ describe("storage", () => {
       phone: "+222 22 33 44 55",
       arrivedAt: "2026-10-01T00:00:00Z",
       bagCount: 10,
+      testBags: 0,
       project: "zouerate1",
       status: "pending",
       stage: "pending",
@@ -69,6 +70,10 @@ describe("storage", () => {
 
     it("drops completed shipments", () => {
       expect(isInStorage(record({ status: "completed" }))).toBe(false);
+    });
+
+    it("drops cancelled shipments, whatever bags they have left", () => {
+      expect(isInStorage(record({ status: "cancelled", stage: "cancelled" }))).toBe(false);
     });
   });
 

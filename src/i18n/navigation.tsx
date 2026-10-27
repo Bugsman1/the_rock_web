@@ -21,7 +21,10 @@ export function Link({ href, locale, ...props }: LinkProps) {
 }
 
 export function usePathname(): string {
-  const { pathname } = useLocation();
+  return pathnameWithoutLocale(useLocation().pathname);
+}
+
+export function pathnameWithoutLocale(pathname: string): string {
   const [, segment] = pathname.split("/");
 
   return isLocale(segment) ? pathname.slice(segment.length + 1) || "/" : pathname;

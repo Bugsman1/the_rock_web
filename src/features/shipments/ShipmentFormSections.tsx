@@ -13,6 +13,7 @@ import {
   hasPassengers,
   passengersCost,
   remainingToPay,
+  transportedBags,
   transportMethodKeys,
   transportTotal,
 } from "./shipments";
@@ -72,10 +73,11 @@ export function ShipmentArrivalFields({ form }: { form: ShipmentForm }) {
 type TransportCostFieldsProps = {
   form: ShipmentForm;
   paid: number | undefined;
+  testBags: number;
   showDebt: boolean;
 };
 
-export function TransportCostFields({ form, paid, showDebt }: TransportCostFieldsProps) {
+export function TransportCostFields({ form, paid, testBags, showDebt }: TransportCostFieldsProps) {
   const t = useTranslations("shipments.form");
   const locale = useLocale();
   const { control, register, formState } = form;
@@ -84,7 +86,8 @@ export function TransportCostFields({ form, paid, showDebt }: TransportCostField
     control,
     name: ["bagCount", "bagFare", "passengerCount", "passengerFare", "currentPayment"],
   });
-  const total = transportTotal({ bagCount, bagFare, passengerCount, passengerFare });
+  const bags = transportedBags(bagCount, testBags);
+  const total = transportTotal({ bagCount: bags, bagFare, passengerCount, passengerFare });
 
   function money(amount: number) {
     return formatMoney(amount, locale);
@@ -127,7 +130,7 @@ export function TransportCostFields({ form, paid, showDebt }: TransportCostField
         {...register("passengerFare", { valueAsNumber: true })}
       />
 
-      <ReadOnlyField label={t("bagsTransportCost")} value={money(bagsCost(bagCount, bagFare))} />
+      <ReadOnlyField label={t("bagsTransportCost")} value={money(bagsCost(bags, bagFare))} />
 
       <ReadOnlyField
         label={t("passengersTransportCost")}

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { ApiSchema } from "@/lib/api/client";
-import { amountLeftToPay, shipmentFromApi, stageOf } from "@/lib/shipments";
+import {
+  amountLeftToPay,
+  isInProgress,
+  shipmentFromApi,
+  stageOf,
+  totalBags,
+} from "@/lib/shipments";
 import { shipmentDetailFromApi, shipmentFormValues } from "./shipments";
 import {
   amountLeftAfter,
@@ -41,17 +47,38 @@ describe("shipment payments", () => {
     refined_bags: 0,
     is_ground: false,
     is_refined: false,
+    is_cancelled: false,
+    cancelled_at: null,
+    cancelled_by_name: "",
+    cancellation_reason: "",
     notes: "",
     created_by_name: "med",
     created_at: "2026-10-10T08:30:00Z",
     updated_at: "2026-10-12T10:00:00Z",
   };
 
+  it("is in progress until it is completed or cancelled", () => {
+    expect(isInProgress(shipmentFromApi({ ...apiShipment, status: "pending" }))).toBe(true);
+    expect(isInProgress(shipmentFromApi({ ...apiShipment, status: "grinding" }))).toBe(true);
+    expect(isInProgress(shipmentFromApi({ ...apiShipment, status: "completed" }))).toBe(false);
+    expect(isInProgress(shipmentFromApi({ ...apiShipment, status: "cancelled" }))).toBe(false);
+  });
+
+  it("keeps the test bags apart from the bags, and charges transport on both", () => {
+    const record = shipmentFromApi({ ...apiShipment, bags_count: 8.5, test_bags_count: 1.5 });
+
+    expect([record.bagCount, record.testBags, totalBags(record)]).toEqual([8.5, 1.5, 10]);
+    expect(record.transportTotal).toBe(10 * 300 + 200);
+    expect(shipmentFromApi({ ...apiShipment, test_bags_count: undefined }).testBags).toBe(0);
+  });
+
   it("shows a shipment as refining once all its bags are ground, until the backend completes it", () => {
     expect(stageOf("pending", false)).toBe("pending");
     expect(stageOf("grinding", false)).toBe("grinding");
     expect(stageOf("grinding", true)).toBe("refining");
     expect(stageOf("completed", true)).toBe("completed");
+    expect(stageOf("cancelled", false)).toBe("cancelled");
+    expect(shipmentFromApi({ ...apiShipment, status: "cancelled" }).stage).toBe("cancelled");
     expect(shipmentFromApi({ ...apiShipment, status: "grinding", is_ground: true }).stage).toBe(
       "refining",
     );

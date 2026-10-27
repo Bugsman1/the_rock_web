@@ -22,6 +22,7 @@ function record(
     phone,
     arrivedAt,
     bagCount: 10,
+    testBags: 0,
     project: "zouerate1",
     status: "completed",
     stage: "completed",
@@ -156,5 +157,24 @@ describe("ShipmentHistory", () => {
 
     expect(screen.getByText(history.empty)).toBeVisible();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("shows each shipment as completed or cancelled", () => {
+    renderHistory([
+      record("SH-1012", "Ahmed", "2026-09-08T09:30:00Z"),
+      {
+        ...record("SH-1070", "Fatima", "2026-10-10T08:00:00Z"),
+        status: "cancelled",
+        stage: "cancelled",
+      },
+    ]);
+
+    const statuses = messages.shipments.statuses;
+    expect(
+      within(screen.getByRole("row", { name: /SH-1070/ })).getByText(statuses.cancelled),
+    ).toBeVisible();
+    expect(
+      within(screen.getByRole("row", { name: /SH-1012/ })).getByText(statuses.completed),
+    ).toBeVisible();
   });
 });

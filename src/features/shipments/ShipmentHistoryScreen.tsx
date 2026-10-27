@@ -2,7 +2,11 @@ import { useState } from "react";
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
-import { DebtBadge, PaymentStatus } from "@/components/shipments/ShipmentBadges";
+import {
+  DebtBadge,
+  PaymentStatus,
+  ShipmentStatusBadge,
+} from "@/components/shipments/ShipmentBadges";
 import { Combobox } from "@/components/ui/Combobox";
 import { DateField } from "@/components/ui/DateField";
 import { Icon } from "@/components/ui/Icon";
@@ -16,7 +20,7 @@ import type { ShipmentRecord } from "@/lib/shipments";
 import { getShipments } from "@/lib/shipmentsApi";
 import { shipmentsOfProject } from "./shipmentStorage";
 import {
-  completedShipments,
+  finishedShipments,
   emptyHistoryFilter,
   filterShipments,
   historyClients,
@@ -30,7 +34,7 @@ export async function projectShipmentsLoader({ params }: LoaderFunctionArgs) {
 
   return {
     project,
-    shipments: completedShipments(
+    shipments: finishedShipments(
       shipmentsOfProject(await getShipments({ project: project.id }), project.id),
     ),
   };
@@ -79,6 +83,11 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
       align: "end",
       className: "text-ink font-bold",
       cell: (record) => formatCount(record.bagCount, locale),
+    },
+    {
+      key: "status",
+      header: t("columns.status"),
+      cell: (record) => <ShipmentStatusBadge status={record.stage} />,
     },
     {
       key: "payment",

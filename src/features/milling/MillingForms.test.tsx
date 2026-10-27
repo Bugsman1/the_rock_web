@@ -17,7 +17,13 @@ const end = messages.milling.end;
 
 const mercured: MillingOperation = {
   ...running,
-  mercury: { addedAt: "2026-10-08T07:00:00.000Z", byName: "Aicha", quantity: 120 },
+  mercury: {
+    addedAt: "2026-10-08T07:00:00.000Z",
+    byName: "Aicha",
+    quantity: 120,
+    total: 120,
+    additions: [],
+  },
 };
 
 const machineLoader = vi.fn(() => null);

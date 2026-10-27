@@ -1,11 +1,19 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
+import { ToastProvider } from "@/components/ui/Toast";
+import { noAccess } from "@/lib/access";
+import type { Access } from "@/lib/access";
+import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/ar.json";
+import frMessages from "@/messages/fr.json";
 import type { Customer } from "@/lib/customers";
 import type { Project } from "@/lib/projects";
+import type { ShipmentRecord } from "@/lib/shipments";
 import { NewShipmentForm } from "./ShipmentForm";
+import { ShipmentScreen, shipmentLoader } from "./ShipmentScreen";
 import type { NewShipmentValues } from "./shipments";
 
 export const form = messages.shipments.form;
@@ -107,3 +115,138 @@ export const filledShipmentValues: NewShipmentValues = {
   mill: "3",
   notes: " Sacs mouillés ",
 };
+
+export function shipmentRecord(overrides: Partial<ShipmentRecord>): ShipmentRecord {
+  return {
+    id: "1",
+    shipmentNumber: "SHP-00001",
+    customerName: "Ahmed",
+    phone: "+222 22 41 18 30",
+    arrivedAt: "2026-10-01T08:00:00Z",
+    bagCount: 10,
+    testBags: 0,
+    project: "3",
+    status: "pending",
+    stage: "pending",
+    source: "Chami",
+    notes: "",
+    transportTotal: 1000,
+    paid: 0,
+    debt: 0,
+    ...overrides,
+  };
+}
+
+export const SHIPMENT_API = `${window.location.origin}/api/v1`;
+const API = SHIPMENT_API;
+
+export const allRights: Access = { ...noAccess, superuser: true };
+
+export const viewer: Access = {
+  ...noAccess,
+  rights: {
+    ...noAccess.rights,
+    shipments: { view: true, add: false, edit: false, delete: false },
+  },
+};
+
+const stamps = { created_at: "2026-10-10T08:30:00Z", updated_at: "2026-10-12T10:00:00Z" };
+
+const page = (results: readonly object[]) => HttpResponse.json({ count: results.length, results });
+
+type Payments = readonly { id: number; amount: string; paid_at: string }[];
+
+const notCancelled = {
+  is_cancelled: false,
+  cancelled_at: null,
+  cancelled_by_name: "",
+  cancellation_reason: "",
+};
+
+export const cancelledByMed = {
+  status: "cancelled",
+  is_cancelled: true,
+  cancelled_at: "2026-10-12T11:00:00Z",
+  cancelled_by_name: "med",
+  cancellation_reason: "Client parti",
+};
+
+export function apiShipment(payments: Payments, debt = "350.00", overrides: object = {}) {
+  const paid = payments.reduce((total, payment) => total + Number(payment.amount), 0);
+
+  return {
+    id: 52,
+    number: "SHP-00052",
+    invoice_number: null,
+    invoiced_at: null,
+    customer_name: "Sidi",
+    customer_phone: "+222 46 10 93 25",
+    arrival_date: "2026-10-10T08:30:00Z",
+    bags_count: 10,
+    bag_transport_cost_per_bag: "300.00",
+    passengers_count: 1,
+    passenger_transport_cost_per_person: "200.00",
+    current_payment: String(paid),
+    debt,
+    debts:
+      Number(debt) > 0
+        ? [
+            {
+              id: 1,
+              amount: "200.00",
+              incurred_at: "2026-10-10T09:00:00Z",
+              description: "Avance sur le prochain voyage",
+            },
+            { id: 2, amount: "150.00", incurred_at: "2026-10-11T09:00:00Z", description: "" },
+          ]
+        : [],
+    payments: payments.map((payment) => ({ ...payment, notes: "" })),
+    transport_method: "truck",
+    source: "Chami",
+    project: 3,
+    status: "pending",
+    ...notCancelled,
+    notes: "",
+    created_by_name: "med",
+    ...stamps,
+    ...overrides,
+  };
+}
+
+export function shipmentHandlers(payments: Payments, debt = "350.00", overrides: object = {}) {
+  return [
+    http.get(`${API}/shipments/52/`, () =>
+      HttpResponse.json(apiShipment(payments, debt, overrides)),
+    ),
+    http.get(`${API}/customers/`, () =>
+      page([{ id: 7, full_name: "Sidi", phone: "+222 46 10 93 25", is_active: true, ...stamps }]),
+    ),
+    http.get(`${API}/projects/`, () =>
+      page([{ id: 3, name: "Zouérat 1", site: "zouerat", status: "active", ...stamps }]),
+    ),
+  ];
+}
+
+export const firstPayment = { id: 1, amount: "1000.00", paid_at: "2026-10-10T08:30:00Z" };
+
+export function openShipment(access: Access = allRights) {
+  const router = createMemoryRouter(
+    [
+      { path: "/fr/shipments/:shipment", loader: shipmentLoader, element: <ShipmentScreen /> },
+      { path: "/fr/shipments/projects/:project", element: <h1>project shipments</h1> },
+    ],
+    { initialEntries: ["/fr/shipments/52"] },
+  );
+
+  render(
+    <IntlProvider locale="fr" messages={frMessages} timeZone="Africa/Nouakchott">
+      <AccessContext value={access}>
+        <ToastProvider anchor={{ current: null }}>
+          <RouterProvider router={router} />
+        </ToastProvider>
+      </AccessContext>
+    </IntlProvider>,
+  );
+
+  return router;
+}

@@ -5,7 +5,9 @@ import type { ShipmentRecord } from "@/lib/shipments";
 import {
   bagsMilledOn,
   combineSummaries,
+  createMercuryAdditionSchema,
   createMercurySchema,
+  mercuryTotalAfter,
   findMachine,
   isBacklogged,
   millingQueue,
@@ -137,6 +139,7 @@ describe("shipments in grinding", () => {
       phone: "+222 46 10 93 25",
       arrivedAt: "2026-10-08T01:00:00.000Z",
       bagCount: 16,
+      testBags: 0,
       project: "3",
       status: "grinding",
       stage: "grinding",
@@ -152,6 +155,7 @@ describe("shipments in grinding", () => {
         record,
         { ...record, id: "13", status: "pending" },
         { ...record, id: "14", status: "completed" },
+        { ...record, id: "15", status: "cancelled", stage: "cancelled" },
       ]).map((shipment) => [shipment.id, shipment.started]),
     ).toEqual([
       ["12", true],
@@ -236,5 +240,26 @@ describe("mercury added to a grinding", () => {
     expect(schema.safeParse({ quantity: Number.NaN }).error?.issues[0]?.message).toBe("required");
     expect(schema.safeParse({ quantity: 99.9 }).error?.issues[0]?.message).toBe("too low");
     expect(schema.safeParse({ quantity: 0 }).error?.issues[0]?.message).toBe("too low");
+  });
+});
+
+describe("extra mercury on a grinding", () => {
+  const schema = createMercuryAdditionSchema({ quantityInvalid: "quantity" });
+
+  it("takes any quantity above zero, with an optional note", () => {
+    expect(schema.safeParse({ quantity: 0.5, notes: "" }).success).toBe(true);
+    expect(schema.safeParse({ quantity: 30, notes: " Pas assez " }).data?.notes).toBe("Pas assez");
+  });
+
+  it("refuses an empty, zero or negative quantity", () => {
+    for (const quantity of [Number.NaN, 0, -5]) {
+      expect(schema.safeParse({ quantity, notes: "" }).error?.issues[0]?.message).toBe("quantity");
+    }
+  });
+
+  it("adds the typed quantity to the mercury already in", () => {
+    expect(mercuryTotalAfter(120, 30.5)).toBe(150.5);
+    expect(mercuryTotalAfter(120, Number.NaN)).toBeUndefined();
+    expect(mercuryTotalAfter(120, 0)).toBeUndefined();
   });
 });

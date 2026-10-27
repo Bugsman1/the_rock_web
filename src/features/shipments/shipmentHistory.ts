@@ -49,6 +49,6 @@ export function filterShipments(
     .sort((a, b) => b.arrivedAt.localeCompare(a.arrivedAt));
 }
 
-export function completedShipments(records: readonly ShipmentRecord[]): readonly ShipmentRecord[] {
-  return records.filter((record) => record.status === "completed");
+export function finishedShipments(records: readonly ShipmentRecord[]): readonly ShipmentRecord[] {
+  return records.filter((record) => record.status === "completed" || record.status === "cancelled");
 }

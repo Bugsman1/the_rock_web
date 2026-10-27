@@ -9,7 +9,7 @@ import { isInService } from "@/lib/projects";
 import { getGrinders, getProjects } from "@/lib/projectsApi";
 import { getShipments } from "@/lib/shipmentsApi";
 import { millingShipments } from "./milling";
-import type { EndMillingValues, MercuryValues } from "./milling";
+import type { EndMillingValues, MercuryAdditionValues, MercuryValues } from "./milling";
 
 export async function getMillingData() {
   const [projects, grinders, shipments, operations] = await Promise.all([
@@ -63,4 +63,30 @@ export async function endOperation(
   });
 
   return saveOutcome(response, error, endErrorsFromApi);
+}
+
+function mercuryAdditionErrorsFromApi(
+  errors: BackendFieldErrors,
+): FieldErrors<keyof MercuryAdditionValues> {
+  const quantity = errors.quantity ?? errors.grinding_operation;
+
+  return {
+    ...(quantity === undefined ? {} : { quantity }),
+    ...(errors.notes === undefined ? {} : { notes: errors.notes }),
+  };
+}
+
+export async function addMercury(
+  operationId: string,
+  values: MercuryAdditionValues,
+): Promise<SaveResult<keyof MercuryAdditionValues>> {
+  const { response, error } = await apiClient.POST("/api/v1/mercury-additions/", {
+    body: {
+      grinding_operation: Number(operationId),
+      quantity: toDecimal(values.quantity),
+      notes: values.notes,
+    },
+  });
+
+  return saveOutcome(response, error, mercuryAdditionErrorsFromApi);
 }

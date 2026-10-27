@@ -26,6 +26,10 @@ import {
   debtErrorsFromApi,
   debtToApi,
 } from "./shipmentPayments";
+import { cancelErrorsFromApi, cancelToApi } from "./shipmentCancel";
+import type { CancelShipmentValues } from "./shipmentCancel";
+import { testBagsErrorsFromApi, testBagsToApi } from "./shipmentTestBags";
+import type { TestBagsValues } from "./shipmentTestBags";
 import type { NewShipmentValues, ShipmentDetail } from "./shipments";
 import type { DebtValues, PaymentValues } from "./shipmentPayments";
 
@@ -152,6 +156,31 @@ export async function addPayment(
   });
 
   return saveOutcome(response, error, paymentErrorsFromApi);
+}
+
+export async function cancelShipment(
+  shipmentId: string,
+  values: CancelShipmentValues,
+): Promise<SaveResult<keyof CancelShipmentValues>> {
+  const { response, error } = await apiClient.POST("/api/v1/shipments/{id}/cancel/", {
+    params: { path: { id: Number(shipmentId) } },
+    body: cancelToApi(values),
+  });
+
+  return saveOutcome(response, error, cancelErrorsFromApi);
+}
+
+export async function setTestBags(
+  shipmentId: string,
+  totalBags: number,
+  values: TestBagsValues,
+): Promise<SaveResult<keyof TestBagsValues>> {
+  const { response, error } = await apiClient.PATCH("/api/v1/shipments/{id}/", {
+    params: { path: { id: Number(shipmentId) } },
+    body: testBagsToApi(totalBags, values),
+  });
+
+  return saveOutcome(response, error, testBagsErrorsFromApi);
 }
 
 type Invoice = {

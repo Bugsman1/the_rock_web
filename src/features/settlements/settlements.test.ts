@@ -10,7 +10,7 @@ import {
   settlementFromApi,
   settleableShipments,
 } from "./settlements";
-import { apiSettlement, shipmentRecord } from "./settlementsTesting";
+import { apiSettlement, refiningOf, shipmentRecord } from "./settlementsTesting";
 
 const messages = {
   amountInvalid: "amount",
@@ -64,14 +64,33 @@ describe("shipments to settle", () => {
     const allGround = shipmentRecord({ id: "4", status: "grinding", stage: "refining" });
 
     expect(
-      settleableShipments([first, running, allGround, elsewhere], []).map(({ id }) => id),
+      settleableShipments([first, running, allGround, elsewhere], [], []).map(({ id }) => id),
     ).toEqual(["1", "3"]);
+  });
+
+  it("holds back a shipment until every refining of it has its gold without material", () => {
+    const withGold = shipmentRecord({ id: "5", shipmentNumber: "SHP-00005" });
+    const missingGold = shipmentRecord({ id: "6", shipmentNumber: "SHP-00006" });
+    const refinings = [
+      refiningOf("SHP-00005", 3.5),
+      refiningOf("SHP-00006", 2),
+      refiningOf("SHP-00006", 0),
+    ];
+
+    expect(settleableShipments([withGold, missingGold], [], refinings).map(({ id }) => id)).toEqual(
+      ["5"],
+    );
+    expect(
+      settleableShipments([missingGold], [], [refiningOf("SHP-00006", 2)]).map(({ id }) => id),
+    ).toEqual(["6"]);
   });
 
   it("leaves out the shipments another settlement already holds", () => {
     const settled = settlementFromApi({ ...apiSettlement, shipments: [1] });
 
-    expect(settleableShipments([first, elsewhere], [settled]).map(({ id }) => id)).toEqual(["3"]);
+    expect(settleableShipments([first, elsewhere], [settled], []).map(({ id }) => id)).toEqual([
+      "3",
+    ]);
   });
 
   it("lists a project's shipments to settle, earliest arrival first", () => {
@@ -79,7 +98,7 @@ describe("shipments to settle", () => {
     const earlier = shipmentRecord({ id: "8", arrivedAt: "2026-10-02T08:00:00Z" });
 
     expect(
-      settleableShipmentsOfProject([later, elsewhere, earlier, running], [], "3").map(
+      settleableShipmentsOfProject([later, elsewhere, earlier, running], [], [], "3").map(
         ({ id }) => id,
       ),
     ).toEqual(["8", "7"]);
@@ -88,11 +107,11 @@ describe("shipments to settle", () => {
   it("counts a project's shipments to settle and its settlements", () => {
     const settled = settlementFromApi({ ...apiSettlement, shipments: [1] });
 
-    expect(projectSettlementSummary([first, elsewhere], [settled], "3")).toEqual({
+    expect(projectSettlementSummary([first, elsewhere], [settled], [], "3")).toEqual({
       waiting: 0,
       settled: 1,
     });
-    expect(projectSettlementSummary([first, elsewhere], [settled], "5")).toEqual({
+    expect(projectSettlementSummary([first, elsewhere], [settled], [], "5")).toEqual({
       waiting: 1,
       settled: 0,
     });

@@ -17,6 +17,10 @@ type TransportCostInput = {
   passengerFare: number;
 };
 
+export function transportedBags(bagCount: number, testBags: number): number {
+  return amountOrZero(bagCount) + testBags;
+}
+
 export function bagsCost(bagCount: number, bagFare: number): number {
   return amountOrZero(bagCount) * amountOrZero(bagFare);
 }
@@ -57,7 +61,11 @@ type ValidationMessages = {
   totalBelowPaid: string;
 };
 
-export function createNewShipmentSchema(messages: ValidationMessages, alreadyPaid = 0) {
+export function createNewShipmentSchema(
+  messages: ValidationMessages,
+  alreadyPaid = 0,
+  testBags = 0,
+) {
   return z
     .object({
       customerName: z.string().trim().min(1, messages.required),
@@ -105,7 +113,12 @@ export function createNewShipmentSchema(messages: ValidationMessages, alreadyPai
       { path: ["passengerFare"], message: messages.passengerFareRequired, when: () => true },
     )
     .superRefine((values, context) => {
-      if (amountOrZero(values.currentPayment) > transportTotal(values)) {
+      const total = transportTotal({
+        ...values,
+        bagCount: transportedBags(values.bagCount, testBags),
+      });
+
+      if (amountOrZero(values.currentPayment) > total) {
         context.addIssue({
           code: "custom",
           path: ["currentPayment"],
@@ -113,7 +126,7 @@ export function createNewShipmentSchema(messages: ValidationMessages, alreadyPai
         });
       }
 
-      if (alreadyPaid > transportTotal(values)) {
+      if (alreadyPaid > total) {
         context.addIssue({ code: "custom", path: ["bagFare"], message: messages.totalBelowPaid });
       }
     });
@@ -203,8 +216,25 @@ export type ShipmentDebt = {
   description: string;
 };
 
+export type Cancellation = {
+  cancelledAt: IsoTimestamp;
+  byName: string;
+  reason: string;
+};
+
+function cancellationFromApi(shipment: ApiSchema<"Shipment">): Cancellation | undefined {
+  return shipment.cancelled_at === null
+    ? undefined
+    : {
+        cancelledAt: shipment.cancelled_at,
+        byName: shipment.cancelled_by_name,
+        reason: shipment.cancellation_reason,
+      };
+}
+
 export type ShipmentDetail = ShipmentRecord & {
   transportMethod: (typeof transportMethodKeys)[number];
+  cancellation: Cancellation | undefined;
   bagFare: number;
   passengerCount: number;
   passengerFare: number;
@@ -216,6 +246,7 @@ export function shipmentDetailFromApi(shipment: ApiSchema<"Shipment">): Shipment
   return {
     ...shipmentFromApi(shipment),
     transportMethod: shipment.transport_method,
+    cancellation: cancellationFromApi(shipment),
     bagFare: fromDecimal(shipment.bag_transport_cost_per_bag),
     passengerCount: shipment.passengers_count ?? 0,
     passengerFare: fromDecimal(shipment.passenger_transport_cost_per_person ?? "0"),
