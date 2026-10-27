@@ -166,6 +166,11 @@ reloaded data no longer has the record the form was for (another user refined, e
 its drawer closes and a red message says the data changed (`common.recordChanged`, 4 seconds). If the
 reload fails, the error page shows instead.
 
+**Layout:** the top bar and the sidebar stay in place; only the page area (`main` in `AppShell`)
+scrolls, and it stops at the end of the page's content. `main` is `relative` so that elements
+positioned inside a page (such as hidden table headers) stay inside it and never make the whole
+window scroll.
+
 **Page skeleton:** while the data of another page is loading, the shell shows a skeleton shaped
 like that page (`skeletonShapeFor(pathname, projectScoped)`: `form`, `table`, `detail` or `cards`;
 for a role limited to one project, `is_project_scoped` from `/auth/me/`, Shipments, Settlements,

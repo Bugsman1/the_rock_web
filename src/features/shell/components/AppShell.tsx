@@ -68,7 +68,7 @@ export function AppShell({ access, userName, roleName, children }: AppShellProps
             mobileOpen={mobileOpen}
             onNavigate={() => setMobileOpen(false)}
           />
-          <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto p-4 md:p-6">
+          <main ref={mainRef} className="relative min-w-0 flex-1 overflow-y-auto p-4 md:p-6">
             {children}
           </main>
         </div>
