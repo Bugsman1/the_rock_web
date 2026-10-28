@@ -42,6 +42,20 @@ export const customers: Customer[] = [
     addedAt: "2026-07-03T08:40:00Z",
     debt: 0,
   },
+  {
+    id: "c-4",
+    name: "Zeinebou Ahmed",
+    phone: "+222 33 70 55 61",
+    addedAt: "2026-07-10T08:40:00Z",
+    debt: 0,
+  },
+  {
+    id: "c-5",
+    name: "Ahmed Salem",
+    phone: "+222 33 70 55 62",
+    addedAt: "2026-07-12T08:40:00Z",
+    debt: 0,
+  },
 ];
 
 export const projects: readonly Project[] = [
@@ -77,6 +91,14 @@ export function renderForm(defaultProject?: string) {
   );
 }
 
+export async function pickClient(
+  user: ReturnType<typeof userEvent.setup>,
+  customer: Customer = mohamed,
+) {
+  await user.type(screen.getByLabelText(form.customerName), customer.name.slice(0, 4));
+  await user.click(screen.getByRole("option", { name: new RegExp(customer.name) }));
+}
+
 export async function typeNoTransportCost(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText(form.bagFare), "0");
   await user.type(screen.getByLabelText(form.passengerCount), "0");
@@ -87,8 +109,7 @@ export async function saveFilledShipment(defaultProject?: string) {
   const user = userEvent.setup();
   renderForm(defaultProject);
 
-  await user.type(screen.getByLabelText(form.customerName), "أحمد");
-  await user.type(screen.getByLabelText(form.phone), "22334455");
+  await pickClient(user);
   await user.type(screen.getByLabelText(form.bagCount), "12");
   await user.type(screen.getByLabelText(form.source), "الشامي");
   await typeNoTransportCost(user);
@@ -232,13 +253,13 @@ export function shipmentHandlers(payments: Payments, debt = "350.00", overrides:
 
 export const firstPayment = { id: 1, amount: "1000.00", paid_at: "2026-10-10T08:30:00Z" };
 
-export function openShipment(access: Access = allRights) {
+export function openShipment(access: Access = allRights, path = "/fr/shipments/52") {
   const router = createMemoryRouter(
     [
       { path: "/fr/shipments/:shipment", loader: shipmentLoader, element: <ShipmentScreen /> },
       { path: "/fr/shipments/projects/:project", element: <h1>project shipments</h1> },
     ],
-    { initialEntries: ["/fr/shipments/52"] },
+    { initialEntries: [path] },
   );
 
   render(

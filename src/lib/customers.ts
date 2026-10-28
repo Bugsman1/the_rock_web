@@ -28,7 +28,9 @@ export function createCustomerSchema(messages: { required: string; phoneInvalid:
 export type CustomerValues = z.infer<ReturnType<typeof createCustomerSchema>>;
 
 export function findCustomer(customers: readonly Customer[], name: string): Customer | undefined {
-  return customers.find((customer) => customer.name === name);
+  const wanted = name.trim().toLocaleLowerCase();
+
+  return customers.find((customer) => customer.name.trim().toLocaleLowerCase() === wanted);
 }
 
 export function isPhoneTaken(

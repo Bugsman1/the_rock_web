@@ -165,15 +165,37 @@ describe("ShipmentClientFields", () => {
     expect(screen.getByRole("combobox", { name: form.customerName })).toHaveValue("");
   });
 
-  it("keeps only digits in the phone and checks its length on blur", async () => {
+  it("finds clients by any part of their name, whatever the case, those starting with it first", async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText(form.customerName), "aHMed");
+
+    expect(
+      within(screen.getByRole("listbox"))
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual([
+      "Ahmed Salem+222 33 70 55 62",
+      "Zeinebou Ahmed+222 33 70 55 61",
+      messages.customers.new,
+    ]);
+  });
+
+  it("never lets the phone be typed: it follows the chosen client", async () => {
     const user = userEvent.setup();
     renderForm();
 
     const phone = screen.getByLabelText(form.phone);
-    await user.type(phone, "22ab33");
-    await user.tab();
+    expect(phone).toHaveAttribute("readonly");
+    await user.type(phone, "22334455");
+    expect(phone).toHaveValue("");
 
-    expect(phone).toHaveValue("2233");
-    expect(await screen.findByText(messages.common.validation.phoneInvalid)).toBeVisible();
+    const name = screen.getByLabelText(form.customerName);
+    await user.type(name, "ahmed salem");
+    expect(phone).toHaveValue("+222 33 70 55 62");
+
+    await user.type(name, "x");
+    expect(phone).toHaveValue("");
   });
 });

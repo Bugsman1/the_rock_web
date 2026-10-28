@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { formatDate, formatTime } from "@/lib/format";
 import messages from "@/messages/ar.json";
-import { form, renderForm, typeNoTransportCost } from "./shipmentFormTesting";
+import { form, pickClient, renderForm, typeNoTransportCost } from "./shipmentFormTesting";
 
 const replace = vi.fn();
 const { createShipmentMock, createCustomerMock, getInvoiceMock } = vi.hoisted(() => ({
@@ -87,8 +87,7 @@ describe("ShipmentForm", () => {
 
     await user.clear(screen.getByLabelText(form.currentPayment));
     await user.type(screen.getByLabelText(form.currentPayment), "2500");
-    await user.type(screen.getByLabelText(form.customerName), "أحمد");
-    await user.type(screen.getByLabelText(form.phone), "22334455");
+    await pickClient(user);
     await user.type(screen.getByLabelText(form.source), "الشامي");
     await user.click(screen.getByRole("button", { name: form.submit }));
 
@@ -105,8 +104,7 @@ describe("ShipmentForm", () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(screen.getByLabelText(form.customerName), "أحمد");
-    await user.type(screen.getByLabelText(form.phone), "36520714");
+    await pickClient(user);
     await user.type(screen.getByLabelText(form.source), "الشامي");
     await user.type(screen.getByLabelText(form.bagCount), "12");
     await typeNoTransportCost(user);
@@ -125,8 +123,7 @@ describe("ShipmentForm", () => {
     await user.type(screen.getByLabelText(form.passengerCount), "3");
     expect(fareLabel()).toHaveTextContent("*");
 
-    await user.type(screen.getByLabelText(form.customerName), "أحمد");
-    await user.type(screen.getByLabelText(form.phone), "22334455");
+    await pickClient(user);
     await user.type(screen.getByLabelText(form.source), "الشامي");
     await user.type(screen.getByLabelText(form.bagCount), "12");
     await user.type(screen.getByLabelText(form.bagFare), "100");
@@ -141,8 +138,7 @@ describe("ShipmentForm", () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(screen.getByLabelText(form.customerName), "أحمد");
-    await user.type(screen.getByLabelText(form.phone), "22334455");
+    await pickClient(user);
     await user.type(screen.getByLabelText(form.source), "الشامي");
     await user.type(screen.getByLabelText(form.bagCount), "12");
     await typeNoTransportCost(user);

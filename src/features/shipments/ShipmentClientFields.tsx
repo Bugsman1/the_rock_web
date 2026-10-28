@@ -9,7 +9,6 @@ import { Drawer } from "@/components/ui/Drawer";
 import { TextField } from "@/components/ui/TextField";
 import { findCustomer } from "@/lib/customers";
 import type { Customer, CustomerValues } from "@/lib/customers";
-import { PHONE_PLACEHOLDER, sanitizePhone } from "@/lib/phone";
 import type { NewShipmentValues } from "./shipments";
 
 type ShipmentForm = UseFormReturn<NewShipmentValues>;
@@ -50,26 +49,22 @@ type ShipmentClientFieldsProps = {
 export function ShipmentClientFields({ form, customers, newCustomer }: ShipmentClientFieldsProps) {
   const t = useTranslations("shipments.form");
   const clientLabels = useTranslations("customers");
-  const { control, setValue, formState } = form;
+  const { control, register, setValue, formState } = form;
   const { errors } = formState;
   const customerName = useWatch({ control, name: "customerName" });
 
   const customerOptions = useMemo(
     () =>
       customers.map((customer) => ({
-        value: customer.name,
+        value: customer.id,
         label: customer.name,
         hint: customer.phone,
       })),
     [customers],
   );
 
-  function fillCustomerPhone(name: string) {
-    const customer = findCustomer(customers, name);
-
-    if (customer !== undefined) {
-      setValue("phone", customer.phone, { shouldDirty: true, shouldValidate: true });
-    }
+  function setPhone(phone: string) {
+    setValue("phone", phone, { shouldDirty: true, shouldValidate: formState.isSubmitted });
   }
 
   return (
@@ -84,33 +79,31 @@ export function ShipmentClientFields({ form, customers, newCustomer }: ShipmentC
             required
             placeholder={clientLabels("searchPlaceholder")}
             options={customerName === newCustomer.addedName ? [] : customerOptions}
-            onSelect={(option) => fillCustomerPhone(option.value)}
+            onSelect={(option) =>
+              setPhone(customers.find((customer) => customer.id === option.value)?.phone ?? "")
+            }
             createLabel={clientLabels("new")}
             onCreate={newCustomer.start}
             error={errors.customerName?.message}
             {...field}
+            onChange={(name) => {
+              field.onChange(name);
+              setPhone(findCustomer(customers, name)?.phone ?? "");
+            }}
           />
         )}
       />
 
-      <Controller
-        control={control}
-        name="phone"
-        render={({ field }) => (
-          <TextField
-            id="phone"
-            type="tel"
-            inputMode="tel"
-            dir="ltr"
-            label={t("phone")}
-            required
-            placeholder={PHONE_PLACEHOLDER}
-            autoComplete="off"
-            error={errors.phone?.message}
-            {...field}
-            onChange={(event) => field.onChange(sanitizePhone(event.target.value))}
-          />
-        )}
+      <TextField
+        id="phone"
+        type="tel"
+        dir="ltr"
+        label={t("phone")}
+        required
+        readOnly
+        tabIndex={-1}
+        error={errors.phone?.message}
+        {...register("phone")}
       />
     </FormSection>
   );

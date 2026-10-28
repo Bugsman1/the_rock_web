@@ -95,6 +95,10 @@ describe("findCustomer", () => {
     expect(findCustomer(customers, "Fatima")?.id).toBe("2");
     expect(findCustomer(customers, "Nobody")).toBeUndefined();
   });
+
+  it("ignores capital letters and surrounding spaces", () => {
+    expect(findCustomer(customers, " fATIMA ")?.id).toBe("2");
+  });
 });
 
 describe("matchCustomer", () => {

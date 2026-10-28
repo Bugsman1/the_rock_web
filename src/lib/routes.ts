@@ -115,8 +115,10 @@ export function grinderHref(project: string, grinder: string): string {
   return `${settingsProjectHref(project)}/machines/${grinder}`;
 }
 
-export function shipmentHref(shipment: string): string {
-  return `${SHIPMENTS_HREF}/${shipment}`;
+export function shipmentHref(shipment: string, from?: "history"): string {
+  const href = `${SHIPMENTS_HREF}/${shipment}`;
+
+  return from === undefined ? href : `${href}?${new URLSearchParams({ from })}`;
 }
 
 export function shipmentsProjectHref(project: string): string {

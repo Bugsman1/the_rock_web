@@ -2,7 +2,14 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import messages from "@/messages/ar.json";
-import { form, renderForm, saveFilledShipment, typeNoTransportCost } from "./shipmentFormTesting";
+import {
+  form,
+  mohamed,
+  pickClient,
+  renderForm,
+  saveFilledShipment,
+  typeNoTransportCost,
+} from "./shipmentFormTesting";
 
 const replace = vi.fn();
 const { createShipmentMock, createCustomerMock, getInvoiceMock } = vi.hoisted(() => ({
@@ -42,8 +49,7 @@ describe("SavedShipment", () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(screen.getByLabelText(form.customerName), "أحمد");
-    await user.type(screen.getByLabelText(form.phone), "22334455");
+    await pickClient(user);
     await user.clear(screen.getByLabelText(form.bagCount));
     await user.type(screen.getByLabelText(form.bagCount), "12");
     await user.selectOptions(screen.getByLabelText(form.mill), "3");
@@ -56,8 +62,8 @@ describe("SavedShipment", () => {
     await waitFor(() => {
       expect(createShipmentMock).toHaveBeenCalledWith(
         {
-          customerName: "أحمد",
-          phone: "22334455",
+          customerName: mohamed.name,
+          phone: mohamed.phone,
           arrivalDate: "2026-10-07",
           arrivalTime: "08:30",
           bagCount: 12,

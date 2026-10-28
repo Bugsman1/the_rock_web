@@ -84,6 +84,7 @@ describe("shipments routes", () => {
     expect(newShipmentHref()).toBe("/shipments/new");
     expect(newShipmentHref("3")).toBe("/shipments/new?project=3");
     expect(shipmentHref("52")).toBe("/shipments/52");
+    expect(shipmentHref("52", "history")).toBe("/shipments/52?from=history");
     expect(shipmentsHistoryHref("3")).toBe("/shipments/projects/3/history");
   });
 });

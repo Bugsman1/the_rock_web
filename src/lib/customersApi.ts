@@ -1,6 +1,6 @@
 import { apiClient, saveFailed, saveOutcome, unwrap } from "./api/client";
 import type { SaveResult } from "./api/client";
-import { MAX_PAGE_SIZE, PAGE_SIZE, toPage } from "./api/pagination";
+import { fetchAllPages, MAX_PAGE_SIZE, PAGE_SIZE, toPage } from "./api/pagination";
 import type { Page } from "./api/pagination";
 import { customerErrorsFromApi, customerFromApi, customerToApi, isPhoneTaken } from "./customers";
 import type { Customer, CustomerValues } from "./customers";
@@ -30,7 +30,15 @@ export async function getCustomerPage(
 }
 
 export async function getCustomerChoices(): Promise<readonly Customer[]> {
-  return (await getCustomerPage("", 1, MAX_PAGE_SIZE)).items;
+  const customers = await fetchAllPages(async (page) =>
+    unwrap(
+      await apiClient.GET("/api/v1/customers/", {
+        params: { query: { ordering: "-created_at", page, page_size: MAX_PAGE_SIZE } },
+      }),
+    ),
+  );
+
+  return customers.map(customerFromApi);
 }
 
 export async function getCustomer(id: string): Promise<Customer | undefined> {

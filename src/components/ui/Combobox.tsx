@@ -50,6 +50,17 @@ function matches(option: ComboboxOption, query: string): boolean {
   );
 }
 
+function matchingOptions(
+  options: readonly ComboboxOption[],
+  query: string,
+): readonly ComboboxOption[] {
+  const found = options.filter((option) => matches(option, query));
+  const startsWithQuery = (option: ComboboxOption) =>
+    normalize(option.label).startsWith(normalize(query));
+
+  return [...found.filter(startsWithQuery), ...found.filter((option) => !startsWithQuery(option))];
+}
+
 export function Combobox({
   id,
   label,
@@ -74,8 +85,7 @@ export function Combobox({
   const invalid = error !== undefined;
 
   const selected = options.find((option) => option.label === value);
-  const visibleOptions =
-    selected === undefined ? options.filter((option) => matches(option, value)) : options;
+  const visibleOptions = selected === undefined ? matchingOptions(options, value) : options;
   const entries: Entry[] = visibleOptions.map((option) => ({ kind: "option", option }));
 
   if (createLabel !== undefined && onCreate !== undefined) {

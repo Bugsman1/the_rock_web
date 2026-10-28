@@ -264,6 +264,26 @@ describe("ShipmentScreen", () => {
     ).toHaveTextContent(formatMoney(40, "fr"));
   });
 
+  it("leads back to the history when opened from it", async () => {
+    answer([firstPayment]);
+    openShipment(undefined, "/fr/shipments/52?from=history");
+
+    expect(await screen.findByRole("link", { name: messages.common.back })).toHaveAttribute(
+      "href",
+      "/fr/shipments/projects/3/history",
+    );
+  });
+
+  it("leads back to the shipments of its project by default", async () => {
+    answer([firstPayment]);
+    openShipment();
+
+    expect(await screen.findByRole("link", { name: messages.common.back })).toHaveAttribute(
+      "href",
+      "/fr/shipments/projects/3",
+    );
+  });
+
   it("shows the shipment without a form to a role that cannot edit it", async () => {
     answer([firstPayment]);
     openShipment(viewer);

@@ -15,7 +15,7 @@ import { getCustomerChoices } from "@/lib/customersApi";
 import { formatCount, formatDateTime, formatMoney } from "@/lib/format";
 import { findProject, isInService } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
-import { shipmentsProjectHref } from "@/lib/routes";
+import { shipmentsHistoryHref, shipmentsProjectHref } from "@/lib/routes";
 import { amountLeftToPay, isInProgress } from "@/lib/shipments";
 import { CancelShipmentDialog } from "./CancelShipmentDialog";
 import { TestBagsDialog } from "./TestBagsDialog";
@@ -26,12 +26,14 @@ import { PaymentForm } from "./PaymentForm";
 import { DebtForm, DebtPanel } from "./DebtForm";
 import { ShipmentDetails, ShipmentHeader } from "./ShipmentHeader";
 
-export async function shipmentLoader({ params }: LoaderFunctionArgs) {
+export async function shipmentLoader({ params, request }: LoaderFunctionArgs) {
+  const fromHistory = new URL(request.url).searchParams.get("from") === "history";
   const shipment = await getShipment(params.shipment ?? "");
   const [customers, projects] = await Promise.all([getCustomerChoices(), getProjects()]);
 
   return {
     shipment,
+    fromHistory,
     customers,
     projects: projects.filter((project) => isInService(project) || project.id === shipment.project),
   };
@@ -118,7 +120,7 @@ function PaymentsPanel({ shipment, onAdd }: { shipment: ShipmentDetail; onAdd: (
 }
 
 export function ShipmentScreen() {
-  const { shipment, customers, projects } = useLoaderData<typeof shipmentLoader>();
+  const { shipment, fromHistory, customers, projects } = useLoaderData<typeof shipmentLoader>();
   const t = useTranslations("shipments.detail");
   const payment = useTranslations("shipments.paymentForm");
   const debtTitle = useTranslations("shipments.debtForm");
@@ -137,7 +139,14 @@ export function ShipmentScreen() {
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <BackLink href={shipmentsProjectHref(shipment.project)} label={common("back")} />
+        <BackLink
+          href={
+            fromHistory
+              ? shipmentsHistoryHref(shipment.project)
+              : shipmentsProjectHref(shipment.project)
+          }
+          label={common("back")}
+        />
         {canEdit && isInProgress(shipment) ? (
           <div className="flex flex-wrap items-center gap-3">
             <Button variant="secondary" width="auto" onClick={() => setSettingTestBags(true)}>

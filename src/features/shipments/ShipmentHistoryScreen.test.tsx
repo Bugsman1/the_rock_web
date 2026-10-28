@@ -138,12 +138,12 @@ describe("ShipmentHistory", () => {
     expect(unpaid).toHaveTextContent(messages.shipments.payment.incomplete);
   });
 
-  it("opens a shipment from its row", () => {
+  it("opens a shipment from its row, saying it came from the history", () => {
     renderHistory();
 
     expect(screen.getByRole("link", { name: "SH-1012" })).toHaveAttribute(
       "href",
-      "/fr/shipments/SH-1012",
+      "/fr/shipments/SH-1012?from=history",
     );
   });
 

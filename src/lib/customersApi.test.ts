@@ -4,6 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
   createCustomer,
   getCustomer,
+  getCustomerChoices,
   getCustomerPage,
   getCustomersWithPhone,
   updateCustomer,
@@ -92,6 +93,29 @@ describe("getCustomerPage", () => {
     server.use(http.get(CUSTOMERS_URL, () => new HttpResponse(null, { status: 401 })));
 
     await expect(getCustomerPage("", 1)).rejects.toBeInstanceOf(Response);
+  });
+});
+
+describe("getCustomerChoices", () => {
+  it("offers every customer, beyond the first page", async () => {
+    const pages: string[] = [];
+    server.use(
+      http.get(CUSTOMERS_URL, ({ request }) => {
+        const page = new URL(request.url).searchParams.get("page") ?? "";
+        pages.push(page);
+
+        return HttpResponse.json({
+          count: 3,
+          results:
+            page === "1"
+              ? [apiCustomer(1, "46109325"), apiCustomer(2, "46109326")]
+              : [apiCustomer(3, "46109327")],
+        });
+      }),
+    );
+
+    expect((await getCustomerChoices()).map((customer) => customer.id)).toEqual(["1", "2", "3"]);
+    expect(pages).toEqual(["1", "2"]);
   });
 });
 

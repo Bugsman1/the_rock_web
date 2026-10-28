@@ -75,7 +75,7 @@ All declared in `src/app/router.tsx` (`routes`). Under `/:locale/` (`ar` or `fr`
 | `login`                                                                                          | `LoginScreen` (a signed-in user goes to their home)                                                                                                                          |
 | `shipments`                                                                                      | `ShipmentsScreen` (`shipmentsLoader`)                                                                                                                                        |
 | `shipments/new` (`?project=<id>` from a project page, `newShipmentHref`)                         | `NewShipmentScreen` (`newShipmentLoader`: that project is preselected and the back links lead to it)                                                                         |
-| `shipments/:shipment` (`shipmentHref`)                                                           | `ShipmentScreen` (`shipmentLoader`): payments, invoice, edit                                                                                                                 |
+| `shipments/:shipment` (`?from=history`, `shipmentHref`)                                          | `ShipmentScreen` (`shipmentLoader`): payments, invoice, edit; back leads to the history when opened from it                                                                  |
 | `shipments/projects/:project` (`?grind=`)                                                        | `ProjectStorageScreen` (`projectStorageLoader`)                                                                                                                              |
 | `shipments/projects/:project/history`                                                            | `ShipmentHistoryScreen` (`projectShipmentsLoader`)                                                                                                                           |
 | `milling` (`?site=`)                                                                             | `MillingScreen` (`millingLoader`); a user who sees one project in service goes straight to it                                                                                |
@@ -333,7 +333,9 @@ phone), project, arrival and bags. It shows no status, payment or debt badge. Te
 isolated (`bdi`) so a Latin name stays aligned with its label in Arabic.
 
 **One shipment (`/shipments/<id>`):** a shipment's number in the project list and in the history
-opens its page (the whole row is a link; the PDF and start-grinding buttons stay separate). The page
+opens its page (the whole row is a link; the PDF and start-grinding buttons stay separate). Opened
+from the history (`?from=history`), its back link leads to the history; otherwise to the project's
+Shipments page (saving the edit form always goes to the Shipments page). The page
 shows the transport total, what was paid and what is left, the payments (installments) oldest first
 ("payment 1", "payment 2"…, with date, amount and notes), and, while something is left and the role
 can add shipments, "add a payment" (it shows what is left now and, as the amount is typed, what
@@ -350,7 +352,12 @@ below what was already paid (`totalBelowPaid`). Other roles see the details read
 **New shipment from a project:** each project's Shipments page has "new shipment" (shipments add
 right), which opens the form on that project. After "new client" fills the client name, the name
 box offers only "new client" (the new client is not in the loaded list); clearing or changing the
-name brings the existing clients back. While the invoice downloads, the saved panel shows only the
+name brings the existing clients back. The client is picked by name: every client whose name or
+phone contains the typed text, ignoring capital letters and accents, those whose name starts with it
+first (`Combobox`, every picker of the app). Clients are loaded in full, every page
+(`getCustomerChoices`). The phone is read-only: picking a client, or typing their exact name
+(`findCustomer`, ignoring capital letters), fills it; any other name empties it; a client not in the
+list gets one only through "new client". While the invoice downloads, the saved panel shows only the
 loading dots (no way back yet). Forms that leave the page once saved (start grinding, finish
 grinding, refining) keep their "saving" state until the next page has loaded, so the filled form
 never shows again in between.

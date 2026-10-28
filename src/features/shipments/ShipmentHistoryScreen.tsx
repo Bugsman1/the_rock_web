@@ -192,7 +192,7 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
           rows={results}
           rowKey={(record) => record.id}
           empty={t("empty")}
-          rowLink={(record) => ({ href: shipmentHref(record.id) })}
+          rowLink={(record) => ({ href: shipmentHref(record.id, "history") })}
           total={{
             label: common("total"),
             column: "bags",
