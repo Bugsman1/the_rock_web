@@ -63,20 +63,28 @@ describe("ShipmentClientFields", () => {
     expect(options[1]).toHaveTextContent(messages.customers.new);
   });
 
-  it("shows every client again with the picked one marked when reopened", async () => {
+  it("shows only the picked client, on top and marked, when reopened", async () => {
     const user = userEvent.setup();
     renderForm();
 
     const name = screen.getByLabelText(form.customerName);
-    await user.type(name, "4118");
-    await user.click(within(screen.getByRole("listbox")).getAllByRole("option")[0] as HTMLElement);
+    await user.type(name, "ahm");
+    await user.keyboard("{ArrowDown}{Enter}");
+    expect(name).toHaveValue("Ahmed Salem");
     await user.tab();
     await user.click(name);
 
     const reopened = within(screen.getByRole("listbox")).getAllByRole("option");
-    expect(reopened).toHaveLength(customers.length + 1);
+    expect(reopened.map((option) => option.textContent)).toEqual([
+      "Ahmed Salem+222 33 70 55 62",
+      messages.customers.new,
+    ]);
     expect(reopened[0]?.querySelector("svg")).not.toBeNull();
-    expect(reopened[1]?.querySelector("svg")).toBeNull();
+
+    await user.clear(name);
+    expect(within(screen.getByRole("listbox")).getAllByRole("option")).toHaveLength(
+      customers.length + 1,
+    );
   });
 
   it("opens the new client form with the name already typed", async () => {

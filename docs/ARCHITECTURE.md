@@ -354,7 +354,7 @@ right), which opens the form on that project. After "new client" fills the clien
 box offers only "new client" (the new client is not in the loaded list); clearing or changing the
 name brings the existing clients back. The client is picked by name: every client whose name or
 phone contains the typed text, ignoring capital letters and accents, those whose name starts with it
-first (`Combobox`, every picker of the app). Clients are loaded in full, every page
+first (`Combobox`, every picker of the app); a picked one is listed alone, on top, until the text changes. Clients are loaded in full, every page
 (`getCustomerChoices`). The phone is read-only: picking a client, or typing their exact name
 (`findCustomer`, ignoring capital letters), fills it; any other name empties it; a client not in the
 list gets one only through "new client". While the invoice downloads, the saved panel shows only the

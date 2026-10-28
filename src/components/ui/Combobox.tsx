@@ -54,11 +54,16 @@ function matchingOptions(
   options: readonly ComboboxOption[],
   query: string,
 ): readonly ComboboxOption[] {
-  const found = options.filter((option) => matches(option, query));
-  const startsWithQuery = (option: ComboboxOption) =>
-    normalize(option.label).startsWith(normalize(query));
+  const text = normalize(query);
+  const rank = (option: ComboboxOption) => {
+    const label = normalize(option.label);
 
-  return [...found.filter(startsWithQuery), ...found.filter((option) => !startsWithQuery(option))];
+    return label === text ? 0 : label.startsWith(text) ? 1 : 2;
+  };
+
+  return options
+    .filter((option) => matches(option, query))
+    .toSorted((first, second) => rank(first) - rank(second));
 }
 
 export function Combobox({
@@ -85,7 +90,7 @@ export function Combobox({
   const invalid = error !== undefined;
 
   const selected = options.find((option) => option.label === value);
-  const visibleOptions = selected === undefined ? matchingOptions(options, value) : options;
+  const visibleOptions = matchingOptions(options, value);
   const entries: Entry[] = visibleOptions.map((option) => ({ kind: "option", option }));
 
   if (createLabel !== undefined && onCreate !== undefined) {
