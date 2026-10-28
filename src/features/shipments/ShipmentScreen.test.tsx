@@ -226,6 +226,44 @@ describe("ShipmentScreen", () => {
     expect(sent).not.toHaveProperty("current_payment");
   });
 
+  it("clears the unloading cost when it is emptied", async () => {
+    answer([firstPayment], "350.00", {
+      unloading_cost_per_bag: "40.00",
+      unloading_total: "440.00",
+    });
+    let sent: unknown;
+    server.use(
+      http.patch(`${API}/shipments/52/`, async ({ request }) => {
+        sent = await request.json();
+        return HttpResponse.json({});
+      }),
+    );
+    const user = userEvent.setup();
+    openShipment();
+
+    const unloading = await screen.findByLabelText(messages.shipments.form.unloadingFare);
+    expect(unloading).toHaveValue(40);
+    await user.clear(unloading);
+    await user.click(screen.getByRole("button", { name: messages.shipments.form.saveChanges }));
+
+    await screen.findByRole("heading", { name: "project shipments" });
+    expect(sent).toMatchObject({ unloading_cost_per_bag: null });
+  });
+
+  it("shows the unloading to a role that cannot edit the shipment", async () => {
+    answer([firstPayment], "350.00", {
+      unloading_cost_per_bag: "40.00",
+      unloading_total: "440.00",
+    });
+    openShipment(viewer);
+
+    const unloadingTotal = await screen.findByText(messages.shipments.form.unloadingTotal);
+    expect(unloadingTotal.nextElementSibling).toHaveTextContent(formatMoney(440, "fr"));
+    expect(
+      screen.getByText(messages.shipments.form.unloadingFare).nextElementSibling,
+    ).toHaveTextContent(formatMoney(40, "fr"));
+  });
+
   it("shows the shipment without a form to a role that cannot edit it", async () => {
     answer([firstPayment]);
     openShipment(viewer);

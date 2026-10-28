@@ -1963,6 +1963,10 @@ export interface components {
             /** Format: decimal */
             passenger_transport_cost_per_person?: string;
             /** Format: decimal */
+            unloading_cost_per_bag?: string | null;
+            /** Format: decimal */
+            unloading_total?: $Read<string>;
+            /** Format: decimal */
             current_payment?: string;
             payments?: $Read<components["schemas"]["ShipmentPaymentSummary"][]>;
             /** Format: decimal */
@@ -2282,6 +2286,10 @@ export interface components {
             passengers_count?: number;
             /** Format: decimal */
             passenger_transport_cost_per_person?: string;
+            /** Format: decimal */
+            unloading_cost_per_bag?: string | null;
+            /** Format: decimal */
+            unloading_total: $Read<string>;
             /** Format: decimal */
             current_payment?: string;
             payments: $Read<components["schemas"]["ShipmentPaymentSummary"][]>;

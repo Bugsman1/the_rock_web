@@ -82,10 +82,18 @@ export function TransportCostFields({ form, paid, testBags, showDebt }: Transpor
   const locale = useLocale();
   const { control, register, formState } = form;
   const { errors } = formState;
-  const [bagCount, bagFare, passengerCount, passengerFare, currentPayment] = useWatch({
-    control,
-    name: ["bagCount", "bagFare", "passengerCount", "passengerFare", "currentPayment"],
-  });
+  const [bagCount, bagFare, passengerCount, passengerFare, unloadingFare, currentPayment] =
+    useWatch({
+      control,
+      name: [
+        "bagCount",
+        "bagFare",
+        "passengerCount",
+        "passengerFare",
+        "unloadingFare",
+        "currentPayment",
+      ],
+    });
   const bags = transportedBags(bagCount, testBags);
   const total = transportTotal({ bagCount: bags, bagFare, passengerCount, passengerFare });
 
@@ -159,6 +167,19 @@ export function TransportCostFields({ form, paid, testBags, showDebt }: Transpor
         value={money(remainingToPay(total, paid ?? currentPayment))}
         emphasis
       />
+
+      <TextField
+        id="unloadingFare"
+        type="number"
+        min={0}
+        step="any"
+        inputMode="decimal"
+        label={t("unloadingFare")}
+        error={errors.unloadingFare?.message}
+        {...register("unloadingFare", { valueAsNumber: true })}
+      />
+
+      <ReadOnlyField label={t("unloadingTotal")} value={money(bagsCost(bags, unloadingFare))} />
 
       {showDebt ? (
         <>

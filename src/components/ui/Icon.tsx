@@ -1,10 +1,10 @@
 import ArrowLeftIcon from "@/icons/arrow-left.svg?react";
 import ArrowRightIcon from "@/icons/arrow-right.svg?react";
-import BackspaceIcon from "@/icons/backspace.svg?react";
 import BellIcon from "@/icons/bell-simple.svg?react";
 import BuildingBankIcon from "@/icons/bank.svg?react";
 import CalculatorIcon from "@/icons/calculator.svg?react";
 import CalendarIcon from "@/icons/calendar.svg?react";
+import CancelIcon from "@/icons/cancel.svg?react";
 import ChartBarIcon from "@/icons/chart-bar.svg?react";
 import CheckIcon from "@/icons/check.svg?react";
 import ChevronDownIcon from "@/icons/chevron-down.svg?react";
@@ -52,11 +52,11 @@ import { cn } from "@/lib/cn";
 const glyphs = {
   "arrow-left": ArrowLeftIcon,
   "arrow-right": ArrowRightIcon,
-  backspace: BackspaceIcon,
   bell: BellIcon,
   "building-bank": BuildingBankIcon,
   calculator: CalculatorIcon,
   calendar: CalendarIcon,
+  cancel: CancelIcon,
   "chart-bar": ChartBarIcon,
   check: CheckIcon,
   "chevron-down": ChevronDownIcon,
@@ -103,12 +103,7 @@ const glyphs = {
 
 export type IconName = keyof typeof glyphs;
 
-const directionalGlyphs: ReadonlySet<IconName> = new Set([
-  "arrow-left",
-  "arrow-right",
-  "backspace",
-  "logout",
-]);
+const directionalGlyphs: ReadonlySet<IconName> = new Set(["arrow-left", "arrow-right", "logout"]);
 
 type IconProps = {
   name: IconName;

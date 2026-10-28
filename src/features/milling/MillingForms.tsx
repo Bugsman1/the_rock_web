@@ -165,7 +165,7 @@ export function EndMillingAction({
   const canRefine = useCan()("refining", "add");
 
   function onSaved() {
-    if (canRefine && formProps.operation.mercury !== undefined) {
+    if (canRefine) {
       replace(startRefiningHref(formProps.operation.project, formProps.operation.id));
       return;
     }
@@ -176,7 +176,12 @@ export function EndMillingAction({
 
   return (
     <>
-      <Button variant="primary" width="auto" onClick={() => setOpen(true)}>
+      <Button
+        variant="primary"
+        width="auto"
+        disabled={formProps.operation.mercury === undefined}
+        onClick={() => setOpen(true)}
+      >
         <Icon name="circle-check" />
         {label}
       </Button>

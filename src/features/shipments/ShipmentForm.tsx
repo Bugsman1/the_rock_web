@@ -9,13 +9,10 @@ import { useReplace } from "@/i18n/navigation";
 import type { Customer } from "@/lib/customers";
 import { formatMoney } from "@/lib/format";
 import type { Project } from "@/lib/projects";
-import {
-  createNewShipmentSchema,
-  isShipmentField,
-  shipmentFormValues,
-  transportMethodKeys,
-} from "./shipments";
-import type { NewShipmentValues, ShipmentDetail } from "./shipments";
+import { createNewShipmentSchema, isShipmentField, transportMethodKeys } from "./shipments";
+import type { NewShipmentValues } from "./shipments";
+import { shipmentFormValues } from "./shipmentDetail";
+import type { ShipmentDetail } from "./shipmentDetail";
 import { createShipment, updateShipment } from "./shipmentsApi";
 import { SavedShipment } from "./InvoicePreview";
 import { NewCustomerDrawer, ShipmentClientFields, useNewCustomer } from "./ShipmentClientFields";
@@ -66,6 +63,7 @@ export function NewShipmentForm({
         bagFare: Number.NaN,
         passengerCount: Number.NaN,
         passengerFare: Number.NaN,
+        unloadingFare: Number.NaN,
         currentPayment: Number.NaN,
         debt: Number.NaN,
         debtNotes: "",

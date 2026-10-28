@@ -208,6 +208,21 @@ describe("ShipmentForm", () => {
     expect(valueOf(form.transportTotal)).toHaveTextContent("2,600");
   });
 
+  it("charges the unloading per bag apart from the transport total", async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    const valueOf = (label: string) => screen.getByText(label).nextElementSibling;
+
+    await user.type(screen.getByLabelText(form.bagCount), "10");
+    await user.type(screen.getByLabelText(form.bagFare), "200");
+    await user.type(screen.getByLabelText(form.unloadingFare), "40");
+
+    expect(valueOf(form.unloadingTotal)).toHaveTextContent("400");
+    expect(valueOf(form.transportTotal)).toHaveTextContent("2,000");
+    expect(valueOf(form.remainingToPay)).toHaveTextContent("2,000");
+  });
+
   it("rejects a negative fare per bag", async () => {
     const user = userEvent.setup();
     renderForm();

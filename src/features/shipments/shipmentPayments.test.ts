@@ -7,7 +7,7 @@ import {
   stageOf,
   totalBags,
 } from "@/lib/shipments";
-import { shipmentDetailFromApi, shipmentFormValues } from "./shipments";
+import { shipmentDetailFromApi, shipmentFormValues } from "./shipmentDetail";
 import {
   amountLeftAfter,
   createDebtSchema,
@@ -32,6 +32,8 @@ describe("shipment payments", () => {
     bag_transport_cost_per_bag: "300.00",
     passengers_count: 1,
     passenger_transport_cost_per_person: "200.00",
+    unloading_cost_per_bag: null,
+    unloading_total: "0.00",
     current_payment: "2200.00",
     debt: "0.00",
     debts: [],
@@ -116,6 +118,24 @@ describe("shipment payments", () => {
       { id: "2", amount: 1200, paidAt: "2026-10-12T10:00:00Z", notes: "Deuxième" },
     ]);
     expect(amountLeftToPay(detail)).toBe(1000);
+  });
+
+  it("reads the unloading apart from the transport, and leaves it empty when there is none", () => {
+    const unloaded = shipmentDetailFromApi({
+      ...apiShipment,
+      unloading_cost_per_bag: "40.00",
+      unloading_total: "400.00",
+    });
+
+    expect(unloaded).toMatchObject({
+      unloadingFare: 40,
+      unloadingTotal: 400,
+      transportTotal: 3200,
+    });
+    expect(amountLeftToPay(unloaded)).toBe(1000);
+    expect(shipmentFormValues(unloaded).unloadingFare).toBe(40);
+    expect(shipmentDetailFromApi(apiShipment).unloadingFare).toBeUndefined();
+    expect(shipmentFormValues(shipmentDetailFromApi(apiShipment)).unloadingFare).toBeNaN();
   });
 
   it("fills the edit form from the shipment, with no payment to type", () => {

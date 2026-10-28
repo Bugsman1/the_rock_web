@@ -109,6 +109,7 @@ export const filledShipmentValues: NewShipmentValues = {
   bagFare: 200,
   passengerCount: 2,
   passengerFare: 50.5,
+  unloadingFare: 40,
   currentPayment: 1000.5,
   debt: 250,
   debtNotes: " Avance sur le prochain voyage ",
@@ -186,6 +187,8 @@ export function apiShipment(payments: Payments, debt = "350.00", overrides: obje
     bag_transport_cost_per_bag: "300.00",
     passengers_count: 1,
     passenger_transport_cost_per_person: "200.00",
+    unloading_cost_per_bag: null,
+    unloading_total: "0.00",
     current_payment: String(paid),
     debt,
     debts:

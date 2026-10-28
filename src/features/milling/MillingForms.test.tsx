@@ -34,11 +34,7 @@ beforeEach(() => {
   machineLoader.mockClear();
 });
 
-async function openEndMilling(
-  access: Access = allRights,
-  defaultTime = "12:30",
-  operation: MillingOperation = mercured,
-) {
+function renderEndMilling(access: Access, defaultTime: string, operation: MillingOperation) {
   const router = createMemoryRouter(
     [
       {
@@ -59,9 +55,16 @@ async function openEndMilling(
     ],
     { initialEntries: ["/"] },
   );
-  const user = userEvent.setup();
 
   inFrench(<RouterProvider router={router} />, access);
+
+  return router;
+}
+
+async function openEndMilling(access: Access = allRights, defaultTime = "12:30") {
+  const router = renderEndMilling(access, defaultTime, mercured);
+  const user = userEvent.setup();
+
   await user.click(await screen.findByRole("button", { name: "Terminer" }));
 
   return { user, router };
@@ -102,22 +105,16 @@ describe("ending a milling operation", () => {
     );
   });
 
-  it("ends a grinding without mercury and reloads the machine instead of opening its refining", async () => {
-    const { user, router } = await openEndMilling(allRights, "12:30", running);
-    expect(machineLoader).toHaveBeenCalledTimes(1);
+  it("cannot be finished before mercury is added", async () => {
+    renderEndMilling(allRights, "12:30", running);
+    const user = userEvent.setup();
+    const finish = await screen.findByRole("button", { name: "Terminer" });
 
-    await user.click(screen.getByRole("button", { name: end.submit }));
+    expect(finish).toBeDisabled();
+    await user.click(finish);
 
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
-    expect(api.endOperation).toHaveBeenCalledWith(
-      running,
-      { endDate: "2026-10-08", endTime: "12:30", notes: "" },
-      "2026-10-08T12:30:00.000Z",
-    );
-    await waitFor(() => expect(machineLoader).toHaveBeenCalledTimes(2));
-    expect(router.state.location.pathname).toBe("/");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(api.endOperation).not.toHaveBeenCalled();
   });
 
   it("stays on the machine when the role may not start the refining", async () => {

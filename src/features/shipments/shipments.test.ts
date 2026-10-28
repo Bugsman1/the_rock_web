@@ -76,6 +76,7 @@ describe("backend form", () => {
         bag_transport_cost_per_bag: "200",
         passengers_count: 2,
         passenger_transport_cost_per_person: "50.5",
+        unloading_cost_per_bag: "40",
         current_payment: "1000.5",
         transport_method: "hilux",
         source: "Chami",
@@ -138,6 +139,27 @@ describe("backend form", () => {
       expect(
         shipmentToApi(noPassengers, { customerId: "7", arrivedAt: "2026-10-10T08:30:00.000Z" }),
       ).toMatchObject({ passengers_count: 0, passenger_transport_cost_per_person: "0" });
+    });
+
+    it("takes an optional unloading cost of zero or more, sent empty as null", () => {
+      const unloadingIssues = (unloadingFare: number) =>
+        (schema.safeParse({ ...values, unloadingFare }).error?.issues ?? []).map((issue) => [
+          issue.path.join("."),
+          issue.message,
+        ]);
+
+      expect(unloadingIssues(Number.NaN)).toEqual([]);
+      expect(unloadingIssues(0)).toEqual([]);
+      expect(unloadingIssues(-1)).toEqual([["unloadingFare", "amount"]]);
+      expect(
+        shipmentToApi(
+          { ...values, unloadingFare: Number.NaN },
+          { customerId: "7", arrivedAt: "2026-10-10T08:30:00.000Z" },
+        ).unloading_cost_per_bag,
+      ).toBeNull();
+      expect(shipmentErrorsFromApi({ unloading_cost_per_bag: "Invalide" })).toEqual({
+        unloadingFare: "Invalide",
+      });
     });
 
     it("needs the fare per passenger as soon as the shipment has passengers", () => {

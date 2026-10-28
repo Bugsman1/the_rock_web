@@ -87,12 +87,7 @@ export function Drawer({ open, title, closeLabel, onClose, wide = false, childre
           <h2 id={titleId} className="text-ink text-[20px] font-bold">
             {title}
           </h2>
-          <IconButton
-            icon="backspace"
-            label={closeLabel}
-            iconClassName="h-7 w-7"
-            onClick={onClose}
-          />
+          <IconButton icon="cancel" label={closeLabel} iconClassName="h-7 w-7" onClick={onClose} />
         </header>
 
         <div className="flex-1 p-6">{open ? children : null}</div>

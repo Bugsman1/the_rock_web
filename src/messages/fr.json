@@ -412,6 +412,8 @@
       "sourcePlaceholder": "Écrivez la provenance de l'expédition",
       "currentPayment": "Paiement actuel",
       "remainingToPay": "Reste à payer",
+      "unloadingFare": "Déchargement par sac",
+      "unloadingTotal": "Déchargement des sacs",
       "saved": {
         "title": "Expédition enregistrée",
         "body": "Téléchargez la facture du transport de cette expédition, en arabe ou en français.",

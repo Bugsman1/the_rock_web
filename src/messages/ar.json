@@ -412,6 +412,8 @@
       "sourcePlaceholder": "اكتب مصدر الشحنة",
       "currentPayment": "الدفعة الحالية",
       "remainingToPay": "المتبقي للدفع",
+      "unloadingFare": "تكلفة حط الدبش للكيس",
+      "unloadingTotal": "تكلفة حط الدبش",
       "saved": {
         "title": "تم حفظ الشحنة",
         "body": "نزّل فاتورة النقل لهذه الشحنة بالعربية أو بالفرنسية.",

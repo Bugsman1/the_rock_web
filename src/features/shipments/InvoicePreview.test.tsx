@@ -66,6 +66,7 @@ describe("SavedShipment", () => {
           bagFare: 0,
           passengerCount: 0,
           passengerFare: 0,
+          unloadingFare: Number.NaN,
           currentPayment: Number.NaN,
           debt: Number.NaN,
           debtNotes: "",

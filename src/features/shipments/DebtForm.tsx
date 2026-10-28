@@ -14,7 +14,7 @@ import { TextArea, TextField } from "@/components/ui/TextField";
 import { useCan } from "@/lib/accessContext";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { createDebtSchema, debtAfter } from "./shipmentPayments";
-import type { ShipmentDebt, ShipmentDetail } from "./shipments";
+import type { ShipmentDebt, ShipmentDetail } from "./shipmentDetail";
 import type { DebtValues } from "./shipmentPayments";
 import { addDebt } from "./shipmentsApi";
 

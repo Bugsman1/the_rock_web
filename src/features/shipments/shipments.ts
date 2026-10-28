@@ -1,12 +1,10 @@
 import { z } from "zod";
-import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/client";
-import { isIsoDate, isTimeValue, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
-import { amountOrZero, fromDecimal, toMoneyDecimal } from "@/lib/format";
+import type { BackendFieldErrors, FieldErrors } from "@/lib/api/client";
+import { isIsoDate, isTimeValue } from "@/lib/datetime";
+import { amountOrZero, toMoneyDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import { isHalfBagCount } from "@/lib/grinding";
 import { isValidPhone } from "@/lib/phone";
-import { shipmentFromApi } from "@/lib/shipments";
-import type { ShipmentRecord } from "@/lib/shipments";
 
 export const transportMethodKeys = ["truck", "hilux", "other"] as const;
 
@@ -98,6 +96,9 @@ export function createNewShipmentSchema(
       passengerFare: z.union([z.nan(), z.number().min(0, messages.amountInvalid)], {
         error: messages.amountInvalid,
       }),
+      unloadingFare: z.union([z.nan(), z.number().min(0, messages.amountInvalid)], {
+        error: messages.amountInvalid,
+      }),
       currentPayment: z.union([z.nan(), z.number().min(0, messages.amountInvalid)], {
         error: messages.amountInvalid,
       }),
@@ -147,6 +148,7 @@ const shipmentFields: readonly ShipmentField[] = [
   "bagFare",
   "passengerCount",
   "passengerFare",
+  "unloadingFare",
   "currentPayment",
   "debt",
   "debtNotes",
@@ -163,6 +165,7 @@ const fieldOfApi: Readonly<Record<string, ShipmentField>> = {
   bag_transport_cost_per_bag: "bagFare",
   passengers_count: "passengerCount",
   passenger_transport_cost_per_person: "passengerFare",
+  unloading_cost_per_bag: "unloadingFare",
   current_payment: "currentPayment",
   project: "mill",
   notes: "notes",
@@ -188,6 +191,9 @@ export function shipmentToApi(
     bag_transport_cost_per_bag: toMoneyDecimal(values.bagFare),
     passengers_count: amountOrZero(values.passengerCount),
     passenger_transport_cost_per_person: toMoneyDecimal(amountOrZero(values.passengerFare)),
+    unloading_cost_per_bag: Number.isNaN(values.unloadingFare)
+      ? null
+      : toMoneyDecimal(values.unloadingFare),
     transport_method: values.transportMethod,
     source: values.source.trim(),
     project: Number(values.mill),
@@ -199,91 +205,6 @@ export function newShipmentToApi(values: NewShipmentValues, target: ShipmentTarg
   return {
     ...shipmentToApi(values, target),
     current_payment: toMoneyDecimal(amountOrZero(values.currentPayment)),
-  };
-}
-
-export type ShipmentPayment = {
-  id: string;
-  amount: number;
-  paidAt: IsoTimestamp;
-  notes: string;
-};
-
-export type ShipmentDebt = {
-  id: string;
-  amount: number;
-  incurredAt: IsoTimestamp;
-  description: string;
-};
-
-export type Cancellation = {
-  cancelledAt: IsoTimestamp;
-  byName: string;
-  reason: string;
-};
-
-function cancellationFromApi(shipment: ApiSchema<"Shipment">): Cancellation | undefined {
-  return shipment.cancelled_at === null
-    ? undefined
-    : {
-        cancelledAt: shipment.cancelled_at,
-        byName: shipment.cancelled_by_name,
-        reason: shipment.cancellation_reason,
-      };
-}
-
-export type ShipmentDetail = ShipmentRecord & {
-  transportMethod: (typeof transportMethodKeys)[number];
-  cancellation: Cancellation | undefined;
-  bagFare: number;
-  passengerCount: number;
-  passengerFare: number;
-  debts: readonly ShipmentDebt[];
-  payments: readonly ShipmentPayment[];
-};
-
-export function shipmentDetailFromApi(shipment: ApiSchema<"Shipment">): ShipmentDetail {
-  return {
-    ...shipmentFromApi(shipment),
-    transportMethod: shipment.transport_method,
-    cancellation: cancellationFromApi(shipment),
-    bagFare: fromDecimal(shipment.bag_transport_cost_per_bag),
-    passengerCount: shipment.passengers_count ?? 0,
-    passengerFare: fromDecimal(shipment.passenger_transport_cost_per_person ?? "0"),
-    debts: shipment.debts.map((debt) => ({
-      id: String(debt.id),
-      amount: fromDecimal(debt.amount),
-      incurredAt: debt.incurred_at,
-      description: debt.description,
-    })),
-    payments: (shipment.payments ?? []).map((payment) => ({
-      id: String(payment.id),
-      amount: fromDecimal(payment.amount),
-      paidAt: payment.paid_at,
-      notes: payment.notes,
-    })),
-  };
-}
-
-export function shipmentFormValues(shipment: ShipmentDetail): NewShipmentValues {
-  const arrivedAt = new Date(shipment.arrivedAt);
-
-  return {
-    customerName: shipment.customerName,
-    phone: shipment.phone,
-    arrivalDate: todayAsInputValue(arrivedAt),
-    arrivalTime: nowAsTimeValue(arrivedAt),
-    bagCount: shipment.bagCount,
-    transportMethod: shipment.transportMethod,
-    source: shipment.source,
-    bagFare: shipment.bagFare,
-    passengerCount: shipment.passengerCount,
-    passengerFare: shipment.passengerFare,
-    currentPayment: Number.NaN,
-    debt: Number.NaN,
-    debtNotes: "",
-    mill: shipment.project,
-    notes: shipment.notes,
   };
 }
 

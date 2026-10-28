@@ -4,10 +4,10 @@ import { ShipmentStatusBadge } from "@/components/shipments/ShipmentBadges";
 import { DetailList } from "@/components/ui/Cards";
 import { PageTitle } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/cn";
-import { formatCount, formatDateTime } from "@/lib/format";
+import { formatCount, formatDateTime, formatMoney } from "@/lib/format";
 import { totalBags } from "@/lib/shipments";
 import { InvoiceDownload } from "./InvoiceDownload";
-import type { ShipmentDetail } from "./shipments";
+import type { ShipmentDetail } from "./shipmentDetail";
 
 export function ShipmentDetails({
   shipment,
@@ -30,6 +30,12 @@ export function ShipmentDetails({
           { label: t("bagCount"), value: formatCount(shipment.bagCount, locale) },
           { label: t("transportMethod"), value: transports(shipment.transportMethod) },
           { label: t("source"), value: shipment.source },
+          ...(shipment.unloadingFare === undefined
+            ? []
+            : [
+                { label: t("unloadingFare"), value: formatMoney(shipment.unloadingFare, locale) },
+                { label: t("unloadingTotal"), value: formatMoney(shipment.unloadingTotal, locale) },
+              ]),
           { label: t("mill"), value: projectName },
           { label: t("notes"), value: shipment.notes === "" ? "—" : shipment.notes },
         ]}

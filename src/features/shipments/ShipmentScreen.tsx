@@ -20,7 +20,7 @@ import { amountLeftToPay, isInProgress } from "@/lib/shipments";
 import { CancelShipmentDialog } from "./CancelShipmentDialog";
 import { TestBagsDialog } from "./TestBagsDialog";
 import { EditShipmentForm } from "./ShipmentForm";
-import type { ShipmentDetail, ShipmentPayment } from "./shipments";
+import type { ShipmentDetail, ShipmentPayment } from "./shipmentDetail";
 import { getShipment } from "./shipmentsApi";
 import { PaymentForm } from "./PaymentForm";
 import { DebtForm, DebtPanel } from "./DebtForm";

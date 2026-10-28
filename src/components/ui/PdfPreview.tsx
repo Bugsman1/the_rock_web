@@ -97,7 +97,7 @@ export function PdfPreviewDialog({
                 {t("download")}
               </a>
               <IconButton
-                icon="backspace"
+                icon="cancel"
                 label={common("close")}
                 iconClassName="h-7 w-7"
                 onClick={onClose}

@@ -14,12 +14,9 @@ import { combineDateAndTime } from "@/lib/datetime";
 import { amountOrZero } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import { isRecordId } from "@/lib/projects";
-import {
-  newShipmentToApi,
-  shipmentDetailFromApi,
-  shipmentErrorsFromApi,
-  shipmentToApi,
-} from "./shipments";
+import { newShipmentToApi, shipmentErrorsFromApi, shipmentToApi } from "./shipments";
+import { shipmentDetailFromApi } from "./shipmentDetail";
+import type { ShipmentDetail } from "./shipmentDetail";
 import {
   paymentErrorsFromApi,
   paymentToApi,
@@ -30,7 +27,7 @@ import { cancelErrorsFromApi, cancelToApi } from "./shipmentCancel";
 import type { CancelShipmentValues } from "./shipmentCancel";
 import { testBagsErrorsFromApi, testBagsToApi } from "./shipmentTestBags";
 import type { TestBagsValues } from "./shipmentTestBags";
-import type { NewShipmentValues, ShipmentDetail } from "./shipments";
+import type { NewShipmentValues } from "./shipments";
 import type { DebtValues, PaymentValues } from "./shipmentPayments";
 
 type SaveShipmentResult = SaveResult<keyof NewShipmentValues>;

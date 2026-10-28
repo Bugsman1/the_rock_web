@@ -14,7 +14,7 @@ export type ButtonWidth = "full" | "auto";
 
 export function buttonClasses(variant: ButtonVariant, width: ButtonWidth): string {
   return cn(
-    "inline-flex h-13 cursor-pointer items-center justify-center gap-2.5 rounded-field font-semibold",
+    "inline-flex h-13 cursor-pointer items-center justify-center gap-2.5 rounded-field font-semibold disabled:cursor-not-allowed disabled:opacity-50",
     width === "full" ? "w-full" : "px-5",
     variants[variant],
   );
