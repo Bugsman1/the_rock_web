@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Icon } from "@/components/ui/Icon";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LoadingDots } from "@/components/ui/LoadingDots";
 import { PasswordField } from "@/components/ui/PasswordField";
 import { TextField } from "@/components/ui/TextField";
@@ -116,7 +117,10 @@ export function LoginForm() {
 
       <p className="text-ink-label text-center text-[15px] font-semibold">{t("contactAdmin")}</p>
 
-      <LanguageSwitcher label={common("language")} />
+      <div className="flex items-center justify-center gap-2">
+        <LanguageSwitcher label={common("language")} />
+        <ThemeToggle label={common("darkMode")} />
+      </div>
     </form>
   );
 }

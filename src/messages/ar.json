@@ -3,6 +3,7 @@
     "appName": "نظام مطاحن أهل الطايع",
     "companyName": "مطاحن أهل الطايع",
     "language": "اللغة",
+    "darkMode": "الوضع الليلي",
     "showPassword": "إظهار كلمة المرور",
     "hidePassword": "إخفاء كلمة المرور",
     "close": "إغلاق",
@@ -77,7 +78,6 @@
     "toggleSidebar": "إظهار أو إخفاء القائمة",
     "navigation": "القائمة الرئيسية",
     "notifications": "الإشعارات",
-    "darkMode": "الوضع الليلي",
     "settings": "الإعدادات",
     "logout": "تسجيل الخروج",
     "nav": {

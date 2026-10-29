@@ -3,6 +3,7 @@
     "appName": "Système Moulins Ehl Taya",
     "companyName": "Moulins Ehl Taya",
     "language": "Langue",
+    "darkMode": "Mode sombre",
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe",
     "close": "Fermer",
@@ -77,7 +78,6 @@
     "toggleSidebar": "Afficher ou masquer le menu",
     "navigation": "Menu principal",
     "notifications": "Notifications",
-    "darkMode": "Mode sombre",
     "settings": "Paramètres",
     "logout": "Se déconnecter",
     "nav": {

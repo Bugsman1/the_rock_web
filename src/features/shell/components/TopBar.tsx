@@ -132,7 +132,7 @@ export function TopBar({
 
       <div className="flex flex-1 items-center justify-end gap-2">
         <LanguageSwitcher label={common("language")} />
-        <ThemeToggle label={t("darkMode")} />
+        <ThemeToggle label={common("darkMode")} />
         <IconButton icon="bell" label={t("notifications")} />
         <UserMenu name={userName} role={roleLabel(roleName, (name) => roles(name))} />
       </div>

@@ -298,7 +298,7 @@ in a drawer or on a page, ends with `DrawerActions` (save, then cancel; with typ
 saving, keep editing goes back to the form; only the cancel button asks): stuck to the bottom in a
 drawer, in place at the end of the page form (new and edit shipment, `sticky={false}`).
 
-**Dark mode:** the moon in the top bar switches the whole app to dark and back; the choice is kept
+**Dark mode:** the moon in the top bar, and next to the language on the login page, switches the whole app to dark and back; the choice is kept
 in this browser (`theme` in `localStorage`) and a first visit is light. Dark mode only redefines the
 colour tokens in `app.css` (surfaces, text, lines, brand and status shades, shadows), so every
 screen follows; status colours keep their meaning. Icons follow the text colour and turn light. The
