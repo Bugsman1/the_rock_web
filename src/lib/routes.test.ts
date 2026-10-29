@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  employeeHref,
+  employeesProjectHref,
   customerHref,
   customersHref,
   editProjectHref,
@@ -136,6 +138,25 @@ describe("inventory routes", () => {
     );
     expect(resourceHref("2", { page: 2, action: "increase" })).toBe(
       "/inventory/resources/2?page=2&action=increase",
+    );
+  });
+});
+
+describe("employees routes", () => {
+  it("opens a project's employees and their drawers", () => {
+    expect(employeesProjectHref("3")).toBe("/employees/projects/3");
+    expect(employeesProjectHref("3", { create: true })).toBe("/employees/projects/3?new=1");
+    expect(employeesProjectHref("3", { edit: "301" })).toBe("/employees/projects/3?edit=301");
+    expect(employeesProjectHref("3", { remove: "301" })).toBe("/employees/projects/3?delete=301");
+  });
+
+  it("opens an employee and their drawers", () => {
+    expect(employeeHref("301")).toBe("/employees/301");
+    expect(employeeHref("301", "withdraw")).toBe("/employees/301?withdraw=1");
+    expect(employeeHref("301", "delete")).toBe("/employees/301?delete=1");
+    expect(employeeHref("301", { editWithdrawal: "9" })).toBe("/employees/301?withdrawal=9");
+    expect(employeeHref("301", { deleteWithdrawal: "9" })).toBe(
+      "/employees/301?deleteWithdrawal=9",
     );
   });
 });

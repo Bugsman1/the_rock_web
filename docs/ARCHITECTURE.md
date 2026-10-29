@@ -5,7 +5,7 @@ React + Vite rewrite of the `the_rock` front-end (Next.js). Bilingual: **Arabic 
 
 > Status: login, app shell, **Shipments**, **Milling** (on the real grinding API), **Refining**,
 > **Clients**, **Final settlements**, **Inventory**, **Users** and **Settings** are built and
-> connected to the API. The other sections (dashboard, accounting, …) render an empty page, as in
+> connected to the API. **Employees and payroll** is built on placeholder data until the backend has it. The other sections (dashboard, accounting, …) render an empty page, as in
 > `the_rock`.
 
 ---
@@ -51,7 +51,7 @@ the_rock_web/
 │  ├─ i18n/                    ← locales, messages map, language names, locale-aware navigation
 │  ├─ messages/                ← ar.json (source of truth), fr.json
 │  ├─ features/                ← one folder per module, public API in index.ts
-│  │  ├─ auth/  shell/  customers/  users/  settings/  shipments/  milling/  refining/  inventory/  settlements/
+│  │  ├─ auth/  shell/  customers/  users/  settings/  shipments/  milling/  refining/  inventory/  settlements/  employees/
 │  ├─ components/ui/           ← shared, domain-free UI kit
 │  ├─ components/customers/    ← client form (Clients and New shipment)
 │  ├─ components/shipments/    ← `ShipmentBadges.tsx`: `PaymentStatus`, `ShipmentStatusBadge` (Shipments and Clients)
@@ -70,36 +70,39 @@ two features lives in `lib/` or `components/`.
 
 All declared in `src/app/router.tsx` (`routes`). Under `/:locale/` (`ar` or `fr`):
 
-| Path                                                                                             | Screen (loader)                                                                                                                                                              |
-| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `login`                                                                                          | `LoginScreen` (a signed-in user goes to their home)                                                                                                                          |
-| `shipments`                                                                                      | `ShipmentsScreen` (`shipmentsLoader`)                                                                                                                                        |
-| `shipments/new` (`?project=<id>` from a project page, `newShipmentHref`)                         | `NewShipmentScreen` (`newShipmentLoader`: that project is preselected and the back links lead to it)                                                                         |
-| `shipments/:shipment` (`?from=history`, `shipmentHref`)                                          | `ShipmentScreen` (`shipmentLoader`): payments, invoice, edit; back leads to the history when opened from it                                                                  |
-| `shipments/projects/:project` (`?grind=`)                                                        | `ProjectStorageScreen` (`projectStorageLoader`)                                                                                                                              |
-| `shipments/projects/:project/history`                                                            | `ShipmentHistoryScreen` (`projectShipmentsLoader`)                                                                                                                           |
-| `milling` (`?site=`)                                                                             | `MillingScreen` (`millingLoader`); a user who sees one project in service goes straight to it                                                                                |
-| `milling/projects/:project` (`?operation=new&shipment=&machine=`)                                | `MillingProjectScreen` (`millingProjectLoader`)                                                                                                                              |
-| `milling/projects/:project/machines/:machine` (`?edit=1`, `editMillingOperationHref`)            | `MachineDetailScreen` (`machineLoader`): the running grinding, its edit drawer, the history                                                                                  |
-| `customers` (`?q=&page=&new=1&edit=`)                                                            | `CustomersScreen` (`customersLoader`)                                                                                                                                        |
-| `customers/:customer` (`?debt=`, `?new=1`)                                                       | `CustomerScreen` (`customerLoader`): the client's debts (needs the debts view right); a debt opens in a drawer, `new=1` adds one                                             |
-| `settlements`                                                                                    | `SettlementsScreen` (`settlementsLoader`): one card per project in service (finished shipments to settle, settlements made); a user who sees one project goes straight to it |
-| `settlements/projects/:project` (`?q=&page=`, `settlementsProjectHref`)                          | `SettlementProjectScreen` (`settlementProjectLoader`): finished shipments to settle (each with "settle"), the project's settlements                                          |
-| `settlements/new` (`?customer=&project=`, `newSettlementHref`; back to the project it came from) | `NewSettlementScreen` (`newSettlementLoader`)                                                                                                                                |
-| `settlements/:settlement` (`?edit=1`, `?delete=1`, `settlementHref`)                             | `SettlementScreen` (`settlementLoader`): totals, PDF, edit amounts, delete                                                                                                   |
-| `users` (`?q=&page=&new=1&edit=`)                                                                | `UsersScreen` (`usersLoader`): search by name, email or phone on the server                                                                                                  |
-| `users/roles` (`?new=1&edit=&delete=`)                                                           | `RolesScreen` (`rolesLoader`): roles, their sections and rights; delete only when no user has it                                                                             |
-| `refining`                                                                                       | `RefiningScreen` (`refiningLoader`): figures and project cards; a user who sees one project in service goes straight to it                                                   |
-| `refining/projects/:project` (`?grinding=`, `refiningProjectHref`, `startRefiningHref`)          | `RefiningProjectScreen` (`refiningProjectLoader`)                                                                                                                            |
-| `inventory`                                                                                      | `InventoryScreen` (`inventoryLoader`): one card per project                                                                                                                  |
-| `inventory/projects/:project` (`?new=resource`)                                                  | `InventoryProjectScreen` (`inventoryProjectLoader`): the project's resources as cards, Mercury first                                                                         |
-| `inventory/resources/:resource` (`?page=`, `?action=increase\|decrease`)                         | `ResourceScreen` (`resourceLoader`): quantities, actions and history                                                                                                         |
-| `settings`                                                                                       | `SettingsHomeScreen` (`settingsHomeLoader`)                                                                                                                                  |
-| `settings/profile`, `settings/language`                                                          | `ProfileScreen` (`profileLoader`), `LanguageScreen`                                                                                                                          |
-| `settings/projects`, `…/new`, `…/:project`, `…/:project/edit`                                    | `ProjectsScreen`, `ProjectFormScreen`, `ProjectSettingsScreen`                                                                                                               |
-| `settings/projects/:project` (`?delete=1`)                                                       | `ProjectSettingsScreen`: delete confirmation, then back to the projects                                                                                                      |
-| `settings/projects/:project/machines/new`, `…/:machine`                                          | `GrinderFormScreen` (`grinderFormLoader`)                                                                                                                                    |
-| other menu entries                                                                               | empty page                                                                                                                                                                   |
+| Path                                                                                                                | Screen (loader)                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `login`                                                                                                             | `LoginScreen` (a signed-in user goes to their home)                                                                                                                          |
+| `shipments`                                                                                                         | `ShipmentsScreen` (`shipmentsLoader`)                                                                                                                                        |
+| `shipments/new` (`?project=<id>` from a project page, `newShipmentHref`)                                            | `NewShipmentScreen` (`newShipmentLoader`: that project is preselected and the back links lead to it)                                                                         |
+| `shipments/:shipment` (`?from=history`, `shipmentHref`)                                                             | `ShipmentScreen` (`shipmentLoader`): payments, invoice, edit; back leads to the history when opened from it                                                                  |
+| `shipments/projects/:project` (`?grind=`)                                                                           | `ProjectStorageScreen` (`projectStorageLoader`)                                                                                                                              |
+| `shipments/projects/:project/history`                                                                               | `ShipmentHistoryScreen` (`projectShipmentsLoader`)                                                                                                                           |
+| `milling` (`?site=`)                                                                                                | `MillingScreen` (`millingLoader`); a user who sees one project in service goes straight to it                                                                                |
+| `milling/projects/:project` (`?operation=new&shipment=&machine=`)                                                   | `MillingProjectScreen` (`millingProjectLoader`)                                                                                                                              |
+| `milling/projects/:project/machines/:machine` (`?edit=1`, `editMillingOperationHref`)                               | `MachineDetailScreen` (`machineLoader`): the running grinding, its edit drawer, the history                                                                                  |
+| `customers` (`?q=&page=&new=1&edit=`)                                                                               | `CustomersScreen` (`customersLoader`)                                                                                                                                        |
+| `customers/:customer` (`?debt=`, `?new=1`)                                                                          | `CustomerScreen` (`customerLoader`): the client's debts (needs the debts view right); a debt opens in a drawer, `new=1` adds one                                             |
+| `settlements`                                                                                                       | `SettlementsScreen` (`settlementsLoader`): one card per project in service (finished shipments to settle, settlements made); a user who sees one project goes straight to it |
+| `settlements/projects/:project` (`?q=&page=`, `settlementsProjectHref`)                                             | `SettlementProjectScreen` (`settlementProjectLoader`): finished shipments to settle (each with "settle"), the project's settlements                                          |
+| `settlements/new` (`?customer=&project=`, `newSettlementHref`; back to the project it came from)                    | `NewSettlementScreen` (`newSettlementLoader`)                                                                                                                                |
+| `settlements/:settlement` (`?edit=1`, `?delete=1`, `settlementHref`)                                                | `SettlementScreen` (`settlementLoader`): totals, PDF, edit amounts, delete                                                                                                   |
+| `users` (`?q=&page=&new=1&edit=`)                                                                                   | `UsersScreen` (`usersLoader`): search by name, email or phone on the server                                                                                                  |
+| `users/roles` (`?new=1&edit=&delete=`)                                                                              | `RolesScreen` (`rolesLoader`): roles, their sections and rights; delete only when no user has it                                                                             |
+| `refining`                                                                                                          | `RefiningScreen` (`refiningLoader`): figures and project cards; a user who sees one project in service goes straight to it                                                   |
+| `refining/projects/:project` (`?grinding=`, `refiningProjectHref`, `startRefiningHref`)                             | `RefiningProjectScreen` (`refiningProjectLoader`)                                                                                                                            |
+| `inventory`                                                                                                         | `InventoryScreen` (`inventoryLoader`): one card per project                                                                                                                  |
+| `inventory/projects/:project` (`?new=resource`)                                                                     | `InventoryProjectScreen` (`inventoryProjectLoader`): the project's resources as cards, Mercury first                                                                         |
+| `inventory/resources/:resource` (`?page=`, `?action=increase\|decrease`)                                            | `ResourceScreen` (`resourceLoader`): quantities, actions and history                                                                                                         |
+| `employees`                                                                                                         | `EmployeesScreen` (`employeesLoader`): one card per project in service; a user who sees one project goes straight to it                                                      |
+| `employees/projects/:project` (`?new=1&edit=&delete=`, `employeesProjectHref`)                                      | `EmployeesProjectScreen` (`employeesProjectLoader`): the project's employees, add / edit / delete                                                                            |
+| `employees/:employee` (`?edit=1`, `?delete=1`, `?withdraw=1`, `?withdrawal=`, `?deleteWithdrawal=`, `employeeHref`) | `EmployeeScreen` (`employeeLoader`): details, balance, withdrawals with add / edit / delete                                                                                  |
+| `settings`                                                                                                          | `SettingsHomeScreen` (`settingsHomeLoader`)                                                                                                                                  |
+| `settings/profile`, `settings/language`                                                                             | `ProfileScreen` (`profileLoader`), `LanguageScreen`                                                                                                                          |
+| `settings/projects`, `…/new`, `…/:project`, `…/:project/edit`                                                       | `ProjectsScreen`, `ProjectFormScreen`, `ProjectSettingsScreen`                                                                                                               |
+| `settings/projects/:project` (`?delete=1`)                                                                          | `ProjectSettingsScreen`: delete confirmation, then back to the projects                                                                                                      |
+| `settings/projects/:project/machines/new`, `…/:machine`                                                             | `GrinderFormScreen` (`grinderFormLoader`)                                                                                                                                    |
+| other menu entries                                                                                                  | empty page                                                                                                                                                                   |
 
 `/` and `/:locale` redirect to the login page. Invalid ids in the URL answer "not found".
 
@@ -255,6 +258,7 @@ Others: `ActionLink`, `Button`, `buttonClasses` (primary, secondary, danger), `B
 | `refining` | `refining.ts` (`refiningQueue`, `refiningSummary`, `queueOfProject`, `refiningsOfProject`, `refiningLoss`, schema, mapping, field errors), `refiningApi.ts` (`getRefiningData`, create), `RefiningScreen.tsx` (overview with figures and project cards; project page with queue, operations table, drawer), `RefiningTables.tsx` (queue and operations tables), `RefiningForm.tsx`; tests share `refiningTesting.tsx` | Every API field is in the form and the table |
 | `settlements` | `settlements.ts` (type, mapping, `settleableShipments` (completed, not settled, every refining with its gold without material: `shipmentsAwaitingGold`), `settleableShipmentsOfProject`, `projectSettlementSummary`, `customerOfShipment` (by phone: the shipment API gives no customer id), `projectsOfShipments`, amounts and new-settlement schemas, mapping to the API, field errors), `settlementsApi.ts` (page, a customer's settlements, get, create, update amounts, delete, PDF), `SettlementsScreen.tsx` (project cards), `SettlementProjectScreen.tsx` (one project), `SettlementTables.tsx` (`SettlementTable`, `WaitingShipmentsTable`), `NewSettlementScreen.tsx` (customer, project, form), `SettlementForm.tsx` (shipments to tick and amounts; new and edit), `SettlementScreen.tsx` (one settlement, totals, edit drawer), `SettlementActions.tsx` (`SettlementPdf`, `DeleteSettlementDrawer`); tests share `settlementsTesting.tsx` | See "Final settlement" below |
 | `inventory` | `resources.ts` (types, kinds mercury / water / fuel with `kindNamed`, `availableKinds`, schemas, `quantityAfterChange`, mapping, field errors), `resourcesApi.ts` (list, get, create, increase / decrease, history page), `InventoryScreens.tsx` (projects, project cards), `ResourceScreen.tsx` (resource page and history), `InventoryForms.tsx` (resource, quantity change); tests share `inventoryTesting.tsx` | Inventory module. A project holds only mercury, water and fuel, each once: a new resource picks one of the types it does not have yet (saved as that code, shown translated), and "new resource" disappears once it has all three; mercury is the refining material. A saved resource's type is read from its name (`kindNamed`: the backend's English, French and Arabic spellings, ignoring case, accents, Arabic diacritics and tatweel); any other resource on the server is left out of the app (`resourceFromApi` gives nothing, its page is not found). Resources are never renamed. Once added, its page opens |
+| `employees` | `employees.ts` (`Employee`, `Withdrawal`, the jobs manager / supervisor / refiner, employee and withdrawal schemas, `projectEmployeesSummary`), `placeholderEmployees.ts` (sample employees and withdrawals), `employeesApi.ts` (placeholder: an in-memory store seeded with the samples for each project; list, get, create, update, delete employees and withdrawals), `EmployeesScreens.tsx` (project cards, a project's employees table), `EmployeeScreen.tsx` (one employee, withdrawals), `EmployeeForm.tsx`, `WithdrawalForm.tsx`, `DeleteDrawer.tsx` (delete confirmation); tests share `employeesTesting.tsx` | See "Employees and payroll" below |
 
 **Search inside each section:** every list has its own search, the app-wide search in the top bar
 is gone. Clients, Users and Settlements search on the server (`?q=`, paginated lists), from the table header: the field
@@ -435,7 +439,9 @@ total stays the same. 0 (clears them), whole or half bags, and fewer than the
 total; the backend refuses fewer current bags than are already in grinding (its message on the
 field). The first section shows current bags, test bags and total bags. Transport is charged on the
 total (current + test), as the backend does: the record's `transportTotal`, the edit form's
-transport cost and its "not below what was paid" check (`transportedBags`).
+transport cost and its "not below what was paid" check (`transportedBags`). Once test bags are saved the page
+reloads and the edit form is rebuilt from the saved bags (keyed on bags and test bags), so the test
+bags are never added twice.
 
 **Workflow:** the new-shipment form has no status field; a new shipment is `pending` and listed on
 its project's Shipments page with "start grinding", which opens the grinding form there and then
@@ -602,6 +608,17 @@ drawer without scrolling). "Add debt" asks an amount, then a note
 `Idempotency-Key` (a UUID per opened form). Amounts and status always come from the backend.
 Editing, deleting and approving a debt are not in the app.
 
+**Employees and payroll (`/employees`, placeholder data):** each project has its employees:
+matricule (typed), name, job (manager, supervisor or refiner: a label only, unrelated to app logins,
+roles or access), phone, monthly salary and start date. The salary is earned day by day (monthly
+salary ÷ the days of that month) and every amount (earned, withdrawn, owed now) comes from the
+backend; the app only shows it. What is owed now is shown with a minus when the employee withdrew
+more than they earned (a debt), in red in the table. A withdrawal has an amount above zero, a typed
+date and time and a note; there is no upper limit. Employees and withdrawals can be added, edited and
+deleted; every delete asks for confirmation first. Until the backend has these endpoints,
+`employeesApi.ts` works on placeholder data kept in memory (lost on reload, the samples come back),
+and the section keeps the access of the sections still to build (view on every module, or admin).
+
 ## 7. Backend connection
 
 - **Development:** `npm run dev` (port 3000, fails if busy) forwards `/api` to `BACKEND_API_URL`
@@ -647,6 +664,8 @@ Editing, deleting and approving a debt are not in the app.
 ## 9. Known gaps / next steps
 
 - Dashboard and the accounting sections are empty pages.
+- Employees and payroll run on placeholder data (`employeesApi.ts`): replace it with the backend's
+  endpoints once they exist, and add its `employees` right to the roles.
 - `schema.d.ts` was generated (2026-10-28) from GitHub `main` `e39b6ef` with
   `manage.py spectacular` (shipment cancel and test bags, mercury additions, customer `debt_total`,
   unloading cost per bag), not from a running server; regenerate with `npm run api:generate` once that version is deployed.

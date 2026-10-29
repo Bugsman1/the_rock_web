@@ -25,13 +25,15 @@ const pageShapes: readonly (readonly [RegExp, SkeletonShape])[] = [
   [/^\/settlements\/projects\/\d+$/, "table"],
   [/^\/refining\/projects\/\d+$/, "table"],
   [/^\/inventory\/(projects|resources)\/\d+$/, "table"],
+  [/^\/employees\/projects\/\d+$/, "table"],
+  [/^\/employees\/\d+$/, "detail"],
   [/^\/(shipments|milling)\/projects\/\d+(\/history)?$/, "table"],
   [/^\/settings\/(profile|projects\/\d+)$/, "detail"],
   [/^\/milling\/projects\/\d+\/machines\/\d+$/, "detail"],
   [/^\/(shipments|settlements)\/\d+$/, "detail"],
 ];
 
-const singleProjectSections = /^\/(shipments|settlements|milling|refining)$/;
+const singleProjectSections = /^\/(shipments|settlements|milling|refining|employees)$/;
 
 export function skeletonShapeFor(pathname: string, projectScoped = false): SkeletonShape {
   const [, , ...rest] = pathname.split("/");

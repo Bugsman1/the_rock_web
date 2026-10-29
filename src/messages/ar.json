@@ -808,6 +808,71 @@
       "refined": "عمليات التصفية"
     }
   },
+  "employees": {
+    "title": "الموظفون والرواتب",
+    "noProjects": "لا توجد مشاريع في الخدمة",
+    "employeeCount": "الموظفون",
+    "totalOwed": "المستحق لهم",
+    "listTitle": "الموظفون",
+    "new": "موظف جديد",
+    "empty": "لا يوجد موظفون في هذا المشروع",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "editLabel": "تعديل {name}",
+    "deleteLabel": "حذف {name}",
+    "jobs": {
+      "manager": "مدير",
+      "supervisor": "مشرف",
+      "refiner": "مصفّي"
+    },
+    "fields": {
+      "matricule": "الرقم التعريفي",
+      "name": "الاسم",
+      "job": "الوظيفة",
+      "phone": "الهاتف",
+      "monthlySalary": "الراتب الشهري",
+      "startedOn": "تاريخ بدء العمل",
+      "earned": "المكتسب حتى اليوم",
+      "withdrawn": "المسحوب",
+      "balance": "المستحق الآن",
+      "amount": "المبلغ",
+      "date": "التاريخ",
+      "time": "الوقت",
+      "note": "ملاحظة",
+      "by": "بواسطة",
+      "action": "إجراء"
+    },
+    "form": {
+      "newTitle": "موظف جديد",
+      "editTitle": "تعديل الموظف",
+      "create": "إضافة الموظف",
+      "save": "حفظ التغييرات",
+      "saving": "جارٍ الحفظ..."
+    },
+    "errors": {
+      "salaryInvalid": "أدخل راتبًا أكبر من صفر",
+      "amountInvalid": "أدخل مبلغًا أكبر من صفر"
+    },
+    "remove": {
+      "title": "حذف الموظف",
+      "question": "حذف {name}؟ لا يمكن التراجع عن ذلك.",
+      "confirm": "حذف",
+      "deleting": "جارٍ الحذف...",
+      "failed": "تعذر الحذف"
+    },
+    "withdrawals": {
+      "title": "سجل السحوبات",
+      "new": "سحب جديد",
+      "newTitle": "سحب جديد",
+      "editTitle": "تعديل السحب",
+      "create": "تسجيل السحب",
+      "empty": "لا توجد سحوبات",
+      "editLabel": "تعديل سحب {date}",
+      "deleteLabel": "حذف سحب {date}",
+      "removeTitle": "حذف السحب",
+      "removeQuestion": "حذف سحب {amount} بتاريخ {date}؟ لا يمكن التراجع عن ذلك."
+    }
+  },
   "inventory": {
     "title": "المخزون",
     "count": "عدد الموارد: {count}",
@@ -1036,6 +1101,12 @@
     "customerDebtPaidOff": "تم تسديد الدين بالكامل",
     "shipmentCancelled": "تم إلغاء الشحنة",
     "testBagsSaved": "تم حفظ أكياس التجربة",
-    "mercuryExtraAdded": "تمت إضافة الزئبق الإضافي"
+    "mercuryExtraAdded": "تمت إضافة الزئبق الإضافي",
+    "employeeAdded": "تمت إضافة الموظف",
+    "employeeUpdated": "تم حفظ بيانات الموظف",
+    "employeeDeleted": "تم حذف الموظف",
+    "withdrawalAdded": "تم تسجيل السحب",
+    "withdrawalUpdated": "تم حفظ السحب",
+    "withdrawalDeleted": "تم حذف السحب"
   }
 }

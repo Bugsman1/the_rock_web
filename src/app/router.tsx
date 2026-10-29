@@ -9,6 +9,14 @@ import {
   customersLoader,
 } from "@/features/customers";
 import {
+  EmployeeScreen,
+  employeeLoader,
+  EmployeesProjectScreen,
+  employeesProjectLoader,
+  EmployeesScreen,
+  employeesLoader,
+} from "@/features/employees";
+import {
   InventoryProjectScreen,
   inventoryProjectLoader,
   InventoryScreen,
@@ -197,6 +205,13 @@ const sectionRoutes: RouteObject[] = [
     loader: resourceLoader,
     element: <ResourceScreen />,
   },
+  { path: "employees", loader: employeesLoader, element: <EmployeesScreen /> },
+  {
+    path: "employees/projects/:project",
+    loader: employeesProjectLoader,
+    element: <EmployeesProjectScreen />,
+  },
+  { path: "employees/:employee", loader: employeeLoader, element: <EmployeeScreen /> },
   { path: "settings", loader: settingsHomeLoader, element: <SettingsHomeScreen /> },
   { path: "settings/profile", loader: profileLoader, element: <ProfileScreen /> },
   { path: "settings/language", element: <LanguageScreen /> },

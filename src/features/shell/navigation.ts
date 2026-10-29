@@ -4,6 +4,7 @@ import type { Access } from "@/lib/access";
 import {
   CUSTOMERS_HREF,
   DASHBOARD_HREF,
+  EMPLOYEES_HREF,
   INVENTORY_HREF,
   MILLING_HREF,
   REFINING_HREF,
@@ -66,7 +67,7 @@ const navGroups: readonly NavGroup[] = [
   {
     key: "resources",
     items: [
-      { key: "employees", href: "/employees", icon: "id-badge" },
+      { key: "employees", href: EMPLOYEES_HREF, icon: "id-badge" },
       { key: "inventory", href: INVENTORY_HREF, icon: "packages" },
       { key: "assets", href: "/assets", icon: "warehouse" },
     ],

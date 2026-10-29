@@ -226,3 +226,33 @@ export function newSettlementHref(choice: { customer?: string; project?: string 
 
   return queryString === "" ? `${SETTLEMENTS_HREF}/new` : `${SETTLEMENTS_HREF}/new?${queryString}`;
 }
+
+export const EMPLOYEES_HREF = "/employees";
+
+export function employeesProjectHref(
+  project: string,
+  drawer?: { create: true } | { edit: string } | { remove: string },
+): string {
+  const href = `${EMPLOYEES_HREF}/projects/${project}`;
+
+  if (drawer === undefined) return href;
+  if ("create" in drawer) return `${href}?new=1`;
+  if ("edit" in drawer) return `${href}?${new URLSearchParams({ edit: drawer.edit })}`;
+
+  return `${href}?${new URLSearchParams({ delete: drawer.remove })}`;
+}
+
+export type EmployeeDrawer =
+  "edit" | "delete" | "withdraw" | { editWithdrawal: string } | { deleteWithdrawal: string };
+
+export function employeeHref(employee: string, drawer?: EmployeeDrawer): string {
+  const href = `${EMPLOYEES_HREF}/${employee}`;
+
+  if (drawer === undefined) return href;
+  if (typeof drawer === "string") return `${href}?${drawer}=1`;
+  if ("editWithdrawal" in drawer) {
+    return `${href}?${new URLSearchParams({ withdrawal: drawer.editWithdrawal })}`;
+  }
+
+  return `${href}?${new URLSearchParams({ deleteWithdrawal: drawer.deleteWithdrawal })}`;
+}

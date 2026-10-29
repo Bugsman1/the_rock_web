@@ -164,6 +164,34 @@ describe("test bags", () => {
     );
   });
 
+  it("refills the shipment form after the test bags, so they are never charged twice", async () => {
+    answer([firstPayment]);
+    server.use(
+      http.patch(`${API}/shipments/52/`, () => {
+        answer([firstPayment], "350.00", { bags_count: 8.5, test_bags_count: 1.5 });
+        return HttpResponse.json({});
+      }),
+    );
+    openShipment();
+    const form = messages.shipments.form;
+    const transportTotal = () =>
+      within(
+        screen.getByRole("button", { name: form.saveChanges }).closest("form") ?? document.body,
+      )
+        .getByText(form.transportTotal)
+        .nextElementSibling?.textContent?.replace(/\s/g, " ");
+
+    expect(await screen.findByLabelText(form.bagCount)).toHaveValue(10);
+    expect(transportTotal()).toBe("3 200");
+
+    const { user, dialog } = await openTestBags();
+    await user.type(dialog.getByLabelText(testBags.field), "1.5");
+    await user.click(dialog.getByRole("button", { name: testBags.submit }));
+
+    await waitFor(() => expect(screen.getByLabelText(form.bagCount)).toHaveValue(8.5));
+    expect(transportTotal()).toBe("3 200");
+  });
+
   it("clears the test bags with 0, putting them back into the current bags", async () => {
     answer([firstPayment], "350.00", { bags_count: 8.5, test_bags_count: 1.5 });
     let sent: unknown;

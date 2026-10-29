@@ -171,6 +171,7 @@ export function ShipmentScreen() {
         <h2 className="text-ink text-[18px] font-bold">{t("detailsTitle")}</h2>
         {canEdit ? (
           <EditShipmentForm
+            key={`${shipment.bagCount}-${shipment.testBags}`}
             shipment={shipment}
             customers={customers}
             projects={projects}

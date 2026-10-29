@@ -300,6 +300,9 @@ describe("skeletonShapeFor", () => {
     expect(skeletonShapeFor("/ar/milling/projects/3/machines/7")).toBe("detail");
     expect(skeletonShapeFor("/ar/shipments")).toBe("cards");
     expect(skeletonShapeFor("/ar/settings")).toBe("cards");
+    expect(skeletonShapeFor("/ar/employees")).toBe("cards");
+    expect(skeletonShapeFor("/ar/employees/projects/3")).toBe("table");
+    expect(skeletonShapeFor("/fr/employees/301")).toBe("detail");
   });
 
   it("draws the project list for a role limited to one project, which opens its project directly", () => {
@@ -307,6 +310,7 @@ describe("skeletonShapeFor", () => {
     expect(skeletonShapeFor("/ar/settlements", true)).toBe("table");
     expect(skeletonShapeFor("/fr/milling", true)).toBe("table");
     expect(skeletonShapeFor("/ar/refining", true)).toBe("table");
+    expect(skeletonShapeFor("/ar/employees", true)).toBe("table");
     expect(skeletonShapeFor("/ar/inventory", true)).toBe("cards");
     expect(skeletonShapeFor("/ar/settings", true)).toBe("cards");
     expect(skeletonShapeFor("/ar/milling/projects/3/machines/7", true)).toBe("detail");

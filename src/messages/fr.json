@@ -808,6 +808,71 @@
       "refined": "Opérations d'affinage"
     }
   },
+  "employees": {
+    "title": "Employés et paie",
+    "noProjects": "Aucun projet en service",
+    "employeeCount": "Employés",
+    "totalOwed": "Dû aux employés",
+    "listTitle": "Employés",
+    "new": "Nouvel employé",
+    "empty": "Aucun employé dans ce projet",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "editLabel": "Modifier {name}",
+    "deleteLabel": "Supprimer {name}",
+    "jobs": {
+      "manager": "Responsable",
+      "supervisor": "Superviseur",
+      "refiner": "Raffineur"
+    },
+    "fields": {
+      "matricule": "Matricule",
+      "name": "Nom",
+      "job": "Poste",
+      "phone": "Téléphone",
+      "monthlySalary": "Salaire mensuel",
+      "startedOn": "Date d'embauche",
+      "earned": "Gagné à ce jour",
+      "withdrawn": "Retiré",
+      "balance": "Dû maintenant",
+      "amount": "Montant",
+      "date": "Date",
+      "time": "Heure",
+      "note": "Note",
+      "by": "Par",
+      "action": "Action"
+    },
+    "form": {
+      "newTitle": "Nouvel employé",
+      "editTitle": "Modifier l'employé",
+      "create": "Ajouter l'employé",
+      "save": "Enregistrer",
+      "saving": "Enregistrement..."
+    },
+    "errors": {
+      "salaryInvalid": "Saisissez un salaire supérieur à zéro",
+      "amountInvalid": "Saisissez un montant supérieur à zéro"
+    },
+    "remove": {
+      "title": "Supprimer l'employé",
+      "question": "Supprimer {name} ? Cette action est définitive.",
+      "confirm": "Supprimer",
+      "deleting": "Suppression...",
+      "failed": "La suppression a échoué"
+    },
+    "withdrawals": {
+      "title": "Historique des retraits",
+      "new": "Nouveau retrait",
+      "newTitle": "Nouveau retrait",
+      "editTitle": "Modifier le retrait",
+      "create": "Enregistrer le retrait",
+      "empty": "Aucun retrait",
+      "editLabel": "Modifier le retrait du {date}",
+      "deleteLabel": "Supprimer le retrait du {date}",
+      "removeTitle": "Supprimer le retrait",
+      "removeQuestion": "Supprimer le retrait de {amount} du {date} ? Cette action est définitive."
+    }
+  },
   "inventory": {
     "title": "Inventaire",
     "count": "Ressources : {count}",
@@ -1036,6 +1101,12 @@
     "customerDebtPaidOff": "Dette payée en totalité",
     "shipmentCancelled": "Expédition annulée",
     "testBagsSaved": "Sacs d'essai enregistrés",
-    "mercuryExtraAdded": "Mercure supplémentaire ajouté"
+    "mercuryExtraAdded": "Mercure supplémentaire ajouté",
+    "employeeAdded": "Employé ajouté",
+    "employeeUpdated": "Employé enregistré",
+    "employeeDeleted": "Employé supprimé",
+    "withdrawalAdded": "Retrait enregistré",
+    "withdrawalUpdated": "Retrait modifié",
+    "withdrawalDeleted": "Retrait supprimé"
   }
 }
