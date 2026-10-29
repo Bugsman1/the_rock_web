@@ -19,7 +19,7 @@ export function IconButton({
     <button
       type={type}
       aria-label={label}
-      className="rounded-field text-ink hover:bg-surface-hover inline-flex size-11 shrink-0 cursor-pointer items-center justify-center"
+      className="rounded-field text-ink hover:bg-surface-hover aria-pressed:bg-surface-hover inline-flex size-11 shrink-0 cursor-pointer items-center justify-center"
       {...props}
     >
       <Icon name={icon} {...(iconClassName === undefined ? {} : { className: iconClassName })} />

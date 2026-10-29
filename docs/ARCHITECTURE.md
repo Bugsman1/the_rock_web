@@ -44,7 +44,7 @@ the_rock_web/
 │  ├─ main.tsx                 ← fonts, styles, mounts the router
 │  ├─ global.d.ts              ← types use-intl: Locale + Messages from ar.json
 │  ├─ app/
-│  │  ├─ app.css               ← Tailwind, design tokens, custom utilities
+│  │  ├─ app.css               ← Tailwind, design tokens (light, and dark under `[data-theme="dark"]`), custom utilities
 │  │  ├─ router.tsx            ← every route, session guard + user loader, signed-in layout
 │  │  ├─ PageStates.tsx        ← page skeleton (`skeletonShapeFor`), first load, `PageError`
 │  │  └─ LocaleLayout.tsx      ← validates :locale, sets <html lang dir> + title, IntlProvider
@@ -201,6 +201,8 @@ Ported from `the_rock`, merged to save files:
 | `FieldError.tsx`       | `FieldError`, `FormError`, `useSaveFailure` + `SaveFailureMessage` (save failed / backend message / unknown outcome)                                                                                                                           |
 | `LoadingDots.tsx`      | `LoadingDots`, `PageSkeleton({ label, shape })`                                                                                                                                                                                                |
 
+`ThemeToggle.tsx`: the dark mode switch (moon icon, `aria-pressed` while dark).
+
 Others: `ActionLink`, `Button`, `buttonClasses` (primary, secondary, danger), `ButtonLink`, `Checkbox`, `Combobox`, `DateField`,
 `fieldClasses`, `FieldLabel`, `Icon`, `IconButton`, `LanguageSwitcher`, `Pagination`,
 `PasswordField`, `ReadOnlyField`, `Select` (`placeholder` is shown until a choice is made, never offered in the list), `Tabs`.
@@ -222,6 +224,7 @@ Others: `ActionLink`, `Button`, `buttonClasses` (primary, secondary, danger), `B
 | `api/connection.ts`                                      | Connection state: `isConnectionLost` (a request failed, the server answered 502/503/504, or the browser is offline), `reportResponse`, `reportConnectionFailure`, `subscribeToConnection`, `connectedFetch` (fails at once while the browser is offline, otherwise 15 s at most, `REQUEST_TIMEOUT_MS`)                                                                                              |
 | `api/pagination.ts`                                      | `PAGE_SIZE`, `MAX_PAGE_SIZE`, `Page`, `toPage`, `parsePageNumber`, `fetchAllPages`                                                                                                                                                                                                                                                                                                                  |
 | `api/schema.d.ts`                                        | Generated types (`npm run api:generate`), not linted or formatted                                                                                                                                                                                                                                                                                                                                   |
+| `theme.ts`                                               | `storedTheme` (light unless dark was chosen in this browser), `currentTheme`, `applyTheme` (`data-theme` on `<html>`, set in `main.tsx` before the first render), `storeTheme` (`localStorage`)                                                                                                                                                                                                     |
 | `access.ts`                                              | Modules, rights, `Access` (signed-in `userId`, `superuser`, rights), `rightsFromApi`, `accessFromApi`, `can`, `canOpen`, `homeHref`                                                                                                                                                                                                                                                                 |
 | `accessContext.ts`                                       | `AccessContext` (filled by the signed-in layout), `useAccess`, `useCan`                                                                                                                                                                                                                                                                                                                             |
 | `routes.ts`                                              | Every href and href builder                                                                                                                                                                                                                                                                                                                                                                         |
@@ -278,8 +281,8 @@ storage, grinding waiting, refining waiting), in progress blue (grinding, machin
 green (ground today, refined today, all refinings). Sidebar items
 are `text-ink` (the darkest text); the active one stays brand blue.
 
-**Top bar:** logo with the company name (wide screens), sidebar toggle; then language, notifications
-and the account button, all black and the same size. The account button shows only the user icon;
+**Top bar:** logo with the company name (wide screens), sidebar toggle; then language, dark mode
+(`ThemeToggle`, moon), notifications and the account button, all in the text colour and the same size. The account button shows only the user icon;
 it opens a menu with the name and role, "my profile" (`/settings/profile`) and log out
 (`useLogOut`, shared with the sidebar). Menus close on an outside click or Escape (`useDismiss`).
 Drawers and the PDF preview close with the `cancel` icon (28px).
@@ -294,6 +297,13 @@ in a drawer or on a page, ends with `DrawerActions` (save, then cancel; with typ
 `dirty` from `formState.isDirty`, cancel first asks "discard the changes?" — discard leaves without
 saving, keep editing goes back to the form; only the cancel button asks): stuck to the bottom in a
 drawer, in place at the end of the page form (new and edit shipment, `sticky={false}`).
+
+**Dark mode:** the moon in the top bar switches the whole app to dark and back; the choice is kept
+in this browser (`theme` in `localStorage`) and a first visit is light. Dark mode only redefines the
+colour tokens in `app.css` (surfaces, text, lines, brand and status shades, shadows), so every
+screen follows; status colours keep their meaning. Icons follow the text colour and turn light. The
+company logo, the PDFs and the login blue panel stay as they are. `index.html` paints the light
+background before the app loads, so a reload in dark mode can flash light for an instant.
 
 **Icons:** `src/icons` mixes Tabler (stroke) and Phosphor (fill) icons; every file uses
 `currentColor` so it follows the text colour. Clients use `users-four`; the close button of drawers and the PDF preview uses

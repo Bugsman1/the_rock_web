@@ -4,6 +4,7 @@ import logoUrl from "@/icons/logo_soukhour.svg";
 import { Icon } from "@/components/ui/Icon";
 import { IconButton } from "@/components/ui/IconButton";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useDismiss } from "@/components/ui/useDismiss";
 import { Link } from "@/i18n/navigation";
 import { SETTINGS_PROFILE_HREF } from "@/lib/routes";
@@ -131,6 +132,7 @@ export function TopBar({
 
       <div className="flex flex-1 items-center justify-end gap-2">
         <LanguageSwitcher label={common("language")} />
+        <ThemeToggle label={t("darkMode")} />
         <IconButton icon="bell" label={t("notifications")} />
         <UserMenu name={userName} role={roleLabel(roleName, (name) => roles(name))} />
       </div>

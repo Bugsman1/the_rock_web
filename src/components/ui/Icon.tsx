@@ -26,6 +26,7 @@ import LogoutIcon from "@/icons/logout.svg?react";
 import MenuIcon from "@/icons/list.svg?react";
 import MillIcon from "@/icons/mill.svg?react";
 import MinusIcon from "@/icons/minus.svg?react";
+import MoonIcon from "@/icons/moon.svg?react";
 import PackagesIcon from "@/icons/packages.svg?react";
 import PencilIcon from "@/icons/pencil.svg?react";
 import PlayerPlayIcon from "@/icons/player-play.svg?react";
@@ -78,6 +79,7 @@ const glyphs = {
   menu: MenuIcon,
   mill: MillIcon,
   minus: MinusIcon,
+  moon: MoonIcon,
   packages: PackagesIcon,
   pencil: PencilIcon,
   "player-play": PlayerPlayIcon,
