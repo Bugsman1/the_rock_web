@@ -292,7 +292,8 @@ it opens a menu with the name and role, "my profile" (`/settings/profile`) and l
 Drawers and the PDF preview close with the `cancel` icon (28px).
 
 **Page headers and tables:** every page title is `PageTitle`; every table is a `DataTable` inside a
-`TablePanel`, with its search in the panel header; `PageLayout` takes optional
+`TablePanel`, with its search in the panel header; a table taller than 70% of the screen scrolls
+inside its panel (`max-h-[70dvh]`) with its header row always shown (sticky); `PageLayout` takes optional
 `stats` (a line of key numbers under the title, `PageStats`) and an optional back link. Used on a
 project's Shipments page, a client and a shipment. Table headers are grey (`bg-surface-page`), rows
 are 48px, numbers end-aligned, and `TableTotalRow` adds a total under the bags or amount column

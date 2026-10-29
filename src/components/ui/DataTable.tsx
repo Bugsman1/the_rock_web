@@ -3,7 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/cn";
 
 const tableHeadBase =
-  "bg-surface-page text-ink-muted px-4 py-2.5 text-[13px] font-bold whitespace-nowrap";
+  "bg-surface-page text-ink-muted sticky top-0 z-20 px-4 py-2.5 text-[13px] font-bold whitespace-nowrap after:border-line after:absolute after:inset-x-0 after:bottom-0 after:border-b-[1.5px]";
 
 const tableHeadClasses = `${tableHeadBase} text-start`;
 
@@ -107,7 +107,7 @@ export function DataTable<Row>({
     total === undefined ? -1 : columns.findIndex((column) => column.key === total.column);
 
   return (
-    <div className="overflow-x-auto">
+    <div className="isolate max-h-[70dvh] overflow-auto">
       <table className="w-full border-collapse">
         <thead className="bg-surface-page">
           <tr className="border-line border-b-[1.5px]">
