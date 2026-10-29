@@ -509,7 +509,7 @@ grinding).
 (`grinding_operation`, also returned in responses). The form first shows the grinding read-only (shipment, client,
 project, machine, operator, bags ground, start, end). A refining always covers exactly the bags of its
 grinding (no bags input; the backend sets `bags_count` itself). Form fields: worker, date, weight
-before and after, gold with material and gold without material (without strictly less than with, checked
+before and after, gold with material and gold without material (without strictly less than with, or both 0, checked
 as soon as either is typed; without ≤ weight before; weight after may be more than before, backend
 `ee051b3`), loss reason (one of the fixed reasons, "no loss" not offered, stored as a key such as `arghawa` and shown
 in the reader's language; older free-text reasons are shown as typed) and notes. There is no "extracted gold": no input and no column in the refinings table;

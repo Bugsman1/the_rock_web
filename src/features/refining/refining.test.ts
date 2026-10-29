@@ -205,6 +205,10 @@ describe("createRefiningSchema", () => {
       goldWithoutMaterial: "without too heavy",
     });
   });
+
+  it("takes gold with and without material both at 0", () => {
+    expect(errorsOf({ ...values, goldWithMaterial: 0, goldWithoutMaterial: 0 })).toEqual({});
+  });
 });
 
 describe("refiningToApi", () => {

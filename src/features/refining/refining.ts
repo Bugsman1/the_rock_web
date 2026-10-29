@@ -143,7 +143,8 @@ export function createRefiningSchema(messages: {
       (values) =>
         !Number.isFinite(values.goldWithoutMaterial) ||
         !Number.isFinite(values.goldWithMaterial) ||
-        values.goldWithoutMaterial < values.goldWithMaterial,
+        values.goldWithoutMaterial < values.goldWithMaterial ||
+        (values.goldWithoutMaterial === 0 && values.goldWithMaterial === 0),
       {
         path: ["goldWithoutMaterial"],
         message: messages.withoutMaterialTooHeavy,
