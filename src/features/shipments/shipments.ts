@@ -15,10 +15,6 @@ type TransportCostInput = {
   passengerFare: number;
 };
 
-export function transportedBags(bagCount: number, testBags: number): number {
-  return amountOrZero(bagCount) + testBags;
-}
-
 export function bagsCost(bagCount: number, bagFare: number): number {
   return amountOrZero(bagCount) * amountOrZero(bagFare);
 }
@@ -57,6 +53,7 @@ type ValidationMessages = {
   passengerFareRequired: string;
   paymentTooHigh: string;
   totalBelowPaid: string;
+  bagsBelowTest: string;
 };
 
 export function createNewShipmentSchema(
@@ -114,10 +111,11 @@ export function createNewShipmentSchema(
       { path: ["passengerFare"], message: messages.passengerFareRequired, when: () => true },
     )
     .superRefine((values, context) => {
-      const total = transportTotal({
-        ...values,
-        bagCount: transportedBags(values.bagCount, testBags),
-      });
+      const total = transportTotal(values);
+
+      if (testBags > 0 && values.bagCount <= testBags) {
+        context.addIssue({ code: "custom", path: ["bagCount"], message: messages.bagsBelowTest });
+      }
 
       if (amountOrZero(values.currentPayment) > total) {
         context.addIssue({
@@ -178,16 +176,17 @@ export function isShipmentField(value: string): value is ShipmentField {
 type ShipmentTarget = {
   customerId: string;
   arrivedAt: IsoTimestamp;
+  testBags?: number;
 };
 
 export function shipmentToApi(
   values: NewShipmentValues,
-  { customerId, arrivedAt }: ShipmentTarget,
+  { customerId, arrivedAt, testBags = 0 }: ShipmentTarget,
 ) {
   return {
     customer: Number(customerId),
     arrival_date: arrivedAt,
-    bags_count: values.bagCount,
+    bags_count: values.bagCount - testBags,
     bag_transport_cost_per_bag: toMoneyDecimal(values.bagFare),
     passengers_count: amountOrZero(values.passengerCount),
     passenger_transport_cost_per_person: toMoneyDecimal(amountOrZero(values.passengerFare)),

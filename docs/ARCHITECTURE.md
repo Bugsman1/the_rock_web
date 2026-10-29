@@ -438,10 +438,11 @@ shipment is created, from the "test bags" popup: they are taken out of the curre
 total stays the same. 0 (clears them), whole or half bags, and fewer than the
 total; the backend refuses fewer current bags than are already in grinding (its message on the
 field). The first section shows current bags, test bags and total bags. Transport is charged on the
-total (current + test), as the backend does: the record's `transportTotal`, the edit form's
-transport cost and its "not below what was paid" check (`transportedBags`). Once test bags are saved the page
-reloads and the edit form is rebuilt from the saved bags (keyed on bags and test bags), so the test
-bags are never added twice.
+total (current + test), as the backend does (the record's `transportTotal`). The edit form's
+"number of bags" is that total, test bags included: its transport, unloading and "not below what was
+paid" check use it as typed, it must stay above the test bags (`bagsBelowTest`), and saving sends
+`bags_count` = that number less the test bags (`shipmentToApi` with `testBags`). The form is rebuilt
+from the saved values whenever the bags or test bags change (keyed on both).
 
 **Workflow:** the new-shipment form has no status field; a new shipment is `pending` and listed on
 its project's Shipments page with "start grinding", which opens the grinding form there and then

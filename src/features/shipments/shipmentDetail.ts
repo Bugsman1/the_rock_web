@@ -2,7 +2,7 @@ import type { ApiSchema } from "@/lib/api/client";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { fromDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
-import { shipmentFromApi } from "@/lib/shipments";
+import { shipmentFromApi, totalBags } from "@/lib/shipments";
 import type { ShipmentRecord } from "@/lib/shipments";
 import type { NewShipmentValues, transportMethodKeys } from "./shipments";
 
@@ -84,7 +84,7 @@ export function shipmentFormValues(shipment: ShipmentDetail): NewShipmentValues 
     phone: shipment.phone,
     arrivalDate: todayAsInputValue(arrivedAt),
     arrivalTime: nowAsTimeValue(arrivedAt),
-    bagCount: shipment.bagCount,
+    bagCount: totalBags(shipment),
     transportMethod: shipment.transportMethod,
     source: shipment.source,
     bagFare: shipment.bagFare,

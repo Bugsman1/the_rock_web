@@ -164,7 +164,7 @@ describe("test bags", () => {
     );
   });
 
-  it("refills the shipment form after the test bags, so they are never charged twice", async () => {
+  it("keeps the full bag count in the form after the test bags, so they are never charged twice", async () => {
     answer([firstPayment]);
     server.use(
       http.patch(`${API}/shipments/52/`, () => {
@@ -188,8 +188,33 @@ describe("test bags", () => {
     await user.type(dialog.getByLabelText(testBags.field), "1.5");
     await user.click(dialog.getByRole("button", { name: testBags.submit }));
 
-    await waitFor(() => expect(screen.getByLabelText(form.bagCount)).toHaveValue(8.5));
+    await waitFor(() => expect(fact(detail.testBags)).toBe("1,5"));
+    expect(screen.getByLabelText(form.bagCount)).toHaveValue(10);
     expect(transportTotal()).toBe("3 200");
+  });
+
+  it("edits the full bag count and sends the bags left once the test bags are taken out", async () => {
+    answer([firstPayment], "350.00", { bags_count: 8.5, test_bags_count: 1.5 });
+    let sent: unknown;
+    server.use(
+      http.patch(`${API}/shipments/52/`, async ({ request }) => {
+        sent = await request.json();
+        return HttpResponse.json({});
+      }),
+    );
+    const user = userEvent.setup();
+    openShipment();
+    const form = messages.shipments.form;
+
+    const bags = await screen.findByLabelText(form.bagCount);
+    expect(bags).toHaveValue(10);
+    await user.clear(bags);
+    await user.type(bags, "12");
+    await user.click(screen.getByRole("button", { name: form.saveChanges }));
+
+    await screen.findByRole("heading", { name: "project shipments" });
+    expect(sent).toMatchObject({ bags_count: 10.5 });
+    expect(sent).not.toHaveProperty("test_bags_count");
   });
 
   it("clears the test bags with 0, putting them back into the current bags", async () => {

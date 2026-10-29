@@ -95,6 +95,7 @@ export async function createShipment(
 
 export async function updateShipment(
   shipmentId: string,
+  testBags: number,
   values: NewShipmentValues,
   phoneTaken: (owner: string) => string,
 ): Promise<SaveShipmentResult> {
@@ -112,7 +113,7 @@ export async function updateShipment(
 
   const { response, error } = await apiClient.PATCH("/api/v1/shipments/{id}/", {
     params: { path: { id: Number(shipmentId) } },
-    body: shipmentToApi(values, { customerId: customer.id, arrivedAt }),
+    body: shipmentToApi(values, { customerId: customer.id, arrivedAt, testBags }),
   });
 
   return saveOutcome(response, error, shipmentErrorsFromApi);

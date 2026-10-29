@@ -8,7 +8,6 @@ import {
   shipmentToApi,
   newShipmentToApi,
   transportTotal,
-  transportedBags,
   createNewShipmentSchema,
   remainingToPay,
 } from "./shipments";
@@ -104,6 +103,7 @@ describe("backend form", () => {
       passengerFareRequired: "fare required",
       paymentTooHigh: "too high",
       totalBelowPaid: "below paid",
+      bagsBelowTest: "below test",
     });
     const issues = (currentPayment: number) =>
       (schema.safeParse({ ...values, phone: "46109325", currentPayment }).error?.issues ?? []).map(
@@ -206,6 +206,7 @@ describe("backend form", () => {
           passengerFareRequired: "fare required",
           paymentTooHigh: "too high",
           totalBelowPaid: "below paid",
+          bagsBelowTest: "below test",
         },
         3000,
       );
@@ -219,7 +220,7 @@ describe("backend form", () => {
       ).toEqual([["bagFare", "below paid"]]);
     });
 
-    it("counts the test bags in the transport, so moving bags to test keeps it paid", () => {
+    it("takes the bag count with its test bags, and sends the bags left to grind", () => {
       const messages = {
         required: "required",
         bagCountInvalid: "bags",
@@ -231,13 +232,23 @@ describe("backend form", () => {
         passengerFareRequired: "fare required",
         paymentTooHigh: "too high",
         totalBelowPaid: "below paid",
+        bagsBelowTest: "below test",
       };
-      const edited = { ...values, bagCount: 10, currentPayment: Number.NaN };
+      const edited = { ...values, bagCount: 20, currentPayment: Number.NaN };
+      const issues = (bagCount: number) =>
+        createNewShipmentSchema(messages, 0, 10)
+          .safeParse({ ...edited, bagCount })
+          .error?.issues.map((issue) => [issue.path.join("."), issue.message]);
 
-      expect(createNewShipmentSchema(messages, 3000, 6).safeParse(edited).success).toBe(true);
-      expect(createNewShipmentSchema(messages, 3000).safeParse(edited).success).toBe(false);
-      expect(transportedBags(10, 6)).toBe(16);
-      expect(transportedBags(Number.NaN, 1.5)).toBe(1.5);
+      expect(issues(20)).toBeUndefined();
+      expect(issues(10)).toEqual([["bagCount", "below test"]]);
+      expect(
+        shipmentToApi(edited, {
+          customerId: "7",
+          arrivedAt: "2026-10-10T08:30:00.000Z",
+          testBags: 10,
+        }),
+      ).toMatchObject({ bags_count: 10, bag_transport_cost_per_bag: "200" });
     });
 
     it("leaves the rest of the transport total to pay", () => {

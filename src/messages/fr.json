@@ -394,6 +394,7 @@
         "phoneTaken": "Ce numéro appartient au client {name}",
         "paymentTooHigh": "Ne peut pas dépasser le total du transport",
         "totalBelowPaid": "Le total du transport ne peut pas être inférieur au montant payé ({paid}).",
+        "bagsBelowTest": "Le nombre de sacs doit dépasser les sacs de test ({testBags})",
         "passengerFareRequired": "Saisissez le prix par passager : l'expédition a des passagers"
       },
       "mill": "Projet",

@@ -27,7 +27,7 @@ export function ShipmentDetails({
           { label: t("customerName"), value: shipment.customerName },
           { label: t("phone"), value: shipment.phone },
           { label: t("arrivalDate"), value: formatDateTime(shipment.arrivedAt, locale) },
-          { label: t("bagCount"), value: formatCount(shipment.bagCount, locale) },
+          { label: t("bagCount"), value: formatCount(totalBags(shipment), locale) },
           { label: t("transportMethod"), value: transports(shipment.transportMethod) },
           { label: t("source"), value: shipment.source },
           ...(shipment.unloadingFare === undefined

@@ -7,7 +7,7 @@ import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { useToast } from "@/components/ui/Toast";
 import { useReplace } from "@/i18n/navigation";
 import type { Customer } from "@/lib/customers";
-import { formatMoney } from "@/lib/format";
+import { formatCount, formatMoney } from "@/lib/format";
 import type { Project } from "@/lib/projects";
 import { createNewShipmentSchema, isShipmentField, transportMethodKeys } from "./shipments";
 import type { NewShipmentValues } from "./shipments";
@@ -132,6 +132,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
           passengerFareRequired: t("errors.passengerFareRequired"),
           paymentTooHigh: t("errors.paymentTooHigh"),
           totalBelowPaid: t("errors.totalBelowPaid", { paid: formatMoney(paid, locale) }),
+          bagsBelowTest: t("errors.bagsBelowTest", { testBags: formatCount(testBags, locale) }),
         },
         paid,
         testBags,
@@ -157,7 +158,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
     const phoneTaken = (name: string) => t("errors.phoneTaken", { name });
 
     if (mode.kind === "edit") {
-      const result = await updateShipment(mode.shipmentId, values, phoneTaken);
+      const result = await updateShipment(mode.shipmentId, mode.testBags, values, phoneTaken);
 
       if (result.ok) {
         toast(toasts("shipmentUpdated"));
@@ -202,7 +203,6 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
         <TransportCostFields
           form={form}
           paid={mode.kind === "edit" ? mode.paid : undefined}
-          testBags={testBags}
           showDebt={mode.kind === "create"}
         />
         <DestinationFields form={form} projects={projects} />
