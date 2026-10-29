@@ -187,11 +187,35 @@ describe("RefiningScreen", () => {
     expect(panel(text.operationsTitle).getByText("SH-3")).toBeVisible();
   });
 
+  it("shows a gold weighed at 0 as 0, and one not weighed yet as a dash", async () => {
+    server.use(
+      http.get(`${API}/refining-operations/`, () =>
+        page([
+          { ...refined, gold_weight_with_mercury: "0.000", gold_weight_without_mercury: "0.000" },
+          { ...refined, id: 10, gold_weight_without_mercury: null },
+        ]),
+      ),
+    );
+    openAt("/fr/refining/projects/3");
+
+    const rowLinks = await screen.findAllByRole("link", {
+      name: text.editLabel.replace("{shipment}", "SH-3"),
+    });
+    const goldOf = (id: number) => {
+      const row = rowLinks.find((link) => link.getAttribute("href")?.endsWith(`edit=${id}`));
+
+      return within(row?.closest("tr") ?? document.body).getAllByRole("cell")[9]?.textContent;
+    };
+
+    expect(goldOf(9)).toBe("0");
+    expect(goldOf(10)).toBe("—");
+  });
+
   it("opens a refining from its row to add the gold without material later", async () => {
     let sent: unknown;
     server.use(
       http.get(`${API}/refining-operations/`, () =>
-        page([{ ...refined, gold_weight: "0.000", gold_weight_without_mercury: "0.000" }]),
+        page([{ ...refined, gold_weight_without_mercury: null }]),
       ),
       http.patch(`${API}/refining-operations/9/`, async ({ request }) => {
         sent = await request.json();
@@ -205,19 +229,13 @@ describe("RefiningScreen", () => {
       name: text.editLabel.replace("{shipment}", "SH-3"),
     });
     expect(row).toHaveAttribute("href", "/fr/refining/projects/3?edit=9");
-    expect(
-      within(row.closest("tr") ?? document.body)
-        .getAllByRole("cell")
-        .map((cell) => cell.textContent),
-    ).toContain("0");
     await user.click(row);
 
     const dialog = within(await screen.findByRole("dialog", { name: text.editTitle }));
     expect(dialog.getByLabelText(text.fields.worker)).toHaveValue("4");
     expect(dialog.getByLabelText(text.fields.weightBefore)).toHaveAttribute("readonly");
-    expect(dialog.getByLabelText(text.fields.goldWithoutMaterial)).toHaveValue(0);
+    expect(dialog.getByLabelText(text.fields.goldWithoutMaterial)).toHaveValue(null);
 
-    await user.clear(dialog.getByLabelText(text.fields.goldWithoutMaterial));
     await user.type(dialog.getByLabelText(text.fields.goldWithoutMaterial), "14.3");
     await user.click(dialog.getByRole("button", { name: text.form.saveChanges }));
 
@@ -225,7 +243,6 @@ describe("RefiningScreen", () => {
       expect(sent).toEqual({
         worker: 4,
         weight_after: "118.250",
-        gold_weight: "14.300",
         gold_weight_with_mercury: "20.000",
         gold_weight_without_mercury: "14.300",
         loss_reason: "arghawa",

@@ -22,7 +22,6 @@ const apiOperation = {
   weight_before: "120.500",
   weight_after: "118.250",
   weight_loss: "2.250",
-  gold_weight: "14.300",
   loss_reason: "",
   notes: "",
   created_at: "2026-10-12T10:00:00Z",

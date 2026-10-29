@@ -212,7 +212,7 @@ describe("createRefiningSchema", () => {
 });
 
 describe("refiningToApi", () => {
-  it("sends the gold without material as the extracted gold, leaving bags and loss to the backend", () => {
+  it("sends the golds, leaving bags and loss to the backend", () => {
     expect(
       refiningToApi(values, { grindingOperationId: "5", refinedAt: "2026-10-12T09:30:00.000Z" }),
     ).toEqual({
@@ -221,7 +221,6 @@ describe("refiningToApi", () => {
       refining_date: "2026-10-12T09:30:00.000Z",
       weight_before: "120.500",
       weight_after: "118.250",
-      gold_weight: "14.300",
       gold_weight_with_mercury: "20.000",
       gold_weight_without_mercury: "14.300",
       loss_reason: "normalShortage",
@@ -266,16 +265,19 @@ describe("refiningLoss", () => {
 describe("editing a refining", () => {
   const saved = refining("3");
 
-  it("sends only what can change after the refining was recorded, an empty gold as 0", () => {
+  it("sends only what can change after the refining was recorded, an empty gold as not weighed", () => {
     expect(refiningUpdateToApi({ ...values, goldWithoutMaterial: Number.NaN })).toEqual({
       worker: Number(values.workerId),
       weight_after: toDecimal(values.weightAfter),
-      gold_weight: "0.000",
       gold_weight_with_mercury: toDecimal(values.goldWithMaterial),
-      gold_weight_without_mercury: "0.000",
+      gold_weight_without_mercury: null,
       loss_reason: values.lossReason,
       notes: values.notes,
     });
+    expect(
+      refiningUpdateToApi({ ...values, goldWithMaterial: 0, goldWithoutMaterial: 0 })
+        .gold_weight_without_mercury,
+    ).toBe("0.000");
   });
 
   it("fills the form with the refining as saved, its worker found by name and a gold of 0", () => {
@@ -286,5 +288,8 @@ describe("editing a refining", () => {
     expect(form.workerId).toBe("4");
     expect(form.goldWithoutMaterial).toBe(0);
     expect(form.weightAfter).toBe(saved.weightAfter);
+    expect(
+      refiningFormValues({ ...saved, goldWithoutMaterial: undefined }, []).goldWithoutMaterial,
+    ).toBeNaN();
   });
 });

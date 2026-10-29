@@ -68,20 +68,20 @@ describe("shipments to settle", () => {
     ).toEqual(["1", "3"]);
   });
 
-  it("holds back a shipment until every refining of it has its gold without material", () => {
+  it("holds back a shipment until every refining of it has its gold weighed, 0 included", () => {
     const withGold = shipmentRecord({ id: "5", shipmentNumber: "SHP-00005" });
     const missingGold = shipmentRecord({ id: "6", shipmentNumber: "SHP-00006" });
     const refinings = [
       refiningOf("SHP-00005", 3.5),
       refiningOf("SHP-00006", 2),
-      refiningOf("SHP-00006", 0),
+      refiningOf("SHP-00006", undefined),
     ];
 
     expect(settleableShipments([withGold, missingGold], [], refinings).map(({ id }) => id)).toEqual(
       ["5"],
     );
     expect(
-      settleableShipments([missingGold], [], [refiningOf("SHP-00006", 2)]).map(({ id }) => id),
+      settleableShipments([missingGold], [], [refiningOf("SHP-00006", 0)]).map(({ id }) => id),
     ).toEqual(["6"]);
   });
 

@@ -37,11 +37,11 @@ function answerShipments() {
 }
 
 describe("SettlementProjectScreen", () => {
-  it("holds back a finished shipment until its gold without material is entered", async () => {
+  it("holds back a finished shipment until its gold without material is weighed", async () => {
     answerShipments();
     server.use(
       http.get(`${API}/refining-operations/`, () =>
-        page([apiRefiningOf(1, "SHP-00003", "0.000"), apiRefiningOf(2, "SHP-00003", "1.500")]),
+        page([apiRefiningOf(1, "SHP-00003", null), apiRefiningOf(2, "SHP-00003", "1.500")]),
       ),
     );
     openAt("/fr/settlements/projects/3");

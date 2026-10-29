@@ -513,7 +513,7 @@ before and after, gold with material and gold without material (without strictly
 as soon as either is typed; without ≤ weight before; weight after may be more than before, backend
 `ee051b3`), loss reason (one of the fixed reasons, "no loss" not offered, stored as a key such as `arghawa` and shown
 in the reader's language; older free-text reasons are shown as typed) and notes. There is no "extracted gold": no input and no column in the refinings table;
-`gold_weight` is still sent, equal to the gold without material. The backend's `gold_weight_with_mercury` / `_without_mercury` are shown
+The backend's `gold_weight_with_mercury` / `_without_mercury` are shown
 as "with / without material". Every weight is entered and shown in grams. The weight before is filled with all the mercury of the grinding, the extra included (`mercury.total`), and is read-only (the backend sets `weight_before` from the grinding's `total_mercury_quantity`); only a grinding recorded before mercury quantities (quantity 0) lets it be typed. A read-only input is shaded (`fieldClasses`). The loss is not typed: it is
 worked out as weight before less weight after (`refiningLoss`), shown read-only; the backend works out and stores the same `loss` itself, and its refusals (not
 enough material) show under that field. Only a real loss (weight after less than before, `hasLoss`)
@@ -521,8 +521,9 @@ shows the loss and asks its reason. When more comes back, the form shows "surplu
 with no reason, and `loss_reason` is sent empty; the backend stores a negative `loss` and returns the
 whole weight after to the stock, so the surplus goes into the Mercury stock. When the loss is 0
 nothing is shown. A grinding operation counts as refined when a refining
-names its id (`refiningQueue`, oldest first). Gold without material is optional (empty is sent as 0;
-the table and the edit form show the backend's value as it is, 0 included) so it can be added later:
+names its id (`refiningQueue`, oldest first). Gold without material is optional (backend `d5dafa2`):
+left empty it is sent as `null`, "not weighed yet", shown "—" in the table and empty in the edit
+form; 0 is a gold weighed at 0 g, shown as 0. It can be added later:
 a refining's row opens it in the same form (`?edit=<id>`, `editRefiningHref`, refining edit right),
 pre-filled (`refiningFormValues`, the worker found by name), with its date and weight before read-only; it sends `PATCH` with the worker, weight
 after, golds, loss reason and notes only (`refiningUpdateToApi`). There is no delete.
@@ -539,7 +540,7 @@ loss in red, or its surplus (a negative `loss`) as "+grams surplus" in green.
 **Settlement pages:** `/settlements` shows a card per project in service with its finished shipments
 waiting for settlement and its settlements; it opens `/settlements/projects/<id>`, which lists that
 project's `completed` shipments no settlement holds yet and whose every refining has its gold
-without material (above 0; `shipmentsAwaitingGold`, from `getRefiningOperations`, which settlement
+without material weighed (not `null`, 0 included; `shipmentsAwaitingGold`, from `getRefiningOperations`, which settlement
 roles may read): a shipment waits there until that gold is entered in its refining (number, customer, phone, arrival, bags,
 transport, debt; local search), each with "settle" (shipments add right) opening the new settlement
 on that customer and project, and below them the project's settlements (`?project=`, number search
@@ -676,8 +677,6 @@ employee with withdrawals) shows the backend's reason in the drawer.
   `manage.py spectacular` (employees, salaries and withdrawals, with start and withdrawal date and
   time), not from a running server; regenerate with `npm run api:generate` once that version is deployed.
 - Settlements still offer only completed shipments; the backend now also settles cancelled ones.
-- A shipment waiting for its gold without material is held back by the app only; the backend still
-  accepts it when its id is sent.
 - Only the debt and employee forms (new employee, raise, withdrawal) send an `Idempotency-Key`; they still lock after an unknown outcome like the
   other forms.
 - The notifications bell does nothing yet.

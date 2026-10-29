@@ -7,7 +7,7 @@ import {
   nowAsTimeValue,
   todayAsInputValue,
 } from "@/lib/datetime";
-import { amountOrZero, toDecimal } from "@/lib/format";
+import { toDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
 import type { ProjectId } from "@/lib/projects";
@@ -163,14 +163,13 @@ export type RefiningTarget = {
 };
 
 export function refiningUpdateToApi(values: RefiningValues) {
-  const goldWithoutMaterial = toDecimal(amountOrZero(values.goldWithoutMaterial));
-
   return {
     worker: Number(values.workerId),
     weight_after: toDecimal(values.weightAfter),
-    gold_weight: goldWithoutMaterial,
     gold_weight_with_mercury: toDecimal(values.goldWithMaterial),
-    gold_weight_without_mercury: goldWithoutMaterial,
+    gold_weight_without_mercury: Number.isFinite(values.goldWithoutMaterial)
+      ? toDecimal(values.goldWithoutMaterial)
+      : null,
     loss_reason: hasLoss(values) ? values.lossReason : "",
     notes: values.notes,
   };
@@ -198,7 +197,7 @@ export function refiningFormValues(
     weightBefore: refining.weightBefore,
     weightAfter: refining.weightAfter,
     goldWithMaterial: refining.goldWithMaterial,
-    goldWithoutMaterial: refining.goldWithoutMaterial,
+    goldWithoutMaterial: refining.goldWithoutMaterial ?? Number.NaN,
     lossReason: refining.lossReason,
     notes: refining.notes,
   };
@@ -210,7 +209,6 @@ export function refiningErrorsFromApi(errors: BackendFieldErrors): FieldErrors<R
     ...(errors.refining_date === undefined ? {} : { date: errors.refining_date }),
     ...(errors.weight_before === undefined ? {} : { weightBefore: errors.weight_before }),
     ...(errors.weight_after === undefined ? {} : { weightAfter: errors.weight_after }),
-    ...(errors.gold_weight === undefined ? {} : { goldWithoutMaterial: errors.gold_weight }),
     ...(errors.gold_weight_with_mercury === undefined
       ? {}
       : { goldWithMaterial: errors.gold_weight_with_mercury }),

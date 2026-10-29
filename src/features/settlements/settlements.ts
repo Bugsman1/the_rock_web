@@ -77,7 +77,7 @@ export function shipmentsAwaitingGold(
 ): ReadonlySet<string> {
   return new Set(
     refinings
-      .filter((refining) => refining.goldWithoutMaterial <= 0)
+      .filter((refining) => refining.goldWithoutMaterial === undefined)
       .map((refining) => refining.shipmentNumber),
   );
 }

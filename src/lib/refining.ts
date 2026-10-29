@@ -18,7 +18,7 @@ export type RefiningOperation = {
   weightBefore: number;
   weightAfter: number;
   goldWithMaterial: number;
-  goldWithoutMaterial: number;
+  goldWithoutMaterial: number | undefined;
   loss: number;
   lossReason: string;
   notes: string;
@@ -27,6 +27,8 @@ export type RefiningOperation = {
 export function refiningOperationFromApi(
   operation: ApiSchema<"RefiningOperation">,
 ): RefiningOperation {
+  const goldWithoutMaterial = operation.gold_weight_without_mercury ?? undefined;
+
   return {
     id: String(operation.id),
     grindingOperationId: String(operation.grinding_operation),
@@ -41,7 +43,8 @@ export function refiningOperationFromApi(
     weightBefore: fromDecimal(operation.weight_before ?? "0"),
     weightAfter: fromDecimal(operation.weight_after),
     goldWithMaterial: fromDecimal(operation.gold_weight_with_mercury ?? "0"),
-    goldWithoutMaterial: fromDecimal(operation.gold_weight_without_mercury ?? "0"),
+    goldWithoutMaterial:
+      goldWithoutMaterial === undefined ? undefined : fromDecimal(goldWithoutMaterial),
     loss: fromDecimal(operation.loss),
     lossReason: operation.loss_reason ?? "",
     notes: operation.notes ?? "",

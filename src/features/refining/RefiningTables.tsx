@@ -194,7 +194,7 @@ export function RefiningOperationsTable({
       quantity(operation.goldWithMaterial),
     ),
     weight("goldWithoutMaterial", t("fields.goldWithoutMaterial"), (operation) =>
-      quantity(operation.goldWithoutMaterial),
+      operation.goldWithoutMaterial === undefined ? "—" : quantity(operation.goldWithoutMaterial),
     ),
     weight("loss", t("fields.loss"), (operation) => quantity(operation.loss)),
     {

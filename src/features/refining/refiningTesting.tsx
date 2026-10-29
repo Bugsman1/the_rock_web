@@ -85,7 +85,6 @@ export const refined = {
   weight_before: "120.500",
   weight_after: "118.250",
   weight_loss: "2.250",
-  gold_weight: "14.300",
   gold_weight_with_mercury: "20.000",
   gold_weight_without_mercury: "14.300",
   loss: "0.500",

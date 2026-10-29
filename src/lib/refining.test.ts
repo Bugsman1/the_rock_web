@@ -15,7 +15,6 @@ const apiOperation = {
   weight_before: "120.500",
   weight_after: "118.250",
   weight_loss: "2.250",
-  gold_weight: "14.300",
   gold_weight_with_mercury: "20.000",
   gold_weight_without_mercury: "14.300",
   loss: "0.500",
@@ -48,7 +47,7 @@ describe("refiningOperationFromApi", () => {
     });
   });
 
-  it("falls back to the recording time, zero weights and empty texts", () => {
+  it("falls back to the recording time, no gold weighed yet and empty texts", () => {
     const {
       refining_date: _date,
       loss_reason: _reason,
@@ -61,9 +60,20 @@ describe("refiningOperationFromApi", () => {
     expect(refiningOperationFromApi(bare)).toMatchObject({
       refinedAt: "2026-10-12T10:00:00Z",
       goldWithMaterial: 0,
-      goldWithoutMaterial: 0,
+      goldWithoutMaterial: undefined,
       lossReason: "",
       notes: "",
     });
+  });
+
+  it("tells a gold not weighed yet from a gold weighed at 0", () => {
+    expect(
+      refiningOperationFromApi({ ...apiOperation, gold_weight_without_mercury: null })
+        .goldWithoutMaterial,
+    ).toBeUndefined();
+    expect(
+      refiningOperationFromApi({ ...apiOperation, gold_weight_without_mercury: "0.000" })
+        .goldWithoutMaterial,
+    ).toBe(0);
   });
 });

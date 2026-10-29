@@ -181,9 +181,12 @@ export function cellsOf(row: HTMLElement | undefined) {
     .map((cell) => cell.textContent);
 }
 
-export function refiningOf(shipmentNumber: string, goldWithoutMaterial: number): RefiningOperation {
+export function refiningOf(
+  shipmentNumber: string,
+  goldWithoutMaterial: number | undefined,
+): RefiningOperation {
   return {
-    id: `${shipmentNumber}-${goldWithoutMaterial}`,
+    id: `${shipmentNumber}-${goldWithoutMaterial ?? "unweighed"}`,
     grindingOperationId: "1",
     shipmentNumber,
     client: "Ahmed",
@@ -203,7 +206,11 @@ export function refiningOf(shipmentNumber: string, goldWithoutMaterial: number):
   };
 }
 
-export function apiRefiningOf(id: number, shipmentNumber: string, goldWithoutMaterial: string) {
+export function apiRefiningOf(
+  id: number,
+  shipmentNumber: string,
+  goldWithoutMaterial: string | null,
+) {
   return {
     id,
     grinding_operation: id,
@@ -216,7 +223,6 @@ export function apiRefiningOf(id: number, shipmentNumber: string, goldWithoutMat
     refining_date: "2026-10-05T08:00:00Z",
     weight_before: "120.000",
     weight_after: "118.000",
-    gold_weight: goldWithoutMaterial,
     gold_weight_with_mercury: "5.000",
     gold_weight_without_mercury: goldWithoutMaterial,
     loss: "2.000",

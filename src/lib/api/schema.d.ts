@@ -1204,7 +1204,8 @@ export interface paths {
         };
         /**
          * @description The gold extracted from the shipment without mercury (g): the sum over the active
-         *     refinings of its active grinding operations.
+         *     refinings of its active grinding operations whose gold is weighed, and how many are
+         *     not weighed yet.
          */
         get: operations["shipments_gold_retrieve"];
         put?: never;
@@ -2313,7 +2314,7 @@ export interface components {
              * Gold weight without mercury (g)
              * Format: decimal
              */
-            gold_weight_without_mercury?: string;
+            gold_weight_without_mercury?: string | null;
             /** Format: decimal */
             loss?: $Read<string>;
             /** Reason of loss */
@@ -2578,7 +2579,7 @@ export interface components {
              * Gold weight without mercury (g)
              * Format: decimal
              */
-            gold_weight_without_mercury?: string;
+            gold_weight_without_mercury?: string | null;
             /** Format: decimal */
             loss: $Read<string>;
             /** Reason of loss */
@@ -2834,6 +2835,7 @@ export interface components {
             shipment: number;
             shipment_number: string;
             refining_operations: number;
+            unweighed_refining_operations: number;
             /** Format: decimal */
             gold_weight_without_mercury: string;
         };
