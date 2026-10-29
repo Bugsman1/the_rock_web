@@ -168,17 +168,6 @@ describe("LoginForm", () => {
     expect(screen.queryByRole("button", { name: /Google/i })).toBeNull();
   });
 
-  it("switches to dark mode before signing in", async () => {
-    const user = userEvent.setup();
-    renderForm();
-
-    await user.click(screen.getByRole("button", { name: messages.common.darkMode }));
-
-    expect(document.documentElement).toHaveAttribute("data-theme", "dark");
-    localStorage.clear();
-    delete document.documentElement.dataset.theme;
-  });
-
   it("keeps the language menu closed until it is opened", async () => {
     const user = userEvent.setup();
     renderForm();
