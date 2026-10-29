@@ -1,16 +1,18 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { useTranslations } from "use-intl";
+import { useLocale, useTranslations } from "use-intl";
 import { DateField } from "@/components/ui/DateField";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
-import { Select } from "@/components/ui/Select";
-import { TextField } from "@/components/ui/TextField";
+import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
+import { TextField, TimeField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
+import { combineDateAndTime, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
+import { formatMoney } from "@/lib/format";
 import { PHONE_PLACEHOLDER, sanitizePhone } from "@/lib/phone";
 import type { ProjectId } from "@/lib/projects";
-import { createEmployeeSchema, employeeJobs, isEmployeeField } from "./employees";
+import { createEmployeeSchema, isEmployeeField } from "./employees";
 import type { Employee, EmployeeValues } from "./employees";
 import { createEmployee, updateEmployee } from "./employeesApi";
 
@@ -26,10 +28,12 @@ function defaultValues(employee: Employee | undefined): EmployeeValues {
     ? {
         matricule: "",
         name: "",
-        job: employeeJobs[0],
+        job: "",
         phone: "",
         monthlySalary: Number.NaN,
         startedOn: "",
+        startTime: "",
+        endedOn: "",
       }
     : {
         matricule: employee.matricule,
@@ -37,7 +41,9 @@ function defaultValues(employee: Employee | undefined): EmployeeValues {
         job: employee.job,
         phone: employee.phone,
         monthlySalary: employee.monthlySalary,
-        startedOn: employee.startedOn,
+        startedOn: todayAsInputValue(new Date(employee.startedAt)),
+        startTime: nowAsTimeValue(new Date(employee.startedAt)),
+        endedOn: employee.endedOn ?? "",
       };
 }
 
@@ -46,7 +52,9 @@ export function EmployeeForm({ project, employee, onSaved, onCancel }: EmployeeF
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
   const toast = useToast();
+  const locale = useLocale();
   const saveFailure = useSaveFailure();
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
 
   const schema = useMemo(
     () =>
@@ -54,7 +62,9 @@ export function EmployeeForm({ project, employee, onSaved, onCancel }: EmployeeF
         required: common("validation.required"),
         phoneInvalid: common("validation.phoneInvalid"),
         dateInvalid: common("validation.dateInvalid"),
+        timeInvalid: common("validation.timeInvalid"),
         salaryInvalid: t("errors.salaryInvalid"),
+        endBeforeStart: t("errors.endBeforeStart"),
       }),
     [t, common],
   );
@@ -74,10 +84,17 @@ export function EmployeeForm({ project, employee, onSaved, onCancel }: EmployeeF
 
     saveFailure.clear();
 
+    const startedAt = combineDateAndTime(values.startedOn, values.startTime);
+
+    if (startedAt === undefined) {
+      saveFailure.fail();
+      return;
+    }
+
     const result =
       employee === undefined
-        ? await createEmployee(project, values)
-        : await updateEmployee(employee.id, values);
+        ? await createEmployee(project, values, startedAt, idempotencyKey)
+        : await updateEmployee(employee.id, values, startedAt);
 
     if (result.ok) {
       toast(toasts(employee === undefined ? "employeeAdded" : "employeeUpdated"));
@@ -116,11 +133,11 @@ export function EmployeeForm({ project, employee, onSaved, onCancel }: EmployeeF
           {...register("name")}
         />
 
-        <Select
+        <TextField
           id="employee-job"
           label={t("fields.job")}
           required
-          options={employeeJobs.map((job) => ({ value: job, label: t(`jobs.${job}`) }))}
+          autoComplete="off"
           error={errors.job?.message}
           {...register("job")}
         />
@@ -145,17 +162,24 @@ export function EmployeeForm({ project, employee, onSaved, onCancel }: EmployeeF
           )}
         />
 
-        <TextField
-          id="employee-salary"
-          type="number"
-          min={0}
-          step="any"
-          inputMode="decimal"
-          label={t("fields.monthlySalary")}
-          required
-          error={errors.monthlySalary?.message}
-          {...register("monthlySalary", { valueAsNumber: true })}
-        />
+        {employee === undefined ? (
+          <TextField
+            id="employee-salary"
+            type="number"
+            min={0}
+            step="any"
+            inputMode="decimal"
+            label={t("fields.monthlySalary")}
+            required
+            error={errors.monthlySalary?.message}
+            {...register("monthlySalary", { valueAsNumber: true })}
+          />
+        ) : (
+          <ReadOnlyField
+            label={t("fields.monthlySalary")}
+            value={formatMoney(employee.monthlySalary, locale)}
+          />
+        )}
 
         <Controller
           control={control}
@@ -168,6 +192,36 @@ export function EmployeeForm({ project, employee, onSaved, onCancel }: EmployeeF
               pickerLabel={common("openCalendar")}
               placeholder={common("datePlaceholder")}
               error={errors.startedOn?.message}
+              {...field}
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="startTime"
+          render={({ field }) => (
+            <TimeField
+              id="employee-start-time"
+              label={t("fields.startTime")}
+              required
+              placeholder={common("timePlaceholder")}
+              error={errors.startTime?.message}
+              {...field}
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="endedOn"
+          render={({ field }) => (
+            <DateField
+              id="employee-ended-on"
+              label={t("fields.endedOn")}
+              pickerLabel={common("openCalendar")}
+              placeholder={common("datePlaceholder")}
+              error={errors.endedOn?.message}
               {...field}
             />
           )}

@@ -13,6 +13,7 @@ import { PageLayout, PageTitle } from "@/components/ui/PageHeader";
 import { TablePanel } from "@/components/ui/TablePanel";
 import { defaultLocale, isLocale } from "@/i18n/locales";
 import { localizedHref } from "@/i18n/navigation";
+import { useCan } from "@/lib/accessContext";
 import { cn } from "@/lib/cn";
 import { formatCount, formatDate, formatMoney } from "@/lib/format";
 import { isInService } from "@/lib/projects";
@@ -21,7 +22,7 @@ import { EMPLOYEES_HREF, employeeHref, employeesProjectHref } from "@/lib/routes
 import { matchesSearch } from "@/lib/search";
 import { DeleteDrawer } from "./DeleteDrawer";
 import { EmployeeForm } from "./EmployeeForm";
-import { projectEmployeesSummary } from "./employees";
+import { employeeCount } from "./employees";
 import type { Employee } from "./employees";
 import { deleteEmployee, getEmployees } from "./employeesApi";
 
@@ -44,7 +45,7 @@ export async function employeesLoader({ params }: LoaderFunctionArgs) {
     throw redirect(localizedHref(locale, employeesProjectHref(onlyProject.id)));
   }
 
-  const employees = await getEmployees(inService.map((project) => project.id));
+  const employees = await getEmployees();
 
   return { projects: inService, employees };
 }
@@ -65,25 +66,23 @@ export function EmployeesScreen() {
         </p>
       ) : (
         <CardGrid>
-          {projects.map((project) => {
-            const summary = projectEmployeesSummary(employees, project.id);
-
-            return (
-              <LinkCard
-                key={project.id}
-                title={common("projectTitle", { name: project.name })}
-                href={employeesProjectHref(project.id)}
-                linkLabel={common("openProject")}
-              >
-                <StatGrid
-                  stats={[
-                    { label: t("employeeCount"), value: formatCount(summary.count, locale) },
-                    { label: t("totalOwed"), value: formatMoney(summary.owed, locale) },
-                  ]}
-                />
-              </LinkCard>
-            );
-          })}
+          {projects.map((project) => (
+            <LinkCard
+              key={project.id}
+              title={common("projectTitle", { name: project.name })}
+              href={employeesProjectHref(project.id)}
+              linkLabel={common("openProject")}
+            >
+              <StatGrid
+                stats={[
+                  {
+                    label: t("employeeCount"),
+                    value: formatCount(employeeCount(employees, project.id), locale),
+                  },
+                ]}
+              />
+            </LinkCard>
+          ))}
         </CardGrid>
       )}
     </div>
@@ -96,7 +95,7 @@ export async function employeesProjectLoader({ params, request }: LoaderFunction
     requireProject(params.project ?? ""),
     getProjects(),
   ]);
-  const employees = await getEmployees([project.id]);
+  const employees = await getEmployees(project.id);
 
   return {
     project,
@@ -112,10 +111,11 @@ function EmployeesTable({ employees, query }: { employees: readonly Employee[]; 
   const t = useTranslations("employees");
   const common = useTranslations("common");
   const locale = useLocale();
+  const can = useCan();
   const visible = employees.filter((employee) =>
     matchesSearch(
       {
-        texts: [employee.name, employee.matricule, t(`jobs.${employee.job}`)],
+        texts: [employee.name, employee.matricule, employee.job],
         phone: employee.phone,
       },
       query,
@@ -140,7 +140,7 @@ function EmployeesTable({ employees, query }: { employees: readonly Employee[]; 
       key: "job",
       header: t("fields.job"),
       className: "text-ink-muted font-semibold",
-      cell: (employee) => t(`jobs.${employee.job}`),
+      cell: (employee) => <span dir="auto">{employee.job}</span>,
     },
     {
       key: "phone",
@@ -159,7 +159,7 @@ function EmployeesTable({ employees, query }: { employees: readonly Employee[]; 
       key: "startedOn",
       header: t("fields.startedOn"),
       className: "text-ink-muted font-semibold",
-      cell: (employee) => formatDate(employee.startedOn, locale),
+      cell: (employee) => formatDate(employee.startedAt, locale),
     },
     {
       key: "balance",
@@ -175,22 +175,26 @@ function EmployeesTable({ employees, query }: { employees: readonly Employee[]; 
       interactive: true,
       cell: (employee) => (
         <div className="flex justify-end gap-1">
-          <ActionLink
-            href={employeesProjectHref(employee.project, { edit: employee.id })}
-            icon="pencil"
-            variant="ghost"
-            ariaLabel={t("editLabel", { name: employee.name })}
-          >
-            {t("edit")}
-          </ActionLink>
-          <ActionLink
-            href={employeesProjectHref(employee.project, { remove: employee.id })}
-            icon="trash"
-            variant="ghost"
-            ariaLabel={t("deleteLabel", { name: employee.name })}
-          >
-            {t("delete")}
-          </ActionLink>
+          {can("employees", "edit") ? (
+            <ActionLink
+              href={employeesProjectHref(employee.project, { edit: employee.id })}
+              icon="pencil"
+              variant="ghost"
+              ariaLabel={t("editLabel", { name: employee.name })}
+            >
+              {t("edit")}
+            </ActionLink>
+          ) : null}
+          {can("employees", "delete") ? (
+            <ActionLink
+              href={employeesProjectHref(employee.project, { remove: employee.id })}
+              icon="trash"
+              variant="ghost"
+              ariaLabel={t("deleteLabel", { name: employee.name })}
+            >
+              {t("delete")}
+            </ActionLink>
+          ) : null}
         </div>
       ),
     },
@@ -214,7 +218,10 @@ export function EmployeesProjectScreen() {
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
   const locale = useLocale();
+  const can = useCan();
   const { close } = useRouteDrawer(employeesProjectHref(project.id));
+  const adding = creating && can("employees", "add");
+  const editingAllowed = editing !== undefined && can("employees", "edit");
   const [query, setQuery] = useState("");
 
   return (
@@ -222,18 +229,14 @@ export function EmployeesProjectScreen() {
       {...(hasOtherProjects ? { backHref: EMPLOYEES_HREF } : {})}
       backLabel={common("back")}
       title={common("projectTitle", { name: project.name })}
-      stats={[
-        { label: t("employeeCount"), value: formatCount(employees.length, locale) },
-        {
-          label: t("totalOwed"),
-          value: formatMoney(projectEmployeesSummary(employees, project.id).owed, locale),
-        },
-      ]}
+      stats={[{ label: t("employeeCount"), value: formatCount(employees.length, locale) }]}
       action={
-        <ButtonLink href={employeesProjectHref(project.id, { create: true })} variant="primary">
-          <Icon name="plus" />
-          {t("new")}
-        </ButtonLink>
+        can("employees", "add") ? (
+          <ButtonLink href={employeesProjectHref(project.id, { create: true })} variant="primary">
+            <Icon name="plus" />
+            {t("new")}
+          </ButtonLink>
+        ) : null
       }
     >
       <TablePanel
@@ -249,15 +252,15 @@ export function EmployeesProjectScreen() {
       </TablePanel>
 
       <Drawer
-        open={creating || editing !== undefined}
-        title={creating ? t("form.newTitle") : t("form.editTitle")}
+        open={adding || editingAllowed}
+        title={adding ? t("form.newTitle") : t("form.editTitle")}
         closeLabel={common("close")}
         onClose={close}
       >
         <EmployeeForm
           key={editing?.id ?? "new"}
           project={project.id}
-          employee={creating ? undefined : editing}
+          employee={adding ? undefined : editing}
           onCancel={close}
           onSaved={close}
         />
@@ -265,12 +268,14 @@ export function EmployeesProjectScreen() {
 
       <DeleteDrawer
         key={removing?.id ?? "none"}
-        open={removing !== undefined}
+        open={removing !== undefined && can("employees", "delete")}
         title={t("remove.title")}
         question={t("remove.question", { name: removing?.name ?? "" })}
         deletedMessage={toasts("employeeDeleted")}
         onDelete={() =>
-          removing === undefined ? Promise.resolve({ ok: false }) : deleteEmployee(removing.id)
+          removing === undefined
+            ? Promise.resolve({ ok: false, reason: undefined })
+            : deleteEmployee(removing.id)
         }
         onDeleted={close}
         onClose={close}

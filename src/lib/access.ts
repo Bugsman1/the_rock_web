@@ -2,6 +2,7 @@ import type { ApiSchema } from "./api/client";
 import {
   CUSTOMERS_HREF,
   DASHBOARD_HREF,
+  EMPLOYEES_HREF,
   INVENTORY_HREF,
   isWithinHref,
   MILLING_HREF,
@@ -23,6 +24,7 @@ export const modules = [
   "customers",
   "debts",
   "settlements",
+  "employees",
   "accounts",
   "locations",
 ] as const;
@@ -48,6 +50,7 @@ export function emptyRights(): Rights {
     customers: noRights,
     debts: noRights,
     settlements: noRights,
+    employees: noRights,
     accounts: noRights,
     locations: noRights,
   };
@@ -95,6 +98,7 @@ const sectionModules: readonly (readonly [string, Module])[] = [
   [INVENTORY_HREF, "inventory"],
   [CUSTOMERS_HREF, "customers"],
   [SETTLEMENTS_HREF, "settlements"],
+  [EMPLOYEES_HREF, "employees"],
   [USERS_HREF, "accounts"],
   [SETTINGS_PROJECTS_HREF, "locations"],
 ];

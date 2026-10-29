@@ -3,13 +3,14 @@ import { useTranslations } from "use-intl";
 import { Drawer, DrawerDeleteActions } from "@/components/ui/Drawer";
 import { FormError } from "@/components/ui/FieldError";
 import { useToast } from "@/components/ui/Toast";
+import type { DeleteResult } from "./employeesApi";
 
 type DeleteDrawerProps = {
   open: boolean;
   title: string;
   question: string;
   deletedMessage: string;
-  onDelete: () => Promise<{ ok: boolean }>;
+  onDelete: () => Promise<DeleteResult>;
   onDeleted: () => void;
   onClose: () => void;
 };
@@ -27,11 +28,11 @@ export function DeleteDrawer({
   const common = useTranslations("common");
   const toast = useToast();
   const [deleting, setDeleting] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [failure, setFailure] = useState<string>();
 
   async function confirm() {
     setDeleting(true);
-    setFailed(false);
+    setFailure(undefined);
 
     const result = await onDelete();
 
@@ -42,7 +43,7 @@ export function DeleteDrawer({
     }
 
     setDeleting(false);
-    setFailed(true);
+    setFailure(result.reason ?? t("failed"));
   }
 
   return (
@@ -50,7 +51,7 @@ export function DeleteDrawer({
       <div className="flex flex-col gap-5">
         <p className="text-ink text-[15px] font-semibold">{question}</p>
 
-        {failed ? <FormError message={t("failed")} /> : null}
+        {failure === undefined ? null : <FormError message={failure} />}
 
         <DrawerDeleteActions
           deleting={deleting}

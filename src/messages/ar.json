@@ -349,6 +349,7 @@
         "customers": "العملاء",
         "debts": "الديون",
         "settlements": "التسوية النهائية",
+        "employees": "الموظفون والرواتب",
         "accounts": "المستخدمون والصلاحيات",
         "locations": "المشاريع والآلات"
       },
@@ -813,7 +814,6 @@
     "title": "الموظفون والرواتب",
     "noProjects": "لا توجد مشاريع في الخدمة",
     "employeeCount": "الموظفون",
-    "totalOwed": "المستحق لهم",
     "listTitle": "الموظفون",
     "new": "موظف جديد",
     "empty": "لا يوجد موظفون في هذا المشروع",
@@ -821,11 +821,6 @@
     "delete": "حذف",
     "editLabel": "تعديل {name}",
     "deleteLabel": "حذف {name}",
-    "jobs": {
-      "manager": "مدير",
-      "supervisor": "مشرف",
-      "refiner": "مصفّي"
-    },
     "fields": {
       "matricule": "الرقم التعريفي",
       "name": "الاسم",
@@ -833,9 +828,14 @@
       "phone": "الهاتف",
       "monthlySalary": "الراتب الشهري",
       "startedOn": "تاريخ بدء العمل",
-      "earned": "المكتسب حتى اليوم",
+      "startTime": "وقت بدء العمل",
+      "endedOn": "تاريخ نهاية العمل",
+      "accruedUntil": "محسوب حتى",
+      "earned": "الراتب المكتسب",
       "withdrawn": "المسحوب",
       "balance": "المستحق الآن",
+      "accumulated": "الراتب المتراكم",
+      "debt": "الدين",
       "amount": "المبلغ",
       "date": "التاريخ",
       "time": "الوقت",
@@ -852,7 +852,8 @@
     },
     "errors": {
       "salaryInvalid": "أدخل راتبًا أكبر من صفر",
-      "amountInvalid": "أدخل مبلغًا أكبر من صفر"
+      "amountInvalid": "أدخل مبلغًا أكبر من صفر",
+      "endBeforeStart": "تاريخ النهاية لا يمكن أن يسبق تاريخ البدء"
     },
     "remove": {
       "title": "حذف الموظف",
@@ -872,6 +873,16 @@
       "deleteLabel": "حذف سحب {date}",
       "removeTitle": "حذف السحب",
       "removeQuestion": "حذف سحب {amount} بتاريخ {date}؟ لا يمكن التراجع عن ذلك."
+    },
+    "raises": {
+      "title": "سجل الرواتب",
+      "new": "زيادة الراتب",
+      "newTitle": "زيادة الراتب",
+      "current": "الراتب الحالي",
+      "newSalary": "الراتب الشهري الجديد",
+      "from": "ابتداءً من",
+      "create": "تسجيل الزيادة",
+      "empty": "لا توجد رواتب"
     }
   },
   "inventory": {
@@ -1108,6 +1119,7 @@
     "employeeDeleted": "تم حذف الموظف",
     "withdrawalAdded": "تم تسجيل السحب",
     "withdrawalUpdated": "تم حفظ السحب",
-    "withdrawalDeleted": "تم حذف السحب"
+    "withdrawalDeleted": "تم حذف السحب",
+    "raiseAdded": "تم تسجيل زيادة الراتب"
   }
 }

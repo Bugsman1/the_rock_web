@@ -243,7 +243,12 @@ export function employeesProjectHref(
 }
 
 export type EmployeeDrawer =
-  "edit" | "delete" | "withdraw" | { editWithdrawal: string } | { deleteWithdrawal: string };
+  | "edit"
+  | "delete"
+  | "withdraw"
+  | "raise"
+  | { editWithdrawal: string }
+  | { deleteWithdrawal: string };
 
 export function employeeHref(employee: string, drawer?: EmployeeDrawer): string {
   const href = `${EMPLOYEES_HREF}/${employee}`;

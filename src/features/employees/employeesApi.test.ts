@@ -1,77 +1,149 @@
+import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import {
+  addRaise,
   addWithdrawal,
   createEmployee,
   deleteEmployee,
-  deleteWithdrawal,
   getEmployee,
   getEmployees,
   getWithdrawals,
   updateEmployee,
   updateWithdrawal,
 } from "./employeesApi";
+import {
+  API,
+  apiEmployee,
+  apiWithdrawal,
+  serveEmployeeData,
+  serveEmployees,
+  server,
+} from "./employeesTesting";
 
-const withdrawal = { amount: 1000, date: "2026-10-20", time: "10:00", note: " Avance " };
+serveEmployees();
 
-describe("placeholder employees", () => {
-  it("gives every project its sample employees, owed or owing", async () => {
-    const employees = await getEmployees(["31"]);
+const values = {
+  matricule: "EMP-9",
+  name: "Sidi",
+  job: "Chauffeur",
+  phone: "46109325",
+  monthlySalary: 15000,
+  startedOn: "2026-10-01",
+  startTime: "08:30",
+  endedOn: "",
+};
 
-    expect(
-      employees.map((employee) => [employee.id, employee.matricule, employee.balance]),
-    ).toEqual([
-      ["3101", "EMP-001", 218000],
-      ["3102", "EMP-002", 49000],
-      ["3103", "EMP-003", -6000],
-    ]);
-    expect((await getEmployee("3103"))?.name).toBe("أحمد ولد إبراهيم");
+const startedAt = "2026-10-01T08:30:00.000Z";
+
+function capture(method: "post" | "patch", path: string, answer = HttpResponse.json({})) {
+  const sent: { body: unknown; key: string | null }[] = [];
+
+  server.use(
+    http[method](`${API}${path}`, async ({ request }) => {
+      sent.push({ body: await request.json(), key: request.headers.get("Idempotency-Key") });
+      return answer;
+    }),
+  );
+
+  return sent;
+}
+
+describe("employees API", () => {
+  it("lists a project's employees, finds one and its withdrawals", async () => {
+    serveEmployeeData(
+      [apiEmployee(7), apiEmployee(8, { project: 12 })],
+      [apiWithdrawal(3), apiWithdrawal(4, { employee: 8 })],
+    );
+
+    expect((await getEmployees("11")).map((employee) => employee.id)).toEqual(["7"]);
+    expect(await getEmployees()).toHaveLength(2);
+    expect((await getEmployee("8"))?.project).toBe("12");
+    expect(await getEmployee("9")).toBeUndefined();
     expect(await getEmployee("abc")).toBeUndefined();
+    expect((await getWithdrawals("7")).map((withdrawal) => withdrawal.id)).toEqual(["3"]);
   });
 
-  it("lists the withdrawals newest first and counts them in the balance", async () => {
-    await getEmployees(["32"]);
-    await addWithdrawal("3202", withdrawal, "2026-10-20T10:00:00.000Z");
+  it("creates an employee with their starting salary, once per key", async () => {
+    const sent = capture("post", "/employees/");
 
-    const withdrawals = await getWithdrawals("3202");
-    expect(withdrawals.map((item) => [item.amount, item.note])).toEqual([
-      [1000, "Avance"],
-      [20000, ""],
-      [20000, ""],
+    expect(await createEmployee("11", values, startedAt, "key-1")).toEqual({ ok: true });
+    expect(sent).toEqual([
+      {
+        key: "key-1",
+        body: {
+          matricule: "EMP-9",
+          full_name: "Sidi",
+          job_title: "Chauffeur",
+          phone: "+22246109325",
+          start_date: startedAt,
+          end_date: null,
+          project: 11,
+          monthly_salary: "15000",
+        },
+      },
     ]);
-    expect((await getEmployee("3202"))?.balance).toBe(48000);
-
-    const added = withdrawals[0];
-    if (added === undefined) {
-      throw new Error("withdrawal missing");
-    }
-
-    await updateWithdrawal(added.id, { ...withdrawal, amount: 4000 }, added.at);
-    expect((await getEmployee("3202"))?.balance).toBe(45000);
-
-    await deleteWithdrawal(added.id);
-    expect((await getEmployee("3202"))?.balance).toBe(49000);
   });
 
-  it("adds, changes and deletes an employee", async () => {
-    const values = {
-      matricule: "EMP-9",
-      name: "Sidi",
-      job: "refiner" as const,
-      phone: "46109325",
-      monthlySalary: 15000,
-      startedOn: "2026-10-01",
-    };
-    const created = await createEmployee("33", values);
+  it("changes an employee without sending the salary, and shows the backend's refusals", async () => {
+    const sent = capture(
+      "patch",
+      "/employees/7/",
+      HttpResponse.json({ start_date: ["Après le premier retrait."] }, { status: 400 }),
+    );
 
-    expect(created.ok).toBe(true);
-    const id = created.ok ? created.id : "";
-    expect(await getEmployee(id)).toMatchObject({ phone: "+222 46 10 93 25", balance: 0 });
+    expect(await updateEmployee("7", { ...values, endedOn: "2026-12-31" }, startedAt)).toEqual({
+      ok: false,
+      fieldErrors: { startedOn: "Après le premier retrait." },
+      failed: false,
+    });
+    expect(sent[0]?.body).toMatchObject({ end_date: "2026-12-31" });
+    expect(sent[0]?.body).not.toHaveProperty("monthly_salary");
+  });
 
-    await updateEmployee(id, { ...values, name: "Sidi Mohamed" });
-    expect((await getEmployee(id))?.name).toBe("Sidi Mohamed");
+  it("gives the backend's reason when it refuses a delete", async () => {
+    server.use(
+      http.delete(`${API}/employees/7/`, () =>
+        HttpResponse.json(["Un employé qui a des retraits ne peut pas être supprimé."], {
+          status: 400,
+        }),
+      ),
+      http.delete(`${API}/employees/8/`, () => new HttpResponse(null, { status: 204 })),
+    );
 
-    expect(await deleteEmployee(id)).toEqual({ ok: true });
-    expect(await getEmployee(id)).toBeUndefined();
-    expect(await deleteEmployee(id)).toEqual({ ok: false });
+    expect(await deleteEmployee("7")).toEqual({
+      ok: false,
+      reason: "Un employé qui a des retraits ne peut pas être supprimé.",
+    });
+    expect(await deleteEmployee("8")).toEqual({ ok: true });
+  });
+
+  it("records a raise and a withdrawal, and changes a withdrawal", async () => {
+    const raises = capture("post", "/employee-salaries/");
+    const withdrawals = capture("post", "/employee-withdrawals/");
+    const changes = capture("patch", "/employee-withdrawals/3/");
+    const withdrawal = { amount: 5000, date: "2026-10-20", time: "11:15", note: "Avance" };
+    const at = "2026-10-20T11:15:00.000Z";
+
+    await addRaise("7", { monthlySalary: 40000, from: "2026-11-01" }, "key-2");
+    await addWithdrawal("7", withdrawal, at, "key-3");
+    await updateWithdrawal("3", { ...withdrawal, amount: 6000 }, at);
+
+    expect(raises).toEqual([
+      {
+        key: "key-2",
+        body: { employee: 7, monthly_salary: "40000", effective_from: "2026-11-01" },
+      },
+    ]);
+    expect(withdrawals).toEqual([
+      {
+        key: "key-3",
+        body: { employee: 7, amount: "5000", withdrawal_date: at, notes: "Avance" },
+      },
+    ]);
+    expect(changes[0]?.body).toEqual({
+      amount: "6000",
+      withdrawal_date: at,
+      notes: "Avance",
+    });
   });
 });

@@ -215,6 +215,27 @@ export interface paths {
         patch: operations["customers_partial_update"];
         trace?: never;
     };
+    "/api/v1/customers/top-by-bags/per-project/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Each active project (a project-scoped user's own only), by name, with the five
+         *     customers with the largest share of that project's bags; a project with no counted
+         *     shipments comes with a total of 0 and no customers.
+         */
+        get: operations["customers_top_by_bags_per_project_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/debt-increases/": {
         parameters: {
             query?: never;
@@ -325,6 +346,186 @@ export interface paths {
          *     recomputes the debt's balance and status; a payment may not exceed what is left.
          */
         patch: operations["debt_payments_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/employee-salaries/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Employees' salaries, oldest first: the starting salary (from the start date) and each
+         *     raise, paid from its date until the next one.
+         */
+        get: operations["employee_salaries_list"];
+        put?: never;
+        /**
+         * @description Employees' salaries, oldest first: the starting salary (from the start date) and each
+         *     raise, paid from its date until the next one.
+         */
+        post: operations["employee_salaries_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employee-salaries/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Employees' salaries, oldest first: the starting salary (from the start date) and each
+         *     raise, paid from its date until the next one.
+         */
+        get: operations["employee_salaries_retrieve"];
+        /**
+         * @description Employees' salaries, oldest first: the starting salary (from the start date) and each
+         *     raise, paid from its date until the next one.
+         */
+        put: operations["employee_salaries_update"];
+        post?: never;
+        /**
+         * @description Employees' salaries, oldest first: the starting salary (from the start date) and each
+         *     raise, paid from its date until the next one.
+         */
+        delete: operations["employee_salaries_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Employees' salaries, oldest first: the starting salary (from the start date) and each
+         *     raise, paid from its date until the next one.
+         */
+        patch: operations["employee_salaries_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/employee-withdrawals/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The history of what employees withdrew from their salary, newest first. Each write
+         *     recomputes the employee's withdrawn amount; a withdrawal may exceed what was accumulated
+         *     (the surplus is the employee's debt).
+         */
+        get: operations["employee_withdrawals_list"];
+        put?: never;
+        /**
+         * @description The history of what employees withdrew from their salary, newest first. Each write
+         *     recomputes the employee's withdrawn amount; a withdrawal may exceed what was accumulated
+         *     (the surplus is the employee's debt).
+         */
+        post: operations["employee_withdrawals_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employee-withdrawals/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The history of what employees withdrew from their salary, newest first. Each write
+         *     recomputes the employee's withdrawn amount; a withdrawal may exceed what was accumulated
+         *     (the surplus is the employee's debt).
+         */
+        get: operations["employee_withdrawals_retrieve"];
+        /**
+         * @description The history of what employees withdrew from their salary, newest first. Each write
+         *     recomputes the employee's withdrawn amount; a withdrawal may exceed what was accumulated
+         *     (the surplus is the employee's debt).
+         */
+        put: operations["employee_withdrawals_update"];
+        post?: never;
+        /**
+         * @description The history of what employees withdrew from their salary, newest first. Each write
+         *     recomputes the employee's withdrawn amount; a withdrawal may exceed what was accumulated
+         *     (the surplus is the employee's debt).
+         */
+        delete: operations["employee_withdrawals_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description The history of what employees withdrew from their salary, newest first. Each write
+         *     recomputes the employee's withdrawn amount; a withdrawal may exceed what was accumulated
+         *     (the surplus is the employee's debt).
+         */
+        patch: operations["employee_withdrawals_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/employees/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The employees of each project, with their salaries, the salary earned over the finished
+         *     days, what they withdrew, and what is left of it (accumulated salary) or taken above it
+         *     (debt).
+         */
+        get: operations["employees_list"];
+        put?: never;
+        /**
+         * @description The employees of each project, with their salaries, the salary earned over the finished
+         *     days, what they withdrew, and what is left of it (accumulated salary) or taken above it
+         *     (debt).
+         */
+        post: operations["employees_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The employees of each project, with their salaries, the salary earned over the finished
+         *     days, what they withdrew, and what is left of it (accumulated salary) or taken above it
+         *     (debt).
+         */
+        get: operations["employees_retrieve"];
+        /**
+         * @description The employees of each project, with their salaries, the salary earned over the finished
+         *     days, what they withdrew, and what is left of it (accumulated salary) or taken above it
+         *     (debt).
+         */
+        put: operations["employees_update"];
+        post?: never;
+        /**
+         * @description The employees of each project, with their salaries, the salary earned over the finished
+         *     days, what they withdrew, and what is left of it (accumulated salary) or taken above it
+         *     (debt).
+         */
+        delete: operations["employees_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description The employees of each project, with their salaries, the salary earned over the finished
+         *     days, what they withdrew, and what is left of it (accumulated salary) or taken above it
+         *     (debt).
+         */
+        patch: operations["employees_partial_update"];
         trace?: never;
     };
     "/api/v1/grinders/": {
@@ -1089,6 +1290,11 @@ export interface components {
             email: $Write<string>;
             password: $Write<string>;
         };
+        /**
+         * @description ModelSerializer whose generated unique checks (unique=True fields) also see soft-deleted
+         *     rows: they keep their value in the database's unique index, so missing them would turn a
+         *     duplicate into a server error instead of a 400.
+         */
         Customer: {
             id: $Read<number>;
             full_name: string;
@@ -1105,6 +1311,16 @@ export interface components {
             created_at: $Read<string>;
             /** Format: date-time */
             updated_at: $Read<string>;
+        };
+        /** @description One customer's transported bags and their share of all the bags (%). */
+        CustomerBagsShare: {
+            id: number;
+            full_name: string;
+            phone: string;
+            /** Format: decimal */
+            bags: string;
+            /** Format: decimal */
+            percentage: string;
         };
         CustomerDebt: {
             id: $Read<number>;
@@ -1246,6 +1462,101 @@ export interface components {
          * @enum {string}
          */
         DebtStatusEnum: "open" | "partially_paid" | "paid";
+        /**
+         * @description ModelSerializer whose generated unique checks (unique=True fields) also see soft-deleted
+         *     rows: they keep their value in the database's unique index, so missing them would turn a
+         *     duplicate into a server error instead of a 400.
+         */
+        Employee: {
+            id: $Read<number>;
+            /** Employee number */
+            matricule: string;
+            full_name: string;
+            job_title: string;
+            project: number;
+            project_name: $Read<string>;
+            phone: string;
+            /** Format: decimal */
+            monthly_salary: string;
+            salaries: $Read<components["schemas"]["EmployeeSalarySummary"][]>;
+            /** Format: date-time */
+            start_date: string;
+            /** Format: date */
+            end_date?: string | null;
+            /** Format: date */
+            accrued_until: $Read<string>;
+            /** Format: decimal */
+            accrued_salary: $Read<string>;
+            /** Format: decimal */
+            withdrawn_amount: $Read<string>;
+            /** Format: decimal */
+            balance: $Read<string>;
+            /** Format: decimal */
+            accumulated_salary: $Read<string>;
+            /** Format: decimal */
+            debt: $Read<string>;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /** @description A raise (or the starting salary) of an employee: paid from its date to the next one. */
+        EmployeeSalary: {
+            id: $Read<number>;
+            employee: number;
+            matricule: $Read<string>;
+            employee_name: $Read<string>;
+            /** Format: decimal */
+            monthly_salary: string;
+            /** Format: date */
+            effective_from: string;
+            notes?: string;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /** @description A salary as listed on its employee. */
+        EmployeeSalarySummary: {
+            id: $Read<number>;
+            /** Format: decimal */
+            monthly_salary: $Read<string>;
+            /** Format: date */
+            effective_from: $Read<string>;
+            notes: $Read<string>;
+        };
+        EmployeeWithdrawal: {
+            id: $Read<number>;
+            employee: number;
+            matricule: $Read<string>;
+            employee_name: $Read<string>;
+            /** Format: decimal */
+            amount: string;
+            /** Format: date-time */
+            withdrawal_date?: string;
+            notes?: string;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /**
+         * @description ModelSerializer whose generated unique checks (unique=True fields) also see soft-deleted
+         *     rows: they keep their value in the database's unique index, so missing them would turn a
+         *     duplicate into a server error instead of a 400.
+         */
         Grinder: {
             id: $Read<number>;
             project: number;
@@ -1356,9 +1667,10 @@ export interface components {
          *     * `inventory` - Inventory
          *     * `settlements` - Settlements
          *     * `debts` - Customer debts
+         *     * `employees` - Employees
          * @enum {string}
          */
-        ModuleEnum: "accounts" | "locations" | "customers" | "shipments" | "grinding" | "refining" | "inventory" | "settlements" | "debts";
+        ModuleEnum: "accounts" | "locations" | "customers" | "shipments" | "grinding" | "refining" | "inventory" | "settlements" | "debts" | "employees";
         Operator: {
             id: $Read<number>;
             name: $Read<string>;
@@ -1423,6 +1735,51 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["DebtPayment"][];
         };
+        PaginatedEmployeeList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Employee"][];
+        };
+        PaginatedEmployeeSalaryList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["EmployeeSalary"][];
+        };
+        PaginatedEmployeeWithdrawalList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["EmployeeWithdrawal"][];
+        };
         PaginatedGrinderList: {
             /** @example 123 */
             count: number;
@@ -1482,6 +1839,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Project"][];
+        };
+        PaginatedProjectTopCustomersByBagsList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["ProjectTopCustomersByBags"][];
         };
         PaginatedRefiningOperationList: {
             /** @example 123 */
@@ -1633,6 +2005,11 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["User"][];
         };
+        /**
+         * @description ModelSerializer whose generated unique checks (unique=True fields) also see soft-deleted
+         *     rows: they keep their value in the database's unique index, so missing them would turn a
+         *     duplicate into a server error instead of a 400.
+         */
         PatchedCustomer: {
             id?: $Read<number>;
             full_name?: string;
@@ -1740,6 +2117,92 @@ export interface components {
             /** Format: date-time */
             updated_at?: $Read<string>;
         };
+        /**
+         * @description ModelSerializer whose generated unique checks (unique=True fields) also see soft-deleted
+         *     rows: they keep their value in the database's unique index, so missing them would turn a
+         *     duplicate into a server error instead of a 400.
+         */
+        PatchedEmployee: {
+            id?: $Read<number>;
+            /** Employee number */
+            matricule?: string;
+            full_name?: string;
+            job_title?: string;
+            project?: number;
+            project_name?: $Read<string>;
+            phone?: string;
+            /** Format: decimal */
+            monthly_salary?: string;
+            salaries?: $Read<components["schemas"]["EmployeeSalarySummary"][]>;
+            /** Format: date-time */
+            start_date?: string;
+            /** Format: date */
+            end_date?: string | null;
+            /** Format: date */
+            accrued_until?: $Read<string>;
+            /** Format: decimal */
+            accrued_salary?: $Read<string>;
+            /** Format: decimal */
+            withdrawn_amount?: $Read<string>;
+            /** Format: decimal */
+            balance?: $Read<string>;
+            /** Format: decimal */
+            accumulated_salary?: $Read<string>;
+            /** Format: decimal */
+            debt?: $Read<string>;
+            created_by_name?: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        /** @description A raise (or the starting salary) of an employee: paid from its date to the next one. */
+        PatchedEmployeeSalary: {
+            id?: $Read<number>;
+            employee?: number;
+            matricule?: $Read<string>;
+            employee_name?: $Read<string>;
+            /** Format: decimal */
+            monthly_salary?: string;
+            /** Format: date */
+            effective_from?: string;
+            notes?: string;
+            created_by_name?: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        PatchedEmployeeWithdrawal: {
+            id?: $Read<number>;
+            employee?: number;
+            matricule?: $Read<string>;
+            employee_name?: $Read<string>;
+            /** Format: decimal */
+            amount?: string;
+            /** Format: date-time */
+            withdrawal_date?: string;
+            notes?: string;
+            created_by_name?: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        /**
+         * @description ModelSerializer whose generated unique checks (unique=True fields) also see soft-deleted
+         *     rows: they keep their value in the database's unique index, so missing them would turn a
+         *     duplicate into a server error instead of a 400.
+         */
         PatchedGrinder: {
             id?: $Read<number>;
             project?: number;
@@ -2071,6 +2534,14 @@ export interface components {
             created_at: $Read<string>;
             /** Format: date-time */
             updated_at: $Read<string>;
+        };
+        /** @description One project's bags and the customers with the largest share of them. */
+        ProjectTopCustomersByBags: {
+            project: number;
+            project_name: string;
+            /** Format: decimal */
+            total_bags: string;
+            results: components["schemas"]["CustomerBagsShare"][];
         };
         RefiningOperation: {
             id: $Read<number>;
@@ -2899,6 +3370,34 @@ export interface operations {
             };
         };
     };
+    customers_top_by_bags_per_project_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedProjectTopCustomersByBagsList"];
+                };
+            };
+        };
+    };
     debt_increases_list: {
         parameters: {
             query?: {
@@ -3209,6 +3708,483 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DebtPayment"];
+                };
+            };
+        };
+    };
+    employee_salaries_list: {
+        parameters: {
+            query?: {
+                employee?: number;
+                employee__project?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEmployeeSalaryList"];
+                };
+            };
+        };
+    };
+    employee_salaries_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeSalary"];
+                "application/x-www-form-urlencoded": components["schemas"]["EmployeeSalary"];
+                "multipart/form-data": components["schemas"]["EmployeeSalary"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeSalary"];
+                };
+            };
+        };
+    };
+    employee_salaries_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee salary. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeSalary"];
+                };
+            };
+        };
+    };
+    employee_salaries_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee salary. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeSalary"];
+                "application/x-www-form-urlencoded": components["schemas"]["EmployeeSalary"];
+                "multipart/form-data": components["schemas"]["EmployeeSalary"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeSalary"];
+                };
+            };
+        };
+    };
+    employee_salaries_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee salary. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    employee_salaries_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee salary. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEmployeeSalary"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedEmployeeSalary"];
+                "multipart/form-data": components["schemas"]["PatchedEmployeeSalary"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeSalary"];
+                };
+            };
+        };
+    };
+    employee_withdrawals_list: {
+        parameters: {
+            query?: {
+                employee?: number;
+                employee__project?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+                withdrawal_date?: string;
+                withdrawal_date__date?: string;
+                withdrawal_date__date__gte?: string;
+                withdrawal_date__date__lte?: string;
+                withdrawal_date__gte?: string;
+                withdrawal_date__lte?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEmployeeWithdrawalList"];
+                };
+            };
+        };
+    };
+    employee_withdrawals_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeWithdrawal"];
+                "application/x-www-form-urlencoded": components["schemas"]["EmployeeWithdrawal"];
+                "multipart/form-data": components["schemas"]["EmployeeWithdrawal"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeWithdrawal"];
+                };
+            };
+        };
+    };
+    employee_withdrawals_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee withdrawal. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeWithdrawal"];
+                };
+            };
+        };
+    };
+    employee_withdrawals_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee withdrawal. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeWithdrawal"];
+                "application/x-www-form-urlencoded": components["schemas"]["EmployeeWithdrawal"];
+                "multipart/form-data": components["schemas"]["EmployeeWithdrawal"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeWithdrawal"];
+                };
+            };
+        };
+    };
+    employee_withdrawals_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee withdrawal. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    employee_withdrawals_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee withdrawal. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEmployeeWithdrawal"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedEmployeeWithdrawal"];
+                "multipart/form-data": components["schemas"]["PatchedEmployeeWithdrawal"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeWithdrawal"];
+                };
+            };
+        };
+    };
+    employees_list: {
+        parameters: {
+            query?: {
+                job_title?: string;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                project?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEmployeeList"];
+                };
+            };
+        };
+    };
+    employees_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Employee"];
+                "application/x-www-form-urlencoded": components["schemas"]["Employee"];
+                "multipart/form-data": components["schemas"]["Employee"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    employees_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    employees_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Employee"];
+                "application/x-www-form-urlencoded": components["schemas"]["Employee"];
+                "multipart/form-data": components["schemas"]["Employee"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    employees_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    employees_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEmployee"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedEmployee"];
+                "multipart/form-data": components["schemas"]["PatchedEmployee"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
                 };
             };
         };
@@ -4276,8 +5252,9 @@ export interface operations {
                  *     * `inventory` - Inventory
                  *     * `settlements` - Settlements
                  *     * `debts` - Customer debts
+                 *     * `employees` - Employees
                  */
-                module?: "accounts" | "customers" | "debts" | "grinding" | "inventory" | "locations" | "refining" | "settlements" | "shipments";
+                module?: "accounts" | "customers" | "debts" | "employees" | "grinding" | "inventory" | "locations" | "refining" | "settlements" | "shipments";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */

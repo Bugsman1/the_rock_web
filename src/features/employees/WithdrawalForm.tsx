@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
@@ -39,6 +39,7 @@ export function WithdrawalForm({ employee, withdrawal, onSaved, onCancel }: With
   const toast = useToast();
   const locale = useLocale();
   const saveFailure = useSaveFailure();
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
 
   const schema = useMemo(
     () =>
@@ -75,7 +76,7 @@ export function WithdrawalForm({ employee, withdrawal, onSaved, onCancel }: With
 
     const result =
       withdrawal === undefined
-        ? await addWithdrawal(employee.id, values, at)
+        ? await addWithdrawal(employee.id, values, at, idempotencyKey)
         : await updateWithdrawal(withdrawal.id, values, at);
 
     if (result.ok) {

@@ -206,9 +206,11 @@ describe("AppShell", () => {
     expect(loader).toHaveBeenCalledTimes(1);
 
     act(() => reportConnectionFailure());
+    expect(await screen.findByRole("alert")).toBeVisible();
     expect(loader).toHaveBeenCalledTimes(1);
 
     act(() => reportResponse(200));
     await waitFor(() => expect(loader).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 });

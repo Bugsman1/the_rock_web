@@ -158,6 +158,10 @@ function currentLocale() {
   return isLocale(segment) ? segment : defaultLocale;
 }
 
+export function idempotent(key: string) {
+  return { header: { "Idempotency-Key": key } };
+}
+
 export function notFound(): never {
   throw new Response(null, { status: 404 });
 }

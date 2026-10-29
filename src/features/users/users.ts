@@ -138,6 +138,7 @@ export function createRoleSchema(messages: { required: string }) {
       customers: moduleRightsSchema,
       debts: moduleRightsSchema,
       settlements: moduleRightsSchema,
+      employees: moduleRightsSchema,
       accounts: moduleRightsSchema,
       locations: moduleRightsSchema,
     }),

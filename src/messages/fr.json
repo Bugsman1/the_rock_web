@@ -349,6 +349,7 @@
         "customers": "Clients",
         "debts": "Dettes",
         "settlements": "Règlement final",
+        "employees": "Employés et paie",
         "accounts": "Utilisateurs et permissions",
         "locations": "Projets et machines"
       },
@@ -813,7 +814,6 @@
     "title": "Employés et paie",
     "noProjects": "Aucun projet en service",
     "employeeCount": "Employés",
-    "totalOwed": "Dû aux employés",
     "listTitle": "Employés",
     "new": "Nouvel employé",
     "empty": "Aucun employé dans ce projet",
@@ -821,11 +821,6 @@
     "delete": "Supprimer",
     "editLabel": "Modifier {name}",
     "deleteLabel": "Supprimer {name}",
-    "jobs": {
-      "manager": "Responsable",
-      "supervisor": "Superviseur",
-      "refiner": "Raffineur"
-    },
     "fields": {
       "matricule": "Matricule",
       "name": "Nom",
@@ -833,9 +828,14 @@
       "phone": "Téléphone",
       "monthlySalary": "Salaire mensuel",
       "startedOn": "Date d'embauche",
-      "earned": "Gagné à ce jour",
+      "startTime": "Heure d'embauche",
+      "endedOn": "Date de fin",
+      "accruedUntil": "Calculé jusqu'au",
+      "earned": "Salaire acquis",
       "withdrawn": "Retiré",
       "balance": "Dû maintenant",
+      "accumulated": "Salaire cumulé",
+      "debt": "Dette",
       "amount": "Montant",
       "date": "Date",
       "time": "Heure",
@@ -852,7 +852,8 @@
     },
     "errors": {
       "salaryInvalid": "Saisissez un salaire supérieur à zéro",
-      "amountInvalid": "Saisissez un montant supérieur à zéro"
+      "amountInvalid": "Saisissez un montant supérieur à zéro",
+      "endBeforeStart": "La date de fin ne peut pas précéder la date d'embauche"
     },
     "remove": {
       "title": "Supprimer l'employé",
@@ -872,6 +873,16 @@
       "deleteLabel": "Supprimer le retrait du {date}",
       "removeTitle": "Supprimer le retrait",
       "removeQuestion": "Supprimer le retrait de {amount} du {date} ? Cette action est définitive."
+    },
+    "raises": {
+      "title": "Historique des salaires",
+      "new": "Augmenter le salaire",
+      "newTitle": "Augmenter le salaire",
+      "current": "Salaire actuel",
+      "newSalary": "Nouveau salaire mensuel",
+      "from": "À partir du",
+      "create": "Enregistrer l'augmentation",
+      "empty": "Aucun salaire"
     }
   },
   "inventory": {
@@ -1108,6 +1119,7 @@
     "employeeDeleted": "Employé supprimé",
     "withdrawalAdded": "Retrait enregistré",
     "withdrawalUpdated": "Retrait modifié",
-    "withdrawalDeleted": "Retrait supprimé"
+    "withdrawalDeleted": "Retrait supprimé",
+    "raiseAdded": "Augmentation enregistrée"
   }
 }

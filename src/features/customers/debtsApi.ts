@@ -1,4 +1,4 @@
-import { apiClient, saveOutcome, unwrap } from "@/lib/api/client";
+import { apiClient, idempotent, saveOutcome, unwrap } from "@/lib/api/client";
 import type { SaveResult } from "@/lib/api/client";
 import { fetchAllPages, MAX_PAGE_SIZE } from "@/lib/api/pagination";
 import {
@@ -18,10 +18,6 @@ import type {
   NewDebtValues,
   PaymentValues,
 } from "./debts";
-
-function idempotent(key: string) {
-  return { header: { "Idempotency-Key": key } };
-}
 
 export async function getCustomerDebts(customerId: string): Promise<readonly CustomerDebt[]> {
   const debts = await fetchAllPages(async (page) =>

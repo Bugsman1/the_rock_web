@@ -1,27 +1,42 @@
 import { describe, expect, it } from "vitest";
 import {
   createEmployeeSchema,
+  createRaiseSchema,
   createWithdrawalSchema,
+  employeeCount,
+  employeeErrorsFromApi,
+  employeeFromApi,
+  employeeToApi,
   isEmployeeField,
+  isRaiseField,
   isWithdrawalField,
-  projectEmployeesSummary,
+  newEmployeeToApi,
+  raiseErrorsFromApi,
+  raiseToApi,
+  withdrawalErrorsFromApi,
+  withdrawalFromApi,
+  withdrawalToApi,
 } from "./employees";
-import type { Employee } from "./employees";
+import { apiEmployee, apiWithdrawal } from "./employeesTesting";
 
 const employeeSchema = createEmployeeSchema({
   required: "required",
   phoneInvalid: "phone",
   dateInvalid: "date",
+  timeInvalid: "time",
   salaryInvalid: "salary",
+  endBeforeStart: "endBeforeStart",
 });
 
 const validEmployee = {
   matricule: " EMP-9 ",
   name: " Sidi ",
-  job: "refiner",
+  job: " Chauffeur ",
   phone: "46109325",
   monthlySalary: 15000,
   startedOn: "2026-09-01",
+  startTime: "08:30",
+  endedOn: "",
 };
 
 function issues(result: { error?: { issues: { path: PropertyKey[]; message: string }[] } }) {
@@ -29,92 +44,186 @@ function issues(result: { error?: { issues: { path: PropertyKey[]; message: stri
 }
 
 describe("employee form", () => {
-  it("takes a complete employee and trims the texts", () => {
-    expect(employeeSchema.parse(validEmployee)).toMatchObject({ matricule: "EMP-9", name: "Sidi" });
+  it("takes a complete employee, any job typed, and trims the texts", () => {
+    expect(employeeSchema.parse(validEmployee)).toMatchObject({
+      matricule: "EMP-9",
+      name: "Sidi",
+      job: "Chauffeur",
+    });
   });
 
-  it("needs every field, a valid phone, a salary above zero and a real date", () => {
+  it("needs every field but the end date, a valid phone, a salary above zero and real dates", () => {
     expect(
       issues(
         employeeSchema.safeParse({
           ...validEmployee,
           matricule: "",
+          job: " ",
           phone: "12",
           monthlySalary: 0,
           startedOn: "2026-02-30",
+          startTime: "25:00",
+          endedOn: "2026-13-01",
         }),
       ),
     ).toEqual([
       ["matricule", "required"],
+      ["job", "required"],
       ["phone", "phone"],
       ["monthlySalary", "salary"],
       ["startedOn", "date"],
+      ["startTime", "time"],
+      ["endedOn", "date"],
     ]);
   });
 
-  it("offers only the three jobs", () => {
-    expect(issues(employeeSchema.safeParse({ ...validEmployee, job: "driver" }))).toEqual([
-      ["job", "required"],
+  it("refuses an end date before the start date", () => {
+    expect(issues(employeeSchema.safeParse({ ...validEmployee, endedOn: "2026-08-31" }))).toEqual([
+      ["endedOn", "endBeforeStart"],
     ]);
+    expect(employeeSchema.safeParse({ ...validEmployee, endedOn: "2026-09-01" }).success).toBe(
+      true,
+    );
   });
 
   it("knows its fields", () => {
-    expect(isEmployeeField("matricule")).toBe(true);
+    expect(isEmployeeField("endedOn")).toBe(true);
     expect(isEmployeeField("balance")).toBe(false);
   });
 });
 
-describe("withdrawal form", () => {
-  const schema = createWithdrawalSchema({
+describe("withdrawal and raise forms", () => {
+  const withdrawalSchema = createWithdrawalSchema({
     required: "required",
     dateInvalid: "date",
     timeInvalid: "time",
     amountInvalid: "amount",
   });
-  const valid = { amount: 5000, date: "2026-10-01", time: "09:30", note: "" };
-
-  it("takes an amount above zero, whatever the employee is owed", () => {
-    expect(schema.safeParse({ ...valid, amount: 9_999_999 }).success).toBe(true);
-    expect(issues(schema.safeParse({ ...valid, amount: 0 }))).toEqual([["amount", "amount"]]);
-    expect(issues(schema.safeParse({ ...valid, amount: Number.NaN }))).toEqual([
-      ["amount", "amount"],
-    ]);
+  const raiseSchema = createRaiseSchema({
+    required: "required",
+    dateInvalid: "date",
+    salaryInvalid: "salary",
   });
 
-  it("needs a date and a time", () => {
-    expect(issues(schema.safeParse({ ...valid, date: "", time: "25:00" }))).toEqual([
+  it("takes a withdrawal above zero, whatever the employee is owed, on a real date", () => {
+    expect(
+      withdrawalSchema.safeParse({ amount: 9_999_999, date: "2026-10-01", time: "09:30", note: "" })
+        .success,
+    ).toBe(true);
+    expect(
+      issues(withdrawalSchema.safeParse({ amount: 0, date: "", time: "9h", note: "" })),
+    ).toEqual([
+      ["amount", "amount"],
       ["date", "required"],
       ["time", "time"],
     ]);
   });
 
-  it("knows its fields", () => {
-    expect(isWithdrawalField("note")).toBe(true);
-    expect(isWithdrawalField("employee")).toBe(false);
+  it("takes a raise with a new salary above zero and the date it starts", () => {
+    expect(raiseSchema.safeParse({ monthlySalary: 40000, from: "2026-11-01" }).success).toBe(true);
+    expect(issues(raiseSchema.safeParse({ monthlySalary: Number.NaN, from: "01/11" }))).toEqual([
+      ["monthlySalary", "salary"],
+      ["from", "date"],
+    ]);
+  });
+
+  it("knows their fields", () => {
+    expect(isWithdrawalField("date")).toBe(true);
+    expect(isWithdrawalField("time")).toBe(true);
+    expect(isRaiseField("from")).toBe(true);
+    expect(isRaiseField("notes")).toBe(false);
   });
 });
 
-describe("projectEmployeesSummary", () => {
-  const employee = (project: string, balance: number): Employee => ({
-    id: `${project}-${balance}`,
-    project,
-    matricule: "M",
-    name: "N",
-    job: "manager",
-    phone: "",
-    monthlySalary: 0,
-    startedOn: "2026-01-01",
-    earned: 0,
-    withdrawn: 0,
-    balance,
+describe("employees from and to the backend", () => {
+  it("reads the employee with the amounts the backend worked out", () => {
+    expect(employeeFromApi(apiEmployee(7, { end_date: "2026-12-31", debt: "5000.5" }))).toEqual({
+      id: "7",
+      project: "11",
+      matricule: "EMP-7",
+      name: "Sidi Ahmed",
+      job: "Chauffeur",
+      phone: "+222 36 52 07 14",
+      monthlySalary: 40000,
+      salaries: [
+        { id: "1", monthlySalary: 39999, from: "2026-01-01" },
+        { id: "2", monthlySalary: 40000, from: "2026-10-01" },
+      ],
+      startedAt: "2026-01-01T08:00:00Z",
+      endedOn: "2026-12-31",
+      accruedUntil: "2026-10-28",
+      earned: expect.closeTo(395860.29, 2),
+      withdrawn: 60000,
+      balance: expect.closeTo(335860.29, 2),
+      accumulated: expect.closeTo(335860.29, 2),
+      debt: 5000.5,
+    });
+    expect(employeeFromApi(apiEmployee(7)).endedOn).toBeUndefined();
   });
 
-  it("counts the project's employees and adds what they are owed, debts included", () => {
+  it("sends the salary only for a new employee, and no end date as null", () => {
+    const values = employeeSchema.parse(validEmployee);
+
+    expect(employeeToApi(values, "2026-09-01T08:30:00.000Z")).toEqual({
+      matricule: "EMP-9",
+      full_name: "Sidi",
+      job_title: "Chauffeur",
+      phone: "+22246109325",
+      start_date: "2026-09-01T08:30:00.000Z",
+      end_date: null,
+    });
+    expect(newEmployeeToApi("11", values, "2026-09-01T08:30:00.000Z")).toMatchObject({
+      project: 11,
+      monthly_salary: "15000",
+    });
+  });
+
+  it("puts the backend's messages on the form's fields", () => {
     expect(
-      projectEmployeesSummary(
-        [employee("3", 5000), employee("3", -2000), employee("4", 9000)],
-        "3",
+      employeeErrorsFromApi({ full_name: "n", job_title: "j", end_date: "e", start_date: "s" }),
+    ).toEqual({ name: "n", job: "j", endedOn: "e", startedOn: "s" });
+    expect(withdrawalErrorsFromApi({ withdrawal_date: "d", notes: "n" })).toEqual({
+      date: "d",
+      note: "n",
+    });
+    expect(raiseErrorsFromApi({ effective_from: "f", monthly_salary: "m" })).toEqual({
+      from: "f",
+      monthlySalary: "m",
+    });
+  });
+
+  it("reads and sends withdrawals and raises", () => {
+    expect(withdrawalFromApi(apiWithdrawal(3, { created_by_name: null }))).toEqual({
+      id: "3",
+      employee: "7",
+      amount: 20000,
+      at: "2026-09-15T10:30:00Z",
+      note: "",
+      byName: null,
+    });
+    expect(
+      withdrawalToApi(
+        { amount: 1500.255, date: "2026-10-01", time: "09:30", note: "Avance" },
+        "2026-10-01T09:30:00.000Z",
       ),
-    ).toEqual({ count: 2, owed: 3000 });
+    ).toEqual({
+      amount: "1500.26",
+      withdrawal_date: "2026-10-01T09:30:00.000Z",
+      notes: "Avance",
+    });
+    expect(raiseToApi("7", { monthlySalary: 40000, from: "2026-11-01" })).toEqual({
+      employee: 7,
+      monthly_salary: "40000",
+      effective_from: "2026-11-01",
+    });
+  });
+
+  it("counts a project's employees", () => {
+    const employees = [apiEmployee(1), apiEmployee(2), apiEmployee(3, { project: 12 })].map(
+      employeeFromApi,
+    );
+
+    expect(employeeCount(employees, "11")).toBe(2);
+    expect(employeeCount(employees, "13")).toBe(0);
   });
 });

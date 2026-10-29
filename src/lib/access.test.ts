@@ -124,6 +124,12 @@ describe("canOpen", () => {
     expect(canOpen(writer, "/settings/projects/new")).toBe(false);
   });
 
+  it("opens the employees section with its own view right", () => {
+    expect(canOpen(access(["employees"]), "/employees")).toBe(true);
+    expect(canOpen(access(["employees"]), "/employees/7")).toBe(true);
+    expect(canOpen(access(["shipments", "customers"]), "/employees/projects/3")).toBe(false);
+  });
+
   it("opens the settings home, profile and language to everyone", () => {
     expect(canOpen(refiner, "/settings")).toBe(true);
     expect(canOpen(refiner, "/settings/profile")).toBe(true);
