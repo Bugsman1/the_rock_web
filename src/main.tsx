@@ -12,9 +12,6 @@ import "@fontsource/ibm-plex-sans/500.css";
 import "@fontsource/ibm-plex-sans/600.css";
 import "@fontsource/ibm-plex-sans/700.css";
 import "./app/app.css";
-import { applyTheme, storedTheme } from "./lib/theme";
-
-applyTheme(storedTheme());
 
 const root = document.getElementById("root");
 

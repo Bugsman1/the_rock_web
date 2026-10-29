@@ -33,7 +33,7 @@ React + Vite rewrite of the `the_rock` front-end (Next.js). Bilingual: **Arabic 
 
 ```
 the_rock_web/
-├─ index.html                  ← root element; page background colour (= `--color-brand-50`, before CSS loads); tab icon = the company logo
+├─ index.html                  ← root element; saved theme applied before drawing; page background colour (= `--color-brand-50`, dark: dark `--surface-page`, before CSS loads); tab icon = the company logo
 ├─ vite.config.ts              ← plugins, @ alias, /api proxy (BACKEND_API_URL), test config
 ├─ Dockerfile, .dockerignore   ← production image: Node builds dist/, Caddy serves it
 ├─ docker/Caddyfile            ← DOMAIN: site (HTTPS, SPA fallback, /api → BACKEND_URL as API_DOMAIN, caching, compression); API_DOMAIN → BACKEND_URL
@@ -224,7 +224,7 @@ Others: `ActionLink`, `Button`, `buttonClasses` (primary, secondary, danger), `B
 | `api/connection.ts`                                      | Connection state: `isConnectionLost` (a request failed, the server answered 502/503/504, or the browser is offline), `reportResponse`, `reportConnectionFailure`, `subscribeToConnection`, `connectedFetch` (fails at once while the browser is offline, otherwise 15 s at most, `REQUEST_TIMEOUT_MS`)                                                                                              |
 | `api/pagination.ts`                                      | `PAGE_SIZE`, `MAX_PAGE_SIZE`, `Page`, `toPage`, `parsePageNumber`, `fetchAllPages`                                                                                                                                                                                                                                                                                                                  |
 | `api/schema.d.ts`                                        | Generated types (`npm run api:generate`), not linted or formatted                                                                                                                                                                                                                                                                                                                                   |
-| `theme.ts`                                               | `storedTheme` (light unless dark was chosen in this browser), `currentTheme`, `applyTheme` (`data-theme` on `<html>`, set in `main.tsx` before the first render), `storeTheme` (`localStorage`)                                                                                                                                                                                                     |
+| `theme.ts`                                               | `currentTheme`, `applyTheme` (`data-theme` on `<html>`), `storeTheme` (`theme` in `localStorage`, read by `index.html` on load)                                                                                                                                                                                                                                                                     |
 | `access.ts`                                              | Modules, rights, `Access` (signed-in `userId`, `superuser`, rights), `rightsFromApi`, `accessFromApi`, `can`, `canOpen`, `homeHref`                                                                                                                                                                                                                                                                 |
 | `accessContext.ts`                                       | `AccessContext` (filled by the signed-in layout), `useAccess`, `useCan`                                                                                                                                                                                                                                                                                                                             |
 | `routes.ts`                                              | Every href and href builder                                                                                                                                                                                                                                                                                                                                                                         |
@@ -302,8 +302,9 @@ drawer, in place at the end of the page form (new and edit shipment, `sticky={fa
 in this browser (`theme` in `localStorage`) and a first visit is light. Dark mode only redefines the
 colour tokens in `app.css` (surfaces, text, lines, brand and status shades, shadows), so every
 screen follows; status colours keep their meaning. Icons follow the text colour and turn light. The
-company logo, the PDFs and the login blue panel stay as they are. `index.html` paints the light
-background before the app loads, so a reload in dark mode can flash light for an instant.
+company logo, the PDFs and the login blue panel stay as they are. A small script in `index.html`
+reads the saved choice and sets `data-theme` before the page is drawn, with the dark page background
+(= dark `--surface-page`), so a reload in dark mode never flashes light.
 
 **Icons:** `src/icons` mixes Tabler (stroke) and Phosphor (fill) icons; every file uses
 `currentColor` so it follows the text colour. Clients use `users-four`; the close button of drawers and the PDF preview uses

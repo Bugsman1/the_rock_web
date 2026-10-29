@@ -8,16 +8,6 @@ function isTheme(value: unknown): value is Theme {
   return themes.some((theme) => theme === value);
 }
 
-export function storedTheme(): Theme {
-  try {
-    const value = localStorage.getItem(THEME_KEY);
-
-    return isTheme(value) ? value : "light";
-  } catch {
-    return "light";
-  }
-}
-
 export function currentTheme(): Theme {
   const value = document.documentElement.dataset.theme;
 

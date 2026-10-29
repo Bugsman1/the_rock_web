@@ -4,9 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/src/icons/logo_soukhour.svg" />
+    <script>
+      try {
+        if (localStorage.getItem("theme") === "dark") {
+          document.documentElement.dataset.theme = "dark";
+        }
+      } catch {}
+    </script>
     <style>
       html {
         background-color: #f4f6fb;
+      }
+      html[data-theme="dark"] {
+        background-color: #212121;
       }
     </style>
     <title>نظام مطاحن أهل الطايع</title>
