@@ -120,7 +120,6 @@ export function RefiningOperationsTable({
   const common = useTranslations("common");
   const locale = useLocale();
   const quantity = (value: number) => formatQuantity(value, locale);
-  const optionalQuantity = (value: number) => (value > 0 ? quantity(value) : "—");
   const machineName = (code: string) => {
     const machine = parseGrinderCode(code);
 
@@ -195,7 +194,7 @@ export function RefiningOperationsTable({
       quantity(operation.goldWithMaterial),
     ),
     weight("goldWithoutMaterial", t("fields.goldWithoutMaterial"), (operation) =>
-      optionalQuantity(operation.goldWithoutMaterial),
+      quantity(operation.goldWithoutMaterial),
     ),
     weight("loss", t("fields.loss"), (operation) => quantity(operation.loss)),
     {

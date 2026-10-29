@@ -521,10 +521,10 @@ shows the loss and asks its reason. When more comes back, the form shows "surplu
 with no reason, and `loss_reason` is sent empty; the backend stores a negative `loss` and returns the
 whole weight after to the stock, so the surplus goes into the Mercury stock. When the loss is 0
 nothing is shown. A grinding operation counts as refined when a refining
-names its id (`refiningQueue`, oldest first). Gold without material is optional (empty is sent as 0
-and shown "—" in the table) so it can be added later: a refining's row opens it in the same form
-(`?edit=<id>`, `editRefiningHref`, refining edit right), pre-filled (`refiningFormValues`, the worker
-found by name), with its date and weight before read-only; it sends `PATCH` with the worker, weight
+names its id (`refiningQueue`, oldest first). Gold without material is optional (empty is sent as 0;
+the table and the edit form show the backend's value as it is, 0 included) so it can be added later:
+a refining's row opens it in the same form (`?edit=<id>`, `editRefiningHref`, refining edit right),
+pre-filled (`refiningFormValues`, the worker found by name), with its date and weight before read-only; it sends `PATCH` with the worker, weight
 after, golds, loss reason and notes only (`refiningUpdateToApi`). There is no delete.
 
 **Mercury and the material stock:** the refining form never shows a stock quantity. The grams

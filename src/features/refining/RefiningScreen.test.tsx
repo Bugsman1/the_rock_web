@@ -205,13 +205,19 @@ describe("RefiningScreen", () => {
       name: text.editLabel.replace("{shipment}", "SH-3"),
     });
     expect(row).toHaveAttribute("href", "/fr/refining/projects/3?edit=9");
+    expect(
+      within(row.closest("tr") ?? document.body)
+        .getAllByRole("cell")
+        .map((cell) => cell.textContent),
+    ).toContain("0");
     await user.click(row);
 
     const dialog = within(await screen.findByRole("dialog", { name: text.editTitle }));
     expect(dialog.getByLabelText(text.fields.worker)).toHaveValue("4");
     expect(dialog.getByLabelText(text.fields.weightBefore)).toHaveAttribute("readonly");
-    expect(dialog.getByLabelText(text.fields.goldWithoutMaterial)).toHaveValue(null);
+    expect(dialog.getByLabelText(text.fields.goldWithoutMaterial)).toHaveValue(0);
 
+    await user.clear(dialog.getByLabelText(text.fields.goldWithoutMaterial));
     await user.type(dialog.getByLabelText(text.fields.goldWithoutMaterial), "14.3");
     await user.click(dialog.getByRole("button", { name: text.form.saveChanges }));
 

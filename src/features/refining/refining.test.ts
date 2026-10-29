@@ -278,13 +278,13 @@ describe("editing a refining", () => {
     });
   });
 
-  it("fills the form with the refining, its worker found by name and no gold yet left empty", () => {
+  it("fills the form with the refining as saved, its worker found by name and a gold of 0", () => {
     const form = refiningFormValues({ ...saved, workerName: "Aicha", goldWithoutMaterial: 0 }, [
       { id: "4", name: "Aicha" },
     ]);
 
     expect(form.workerId).toBe("4");
-    expect(form.goldWithoutMaterial).toBeNaN();
+    expect(form.goldWithoutMaterial).toBe(0);
     expect(form.weightAfter).toBe(saved.weightAfter);
   });
 });

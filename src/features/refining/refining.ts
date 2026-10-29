@@ -198,8 +198,7 @@ export function refiningFormValues(
     weightBefore: refining.weightBefore,
     weightAfter: refining.weightAfter,
     goldWithMaterial: refining.goldWithMaterial,
-    goldWithoutMaterial:
-      refining.goldWithoutMaterial > 0 ? refining.goldWithoutMaterial : Number.NaN,
+    goldWithoutMaterial: refining.goldWithoutMaterial,
     lossReason: refining.lossReason,
     notes: refining.notes,
   };
