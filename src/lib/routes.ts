@@ -242,22 +242,44 @@ export function employeesProjectHref(
   return `${href}?${new URLSearchParams({ delete: drawer.remove })}`;
 }
 
+const employeeRecordParams = {
+  editWithdrawal: "withdrawal",
+  deleteWithdrawal: "deleteWithdrawal",
+  editAbsence: "absence",
+  deleteAbsence: "deleteAbsence",
+  editDebt: "debt",
+  deleteDebt: "deleteDebt",
+  editPayment: "payment",
+  deletePayment: "deletePayment",
+} as const;
+
+type EmployeeRecordAction = keyof typeof employeeRecordParams;
+
+const employeeRecordActions = Object.keys(employeeRecordParams).filter(
+  (key): key is EmployeeRecordAction => key in employeeRecordParams,
+);
+
 export type EmployeeDrawer =
   | "edit"
   | "delete"
   | "withdraw"
   | "raise"
-  | { editWithdrawal: string }
-  | { deleteWithdrawal: string };
+  | "addAbsence"
+  | "addDebt"
+  | "addPayment"
+  | Partial<Record<EmployeeRecordAction, string>>;
 
 export function employeeHref(employee: string, drawer?: EmployeeDrawer): string {
   const href = `${EMPLOYEES_HREF}/${employee}`;
 
   if (drawer === undefined) return href;
   if (typeof drawer === "string") return `${href}?${drawer}=1`;
-  if ("editWithdrawal" in drawer) {
-    return `${href}?${new URLSearchParams({ withdrawal: drawer.editWithdrawal })}`;
-  }
 
-  return `${href}?${new URLSearchParams({ deleteWithdrawal: drawer.deleteWithdrawal })}`;
+  const params = employeeRecordActions.flatMap((action) => {
+    const id = drawer[action];
+
+    return id === undefined ? [] : [[employeeRecordParams[action], id]];
+  });
+
+  return `${href}?${new URLSearchParams(params)}`;
 }

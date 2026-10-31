@@ -10,6 +10,7 @@ import {
   isEmployeeField,
   isRaiseField,
   isWithdrawalField,
+  monthlySalaryFromApi,
   newEmployeeToApi,
   raiseErrorsFromApi,
   raiseToApi,
@@ -17,7 +18,7 @@ import {
   withdrawalFromApi,
   withdrawalToApi,
 } from "./employees";
-import { apiEmployee, apiWithdrawal } from "./employeesTesting";
+import { apiEmployee, apiMonthlySalary, apiWithdrawal } from "./employeesTesting";
 
 const employeeSchema = createEmployeeSchema({
   required: "required",
@@ -29,9 +30,8 @@ const employeeSchema = createEmployeeSchema({
 });
 
 const validEmployee = {
-  matricule: " EMP-9 ",
   name: " Sidi ",
-  job: " Chauffeur ",
+  job: "CHF",
   phone: "46109325",
   monthlySalary: 15000,
   startedOn: "2026-09-01",
@@ -44,21 +44,20 @@ function issues(result: { error?: { issues: { path: PropertyKey[]; message: stri
 }
 
 describe("employee form", () => {
-  it("takes a complete employee, any job typed, and trims the texts", () => {
+  it("takes a complete employee, a job title from the list, and trims the texts", () => {
     expect(employeeSchema.parse(validEmployee)).toMatchObject({
-      matricule: "EMP-9",
       name: "Sidi",
-      job: "Chauffeur",
+      job: "CHF",
     });
   });
 
-  it("needs every field but the end date, a valid phone, a salary above zero and real dates", () => {
+  it("needs every field but the end date, a listed job title, a valid phone, a salary above zero and real dates", () => {
     expect(
       issues(
         employeeSchema.safeParse({
           ...validEmployee,
-          matricule: "",
-          job: " ",
+          name: " ",
+          job: "Chauffeur",
           phone: "12",
           monthlySalary: 0,
           startedOn: "2026-02-30",
@@ -67,7 +66,7 @@ describe("employee form", () => {
         }),
       ),
     ).toEqual([
-      ["matricule", "required"],
+      ["name", "required"],
       ["job", "required"],
       ["phone", "phone"],
       ["monthlySalary", "salary"],
@@ -88,6 +87,7 @@ describe("employee form", () => {
 
   it("knows its fields", () => {
     expect(isEmployeeField("endedOn")).toBe(true);
+    expect(isEmployeeField("matricule")).toBe(false);
     expect(isEmployeeField("balance")).toBe(false);
   });
 });
@@ -137,12 +137,23 @@ describe("withdrawal and raise forms", () => {
 
 describe("employees from and to the backend", () => {
   it("reads the employee with the amounts the backend worked out", () => {
-    expect(employeeFromApi(apiEmployee(7, { end_date: "2026-12-31", debt: "5000.5" }))).toEqual({
+    expect(
+      employeeFromApi(
+        apiEmployee(7, {
+          end_date: "2026-12-31",
+          debt: "5000.5",
+          absent_days: 3,
+          remaining_debt: "9500.00",
+          remaining_salary_debt: "7000.00",
+          remaining_other_debt: "2500.00",
+        }),
+      ),
+    ).toEqual({
       id: "7",
       project: "11",
       matricule: "EMP-7",
       name: "Sidi Ahmed",
-      job: "Chauffeur",
+      job: "CHF",
       phone: "+222 36 52 07 14",
       monthlySalary: 40000,
       salaries: [
@@ -152,22 +163,34 @@ describe("employees from and to the backend", () => {
       startedAt: "2026-01-01T08:00:00Z",
       endedOn: "2026-12-31",
       accruedUntil: "2026-10-28",
+      absentDays: 3,
       earned: expect.closeTo(395860.29, 2),
       withdrawn: 60000,
       balance: expect.closeTo(335860.29, 2),
       accumulated: expect.closeTo(335860.29, 2),
       debt: 5000.5,
+      debtLeft: 9500,
+      salaryDebtLeft: 7000,
+      otherDebtLeft: 2500,
     });
     expect(employeeFromApi(apiEmployee(7)).endedOn).toBeUndefined();
+  });
+
+  it("reads a month's salary with the month named by the backend", () => {
+    expect(monthlySalaryFromApi(apiMonthlySalary(2))).toEqual({
+      id: "2",
+      monthName: "septembre 2026",
+      amount: 40000,
+      creditedOn: "2026-09-30",
+    });
   });
 
   it("sends the salary only for a new employee, and no end date as null", () => {
     const values = employeeSchema.parse(validEmployee);
 
     expect(employeeToApi(values, "2026-09-01T08:30:00.000Z")).toEqual({
-      matricule: "EMP-9",
       full_name: "Sidi",
-      job_title: "Chauffeur",
+      job_title: "CHF",
       phone: "+22246109325",
       start_date: "2026-09-01T08:30:00.000Z",
       end_date: null,

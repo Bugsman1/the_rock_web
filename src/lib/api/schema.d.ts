@@ -348,6 +348,240 @@ export interface paths {
         patch: operations["debt_payments_partial_update"];
         trace?: never;
     };
+    "/api/v1/employee-absences/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Employees' days of unpaid absence, newest first, each deducted from the salary at the
+         *     day's rate.
+         */
+        get: operations["employee_absences_list"];
+        put?: never;
+        /**
+         * @description Employees' days of unpaid absence, newest first, each deducted from the salary at the
+         *     day's rate.
+         */
+        post: operations["employee_absences_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employee-absences/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Employees' days of unpaid absence, newest first, each deducted from the salary at the
+         *     day's rate.
+         */
+        get: operations["employee_absences_retrieve"];
+        /**
+         * @description Employees' days of unpaid absence, newest first, each deducted from the salary at the
+         *     day's rate.
+         */
+        put: operations["employee_absences_update"];
+        post?: never;
+        /**
+         * @description Employees' days of unpaid absence, newest first, each deducted from the salary at the
+         *     day's rate.
+         */
+        delete: operations["employee_absences_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Employees' days of unpaid absence, newest first, each deducted from the salary at the
+         *     day's rate.
+         */
+        patch: operations["employee_absences_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/employee-debt-payments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description What employees paid of their debts, newest first. A payment entered here is paid
+         *     another way, never above what is left of the debts not paid by salary; the payments from
+         *     the salary are written by the system and are not created, edited nor deleted here.
+         */
+        get: operations["employee_debt_payments_list"];
+        put?: never;
+        /**
+         * @description What employees paid of their debts, newest first. A payment entered here is paid
+         *     another way, never above what is left of the debts not paid by salary; the payments from
+         *     the salary are written by the system and are not created, edited nor deleted here.
+         */
+        post: operations["employee_debt_payments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employee-debt-payments/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description What employees paid of their debts, newest first. A payment entered here is paid
+         *     another way, never above what is left of the debts not paid by salary; the payments from
+         *     the salary are written by the system and are not created, edited nor deleted here.
+         */
+        get: operations["employee_debt_payments_retrieve"];
+        /**
+         * @description What employees paid of their debts, newest first. A payment entered here is paid
+         *     another way, never above what is left of the debts not paid by salary; the payments from
+         *     the salary are written by the system and are not created, edited nor deleted here.
+         */
+        put: operations["employee_debt_payments_update"];
+        post?: never;
+        /**
+         * @description What employees paid of their debts, newest first. A payment entered here is paid
+         *     another way, never above what is left of the debts not paid by salary; the payments from
+         *     the salary are written by the system and are not created, edited nor deleted here.
+         */
+        delete: operations["employee_debt_payments_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description What employees paid of their debts, newest first. A payment entered here is paid
+         *     another way, never above what is left of the debts not paid by salary; the payments from
+         *     the salary are written by the system and are not created, edited nor deleted here.
+         */
+        patch: operations["employee_debt_payments_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/employee-debts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The debts employees took, newest first, each with its date, description and whether
+         *     it is paid by salary. Each write recomputes the employee's totals and, when the balance
+         *     covers what is left of the debts paid by salary, the salary pays it; the others are paid
+         *     by hand. The debts of a kind cannot be lowered, deleted nor moved to the other kind below
+         *     what the employee already paid of them.
+         */
+        get: operations["employee_debts_list"];
+        put?: never;
+        /**
+         * @description The debts employees took, newest first, each with its date, description and whether
+         *     it is paid by salary. Each write recomputes the employee's totals and, when the balance
+         *     covers what is left of the debts paid by salary, the salary pays it; the others are paid
+         *     by hand. The debts of a kind cannot be lowered, deleted nor moved to the other kind below
+         *     what the employee already paid of them.
+         */
+        post: operations["employee_debts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employee-debts/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The debts employees took, newest first, each with its date, description and whether
+         *     it is paid by salary. Each write recomputes the employee's totals and, when the balance
+         *     covers what is left of the debts paid by salary, the salary pays it; the others are paid
+         *     by hand. The debts of a kind cannot be lowered, deleted nor moved to the other kind below
+         *     what the employee already paid of them.
+         */
+        get: operations["employee_debts_retrieve"];
+        /**
+         * @description The debts employees took, newest first, each with its date, description and whether
+         *     it is paid by salary. Each write recomputes the employee's totals and, when the balance
+         *     covers what is left of the debts paid by salary, the salary pays it; the others are paid
+         *     by hand. The debts of a kind cannot be lowered, deleted nor moved to the other kind below
+         *     what the employee already paid of them.
+         */
+        put: operations["employee_debts_update"];
+        post?: never;
+        /**
+         * @description The debts employees took, newest first, each with its date, description and whether
+         *     it is paid by salary. Each write recomputes the employee's totals and, when the balance
+         *     covers what is left of the debts paid by salary, the salary pays it; the others are paid
+         *     by hand. The debts of a kind cannot be lowered, deleted nor moved to the other kind below
+         *     what the employee already paid of them.
+         */
+        delete: operations["employee_debts_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description The debts employees took, newest first, each with its date, description and whether
+         *     it is paid by salary. Each write recomputes the employee's totals and, when the balance
+         *     covers what is left of the debts paid by salary, the salary pays it; the others are paid
+         *     by hand. The debts of a kind cannot be lowered, deleted nor moved to the other kind below
+         *     what the employee already paid of them.
+         */
+        patch: operations["employee_debts_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/employee-monthly-salaries/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The salary each employee earned month by month, newest first, credited on the month's
+         *     last day. Read-only: written and corrected by the employee's salaries, absences and dates,
+         *     and each day by the update_employee_salaries command.
+         */
+        get: operations["employee_monthly_salaries_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employee-monthly-salaries/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The salary each employee earned month by month, newest first, credited on the month's
+         *     last day. Read-only: written and corrected by the employee's salaries, absences and dates,
+         *     and each day by the update_employee_salaries command.
+         */
+        get: operations["employee_monthly_salaries_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/employee-salaries/": {
         parameters: {
             query?: never;
@@ -413,15 +647,17 @@ export interface paths {
         };
         /**
          * @description The history of what employees withdrew from their salary, newest first. Each write
-         *     recomputes the employee's withdrawn amount; a withdrawal may exceed what was accumulated
-         *     (the surplus is the employee's debt).
+         *     recomputes the employee's withdrawn amount; a withdrawal is never more than the
+         *     employee's balance (an edit adds that much at most), and none is made nor raised while a
+         *     debt paid by salary is not paid, checked under the employee's lock.
          */
         get: operations["employee_withdrawals_list"];
         put?: never;
         /**
          * @description The history of what employees withdrew from their salary, newest first. Each write
-         *     recomputes the employee's withdrawn amount; a withdrawal may exceed what was accumulated
-         *     (the surplus is the employee's debt).
+         *     recomputes the employee's withdrawn amount; a withdrawal is never more than the
+         *     employee's balance (an edit adds that much at most), and none is made nor raised while a
+         *     debt paid by salary is not paid, checked under the employee's lock.
          */
         post: operations["employee_withdrawals_create"];
         delete?: never;
@@ -439,29 +675,33 @@ export interface paths {
         };
         /**
          * @description The history of what employees withdrew from their salary, newest first. Each write
-         *     recomputes the employee's withdrawn amount; a withdrawal may exceed what was accumulated
-         *     (the surplus is the employee's debt).
+         *     recomputes the employee's withdrawn amount; a withdrawal is never more than the
+         *     employee's balance (an edit adds that much at most), and none is made nor raised while a
+         *     debt paid by salary is not paid, checked under the employee's lock.
          */
         get: operations["employee_withdrawals_retrieve"];
         /**
          * @description The history of what employees withdrew from their salary, newest first. Each write
-         *     recomputes the employee's withdrawn amount; a withdrawal may exceed what was accumulated
-         *     (the surplus is the employee's debt).
+         *     recomputes the employee's withdrawn amount; a withdrawal is never more than the
+         *     employee's balance (an edit adds that much at most), and none is made nor raised while a
+         *     debt paid by salary is not paid, checked under the employee's lock.
          */
         put: operations["employee_withdrawals_update"];
         post?: never;
         /**
          * @description The history of what employees withdrew from their salary, newest first. Each write
-         *     recomputes the employee's withdrawn amount; a withdrawal may exceed what was accumulated
-         *     (the surplus is the employee's debt).
+         *     recomputes the employee's withdrawn amount; a withdrawal is never more than the
+         *     employee's balance (an edit adds that much at most), and none is made nor raised while a
+         *     debt paid by salary is not paid, checked under the employee's lock.
          */
         delete: operations["employee_withdrawals_destroy"];
         options?: never;
         head?: never;
         /**
          * @description The history of what employees withdrew from their salary, newest first. Each write
-         *     recomputes the employee's withdrawn amount; a withdrawal may exceed what was accumulated
-         *     (the surplus is the employee's debt).
+         *     recomputes the employee's withdrawn amount; a withdrawal is never more than the
+         *     employee's balance (an edit adds that much at most), and none is made nor raised while a
+         *     debt paid by salary is not paid, checked under the employee's lock.
          */
         patch: operations["employee_withdrawals_partial_update"];
         trace?: never;
@@ -475,15 +715,15 @@ export interface paths {
         };
         /**
          * @description The employees of each project, with their salaries, the salary earned over the finished
-         *     days, what they withdrew, and what is left of it (accumulated salary) or taken above it
-         *     (debt).
+         *     days, what they withdrew, their debts, and what is left of the salary (accumulated) or
+         *     taken above it by a debt (debt).
          */
         get: operations["employees_list"];
         put?: never;
         /**
          * @description The employees of each project, with their salaries, the salary earned over the finished
-         *     days, what they withdrew, and what is left of it (accumulated salary) or taken above it
-         *     (debt).
+         *     days, what they withdrew, their debts, and what is left of the salary (accumulated) or
+         *     taken above it by a debt (debt).
          */
         post: operations["employees_create"];
         delete?: never;
@@ -501,29 +741,29 @@ export interface paths {
         };
         /**
          * @description The employees of each project, with their salaries, the salary earned over the finished
-         *     days, what they withdrew, and what is left of it (accumulated salary) or taken above it
-         *     (debt).
+         *     days, what they withdrew, their debts, and what is left of the salary (accumulated) or
+         *     taken above it by a debt (debt).
          */
         get: operations["employees_retrieve"];
         /**
          * @description The employees of each project, with their salaries, the salary earned over the finished
-         *     days, what they withdrew, and what is left of it (accumulated salary) or taken above it
-         *     (debt).
+         *     days, what they withdrew, their debts, and what is left of the salary (accumulated) or
+         *     taken above it by a debt (debt).
          */
         put: operations["employees_update"];
         post?: never;
         /**
          * @description The employees of each project, with their salaries, the salary earned over the finished
-         *     days, what they withdrew, and what is left of it (accumulated salary) or taken above it
-         *     (debt).
+         *     days, what they withdrew, their debts, and what is left of the salary (accumulated) or
+         *     taken above it by a debt (debt).
          */
         delete: operations["employees_destroy"];
         options?: never;
         head?: never;
         /**
          * @description The employees of each project, with their salaries, the salary earned over the finished
-         *     days, what they withdrew, and what is left of it (accumulated salary) or taken above it
-         *     (debt).
+         *     days, what they withdrew, their debts, and what is left of the salary (accumulated) or
+         *     taken above it by a debt (debt).
          */
         patch: operations["employees_partial_update"];
         trace?: never;
@@ -1471,9 +1711,10 @@ export interface components {
         Employee: {
             id: $Read<number>;
             /** Employee number */
-            matricule: string;
+            matricule: $Read<string>;
             full_name: string;
-            job_title: string;
+            job_title: components["schemas"]["JobTitleEnum"];
+            job_title_name: $Read<string>;
             project: number;
             project_name: $Read<string>;
             phone: string;
@@ -1486,10 +1727,37 @@ export interface components {
             end_date?: string | null;
             /** Format: date */
             accrued_until: $Read<string>;
+            absent_days: $Read<number>;
             /** Format: decimal */
             accrued_salary: $Read<string>;
             /** Format: decimal */
             withdrawn_amount: $Read<string>;
+            /**
+             * Debts
+             * Format: decimal
+             */
+            debts_amount: $Read<string>;
+            /**
+             * Debts paid by salary
+             * Format: decimal
+             */
+            debts_by_salary: $Read<string>;
+            /**
+             * Debt paid from the salary
+             * Format: decimal
+             */
+            salary_debts_amount: $Read<string>;
+            /**
+             * Debt paid another way
+             * Format: decimal
+             */
+            other_debts_paid: $Read<string>;
+            /** Format: decimal */
+            remaining_salary_debt: $Read<string>;
+            /** Format: decimal */
+            remaining_other_debt: $Read<string>;
+            /** Format: decimal */
+            remaining_debt: $Read<string>;
             /** Format: decimal */
             balance: $Read<string>;
             /** Format: decimal */
@@ -1497,6 +1765,111 @@ export interface components {
             /** Format: decimal */
             debt: $Read<string>;
             created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /**
+         * @description Days of unpaid absence, deducted from the salary at the day's rate. Dates within the
+         *     employment and no day twice are checked by the view, under the employee's lock.
+         */
+        EmployeeAbsence: {
+            id: $Read<number>;
+            employee: number;
+            matricule: $Read<string>;
+            employee_name: $Read<string>;
+            /** Format: date */
+            start_date: string;
+            /** Format: date */
+            end_date?: string;
+            /** @description The days deducted: each calendar day but the 31st. */
+            days: $Read<number>;
+            reason?: string;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /**
+         * @description A debt the employee took. Paid by salary (the default), the system takes it from the
+         *     salary; otherwise the employee pays it by hand, in steps.
+         */
+        EmployeeDebt: {
+            id: $Read<number>;
+            employee: number;
+            matricule: $Read<string>;
+            employee_name: $Read<string>;
+            /** Format: decimal */
+            amount: string;
+            /** Format: date-time */
+            debt_date?: string;
+            description: string;
+            /** @default true */
+            paid_by_salary: boolean;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /**
+         * @description An amount the employee paid of their debts. Entered by hand, it is paid another way
+         *     (method "other"), never above what is left of the debts not paid by salary (checked by
+         *     the view, under the employee's lock); the payments from the salary are the system's and
+         *     only listed.
+         */
+        EmployeeDebtPayment: {
+            id: $Read<number>;
+            employee: number;
+            matricule: $Read<string>;
+            employee_name: $Read<string>;
+            /** Format: decimal */
+            amount: string;
+            /** Payment method */
+            method: $Read<components["schemas"]["MethodEnum"]>;
+            /** Format: date-time */
+            paid_at?: string;
+            notes?: string;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /**
+         * @description A month's salary credited to the employee on its last day. Read-only: kept by the
+         *     employee's salaries, absences and dates.
+         */
+        EmployeeMonthlySalary: {
+            id: $Read<number>;
+            employee: $Read<number>;
+            matricule: $Read<string>;
+            employee_name: $Read<string>;
+            /**
+             * شهر
+             * Format: date
+             */
+            month: $Read<string>;
+            /** @description The month and its year in the request's language: «أكتوبر 2026», «octobre 2026». */
+            month_name: $Read<string>;
+            /** Format: decimal */
+            amount: $Read<string>;
+            /** Format: date */
+            credited_on: $Read<string>;
             /**
              * أنشئت في
              * Format: date-time
@@ -1618,6 +1991,19 @@ export interface components {
             /** Format: date-time */
             updated_at: $Read<string>;
         };
+        /**
+         * @description * `ADM` - الإدارة
+         *     * `CHF` - Drivers
+         *     * `ENG` - Heavy Equipment Operators
+         *     * `MOU` - Mill Workers
+         *     * `MIN` - Miners
+         *     * `MEC` - Mechanics
+         *     * `SOU` - Welders
+         *     * `TEC` - Technicians
+         *     * `SAF` - Gold Refiners
+         * @enum {string}
+         */
+        JobTitleEnum: "ADM" | "CHF" | "ENG" | "MOU" | "MIN" | "MEC" | "SOU" | "TEC" | "SAF";
         Me: {
             id: $Read<number>;
             /**
@@ -1658,6 +2044,12 @@ export interface components {
              */
             created_at: $Read<string>;
         };
+        /**
+         * @description * `salary` - From the salary
+         *     * `other` - Another way
+         * @enum {string}
+         */
+        MethodEnum: "salary" | "other";
         /**
          * @description * `accounts` - Accounts
          *     * `locations` - Locations
@@ -1736,6 +2128,51 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["DebtPayment"][];
         };
+        PaginatedEmployeeAbsenceList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["EmployeeAbsence"][];
+        };
+        PaginatedEmployeeDebtList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["EmployeeDebt"][];
+        };
+        PaginatedEmployeeDebtPaymentList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["EmployeeDebtPayment"][];
+        };
         PaginatedEmployeeList: {
             /** @example 123 */
             count: number;
@@ -1750,6 +2187,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Employee"][];
+        };
+        PaginatedEmployeeMonthlySalaryList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["EmployeeMonthlySalary"][];
         };
         PaginatedEmployeeSalaryList: {
             /** @example 123 */
@@ -2126,9 +2578,10 @@ export interface components {
         PatchedEmployee: {
             id?: $Read<number>;
             /** Employee number */
-            matricule?: string;
+            matricule?: $Read<string>;
             full_name?: string;
-            job_title?: string;
+            job_title?: components["schemas"]["JobTitleEnum"];
+            job_title_name?: $Read<string>;
             project?: number;
             project_name?: $Read<string>;
             phone?: string;
@@ -2141,16 +2594,120 @@ export interface components {
             end_date?: string | null;
             /** Format: date */
             accrued_until?: $Read<string>;
+            absent_days?: $Read<number>;
             /** Format: decimal */
             accrued_salary?: $Read<string>;
             /** Format: decimal */
             withdrawn_amount?: $Read<string>;
+            /**
+             * Debts
+             * Format: decimal
+             */
+            debts_amount?: $Read<string>;
+            /**
+             * Debts paid by salary
+             * Format: decimal
+             */
+            debts_by_salary?: $Read<string>;
+            /**
+             * Debt paid from the salary
+             * Format: decimal
+             */
+            salary_debts_amount?: $Read<string>;
+            /**
+             * Debt paid another way
+             * Format: decimal
+             */
+            other_debts_paid?: $Read<string>;
+            /** Format: decimal */
+            remaining_salary_debt?: $Read<string>;
+            /** Format: decimal */
+            remaining_other_debt?: $Read<string>;
+            /** Format: decimal */
+            remaining_debt?: $Read<string>;
             /** Format: decimal */
             balance?: $Read<string>;
             /** Format: decimal */
             accumulated_salary?: $Read<string>;
             /** Format: decimal */
             debt?: $Read<string>;
+            created_by_name?: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        /**
+         * @description Days of unpaid absence, deducted from the salary at the day's rate. Dates within the
+         *     employment and no day twice are checked by the view, under the employee's lock.
+         */
+        PatchedEmployeeAbsence: {
+            id?: $Read<number>;
+            employee?: number;
+            matricule?: $Read<string>;
+            employee_name?: $Read<string>;
+            /** Format: date */
+            start_date?: string;
+            /** Format: date */
+            end_date?: string;
+            /** @description The days deducted: each calendar day but the 31st. */
+            days?: $Read<number>;
+            reason?: string;
+            created_by_name?: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        /**
+         * @description A debt the employee took. Paid by salary (the default), the system takes it from the
+         *     salary; otherwise the employee pays it by hand, in steps.
+         */
+        PatchedEmployeeDebt: {
+            id?: $Read<number>;
+            employee?: number;
+            matricule?: $Read<string>;
+            employee_name?: $Read<string>;
+            /** Format: decimal */
+            amount?: string;
+            /** Format: date-time */
+            debt_date?: string;
+            description?: string;
+            /** @default true */
+            paid_by_salary: boolean;
+            created_by_name?: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        /**
+         * @description An amount the employee paid of their debts. Entered by hand, it is paid another way
+         *     (method "other"), never above what is left of the debts not paid by salary (checked by
+         *     the view, under the employee's lock); the payments from the salary are the system's and
+         *     only listed.
+         */
+        PatchedEmployeeDebtPayment: {
+            id?: $Read<number>;
+            employee?: number;
+            matricule?: $Read<string>;
+            employee_name?: $Read<string>;
+            /** Format: decimal */
+            amount?: string;
+            /** Payment method */
+            method?: $Read<components["schemas"]["MethodEnum"]>;
+            /** Format: date-time */
+            paid_at?: string;
+            notes?: string;
             created_by_name?: $Read<string | null>;
             /**
              * أنشئت في
@@ -2444,6 +3001,8 @@ export interface components {
             ground_bags?: $Read<number>;
             /** Format: double */
             refined_bags?: $Read<number>;
+            /** Format: double */
+            remaining_bags?: $Read<number>;
             is_ground?: $Read<boolean>;
             is_refined?: $Read<boolean>;
             is_cancelled?: $Read<boolean>;
@@ -2776,6 +3335,8 @@ export interface components {
             ground_bags: $Read<number>;
             /** Format: double */
             refined_bags: $Read<number>;
+            /** Format: double */
+            remaining_bags: $Read<number>;
             is_ground: $Read<boolean>;
             is_refined: $Read<boolean>;
             is_cancelled: $Read<boolean>;
@@ -3003,6 +3564,7 @@ export interface operations {
         parameters: {
             query?: {
                 customer?: number;
+                has_remaining?: boolean;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -3187,6 +3749,7 @@ export interface operations {
         parameters: {
             query?: {
                 customer?: number;
+                has_remaining?: boolean;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A search term. */
@@ -3714,6 +4277,557 @@ export interface operations {
             };
         };
     };
+    employee_absences_list: {
+        parameters: {
+            query?: {
+                employee?: number;
+                employee__project?: number;
+                end_date?: string;
+                end_date__gte?: string;
+                end_date__lte?: string;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+                start_date?: string;
+                start_date__gte?: string;
+                start_date__lte?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEmployeeAbsenceList"];
+                };
+            };
+        };
+    };
+    employee_absences_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeAbsence"];
+                "application/x-www-form-urlencoded": components["schemas"]["EmployeeAbsence"];
+                "multipart/form-data": components["schemas"]["EmployeeAbsence"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeAbsence"];
+                };
+            };
+        };
+    };
+    employee_absences_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee absence. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeAbsence"];
+                };
+            };
+        };
+    };
+    employee_absences_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee absence. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeAbsence"];
+                "application/x-www-form-urlencoded": components["schemas"]["EmployeeAbsence"];
+                "multipart/form-data": components["schemas"]["EmployeeAbsence"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeAbsence"];
+                };
+            };
+        };
+    };
+    employee_absences_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee absence. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    employee_absences_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee absence. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEmployeeAbsence"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedEmployeeAbsence"];
+                "multipart/form-data": components["schemas"]["PatchedEmployeeAbsence"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeAbsence"];
+                };
+            };
+        };
+    };
+    employee_debt_payments_list: {
+        parameters: {
+            query?: {
+                employee?: number;
+                employee__project?: number;
+                /**
+                 * @description * `salary` - From the salary
+                 *     * `other` - Another way
+                 */
+                method?: "other" | "salary";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                paid_at?: string;
+                paid_at__date?: string;
+                paid_at__date__gte?: string;
+                paid_at__date__lte?: string;
+                paid_at__gte?: string;
+                paid_at__lte?: string;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEmployeeDebtPaymentList"];
+                };
+            };
+        };
+    };
+    employee_debt_payments_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeDebtPayment"];
+                "application/x-www-form-urlencoded": components["schemas"]["EmployeeDebtPayment"];
+                "multipart/form-data": components["schemas"]["EmployeeDebtPayment"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeDebtPayment"];
+                };
+            };
+        };
+    };
+    employee_debt_payments_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee debt payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeDebtPayment"];
+                };
+            };
+        };
+    };
+    employee_debt_payments_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee debt payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeDebtPayment"];
+                "application/x-www-form-urlencoded": components["schemas"]["EmployeeDebtPayment"];
+                "multipart/form-data": components["schemas"]["EmployeeDebtPayment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeDebtPayment"];
+                };
+            };
+        };
+    };
+    employee_debt_payments_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee debt payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    employee_debt_payments_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee debt payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEmployeeDebtPayment"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedEmployeeDebtPayment"];
+                "multipart/form-data": components["schemas"]["PatchedEmployeeDebtPayment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeDebtPayment"];
+                };
+            };
+        };
+    };
+    employee_debts_list: {
+        parameters: {
+            query?: {
+                debt_date?: string;
+                debt_date__date?: string;
+                debt_date__date__gte?: string;
+                debt_date__date__lte?: string;
+                debt_date__gte?: string;
+                debt_date__lte?: string;
+                employee?: number;
+                employee__project?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                paid_by_salary?: boolean;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEmployeeDebtList"];
+                };
+            };
+        };
+    };
+    employee_debts_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeDebt"];
+                "application/x-www-form-urlencoded": components["schemas"]["EmployeeDebt"];
+                "multipart/form-data": components["schemas"]["EmployeeDebt"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeDebt"];
+                };
+            };
+        };
+    };
+    employee_debts_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee debt. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeDebt"];
+                };
+            };
+        };
+    };
+    employee_debts_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee debt. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeDebt"];
+                "application/x-www-form-urlencoded": components["schemas"]["EmployeeDebt"];
+                "multipart/form-data": components["schemas"]["EmployeeDebt"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeDebt"];
+                };
+            };
+        };
+    };
+    employee_debts_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee debt. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    employee_debts_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee debt. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEmployeeDebt"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedEmployeeDebt"];
+                "multipart/form-data": components["schemas"]["PatchedEmployeeDebt"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeDebt"];
+                };
+            };
+        };
+    };
+    employee_monthly_salaries_list: {
+        parameters: {
+            query?: {
+                employee?: number;
+                employee__project?: number;
+                month?: string;
+                month__gte?: string;
+                month__lte?: string;
+                month__year?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEmployeeMonthlySalaryList"];
+                };
+            };
+        };
+    };
+    employee_monthly_salaries_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee monthly salary. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeMonthlySalary"];
+                };
+            };
+        };
+    };
     employee_salaries_list: {
         parameters: {
             query?: {
@@ -4037,7 +5151,18 @@ export interface operations {
     employees_list: {
         parameters: {
             query?: {
-                job_title?: string;
+                /**
+                 * @description * `ADM` - الإدارة
+                 *     * `CHF` - Drivers
+                 *     * `ENG` - Heavy Equipment Operators
+                 *     * `MOU` - Mill Workers
+                 *     * `MIN` - Miners
+                 *     * `MEC` - Mechanics
+                 *     * `SOU` - Welders
+                 *     * `TEC` - Technicians
+                 *     * `SAF` - Gold Refiners
+                 */
+                job_title?: "ADM" | "CHF" | "ENG" | "MEC" | "MIN" | "MOU" | "SAF" | "SOU" | "TEC";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -4365,6 +5490,7 @@ export interface operations {
                 /** @description Number of results to return per page. */
                 page_size?: number;
                 project?: number;
+                refined?: boolean;
                 /** @description A search term. */
                 search?: string;
                 shipment?: number;
@@ -6045,8 +7171,11 @@ export interface operations {
         parameters: {
             query?: {
                 arrival_date?: string;
+                arrival_date__gte?: string;
+                arrival_date__lte?: string;
                 created_by?: number;
                 customer?: number;
+                has_remaining_bags?: boolean;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -6064,6 +7193,16 @@ export interface operations {
                  *     * `cancelled` - Cancelled
                  */
                 status?: "cancelled" | "completed" | "grinding" | "pending" | "refining";
+                /**
+                 * @description يمكن فصل القيم المتعددة بفواصل.
+                 *
+                 *     * `pending` - Pending
+                 *     * `grinding` - In Grinding
+                 *     * `refining` - In Refining
+                 *     * `completed` - Completed
+                 *     * `cancelled` - Cancelled
+                 */
+                status__in?: ("cancelled" | "completed" | "grinding" | "pending" | "refining")[];
                 /**
                  * @description * `truck` - Truck
                  *     * `hilux` - Hilux

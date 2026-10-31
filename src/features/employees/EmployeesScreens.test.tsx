@@ -31,7 +31,8 @@ function rowOf(matricule: string) {
 
 const owing = apiEmployee(8, {
   full_name: "Mariem",
-  job_title: "Gardien",
+  job_title: "MOU",
+  job_title_name: "Ouvriers des moulins",
   phone: "+22246109325",
   balance: "-6000.00",
   debt: "6000.00",
@@ -76,7 +77,7 @@ describe("a project's employees", () => {
     expect(cellsOf(rowOf("EMP-8")).slice(0, 7)).toEqual([
       "EMP-8",
       "Mariem",
-      "Gardien",
+      text.jobTitles.MOU,
       "+222 46 10 93 25",
       money(40000),
       "01/01/2026",
@@ -89,19 +90,19 @@ describe("a project's employees", () => {
     );
   });
 
-  it("finds an employee by the job typed for them", async () => {
+  it("finds an employee by the name of their job title", async () => {
     serveProjects([11, 12]);
     serveEmployeeData([apiEmployee(7), owing]);
     const user = userEvent.setup();
     openAt("/fr/employees/projects/11");
 
-    await user.type(await screen.findByRole("searchbox"), "gard");
+    await user.type(await screen.findByRole("searchbox"), "moulin");
 
     expect(screen.getByRole("cell", { name: "EMP-8" })).toBeVisible();
     expect(screen.queryByRole("cell", { name: "EMP-7" })).toBeNull();
   });
 
-  it("adds an employee with a typed job, after refusing an incomplete form", async () => {
+  it("adds an employee with a job title from the list, after refusing an incomplete form", async () => {
     serveProjects([11, 12]);
     serveEmployeeData([]);
     const sent: unknown[] = [];
@@ -119,9 +120,9 @@ describe("a project's employees", () => {
     expect(drawer.getAllByText(common.validation.required).length).toBeGreaterThan(0);
     expect(drawer.getByText(text.errors.salaryInvalid)).toBeVisible();
 
-    await user.type(drawer.getByLabelText(text.fields.matricule), "EMP-010");
+    expect(drawer.queryByLabelText(text.fields.matricule)).toBeNull();
     await user.type(drawer.getByLabelText(text.fields.name), "Mariem");
-    await user.type(drawer.getByLabelText(text.fields.job), "Gardien");
+    await user.selectOptions(drawer.getByLabelText(text.fields.job), text.jobTitles.MOU);
     await user.type(drawer.getByLabelText(text.fields.phone), "36520714");
     await user.type(drawer.getByLabelText(text.fields.monthlySalary), "18000");
     await user.type(drawer.getByLabelText(text.fields.startedOn), "01/10/2026");
@@ -136,7 +137,7 @@ describe("a project's employees", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(sent).toEqual([
       expect.objectContaining({
-        job_title: "Gardien",
+        job_title: "MOU",
         monthly_salary: "18000",
         start_date: "2026-10-01T08:30:00.000Z",
         end_date: null,
@@ -144,7 +145,7 @@ describe("a project's employees", () => {
     ]);
   });
 
-  it("shows the salary read-only when changing an employee", async () => {
+  it("shows the salary and matricule read-only when changing an employee", async () => {
     serveProjects([11, 12]);
     serveEmployeeData([apiEmployee(7)]);
     openAt("/fr/employees/projects/11?edit=7");
@@ -152,7 +153,8 @@ describe("a project's employees", () => {
     const drawer = within(await screen.findByRole("dialog", { name: text.form.editTitle }));
     expect(drawer.getByText(money(40000))).toBeVisible();
     expect(drawer.queryByRole("spinbutton", { name: text.fields.monthlySalary })).toBeNull();
-    expect(drawer.getByLabelText(text.fields.job)).toHaveValue("Chauffeur");
+    expect(drawer.getByText("EMP-7")).toBeVisible();
+    expect(drawer.getByLabelText(text.fields.job)).toHaveValue("CHF");
     expect(drawer.getByLabelText(text.fields.startedOn)).toHaveValue("01/01/2026");
     expect(drawer.getByLabelText(text.fields.startTime)).toHaveValue("08:00");
   });

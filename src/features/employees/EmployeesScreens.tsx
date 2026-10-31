@@ -115,7 +115,7 @@ function EmployeesTable({ employees, query }: { employees: readonly Employee[]; 
   const visible = employees.filter((employee) =>
     matchesSearch(
       {
-        texts: [employee.name, employee.matricule, employee.job],
+        texts: [employee.name, employee.matricule, t(`jobTitles.${employee.job}`)],
         phone: employee.phone,
       },
       query,
@@ -140,7 +140,7 @@ function EmployeesTable({ employees, query }: { employees: readonly Employee[]; 
       key: "job",
       header: t("fields.job"),
       className: "text-ink-muted font-semibold",
-      cell: (employee) => <span dir="auto">{employee.job}</span>,
+      cell: (employee) => t(`jobTitles.${employee.job}`),
     },
     {
       key: "phone",

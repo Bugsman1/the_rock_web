@@ -46,6 +46,7 @@ describe("shipment payments", () => {
     project: 3,
     status: "pending",
     ground_bags: 0,
+    remaining_bags: 10,
     refined_bags: 0,
     is_ground: false,
     is_refined: false,

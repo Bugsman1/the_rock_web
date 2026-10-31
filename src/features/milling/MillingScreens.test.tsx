@@ -261,6 +261,15 @@ describe("milling screens", () => {
     expect(within(rows[0] ?? table).getByText("Client 1")).toBeVisible();
   });
 
+  it("opens a machine from its row", async () => {
+    openAt("/fr/milling/projects/3");
+
+    expect(await screen.findByRole("link", { name: "2" })).toHaveAttribute(
+      "href",
+      "/fr/milling/projects/3/machines/2",
+    );
+  });
+
   it("queues the shipments that still have bags to mill", async () => {
     openAt("/fr/milling/projects/3");
 

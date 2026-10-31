@@ -67,16 +67,18 @@ function desktopMenuButton() {
 }
 
 describe("AppShell", () => {
-  it("shows only the account icon, which opens the name, role, profile and logout", async () => {
+  it("shows the user's name by the account icon, which opens the name, role, profile and logout", async () => {
     const user = userEvent.setup();
     renderShell(supervisor, "supervisor");
 
-    expect(screen.queryByText("Sidi")).toBeNull();
-    await user.click(
-      screen.getByRole("button", { name: messages.shell.userMenu.replace("{name}", "Sidi") }),
-    );
+    const account = screen.getByRole("button", {
+      name: messages.shell.userMenu.replace("{name}", "Sidi"),
+    });
+    expect(account).toHaveTextContent("Sidi");
+    expect(screen.queryByText(messages.roles.supervisor)).toBeNull();
+    await user.click(account);
 
-    expect(screen.getByText("Sidi")).toBeInTheDocument();
+    expect(screen.getAllByText("Sidi")).toHaveLength(2);
     expect(screen.getByText(messages.roles.supervisor)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: messages.shell.profile })).toHaveAttribute(
       "href",

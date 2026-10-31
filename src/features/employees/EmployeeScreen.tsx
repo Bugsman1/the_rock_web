@@ -1,33 +1,61 @@
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
-import { ButtonLink } from "@/components/ui/ButtonLink";
-import { DetailList } from "@/components/ui/Cards";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
-import { Icon } from "@/components/ui/Icon";
 import { PageLayout } from "@/components/ui/PageHeader";
-import { TablePanel } from "@/components/ui/TablePanel";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { notFound } from "@/lib/api/client";
-import { formatDate, formatDateTime, formatMoney } from "@/lib/format";
+import { formatDateTime, formatMoney } from "@/lib/format";
 import { employeeHref, employeesProjectHref } from "@/lib/routes";
+import { AbsenceDrawers } from "./AbsencesTab";
+import { WithdrawalForm } from "./AmountForms";
+import { DebtDrawers } from "./DebtsTab";
 import { DeleteDrawer } from "./DeleteDrawer";
 import { EmployeeForm } from "./EmployeeForm";
-import type { Employee } from "./employees";
-import { deleteEmployee, deleteWithdrawal, getEmployee, getWithdrawals } from "./employeesApi";
-import { SalariesTable, WithdrawalsTable } from "./EmployeeTables";
+import { EmployeeActions, EmployeeDetails, EmployeeTabs } from "./EmployeeSections";
+import { isEnteredByHand } from "./employeeDebts";
+import { getDebtPayments, getDebts } from "./employeeDebtsApi";
+import {
+  deleteEmployee,
+  deleteWithdrawal,
+  getAbsences,
+  getEmployee,
+  getMonthlySalaries,
+  getWithdrawals,
+} from "./employeesApi";
 import { RaiseForm } from "./RaiseForm";
-import { WithdrawalForm } from "./WithdrawalForm";
+
+function recordDrawers<Row extends { id: string }>(
+  rows: readonly Row[],
+  search: URLSearchParams,
+  params: { add: string; edit: string; remove: string },
+) {
+  return {
+    adding: search.get(params.add) === "1",
+    editing: rows.find((row) => row.id === search.get(params.edit)),
+    removing: rows.find((row) => row.id === search.get(params.remove)),
+  };
+}
 
 export async function employeeLoader({ params, request }: LoaderFunctionArgs) {
   const employee = (await getEmployee(params.employee ?? "")) ?? notFound();
-  const withdrawals = await getWithdrawals(employee.id);
+  const [withdrawals, absences, debts, payments, monthlySalaries] = await Promise.all([
+    getWithdrawals(employee.id),
+    getAbsences(employee.id),
+    getDebts(employee.id),
+    getDebtPayments(employee.id),
+    getMonthlySalaries(employee.id),
+  ]);
   const search = new URL(request.url).searchParams;
 
   return {
     employee,
     withdrawals,
+    absences,
+    debts,
+    payments,
+    monthlySalaries,
     editing: search.get("edit") === "1",
     removing: search.get("delete") === "1",
     withdrawing: search.get("withdraw") === "1",
@@ -36,81 +64,41 @@ export async function employeeLoader({ params, request }: LoaderFunctionArgs) {
     removingWithdrawal: withdrawals.find(
       (withdrawal) => withdrawal.id === search.get("deleteWithdrawal"),
     ),
+    absenceDrawers: recordDrawers(absences, search, {
+      add: "addAbsence",
+      edit: "absence",
+      remove: "deleteAbsence",
+    }),
+    debtDrawers: recordDrawers(debts, search, {
+      add: "addDebt",
+      edit: "debt",
+      remove: "deleteDebt",
+    }),
+    paymentDrawers: recordDrawers(payments.filter(isEnteredByHand), search, {
+      add: "addPayment",
+      edit: "payment",
+      remove: "deletePayment",
+    }),
   };
-}
-
-function EmployeeDetails({ employee }: { employee: Employee }) {
-  const t = useTranslations("employees");
-  const locale = useLocale();
-
-  return (
-    <section className="rounded-card border-line bg-surface shadow-subtle border-[1.5px] p-6">
-      <DetailList
-        items={[
-          { label: t("fields.matricule"), value: employee.matricule },
-          { label: t("fields.job"), value: employee.job },
-          { label: t("fields.phone"), value: employee.phone, dir: "ltr" },
-          { label: t("fields.monthlySalary"), value: formatMoney(employee.monthlySalary, locale) },
-          { label: t("fields.startedOn"), value: formatDateTime(employee.startedAt, locale) },
-          {
-            label: t("fields.endedOn"),
-            value: employee.endedOn === undefined ? "—" : formatDate(employee.endedOn, locale),
-          },
-          { label: t("fields.accruedUntil"), value: formatDate(employee.accruedUntil, locale) },
-          { label: t("fields.earned"), value: formatMoney(employee.earned, locale) },
-          { label: t("fields.withdrawn"), value: formatMoney(employee.withdrawn, locale) },
-          { label: t("fields.accumulated"), value: formatMoney(employee.accumulated, locale) },
-          { label: t("fields.debt"), value: formatMoney(employee.debt, locale) },
-        ]}
-      />
-    </section>
-  );
-}
-
-function EmployeeActions({ employee }: { employee: Employee }) {
-  const t = useTranslations("employees");
-  const can = useCan();
-
-  return (
-    <>
-      {can("employees", "add") ? (
-        <>
-          <ButtonLink href={employeeHref(employee.id, "withdraw")} variant="primary">
-            <Icon name="plus" />
-            {t("withdrawals.new")}
-          </ButtonLink>
-          <ButtonLink href={employeeHref(employee.id, "raise")} variant="secondary">
-            <Icon name="plus" />
-            {t("raises.new")}
-          </ButtonLink>
-        </>
-      ) : null}
-      {can("employees", "edit") ? (
-        <ButtonLink href={employeeHref(employee.id, "edit")} variant="secondary">
-          <Icon name="pencil" />
-          {t("edit")}
-        </ButtonLink>
-      ) : null}
-      {can("employees", "delete") ? (
-        <ButtonLink href={employeeHref(employee.id, "delete")} variant="danger">
-          <Icon name="trash" />
-          {t("delete")}
-        </ButtonLink>
-      ) : null}
-    </>
-  );
 }
 
 export function EmployeeScreen() {
   const {
     employee,
     withdrawals,
+    absences,
+    debts,
+    payments,
+    monthlySalaries,
     editing,
     removing,
     withdrawing,
     raising,
     editingWithdrawal,
     removingWithdrawal,
+    absenceDrawers,
+    debtDrawers,
+    paymentDrawers,
   } = useLoaderData<typeof employeeLoader>();
   const t = useTranslations("employees");
   const common = useTranslations("common");
@@ -132,13 +120,18 @@ export function EmployeeScreen() {
     >
       <EmployeeDetails employee={employee} />
 
-      <TablePanel title={t("raises.title")}>
-        <SalariesTable salaries={employee.salaries} />
-      </TablePanel>
+      <EmployeeTabs
+        employee={employee}
+        withdrawals={withdrawals}
+        debts={debts}
+        payments={payments}
+        absences={absences}
+        monthlySalaries={monthlySalaries}
+      />
 
-      <TablePanel title={t("withdrawals.title")}>
-        <WithdrawalsTable employee={employee} withdrawals={withdrawals} />
-      </TablePanel>
+      <AbsenceDrawers employee={employee} drawers={absenceDrawers} />
+
+      <DebtDrawers employee={employee} debtDrawers={debtDrawers} paymentDrawers={paymentDrawers} />
 
       <Drawer
         open={editing && editingAllowed}

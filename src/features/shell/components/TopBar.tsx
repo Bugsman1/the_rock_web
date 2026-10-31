@@ -39,9 +39,16 @@ function UserMenu({ name, role }: UserBadgeProps) {
         aria-controls={USER_MENU_ID}
         aria-label={t("userMenu", { name })}
         onClick={() => setOpen((previous) => !previous)}
-        className="rounded-field text-ink hover:bg-surface-hover inline-flex size-11 shrink-0 cursor-pointer items-center justify-center"
+        className="rounded-field text-ink hover:bg-surface-hover inline-flex h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center gap-2 sm:px-2"
       >
         <Icon name="user" />
+        <span
+          aria-hidden
+          dir="auto"
+          className="hidden max-w-48 truncate text-[14px] font-semibold sm:inline"
+        >
+          {name}
+        </span>
       </button>
 
       {open ? (

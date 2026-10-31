@@ -841,19 +841,30 @@
       "time": "الوقت",
       "note": "ملاحظة",
       "by": "بواسطة",
-      "action": "إجراء"
+      "action": "إجراء",
+      "absentDays": "الأيام المخصومة",
+      "salaryDebtLeft": "دين الراتب المتبقي",
+      "otherDebtLeft": "الدين الآخر المتبقي",
+      "description": "الوصف",
+      "reason": "السبب",
+      "from": "من",
+      "to": "إلى",
+      "days": "الأيام",
+      "repayment": "طريقة السداد"
     },
     "form": {
       "newTitle": "موظف جديد",
       "editTitle": "تعديل الموظف",
       "create": "إضافة الموظف",
       "save": "حفظ التغييرات",
-      "saving": "جارٍ الحفظ..."
+      "saving": "جارٍ الحفظ...",
+      "jobPlaceholder": "اختر الوظيفة"
     },
     "errors": {
       "salaryInvalid": "أدخل راتبًا أكبر من صفر",
       "amountInvalid": "أدخل مبلغًا أكبر من صفر",
-      "endBeforeStart": "تاريخ النهاية لا يمكن أن يسبق تاريخ البدء"
+      "endBeforeStart": "تاريخ النهاية لا يمكن أن يسبق تاريخ البدء",
+      "absenceEndBeforeStart": "تاريخ النهاية لا يمكن أن يسبق تاريخ البداية"
     },
     "remove": {
       "title": "حذف الموظف",
@@ -883,6 +894,71 @@
       "from": "ابتداءً من",
       "create": "تسجيل الزيادة",
       "empty": "لا توجد رواتب"
+    },
+    "absences": {
+      "title": "الأيام المخصومة",
+      "new": "خصم أيام",
+      "newTitle": "خصم أيام",
+      "editTitle": "تعديل الخصم",
+      "create": "تسجيل الخصم",
+      "empty": "لا توجد خصومات",
+      "editLabel": "تعديل خصم {date}",
+      "deleteLabel": "حذف خصم {date}",
+      "removeTitle": "حذف الخصم",
+      "removeQuestion": "حذف خصم الأيام من {from} إلى {to}؟ لا يمكن التراجع عن ذلك."
+    },
+    "debts": {
+      "title": "الديون",
+      "new": "دين جديد",
+      "newTitle": "دين جديد",
+      "editTitle": "تعديل الدين",
+      "create": "تسجيل الدين",
+      "empty": "لا توجد ديون",
+      "paidBySalary": "يُسدَّد من الراتب",
+      "bySalary": "من الراتب",
+      "byHand": "يدويًا",
+      "editLabel": "تعديل دين {date}",
+      "deleteLabel": "حذف دين {date}",
+      "removeTitle": "حذف الدين",
+      "removeQuestion": "حذف دين {amount} بتاريخ {date}؟ لا يمكن التراجع عن ذلك.",
+      "kind": "النوع",
+      "debt": "دين",
+      "payment": "تسديد",
+      "left": "المتبقي للسداد"
+    },
+    "payments": {
+      "new": "تسديد جديد",
+      "newTitle": "تسديد جديد",
+      "editTitle": "تعديل التسديد",
+      "create": "تسجيل التسديد",
+      "editLabel": "تعديل تسديد {date}",
+      "deleteLabel": "حذف تسديد {date}",
+      "removeTitle": "حذف التسديد",
+      "removeQuestion": "حذف تسديد {amount} بتاريخ {date}؟ لا يمكن التراجع عن ذلك."
+    },
+    "monthlySalaries": {
+      "title": "الرواتب الشهرية",
+      "month": "الشهر",
+      "creditedOn": "أُضيف في",
+      "empty": "لا يوجد شهر مكتمل"
+    },
+    "jobTitles": {
+      "ADM": "إداري",
+      "CHF": "سائق",
+      "ENG": "سائق آليات",
+      "MOU": "عامل مطحنة",
+      "MIN": "عامل منجم",
+      "MEC": "ميكانيكي",
+      "SOU": "لحّام",
+      "TEC": "فني",
+      "SAF": "صفّاي"
+    },
+    "tabs": {
+      "label": "سجلات الموظف",
+      "withdrawals": "السحوبات",
+      "debts": "الديون",
+      "deductions": "الخصومات",
+      "salaries": "الرواتب"
     }
   },
   "inventory": {
@@ -1120,6 +1196,15 @@
     "withdrawalAdded": "تم تسجيل السحب",
     "withdrawalUpdated": "تم حفظ السحب",
     "withdrawalDeleted": "تم حذف السحب",
-    "raiseAdded": "تم تسجيل زيادة الراتب"
+    "raiseAdded": "تم تسجيل زيادة الراتب",
+    "absenceAdded": "تم تسجيل الخصم",
+    "absenceUpdated": "تم حفظ الخصم",
+    "absenceDeleted": "تم حذف الخصم",
+    "employeeDebtAdded": "تم تسجيل الدين",
+    "employeeDebtUpdated": "تم حفظ الدين",
+    "employeeDebtDeleted": "تم حذف الدين",
+    "debtPaymentAdded": "تم تسجيل التسديد",
+    "debtPaymentUpdated": "تم حفظ التسديد",
+    "debtPaymentDeleted": "تم حذف التسديد"
   }
 }

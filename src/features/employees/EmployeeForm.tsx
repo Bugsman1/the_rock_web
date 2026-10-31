@@ -6,14 +6,15 @@ import { DateField } from "@/components/ui/DateField";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
+import { Select } from "@/components/ui/Select";
 import { TextField, TimeField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
 import { combineDateAndTime, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { formatMoney } from "@/lib/format";
 import { PHONE_PLACEHOLDER, sanitizePhone } from "@/lib/phone";
 import type { ProjectId } from "@/lib/projects";
-import { createEmployeeSchema, isEmployeeField } from "./employees";
-import type { Employee, EmployeeValues } from "./employees";
+import { createEmployeeSchema, isEmployeeField, jobTitles } from "./employees";
+import type { Employee, EmployeeInput, EmployeeValues } from "./employees";
 import { createEmployee, updateEmployee } from "./employeesApi";
 
 type EmployeeFormProps = {
@@ -23,10 +24,9 @@ type EmployeeFormProps = {
   onCancel: () => void;
 };
 
-function defaultValues(employee: Employee | undefined): EmployeeValues {
+function defaultValues(employee: Employee | undefined): EmployeeInput {
   return employee === undefined
     ? {
-        matricule: "",
         name: "",
         job: "",
         phone: "",
@@ -36,7 +36,6 @@ function defaultValues(employee: Employee | undefined): EmployeeValues {
         endedOn: "",
       }
     : {
-        matricule: employee.matricule,
         name: employee.name,
         job: employee.job,
         phone: employee.phone,
@@ -69,7 +68,11 @@ export function EmployeeForm({ project, employee, onSaved, onCancel }: EmployeeF
     [t, common],
   );
 
-  const { control, register, handleSubmit, formState, setError } = useForm<EmployeeValues>({
+  const { control, register, handleSubmit, formState, setError } = useForm<
+    EmployeeInput,
+    unknown,
+    EmployeeValues
+  >({
     mode: "onTouched",
     resolver: zodResolver(schema),
     defaultValues: defaultValues(employee),
@@ -114,15 +117,11 @@ export function EmployeeForm({ project, employee, onSaved, onCancel }: EmployeeF
   return (
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
-        <TextField
-          id="employee-matricule"
-          label={t("fields.matricule")}
-          required
-          autoComplete="off"
-          dir="auto"
-          error={errors.matricule?.message}
-          {...register("matricule")}
-        />
+        {employee === undefined ? null : (
+          <div className="sm:col-span-2">
+            <ReadOnlyField label={t("fields.matricule")} value={employee.matricule} />
+          </div>
+        )}
 
         <TextField
           id="employee-name"
@@ -133,11 +132,12 @@ export function EmployeeForm({ project, employee, onSaved, onCancel }: EmployeeF
           {...register("name")}
         />
 
-        <TextField
+        <Select
           id="employee-job"
           label={t("fields.job")}
           required
-          autoComplete="off"
+          placeholder={t("form.jobPlaceholder")}
+          options={jobTitles.map((title) => ({ value: title, label: t(`jobTitles.${title}`) }))}
           error={errors.job?.message}
           {...register("job")}
         />

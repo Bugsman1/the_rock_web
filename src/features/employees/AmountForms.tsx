@@ -8,34 +8,62 @@ import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
+import type { SaveResult } from "@/lib/api/client";
 import { combineDateAndTime, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { formatMoney } from "@/lib/format";
+import type { IsoTimestamp } from "@/lib/format";
+import type { DebtPayment } from "./employeeDebts";
+import { addDebtPayment, updateDebtPayment } from "./employeeDebtsApi";
 import { createWithdrawalSchema, isWithdrawalField } from "./employees";
 import type { Employee, Withdrawal, WithdrawalValues } from "./employees";
 import { addWithdrawal, updateWithdrawal } from "./employeesApi";
 
-type WithdrawalFormProps = {
+type RecordedAmount = {
+  amount: number;
+  at: IsoTimestamp;
+  note: string;
+};
+
+type AmountFormProps = {
+  idPrefix: string;
   employee: Employee;
-  withdrawal: Withdrawal | undefined;
+  figure: { label: string; amount: number };
+  recorded: RecordedAmount | undefined;
+  save: (
+    values: WithdrawalValues,
+    at: IsoTimestamp,
+    key: string,
+  ) => Promise<SaveResult<keyof WithdrawalValues>>;
+  savedMessage: string;
+  createLabel: string;
   onSaved: () => void;
   onCancel: () => void;
 };
 
-function defaultValues(withdrawal: Withdrawal | undefined): WithdrawalValues {
-  const at = withdrawal === undefined ? new Date() : new Date(withdrawal.at);
+function defaultValues(recorded: RecordedAmount | undefined): WithdrawalValues {
+  const at = recorded === undefined ? new Date() : new Date(recorded.at);
 
   return {
-    amount: withdrawal?.amount ?? Number.NaN,
+    amount: recorded?.amount ?? Number.NaN,
     date: todayAsInputValue(at),
     time: nowAsTimeValue(at),
-    note: withdrawal?.note ?? "",
+    note: recorded?.note ?? "",
   };
 }
 
-export function WithdrawalForm({ employee, withdrawal, onSaved, onCancel }: WithdrawalFormProps) {
+function AmountForm({
+  idPrefix,
+  employee,
+  figure,
+  recorded,
+  save,
+  savedMessage,
+  createLabel,
+  onSaved,
+  onCancel,
+}: AmountFormProps) {
   const t = useTranslations("employees");
   const common = useTranslations("common");
-  const toasts = useTranslations("toasts");
   const toast = useToast();
   const locale = useLocale();
   const saveFailure = useSaveFailure();
@@ -55,7 +83,7 @@ export function WithdrawalForm({ employee, withdrawal, onSaved, onCancel }: With
   const { control, register, handleSubmit, formState, setError } = useForm<WithdrawalValues>({
     mode: "onTouched",
     resolver: zodResolver(schema),
-    defaultValues: defaultValues(withdrawal),
+    defaultValues: defaultValues(recorded),
   });
 
   const { errors } = formState;
@@ -74,13 +102,10 @@ export function WithdrawalForm({ employee, withdrawal, onSaved, onCancel }: With
       return;
     }
 
-    const result =
-      withdrawal === undefined
-        ? await addWithdrawal(employee.id, values, at, idempotencyKey)
-        : await updateWithdrawal(withdrawal.id, values, at);
+    const result = await save(values, at, idempotencyKey);
 
     if (result.ok) {
-      toast(toasts(withdrawal === undefined ? "withdrawalAdded" : "withdrawalUpdated"));
+      toast(savedMessage);
       onSaved();
       return;
     }
@@ -98,15 +123,11 @@ export function WithdrawalForm({ employee, withdrawal, onSaved, onCancel }: With
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <ReadOnlyField label={t("fields.name")} value={employee.name} />
-        <ReadOnlyField
-          label={t("fields.balance")}
-          value={formatMoney(employee.balance, locale)}
-          emphasis
-        />
+        <ReadOnlyField label={figure.label} value={formatMoney(figure.amount, locale)} emphasis />
 
         <div className="sm:col-span-2">
           <TextField
-            id="withdrawal-amount"
+            id={`${idPrefix}-amount`}
             type="number"
             min={0}
             step="any"
@@ -123,7 +144,7 @@ export function WithdrawalForm({ employee, withdrawal, onSaved, onCancel }: With
           name="date"
           render={({ field }) => (
             <DateField
-              id="withdrawal-date"
+              id={`${idPrefix}-date`}
               label={t("fields.date")}
               required
               pickerLabel={common("openCalendar")}
@@ -139,7 +160,7 @@ export function WithdrawalForm({ employee, withdrawal, onSaved, onCancel }: With
           name="time"
           render={({ field }) => (
             <TimeField
-              id="withdrawal-time"
+              id={`${idPrefix}-time`}
               label={t("fields.time")}
               required
               placeholder={common("timePlaceholder")}
@@ -151,7 +172,7 @@ export function WithdrawalForm({ employee, withdrawal, onSaved, onCancel }: With
 
         <div className="sm:col-span-2">
           <TextArea
-            id="withdrawal-note"
+            id={`${idPrefix}-note`}
             label={t("fields.note")}
             rows={2}
             error={errors.note?.message}
@@ -166,12 +187,69 @@ export function WithdrawalForm({ employee, withdrawal, onSaved, onCancel }: With
         dirty={formState.isDirty}
         locked={saveFailure.unknown}
         submitting={formState.isSubmitting}
-        submitIcon={withdrawal === undefined ? "plus" : "circle-check"}
-        submitLabel={withdrawal === undefined ? t("withdrawals.create") : t("form.save")}
+        submitIcon={recorded === undefined ? "plus" : "circle-check"}
+        submitLabel={recorded === undefined ? createLabel : t("form.save")}
         savingLabel={t("form.saving")}
         cancelLabel={common("cancel")}
         onCancel={onCancel}
       />
     </form>
+  );
+}
+
+type FormActions = {
+  onSaved: () => void;
+  onCancel: () => void;
+};
+
+export function WithdrawalForm({
+  employee,
+  withdrawal,
+  ...actions
+}: FormActions & { employee: Employee; withdrawal: Withdrawal | undefined }) {
+  const t = useTranslations("employees");
+  const toasts = useTranslations("toasts");
+
+  return (
+    <AmountForm
+      idPrefix="withdrawal"
+      employee={employee}
+      figure={{ label: t("fields.balance"), amount: employee.balance }}
+      recorded={withdrawal}
+      save={(values, at, key) =>
+        withdrawal === undefined
+          ? addWithdrawal(employee.id, values, at, key)
+          : updateWithdrawal(withdrawal.id, values, at)
+      }
+      savedMessage={toasts(withdrawal === undefined ? "withdrawalAdded" : "withdrawalUpdated")}
+      createLabel={t("withdrawals.create")}
+      {...actions}
+    />
+  );
+}
+
+export function DebtPaymentForm({
+  employee,
+  payment,
+  ...actions
+}: FormActions & { employee: Employee; payment: DebtPayment | undefined }) {
+  const t = useTranslations("employees");
+  const toasts = useTranslations("toasts");
+
+  return (
+    <AmountForm
+      idPrefix="payment"
+      employee={employee}
+      figure={{ label: t("fields.otherDebtLeft"), amount: employee.otherDebtLeft }}
+      recorded={payment}
+      save={(values, at, key) =>
+        payment === undefined
+          ? addDebtPayment(employee.id, values, at, key)
+          : updateDebtPayment(payment.id, values, at)
+      }
+      savedMessage={toasts(payment === undefined ? "debtPaymentAdded" : "debtPaymentUpdated")}
+      createLabel={t("payments.create")}
+      {...actions}
+    />
   );
 }

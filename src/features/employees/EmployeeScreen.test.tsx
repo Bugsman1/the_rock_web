@@ -5,11 +5,16 @@ import { describe, expect, it } from "vitest";
 import {
   API,
   apiEmployee,
+  apiMonthlySalary,
   apiWithdrawal,
+  capture,
   cellsOf,
   money,
   openAt,
+  openTab,
+  rowsOf,
   serveEmployeeData,
+  serveEmployeeRecords,
   serveEmployees,
   serveProjects,
   server,
@@ -23,35 +28,12 @@ function detail(label: string) {
   return screen.getByText(label, { selector: "dt" }).nextSibling;
 }
 
-function rowsOf(title: string) {
-  const panel = screen.getByText(title).closest("section");
-
-  if (panel === null) {
-    throw new Error(`${title} panel missing`);
-  }
-
-  return within(panel).getAllByRole("row").slice(1);
-}
-
 function serveSeven() {
   serveProjects([11]);
   serveEmployeeData(
     [apiEmployee(7)],
     [apiWithdrawal(4, { amount: "40000.00", notes: "Avance" }), apiWithdrawal(3)],
   );
-}
-
-function capture(method: "post" | "patch", path: string, answer = HttpResponse.json({})) {
-  const sent: unknown[] = [];
-
-  server.use(
-    http[method](`${API}${path}`, async ({ request }) => {
-      sent.push(await request.json());
-      return answer;
-    }),
-  );
-
-  return sent;
 }
 
 describe("one employee", () => {
@@ -67,10 +49,12 @@ describe("one employee", () => {
     expect(detail(text.fields.withdrawn)).toHaveTextContent(money(60000));
     expect(detail(text.fields.accumulated)).toHaveTextContent(money(335860.29));
     expect(detail(text.fields.debt)).toHaveTextContent(money(0));
+    await openTab(text.tabs.salaries);
     expect(rowsOf(text.raises.title).map(cellsOf)).toEqual([
       ["01/01/2026", money(39999)],
       ["01/10/2026", money(40000)],
     ]);
+    await openTab(text.tabs.withdrawals);
     expect(
       rowsOf(text.withdrawals.title)
         .slice(0, -1)
@@ -78,6 +62,34 @@ describe("one employee", () => {
     ).toEqual([
       ["15/09/2026 10:30", money(40000), "Avance", "admin"],
       ["15/09/2026 10:30", money(20000), "—", "admin"],
+    ]);
+  });
+
+  it("shows the absent days, the debts left and the months the backend credited", async () => {
+    serveProjects([11]);
+    serveEmployeeData([
+      apiEmployee(7, {
+        absent_days: 4,
+        remaining_salary_debt: "7000.00",
+        remaining_other_debt: "2500.00",
+      }),
+    ]);
+    serveEmployeeRecords({
+      monthlySalaries: [
+        apiMonthlySalary(2, { month_name: "octobre 2026", credited_on: "2026-10-31" }),
+        apiMonthlySalary(1),
+      ],
+    });
+    openAt("/fr/employees/7");
+
+    expect(await screen.findByRole("heading", { name: "Sidi Ahmed" })).toBeVisible();
+    expect(detail(text.fields.absentDays)).toHaveTextContent("4");
+    expect(detail(text.fields.salaryDebtLeft)).toHaveTextContent(money(7000));
+    expect(detail(text.fields.otherDebtLeft)).toHaveTextContent(money(2500));
+    await openTab(text.tabs.salaries);
+    expect(rowsOf(text.monthlySalaries.title).map(cellsOf)).toEqual([
+      ["octobre 2026", "31/10/2026", money(40000)],
+      ["septembre 2026", "30/09/2026", money(40000)],
     ]);
   });
 

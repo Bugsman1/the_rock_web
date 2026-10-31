@@ -841,19 +841,30 @@
       "time": "Heure",
       "note": "Note",
       "by": "Par",
-      "action": "Action"
+      "action": "Action",
+      "absentDays": "Jours retenus",
+      "salaryDebtLeft": "Dette sur salaire restante",
+      "otherDebtLeft": "Autre dette restante",
+      "description": "Description",
+      "reason": "Motif",
+      "from": "Du",
+      "to": "Au",
+      "days": "Jours",
+      "repayment": "Remboursement"
     },
     "form": {
       "newTitle": "Nouvel employé",
       "editTitle": "Modifier l'employé",
       "create": "Ajouter l'employé",
       "save": "Enregistrer",
-      "saving": "Enregistrement..."
+      "saving": "Enregistrement...",
+      "jobPlaceholder": "Choisir le poste"
     },
     "errors": {
       "salaryInvalid": "Saisissez un salaire supérieur à zéro",
       "amountInvalid": "Saisissez un montant supérieur à zéro",
-      "endBeforeStart": "La date de fin ne peut pas précéder la date d'embauche"
+      "endBeforeStart": "La date de fin ne peut pas précéder la date d'embauche",
+      "absenceEndBeforeStart": "La date de fin ne peut pas précéder la date de début"
     },
     "remove": {
       "title": "Supprimer l'employé",
@@ -883,6 +894,71 @@
       "from": "À partir du",
       "create": "Enregistrer l'augmentation",
       "empty": "Aucun salaire"
+    },
+    "absences": {
+      "title": "Jours retenus",
+      "new": "Retenir des jours",
+      "newTitle": "Retenir des jours",
+      "editTitle": "Modifier la retenue",
+      "create": "Enregistrer la retenue",
+      "empty": "Aucune retenue",
+      "editLabel": "Modifier la retenue du {date}",
+      "deleteLabel": "Supprimer la retenue du {date}",
+      "removeTitle": "Supprimer la retenue",
+      "removeQuestion": "Supprimer la retenue du {from} au {to} ? Cette action est définitive."
+    },
+    "debts": {
+      "title": "Dettes",
+      "new": "Nouvelle dette",
+      "newTitle": "Nouvelle dette",
+      "editTitle": "Modifier la dette",
+      "create": "Enregistrer la dette",
+      "empty": "Aucune dette",
+      "paidBySalary": "Payée sur le salaire",
+      "bySalary": "Sur le salaire",
+      "byHand": "À la main",
+      "editLabel": "Modifier la dette du {date}",
+      "deleteLabel": "Supprimer la dette du {date}",
+      "removeTitle": "Supprimer la dette",
+      "removeQuestion": "Supprimer la dette de {amount} du {date} ? Cette action est définitive.",
+      "kind": "Type",
+      "debt": "Dette",
+      "payment": "Paiement",
+      "left": "Reste à payer"
+    },
+    "payments": {
+      "new": "Nouveau paiement",
+      "newTitle": "Nouveau paiement",
+      "editTitle": "Modifier le paiement",
+      "create": "Enregistrer le paiement",
+      "editLabel": "Modifier le paiement du {date}",
+      "deleteLabel": "Supprimer le paiement du {date}",
+      "removeTitle": "Supprimer le paiement",
+      "removeQuestion": "Supprimer le paiement de {amount} du {date} ? Cette action est définitive."
+    },
+    "monthlySalaries": {
+      "title": "Salaires mensuels",
+      "month": "Mois",
+      "creditedOn": "Crédité le",
+      "empty": "Aucun mois terminé"
+    },
+    "jobTitles": {
+      "ADM": "Administrateur",
+      "CHF": "Chauffeur",
+      "ENG": "Conducteur d'engins",
+      "MOU": "Ouvrier du moulin",
+      "MIN": "Mineur",
+      "MEC": "Mécanicien",
+      "SOU": "Soudeur",
+      "TEC": "Technicien",
+      "SAF": "Affineur"
+    },
+    "tabs": {
+      "label": "Dossiers de l'employé",
+      "withdrawals": "Retraits",
+      "debts": "Dettes",
+      "deductions": "Retenues",
+      "salaries": "Salaires"
     }
   },
   "inventory": {
@@ -1120,6 +1196,15 @@
     "withdrawalAdded": "Retrait enregistré",
     "withdrawalUpdated": "Retrait modifié",
     "withdrawalDeleted": "Retrait supprimé",
-    "raiseAdded": "Augmentation enregistrée"
+    "raiseAdded": "Augmentation enregistrée",
+    "absenceAdded": "Retenue enregistrée",
+    "absenceUpdated": "Retenue modifiée",
+    "absenceDeleted": "Retenue supprimée",
+    "employeeDebtAdded": "Dette enregistrée",
+    "employeeDebtUpdated": "Dette modifiée",
+    "employeeDebtDeleted": "Dette supprimée",
+    "debtPaymentAdded": "Paiement enregistré",
+    "debtPaymentUpdated": "Paiement modifié",
+    "debtPaymentDeleted": "Paiement supprimé"
   }
 }

@@ -158,5 +158,9 @@ describe("employees routes", () => {
     expect(employeeHref("301", { deleteWithdrawal: "9" })).toBe(
       "/employees/301?deleteWithdrawal=9",
     );
+    expect(employeeHref("301", "addAbsence")).toBe("/employees/301?addAbsence=1");
+    expect(employeeHref("301", { editAbsence: "4" })).toBe("/employees/301?absence=4");
+    expect(employeeHref("301", { deleteDebt: "5" })).toBe("/employees/301?deleteDebt=5");
+    expect(employeeHref("301", { editPayment: "6" })).toBe("/employees/301?payment=6");
   });
 });

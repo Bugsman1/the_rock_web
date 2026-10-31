@@ -47,6 +47,7 @@ export function MachineList({ project, rows }: { project: string; rows: readonly
     {
       key: "machine",
       header: t("project.columns.machine"),
+      rowLink: true,
       className: "text-ink font-bold",
       cell: ({ number }) => formatCount(number, locale),
     },
@@ -77,6 +78,7 @@ export function MachineList({ project, rows }: { project: string; rows: readonly
     {
       key: "mercury",
       header: t("mercury.column"),
+      interactive: true,
       cell: ({ operation }) =>
         operation === undefined ? (
           <span className="text-ink-faint">—</span>
@@ -104,6 +106,7 @@ export function MachineList({ project, rows }: { project: string; rows: readonly
       header: t("project.columns.action"),
       hideHeader: true,
       align: "end",
+      interactive: true,
       cell: ({ number, status }) =>
         canStart && status === "idle" ? (
           <ActionLink
@@ -167,6 +170,7 @@ export function MachineList({ project, rows }: { project: string; rows: readonly
           rows={visible}
           rowKey={(row) => String(row.number)}
           empty={t("project.noMachines")}
+          rowLink={(row) => ({ href: millingMachineHref(project, row.number) })}
         />
       </div>
     </div>

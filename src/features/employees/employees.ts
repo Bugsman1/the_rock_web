@@ -6,6 +6,24 @@ import type { IsoTimestamp } from "@/lib/format";
 import { formatPhone, isValidPhone, phoneToApi } from "@/lib/phone";
 import type { ProjectId } from "@/lib/projects";
 
+export const jobTitles = [
+  "ADM",
+  "CHF",
+  "ENG",
+  "MOU",
+  "MIN",
+  "MEC",
+  "SOU",
+  "TEC",
+  "SAF",
+] as const satisfies readonly ApiSchema<"Employee">["job_title"][];
+
+export type JobTitle = (typeof jobTitles)[number];
+
+export function isJobTitle(value: string): value is JobTitle {
+  return jobTitles.some((title) => title === value);
+}
+
 export type Salary = {
   id: string;
   monthlySalary: number;
@@ -17,18 +35,22 @@ export type Employee = {
   project: ProjectId;
   matricule: string;
   name: string;
-  job: string;
+  job: JobTitle;
   phone: string;
   monthlySalary: number;
   salaries: readonly Salary[];
   startedAt: IsoTimestamp;
   endedOn: string | undefined;
   accruedUntil: string;
+  absentDays: number;
   earned: number;
   withdrawn: number;
   balance: number;
   accumulated: number;
   debt: number;
+  debtLeft: number;
+  salaryDebtLeft: number;
+  otherDebtLeft: number;
 };
 
 export type Withdrawal = {
@@ -40,20 +62,25 @@ export type Withdrawal = {
   byName: string | null;
 };
 
-const NOTE_MAX_LENGTH = 500;
+export type MonthlySalary = {
+  id: string;
+  monthName: string;
+  amount: number;
+  creditedOn: string;
+};
 
-const MATRICULE_MAX_LENGTH = 30;
+const NOTE_MAX_LENGTH = 500;
 
 const TEXT_MAX_LENGTH = 100;
 
-function requiredIsoDate(messages: { required: string; dateInvalid: string }) {
+export function requiredIsoDate(messages: { required: string; dateInvalid: string }) {
   return z
     .string()
     .min(1, { message: messages.required, abort: true })
     .refine(isIsoDate, messages.dateInvalid);
 }
 
-function requiredTime(messages: { required: string; timeInvalid: string }) {
+export function requiredTime(messages: { required: string; timeInvalid: string }) {
   return z
     .string()
     .min(1, { message: messages.required, abort: true })
@@ -70,9 +97,8 @@ export function createEmployeeSchema(messages: {
 }) {
   return z
     .object({
-      matricule: z.string().trim().min(1, messages.required).max(MATRICULE_MAX_LENGTH),
       name: z.string().trim().min(1, messages.required).max(TEXT_MAX_LENGTH),
-      job: z.string().trim().min(1, messages.required).max(TEXT_MAX_LENGTH),
+      job: z.string().refine(isJobTitle, messages.required),
       phone: z
         .string()
         .trim()
@@ -89,10 +115,11 @@ export function createEmployeeSchema(messages: {
     });
 }
 
-export type EmployeeValues = z.infer<ReturnType<typeof createEmployeeSchema>>;
+export type EmployeeInput = z.input<ReturnType<typeof createEmployeeSchema>>;
+
+export type EmployeeValues = z.output<ReturnType<typeof createEmployeeSchema>>;
 
 const employeeFields: readonly (keyof EmployeeValues)[] = [
-  "matricule",
   "name",
   "job",
   "phone",
@@ -168,17 +195,20 @@ export function employeeFromApi(employee: ApiSchema<"Employee">): Employee {
     startedAt: employee.start_date,
     endedOn: employee.end_date ?? undefined,
     accruedUntil: employee.accrued_until,
+    absentDays: employee.absent_days,
     earned: fromDecimal(employee.accrued_salary),
     withdrawn: fromDecimal(employee.withdrawn_amount),
     balance: fromDecimal(employee.balance),
     accumulated: fromDecimal(employee.accumulated_salary),
     debt: fromDecimal(employee.debt),
+    debtLeft: fromDecimal(employee.remaining_debt),
+    salaryDebtLeft: fromDecimal(employee.remaining_salary_debt),
+    otherDebtLeft: fromDecimal(employee.remaining_other_debt),
   };
 }
 
 export function employeeToApi(values: EmployeeValues, startedAt: IsoTimestamp) {
   return {
-    matricule: values.matricule,
     full_name: values.name,
     job_title: values.job,
     phone: phoneToApi(values.phone),
@@ -203,7 +233,6 @@ export function employeeErrorsFromApi(
   errors: BackendFieldErrors,
 ): FieldErrors<keyof EmployeeValues> {
   return {
-    ...(errors.matricule === undefined ? {} : { matricule: errors.matricule }),
     ...(errors.full_name === undefined ? {} : { name: errors.full_name }),
     ...(errors.job_title === undefined ? {} : { job: errors.job_title }),
     ...(errors.phone === undefined ? {} : { phone: errors.phone }),
@@ -239,6 +268,15 @@ export function withdrawalErrorsFromApi(
     ...(errors.amount === undefined ? {} : { amount: errors.amount }),
     ...(errors.withdrawal_date === undefined ? {} : { date: errors.withdrawal_date }),
     ...(errors.notes === undefined ? {} : { note: errors.notes }),
+  };
+}
+
+export function monthlySalaryFromApi(salary: ApiSchema<"EmployeeMonthlySalary">): MonthlySalary {
+  return {
+    id: String(salary.id),
+    monthName: salary.month_name,
+    amount: fromDecimal(salary.amount),
+    creditedOn: salary.credited_on,
   };
 }
 

@@ -1,5 +1,6 @@
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
+import type { EmployeeValues } from "./employees";
 import {
   addRaise,
   addWithdrawal,
@@ -22,10 +23,9 @@ import {
 
 serveEmployees();
 
-const values = {
-  matricule: "EMP-9",
+const values: EmployeeValues = {
   name: "Sidi",
-  job: "Chauffeur",
+  job: "CHF",
   phone: "46109325",
   monthlySalary: 15000,
   startedOn: "2026-10-01",
@@ -71,9 +71,8 @@ describe("employees API", () => {
       {
         key: "key-1",
         body: {
-          matricule: "EMP-9",
           full_name: "Sidi",
-          job_title: "Chauffeur",
+          job_title: "CHF",
           phone: "+22246109325",
           start_date: startedAt,
           end_date: null,
