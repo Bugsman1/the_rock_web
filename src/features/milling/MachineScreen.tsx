@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { ReactNode } from "react";
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
@@ -7,22 +6,26 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { DetailList } from "@/components/ui/Cards";
 import { Icon } from "@/components/ui/Icon";
 import { BackLink, PageTitle } from "@/components/ui/PageHeader";
-import { TablePanel } from "@/components/ui/TablePanel";
 import { Tabs } from "@/components/ui/Tabs";
 import { useCan } from "@/lib/accessContext";
 import { notFound } from "@/lib/api/client";
+import { getCustomer } from "@/lib/customersApi";
+import { listQueryFromParams } from "@/lib/filters";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { formatCount, formatDateTime, formatQuantity } from "@/lib/format";
-import { findProject, isRecordId } from "@/lib/projects";
+import { findProject, isInService, isRecordId } from "@/lib/projects";
+import { getGrinders, getProjects } from "@/lib/projectsApi";
+import { getShipments } from "@/lib/shipmentsApi";
 import { getOperators } from "@/lib/users";
 import {
   editMillingOperationHref,
   millingProjectHref,
   newMillingOperationHref,
 } from "@/lib/routes";
-import { activeOperationOf, machineStatus } from "@/lib/grinding";
-import { findMachine, operationHistory } from "./milling";
-import { getMillingData } from "./millingApi";
+import { activeOperationOf, machinesFromGrinders, machineStatus } from "@/lib/grinding";
+import { getGrindingOperations, getGrindingPage } from "@/lib/grindingApi";
+import { findMachine, millingShipments, millingStatuses } from "./milling";
+import { machineHistoryFilter, machineHistoryGroups } from "./millingFilters";
 import { MercuryAdditionsList } from "./MercuryAdditions";
 import { MercuryStatus } from "./MercuryForm";
 import { EditOperationDrawer, EndMillingAction } from "./MillingForms";
@@ -38,23 +41,40 @@ export async function machineLoader({ params, request }: LoaderFunctionArgs) {
     notFound();
   }
 
-  const editing = new URL(request.url).searchParams.get("edit") === "1";
-  const [data, operators] = await Promise.all([
-    getMillingData(),
+  const search = new URL(request.url).searchParams;
+  const editing = search.get("edit") === "1";
+  const list = listQueryFromParams(search, machineHistoryGroups);
+  const [projects, grinders, running, operators, shipments] = await Promise.all([
+    getProjects(),
+    getGrinders(projectId),
+    getGrindingOperations({ project: projectId, running: true }),
     editing ? getOperators(projectId, "grinding") : [],
+    editing ? getShipments({ project: projectId, statuses: millingStatuses }) : [],
+  ]);
+  const machines = machinesFromGrinders(grinders);
+  const machine = findMachine(machines, projectId, Number(number)) ?? notFound();
+  const filter = machineHistoryFilter(projectId, machine.grinderId, list);
+  const [first, client] = await Promise.all([
+    getGrindingPage(filter, 1),
+    list.filters.client === "" ? undefined : getCustomer(list.filters.client),
   ]);
 
   return {
-    data,
+    data: { machines, shipments: millingShipments(shipments), operations: running },
     operators,
     editing,
-    project: findProject(data.projects, projectId) ?? notFound(),
-    machine: findMachine(data.machines, projectId, Number(number)) ?? notFound(),
+    project: findProject(projects.filter(isInService), projectId) ?? notFound(),
+    machine,
+    list,
+    filter,
+    first,
+    clientName: client?.name,
   };
 }
 
 export function MachineDetailScreen() {
-  const { data, operators, editing, project, machine } = useLoaderData<typeof machineLoader>();
+  const { data, operators, editing, project, machine, list, filter, first, clientName } =
+    useLoaderData<typeof machineLoader>();
   const t = useTranslations("milling");
   const common = useTranslations("common");
   const locale = useLocale();
@@ -63,7 +83,6 @@ export function MachineDetailScreen() {
   const count = (value: number) => formatCount(value, locale);
   const status = machineStatus(machine, data.operations);
   const operation = activeOperationOf(data.operations, project.id, machine.number);
-  const [query, setQuery] = useState("");
 
   let currentPanel: ReactNode;
 
@@ -203,20 +222,14 @@ export function MachineDetailScreen() {
         />
       </section>
 
-      <TablePanel
-        title={t("machine.history.title")}
-        search={{
-          label: common("searchIn", { list: t("machine.history.title") }),
-          placeholder: common("searchList"),
-          value: query,
-          onChange: setQuery,
-        }}
-      >
-        <MachineHistoryTable
-          history={operationHistory(data.operations, project.id, machine.number)}
-          query={query}
-        />
-      </TablePanel>
+      <MachineHistoryTable
+        project={project.id}
+        machine={machine.number}
+        list={list}
+        filter={filter}
+        first={first}
+        clientName={clientName}
+      />
     </div>
   );
 }

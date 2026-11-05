@@ -13,7 +13,8 @@ import { combineDateAndTime, nowAsTimeValue, todayAsInputValue } from "@/lib/dat
 import { formatMoney } from "@/lib/format";
 import { PHONE_PLACEHOLDER, sanitizePhone } from "@/lib/phone";
 import type { ProjectId } from "@/lib/projects";
-import { createEmployeeSchema, isEmployeeField, jobTitles } from "./employees";
+import { jobTitles } from "./employeeJobs";
+import { createEmployeeSchema, isEmployeeField } from "./employees";
 import type { Employee, EmployeeInput, EmployeeValues } from "./employees";
 import { createEmployee, updateEmployee } from "./employeesApi";
 

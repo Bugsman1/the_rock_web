@@ -95,7 +95,7 @@ export function isRunning(operation: MillingOperation): boolean {
   return operation.endedAt === undefined;
 }
 
-export function operationsOfMachine(
+function operationsOfMachine(
   operations: readonly MillingOperation[],
   project: ProjectId,
   machine: number,
@@ -129,25 +129,6 @@ export function idleMachines(
   operations: readonly MillingOperation[],
 ): readonly Machine[] {
   return machines.filter((machine) => machineStatus(machine, operations) === "idle");
-}
-
-export function operationsOfShipment(
-  shipmentNumber: string,
-  operations: readonly MillingOperation[],
-): readonly MillingOperation[] {
-  return operations.filter((operation) => operation.shipmentNumber === shipmentNumber);
-}
-
-export function remainingBags(
-  shipment: { shipmentNumber: string; bags: number },
-  operations: readonly MillingOperation[],
-): number {
-  const consumed = operationsOfShipment(shipment.shipmentNumber, operations).reduce(
-    (total, operation) => total + operation.bags,
-    0,
-  );
-
-  return Math.max(0, shipment.bags - consumed);
 }
 
 export function operationFromApi(

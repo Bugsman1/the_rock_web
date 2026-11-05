@@ -5,24 +5,8 @@ import { fromDecimal, toMoneyDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import { formatPhone, isValidPhone, phoneToApi } from "@/lib/phone";
 import type { ProjectId } from "@/lib/projects";
-
-export const jobTitles = [
-  "ADM",
-  "CHF",
-  "ENG",
-  "MOU",
-  "MIN",
-  "MEC",
-  "SOU",
-  "TEC",
-  "SAF",
-] as const satisfies readonly ApiSchema<"Employee">["job_title"][];
-
-export type JobTitle = (typeof jobTitles)[number];
-
-export function isJobTitle(value: string): value is JobTitle {
-  return jobTitles.some((title) => title === value);
-}
+import { isJobTitle } from "./employeeJobs";
+import type { JobTitle } from "./employeeJobs";
 
 export type Salary = {
   id: string;
@@ -172,10 +156,6 @@ const raiseFields: readonly (keyof RaiseValues)[] = ["monthlySalary", "from"];
 
 export function isRaiseField(value: string): value is keyof RaiseValues {
   return raiseFields.some((field) => field === value);
-}
-
-export function employeeCount(employees: readonly Employee[], project: ProjectId): number {
-  return employees.filter((employee) => employee.project === project).length;
 }
 
 export function employeeFromApi(employee: ApiSchema<"Employee">): Employee {

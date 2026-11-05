@@ -17,6 +17,27 @@ import {
 import type { Readable } from "openapi-typescript-helpers";
 import type { components, paths } from "./schema";
 import { clearSession, readSession, updateSession } from "./session";
+import type { SessionTokens } from "./session";
+
+let pendingRenewal: Promise<SessionTokens | undefined> | undefined;
+
+function renewOnce(refresh: string): Promise<SessionTokens | undefined> {
+  pendingRenewal ??= refreshTokens(refresh).finally(() => {
+    pendingRenewal = undefined;
+  });
+
+  return pendingRenewal;
+}
+
+function renewedElsewhere(used: SessionTokens, now: Date): string | undefined {
+  const latest = readSession();
+
+  return latest !== undefined &&
+    latest.refresh !== used.refresh &&
+    !isTokenExpired(latest.access, now)
+    ? latest.access
+    : undefined;
+}
 
 async function currentAccessToken(now: Date): Promise<string | undefined> {
   const session = readSession();
@@ -31,11 +52,16 @@ async function currentAccessToken(now: Date): Promise<string | undefined> {
 
   const tokens = isTokenExpired(session.refresh, now)
     ? undefined
-    : await refreshTokens(session.refresh);
+    : await renewOnce(session.refresh);
 
   if (tokens === undefined) {
-    clearSession();
-    return undefined;
+    const access = renewedElsewhere(session, now);
+
+    if (access === undefined) {
+      clearSession();
+    }
+
+    return access;
   }
 
   updateSession(tokens);

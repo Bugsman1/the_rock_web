@@ -38,6 +38,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/logout/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Blacklists the refresh token sent, so it can no longer be refreshed: 204 on success, 401
+         *     when it is invalid, expired or already blacklisted. Open without an access token, so a user
+         *     whose access token has expired can still log out; the access token itself stays valid until
+         *     it expires.
+         */
+        post: operations["auth_logout_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/me/": {
         parameters: {
             query?: never;
@@ -2293,21 +2315,6 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Project"][];
         };
-        PaginatedProjectTopCustomersByBagsList: {
-            /** @example 123 */
-            count: number;
-            /**
-             * Format: uri
-             * @example http://api.example.org/accounts/?page=4
-             */
-            next?: string | null;
-            /**
-             * Format: uri
-             * @example http://api.example.org/accounts/?page=2
-             */
-            previous?: string | null;
-            results: components["schemas"]["ProjectTopCustomersByBags"][];
-        };
         PaginatedRefiningOperationList: {
             /** @example 123 */
             count: number;
@@ -2988,7 +2995,12 @@ export interface components {
             /** Format: decimal */
             unloading_total?: $Read<string>;
             /** Format: decimal */
+            transport_total?: $Read<string>;
+            /** Format: decimal */
             current_payment?: string;
+            /** Format: decimal */
+            amount_left_to_pay?: $Read<string>;
+            is_fully_paid?: $Read<boolean>;
             payments?: $Read<components["schemas"]["ShipmentPaymentSummary"][]>;
             /** Format: decimal */
             debt?: $Read<string>;
@@ -3322,7 +3334,12 @@ export interface components {
             /** Format: decimal */
             unloading_total: $Read<string>;
             /** Format: decimal */
+            transport_total: $Read<string>;
+            /** Format: decimal */
             current_payment?: string;
+            /** Format: decimal */
+            amount_left_to_pay: $Read<string>;
+            is_fully_paid: $Read<boolean>;
             payments: $Read<components["schemas"]["ShipmentPaymentSummary"][]>;
             /** Format: decimal */
             debt: $Read<string>;
@@ -3446,6 +3463,9 @@ export interface components {
          * @enum {string}
          */
         StatusEnum: "active" | "inactive" | "maintenance";
+        TokenBlacklist: {
+            refresh: $Write<string>;
+        };
         TokenRefresh: {
             access: $Read<string>;
             refresh: string;
@@ -3513,6 +3533,30 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CustomTokenObtainPair"];
                 };
+            };
+        };
+    };
+    auth_logout_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenBlacklist"];
+                "application/x-www-form-urlencoded": components["schemas"]["TokenBlacklist"];
+                "multipart/form-data": components["schemas"]["TokenBlacklist"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -3937,16 +3981,7 @@ export interface operations {
     };
     customers_top_by_bags_per_project_list: {
         parameters: {
-            query?: {
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A page number within the paginated result set. */
-                page?: number;
-                /** @description Number of results to return per page. */
-                page_size?: number;
-                /** @description A search term. */
-                search?: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -3958,7 +3993,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedProjectTopCustomersByBagsList"];
+                    "application/json": components["schemas"]["ProjectTopCustomersByBags"][];
                 };
             };
         };
@@ -5482,6 +5517,7 @@ export interface operations {
         parameters: {
             query?: {
                 grinder?: number;
+                is_running?: boolean;
                 operator?: number;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
@@ -5495,6 +5531,8 @@ export interface operations {
                 search?: string;
                 shipment?: number;
                 shipment__customer?: number;
+                start_time__date__gte?: string;
+                start_time__date__lte?: string;
             };
             header?: never;
             path?: never;
@@ -5929,6 +5967,7 @@ export interface operations {
     refining_operations_list: {
         parameters: {
             query?: {
+                gold_weighed?: boolean;
                 grinder?: number;
                 grinding_operation?: number;
                 /** @description Which field to use when ordering the results. */
@@ -5938,6 +5977,8 @@ export interface operations {
                 /** @description Number of results to return per page. */
                 page_size?: number;
                 project?: number;
+                refining_date__date__gte?: string;
+                refining_date__date__lte?: string;
                 /** @description A search term. */
                 search?: string;
                 shipment?: number;
@@ -7176,6 +7217,7 @@ export interface operations {
                 created_by?: number;
                 customer?: number;
                 has_remaining_bags?: boolean;
+                is_fully_paid?: boolean;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */

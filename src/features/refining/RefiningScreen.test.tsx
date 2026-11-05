@@ -37,13 +37,13 @@ describe("RefiningScreen", () => {
     );
   });
 
-  it("sums what waits for refining and what was refined, then a card per project, with no loss", async () => {
+  it("sums what the backend gives as waiting and the refinings it counts, then a card per project, with no loss", async () => {
     withTwoProjects();
     openAt("/fr/refining");
 
     const summary = within(await screen.findByRole("region", { name: text.overview.title }));
     expect(summary.getByText(text.overview.waiting).nextElementSibling).toHaveTextContent(
-      /^1\s*4 sacs$/,
+      /^2\s*8 sacs$/,
     );
     expect(summary.getByText(text.overview.refined).nextElementSibling).toHaveTextContent("1");
     expect(summary.getByText(text.overview.refinedToday).nextElementSibling).toHaveTextContent("0");
@@ -55,7 +55,7 @@ describe("RefiningScreen", () => {
     expect(screen.queryByText(/perte/i)).toBeNull();
   });
 
-  it("lists the finished grinding operations that still wait for refining", async () => {
+  it("lists the finished grinding operations the backend gives as not refined yet", async () => {
     openAt("/fr/refining/projects/3");
 
     await screen.findByRole("heading", { name: text.queueTitle });
@@ -66,7 +66,7 @@ describe("RefiningScreen", () => {
     expect(queue.queryByText("P3-2")).toBeNull();
     expect(queue.queryByText("SH-1")).toBeNull();
     expect(queue.queryByText("SH-3")).toBeNull();
-    expect(queue.queryByText("SH-4")).toBeNull();
+    expect(queue.getByText("SH-4")).toBeVisible();
     expect(
       queue.getByRole("link", { name: "Démarrer l'affinage de l'expédition SH-2" }),
     ).toHaveAttribute("href", "/fr/refining/projects/3?grinding=2");
@@ -150,9 +150,20 @@ describe("RefiningScreen", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("searches the queue and the refinings separately", async () => {
+  it("asks the backend for each list's own search and keeps both in the address", async () => {
+    const asked = { grindings: "", refinings: "" };
+    server.use(
+      http.get(`${API}/grinding-operations/`, ({ request }) => {
+        asked.grindings = new URL(request.url).searchParams.get("search") ?? "";
+        return page([]);
+      }),
+      http.get(`${API}/refining-operations/`, ({ request }) => {
+        asked.refinings = new URL(request.url).searchParams.get("search") ?? "";
+        return page([refined]);
+      }),
+    );
     const user = userEvent.setup();
-    openAt("/fr/refining/projects/3");
+    const router = openAt("/fr/refining/projects/3");
 
     await user.type(
       await screen.findByLabelText(
@@ -160,31 +171,19 @@ describe("RefiningScreen", () => {
       ),
       "aicha",
     );
-
-    expect(panel(text.operationsTitle).getByText("SH-3")).toBeVisible();
-    expect(panel(text.queueTitle).getByText("SH-2")).toBeVisible();
+    await waitFor(() => expect(asked.refinings).toBe("aicha"));
 
     await user.type(
       screen.getByLabelText(messages.common.searchIn.replace("{list}", text.queueTitle)),
       "SH-9",
     );
 
-    expect(panel(text.queueTitle).getByText(messages.common.noMatch)).toBeVisible();
-    expect(panel(text.operationsTitle).getByText("SH-3")).toBeVisible();
-  });
-
-  it("finds a refining by its machine number", async () => {
-    const user = userEvent.setup();
-    openAt("/fr/refining/projects/3");
-
-    await user.type(
-      await screen.findByLabelText(
-        messages.common.searchIn.replace("{list}", text.operationsTitle),
-      ),
-      text.machineNumber.replace("{number}", "2"),
+    await waitFor(() => expect(asked.grindings).toBe("SH-9"));
+    expect(asked.refinings).toBe("aicha");
+    await waitFor(() => expect(router.state.location.search).toBe("?q=aicha&queue=SH-9"));
+    await waitFor(() =>
+      expect(panel(text.queueTitle).getByText(messages.common.noMatch)).toBeVisible(),
     );
-
-    expect(panel(text.operationsTitle).getByText("SH-3")).toBeVisible();
   });
 
   it("shows a gold weighed at 0 as 0, and one not weighed yet as a dash", async () => {
@@ -211,11 +210,52 @@ describe("RefiningScreen", () => {
     expect(goldOf(10)).toBe("—");
   });
 
+  it("asks the backend for the refinings whose gold is not weighed yet, on one machine", async () => {
+    let asked = new URLSearchParams();
+    server.use(
+      http.get(`${API}/refining-operations/`, ({ request }) => {
+        asked = new URL(request.url).searchParams;
+        return page([{ ...refined, id: 10, gold_weight_without_mercury: null }]);
+      }),
+    );
+    const user = userEvent.setup();
+    const router = openAt("/fr/refining/projects/3");
+
+    await screen.findAllByRole("link", { name: text.editLabel.replace("{shipment}", "SH-3") });
+    const done = panel(text.operationsTitle);
+    await user.click(done.getByRole("link", { name: new RegExp(messages.filters.button) }));
+    await user.click(await done.findByRole("checkbox", { name: text.goldFilter.notWeighed }));
+    const machine = done.getByRole("combobox", { name: text.fields.machine });
+    expect(machine).toHaveDisplayValue(text.allMachines);
+    await user.selectOptions(machine, text.machineNumber.replace("{number}", "2"));
+    await user.click(done.getByRole("button", { name: messages.filters.show }));
+
+    await waitFor(() => expect(router.state.location.search).toBe("?gold=notWeighed&machine=13"));
+    expect(asked.get("gold_weighed")).toBe("false");
+    expect(asked.get("grinder")).toBe("13");
+    expect(asked.get("project")).toBe("3");
+  });
+
+  it("drops the machine filter when every machine is chosen again", async () => {
+    const user = userEvent.setup();
+    const router = openAt("/fr/refining/projects/3?machine=13&filters=1");
+
+    const machine = await screen.findByRole("combobox", { name: text.fields.machine });
+    expect(machine).toHaveDisplayValue(text.machineNumber.replace("{number}", "2"));
+    await user.selectOptions(machine, text.allMachines);
+    await user.click(screen.getByRole("button", { name: messages.filters.show }));
+
+    await waitFor(() => expect(router.state.location.search).toBe(""));
+  });
+
   it("opens a refining from its row to add the gold without material later", async () => {
     let sent: unknown;
     server.use(
       http.get(`${API}/refining-operations/`, () =>
         page([{ ...refined, gold_weight_without_mercury: null }]),
+      ),
+      http.get(`${API}/refining-operations/9/`, () =>
+        HttpResponse.json({ ...refined, gold_weight_without_mercury: null }),
       ),
       http.patch(`${API}/refining-operations/9/`, async ({ request }) => {
         sent = await request.json();

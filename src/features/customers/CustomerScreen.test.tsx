@@ -167,6 +167,33 @@ describe("CustomerScreen", () => {
     ).toHaveAttribute("href", "/fr/customers/7?debt=12&action=payOff");
   });
 
+  it("narrows the debts to the chosen statuses", async () => {
+    const user = userEvent.setup();
+    openAt("/fr/customers/7");
+
+    await screen.findByRole("link", { name: "Avance en espèces" });
+    const choose = async (...names: readonly string[]) => {
+      await user.click(screen.getByRole("link", { name: new RegExp(messages.filters.button) }));
+      const statuses = within(await screen.findByRole("group", { name: text.columns.status }));
+      for (const name of names) {
+        await user.click(statuses.getByRole("checkbox", { name }));
+      }
+      await user.click(
+        screen.getByRole("button", {
+          name: new RegExp(messages.filters.show.split(" (")[0] ?? ""),
+        }),
+      );
+    };
+
+    await choose(text.status.paid);
+    expect(screen.getByRole("link", { name: "Pièces" })).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Avance en espèces" })).toBeNull();
+
+    await choose(text.status.paid, text.status.open, text.status.partially_paid);
+    expect(screen.getByRole("link", { name: "Avance en espèces" })).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Pièces" })).toBeNull();
+  });
+
   it("opens a debt's history from its row, with the balance after each line", async () => {
     openAt("/fr/customers/7?debt=12");
     const dialog = await openedDebt();

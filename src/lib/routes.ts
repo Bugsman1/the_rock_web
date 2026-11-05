@@ -121,28 +121,45 @@ export function shipmentHref(shipment: string, from?: "history"): string {
   return from === undefined ? href : `${href}?${new URLSearchParams({ from })}`;
 }
 
-export function shipmentsProjectHref(project: string): string {
-  return `${SHIPMENTS_HREF}/projects/${project}`;
+function withParams(href: string, params: URLSearchParams | undefined): string {
+  const query = params?.toString() ?? "";
+
+  return query === "" ? href : `${href}?${query}`;
 }
 
-export function startGrindingHref(project: string, shipmentNumber: string): string {
-  return `${shipmentsProjectHref(project)}?${new URLSearchParams({ grind: shipmentNumber })}`;
+export function shipmentsProjectHref(project: string, list?: URLSearchParams): string {
+  return withParams(`${SHIPMENTS_HREF}/projects/${project}`, list);
 }
 
-export function shipmentsHistoryHref(project: string): string {
-  return `${shipmentsProjectHref(project)}/history`;
+export function startGrindingHref(
+  project: string,
+  shipmentNumber: string,
+  list?: URLSearchParams,
+): string {
+  const params = new URLSearchParams(list);
+  params.set("grind", shipmentNumber);
+
+  return shipmentsProjectHref(project, params);
+}
+
+export function shipmentsHistoryHref(project: string, list?: URLSearchParams): string {
+  return withParams(`${SHIPMENTS_HREF}/projects/${project}/history`, list);
 }
 
 export function millingSiteHref(site: string): string {
   return `${MILLING_HREF}?${new URLSearchParams({ site }).toString()}`;
 }
 
-export function millingProjectHref(project: string): string {
-  return `${MILLING_HREF}/projects/${project}`;
+export function millingProjectHref(project: string, list?: URLSearchParams): string {
+  return withParams(`${MILLING_HREF}/projects/${project}`, list);
 }
 
-export function millingMachineHref(project: string, machine: number): string {
-  return `${millingProjectHref(project)}/machines/${machine}`;
+export function millingMachineHref(
+  project: string,
+  machine: number,
+  list?: URLSearchParams,
+): string {
+  return withParams(`${MILLING_HREF}/projects/${project}/machines/${machine}`, list);
 }
 
 export function editMillingOperationHref(project: string, machine: number): string {
@@ -152,13 +169,15 @@ export function editMillingOperationHref(project: string, machine: number): stri
 type NewMillingOperationRequest = {
   shipmentNumber?: string;
   machine?: number;
+  list?: URLSearchParams;
 };
 
 export function newMillingOperationHref(
   project: string,
   request: NewMillingOperationRequest = {},
 ): string {
-  const query = new URLSearchParams({ operation: "new" });
+  const query = new URLSearchParams(request.list);
+  query.set("operation", "new");
 
   if (request.shipmentNumber !== undefined) query.set("shipment", request.shipmentNumber);
   if (request.machine !== undefined) query.set("machine", String(request.machine));
@@ -166,16 +185,36 @@ export function newMillingOperationHref(
   return `${millingProjectHref(project)}?${query.toString()}`;
 }
 
-export function refiningProjectHref(project: string): string {
-  return `${REFINING_HREF}/projects/${project}`;
+export function refiningProjectHref(project: string, list?: URLSearchParams): string {
+  return withParams(`${REFINING_HREF}/projects/${project}`, list);
 }
 
-export function startRefiningHref(project: string, grindingOperation: string): string {
-  return `${refiningProjectHref(project)}?${new URLSearchParams({ grinding: grindingOperation })}`;
+function refiningDrawerHref(
+  project: string,
+  drawer: "grinding" | "edit",
+  id: string,
+  list?: URLSearchParams,
+): string {
+  const params = new URLSearchParams(list);
+  params.set(drawer, id);
+
+  return refiningProjectHref(project, params);
 }
 
-export function editRefiningHref(project: string, refining: string): string {
-  return `${refiningProjectHref(project)}?${new URLSearchParams({ edit: refining })}`;
+export function startRefiningHref(
+  project: string,
+  grindingOperation: string,
+  list?: URLSearchParams,
+): string {
+  return refiningDrawerHref(project, "grinding", grindingOperation, list);
+}
+
+export function editRefiningHref(
+  project: string,
+  refining: string,
+  list?: URLSearchParams,
+): string {
+  return refiningDrawerHref(project, "edit", refining, list);
 }
 
 export function inventoryProjectHref(project: string, newResource = false): string {

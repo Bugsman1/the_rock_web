@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useWatch } from "react-hook-form";
 import type { UseFormReturn } from "react-hook-form";
 import { useTranslations } from "use-intl";
 import { CustomerForm } from "@/components/customers/CustomerForm";
+import type { CustomerChoices } from "@/components/customers/useCustomerSearch";
 import { Combobox } from "@/components/ui/Combobox";
 import { FormSection } from "@/components/ui/Cards";
 import { Drawer } from "@/components/ui/Drawer";
@@ -42,16 +43,25 @@ export function useNewCustomer(form: ShipmentForm, customers: readonly Customer[
 
 type ShipmentClientFieldsProps = {
   form: ShipmentForm;
-  customers: readonly Customer[];
+  choices: CustomerChoices;
   newCustomer: NewCustomer;
 };
 
-export function ShipmentClientFields({ form, customers, newCustomer }: ShipmentClientFieldsProps) {
+export function ShipmentClientFields({ form, choices, newCustomer }: ShipmentClientFieldsProps) {
   const t = useTranslations("shipments.form");
   const clientLabels = useTranslations("customers");
-  const { control, register, setValue, formState } = form;
-  const { errors } = formState;
+  const { control, register, setValue, getValues, formState } = form;
+  const { errors, isSubmitted } = formState;
   const customerName = useWatch({ control, name: "customerName" });
+  const { customers, search } = choices;
+
+  useEffect(() => {
+    const typed = findCustomer(customers, getValues("customerName"));
+
+    if (typed !== undefined) {
+      setValue("phone", typed.phone, { shouldDirty: true, shouldValidate: isSubmitted });
+    }
+  }, [customers, getValues, setValue, isSubmitted]);
 
   const customerOptions = useMemo(
     () =>
@@ -88,6 +98,7 @@ export function ShipmentClientFields({ form, customers, newCustomer }: ShipmentC
             {...field}
             onChange={(name) => {
               field.onChange(name);
+              search(name);
               setPhone(findCustomer(customers, name)?.phone ?? "");
             }}
           />

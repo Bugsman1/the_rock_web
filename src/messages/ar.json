@@ -1,5 +1,7 @@
 {
   "common": {
+    "showMore": "عرض المزيد",
+    "loadMoreFailed": "تعذّر التحميل، أعد المحاولة.",
     "appName": "نظام مطاحن أهل الطايع",
     "companyName": "مطاحن أهل الطايع",
     "language": "اللغة",
@@ -43,6 +45,15 @@
       "confirm": "تجاهل التغييرات",
       "keep": "متابعة التعديل"
     }
+  },
+  "filters": {
+    "show": "عرض النتائج",
+    "button": "الفلاتر",
+    "clear": "مسح الفلاتر",
+    "client": "العميل",
+    "allClients": "كل العملاء",
+    "from": "من",
+    "to": "إلى"
   },
   "auth": {
     "login": {
@@ -438,6 +449,7 @@
     "totalBags": "إجمالي الأكياس في جميع المشاريع",
     "clientsLabel": "العملاء",
     "bagsLabel": "الأكياس",
+    "topClientBags": "{bags} كيس",
     "topClients": "أكبر العملاء بعدد الأكياس",
     "transportMethods": {
       "truck": "شاحنة",
@@ -468,12 +480,8 @@
     "history": {
       "open": "السجل",
       "title": "سجل الشحنات · {project}",
-      "allClients": "كل العملاء",
-      "from": "من",
-      "to": "إلى",
       "count": "عدد الشحنات: {count}",
       "clientCount": "الشحنات: {shipments} · الأكياس: {bags}",
-      "clear": "مسح التصفية",
       "empty": "لا توجد شحنات مطابقة لهذه التصفية.",
       "columns": {
         "shipment": "رقم الشحنة",
@@ -573,6 +581,10 @@
       "tooMany": "يجب أن تكون أكياس التجربة أقل من أكياس الشحنة ({total})",
       "submit": "حفظ أكياس التجربة",
       "saving": "جارٍ الحفظ"
+    },
+    "filters": {
+      "payment": "الدفع",
+      "status": "الحالة"
     }
   },
   "milling": {
@@ -624,9 +636,7 @@
         "status": "الحالة",
         "action": "إجراء"
       },
-      "remainingOf": "{remaining} من {total}",
-      "showAll": "عرض الكل ({count})",
-      "showLess": "عرض أقل"
+      "remainingOf": "{remaining} من {total}"
     },
     "operation": {
       "title": "عملية طحن جديدة",
@@ -746,6 +756,7 @@
     }
   },
   "refining": {
+    "allMachines": "كل الآلات",
     "title": "التصفية",
     "new": "عملية تصفية جديدة",
     "editTitle": "تعديل التصفية",
@@ -808,6 +819,10 @@
       "waitingBags": "{bags} كيس",
       "refinedToday": "صُفّيت اليوم",
       "refined": "عمليات التصفية"
+    },
+    "goldFilter": {
+      "notWeighed": "لم يوزن",
+      "weighed": "موزون"
     }
   },
   "employees": {
@@ -959,7 +974,8 @@
       "debts": "الديون",
       "deductions": "الخصومات",
       "salaries": "الرواتب"
-    }
+    },
+    "allJobs": "كل الوظائف"
   },
   "inventory": {
     "title": "المخزون",

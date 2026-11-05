@@ -9,7 +9,7 @@ import { noAccess } from "@/lib/access";
 import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
-import { endOperation, getMillingData } from "./millingApi";
+import { endOperation, getMillingOverview } from "./millingApi";
 import { MillingScreen, millingLoader } from "./MillingScreens";
 import { MillingProjectScreen, millingProjectLoader } from "./MillingProjectScreen";
 import { MachineDetailScreen, machineLoader } from "./MachineScreen";
@@ -19,6 +19,7 @@ const allRights: Access = { ...noAccess, superuser: true };
 const API = `${window.location.origin}/api/v1`;
 const server = setupServer();
 const text = messages.milling;
+const showResults = new RegExp(messages.filters.show.split(" (")[0] ?? "");
 
 const stamps = {
   is_active: true,
@@ -28,7 +29,7 @@ const stamps = {
 
 const page = (results: readonly object[]) => HttpResponse.json({ count: results.length, results });
 
-const shipment = (id: number, status: string, bags: number) => ({
+const shipment = (id: number, status: string, bags: number, remaining = bags) => ({
   id,
   number: `SH-${id}`,
   customer: 1,
@@ -36,6 +37,7 @@ const shipment = (id: number, status: string, bags: number) => ({
   customer_phone: "+222 22 41 18 30",
   arrival_date: `2026-10-0${id % 9}T08:00:00Z`,
   bags_count: bags,
+  remaining_bags: remaining,
   bag_transport_cost_per_bag: "0",
   transport_method: "truck",
   source: "Chami",
@@ -82,17 +84,31 @@ beforeEach(() => {
         { id: 9, project: 3, code: "P3-3", status: "maintenance", ...stamps },
       ]),
     ),
-    http.get(`${API}/shipments/`, () =>
-      page([
-        shipment(1, "grinding", 6),
-        shipment(2, "grinding", 4),
-        shipment(3, "completed", 5),
-        shipment(4, "pending", 3),
-      ]),
+    http.get(`${API}/shipments/`, ({ request }) =>
+      page(shipmentsAsked(new URL(request.url).searchParams)),
     ),
     http.get(`${API}/grinding-operations/`, () => page([runningOperation])),
   );
 });
+
+const shipments = [
+  shipment(1, "grinding", 6, 4),
+  shipment(2, "grinding", 4),
+  shipment(3, "completed", 5),
+  shipment(4, "pending", 3),
+];
+
+function shipmentsAsked(query: URLSearchParams) {
+  const statuses = query.get("status__in")?.split(",");
+  const search = (query.get("search") ?? "").toLowerCase();
+
+  return shipments.filter(
+    (item) =>
+      (statuses === undefined || statuses.includes(item.status)) &&
+      (query.get("has_remaining_bags") !== "true" || item.remaining_bags > 0) &&
+      `${item.number} ${item.customer_name}`.toLowerCase().includes(search),
+  );
+}
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -128,9 +144,9 @@ function openAt(path: string, access: Access = allRights) {
   );
 }
 
-describe("getMillingData", () => {
+describe("getMillingOverview", () => {
   it("keeps the waiting and grinding shipments and places each operation on its machine", async () => {
-    const data = await getMillingData();
+    const data = await getMillingOverview("2026-10-08");
 
     expect(data.shipments.map((item) => item.shipmentNumber)).toEqual(["SH-1", "SH-2", "SH-4"]);
     expect(data.machines.map((machine) => machine.number)).toEqual([1, 2, 3]);
@@ -147,7 +163,7 @@ describe("endOperation", () => {
         return HttpResponse.json({});
       }),
     );
-    const [operation] = (await getMillingData()).operations;
+    const [operation] = (await getMillingOverview("2026-10-08")).operations;
 
     if (operation === undefined) {
       throw new Error("operation missing");
@@ -234,12 +250,12 @@ describe("milling screens", () => {
     await user.type(search, "client 4");
 
     const queue = within(search.closest("section") ?? document.body);
+    await waitFor(() => expect(queue.queryByText("SH-2")).toBeNull());
     expect(queue.getByText("SH-4")).toBeVisible();
-    expect(queue.queryByText("SH-2")).toBeNull();
 
     await user.clear(search);
     await user.type(search, "SH-99");
-    expect(queue.getByText(messages.common.noMatch)).toBeVisible();
+    expect(await queue.findByText(messages.common.noMatch)).toBeVisible();
   });
 
   it("filters the machines of a project by status", async () => {
@@ -268,6 +284,25 @@ describe("milling screens", () => {
       "href",
       "/fr/milling/projects/3/machines/2",
     );
+  });
+
+  it("asks the backend for the partly ground shipments only", async () => {
+    const user = userEvent.setup();
+    openAt("/fr/milling/projects/3");
+
+    const search = await screen.findByLabelText(
+      messages.common.searchIn.replace("{list}", text.project.queueTitle),
+    );
+    const queue = within(search.closest("section") ?? document.body);
+    await user.click(queue.getByRole("link", { name: new RegExp(messages.filters.button) }));
+    await user.click(
+      await queue.findByRole("checkbox", { name: text.shipmentStatuses.partiallyMilled }),
+    );
+    await user.click(queue.getByRole("button", { name: showResults }));
+
+    await waitFor(() => expect(queue.queryByText("SH-4")).toBeNull());
+    expect(queue.getByText("SH-1")).toBeVisible();
+    expect(queue.getByText("SH-2")).toBeVisible();
   });
 
   it("queues the shipments that still have bags to mill", async () => {
@@ -313,6 +348,43 @@ describe("milling screens", () => {
     expect(within(ended ?? section).getByText("SH-3")).toBeVisible();
     expect(within(ended ?? section).getByText("6 h 0 min")).toBeVisible();
     expect(within(ended ?? section).getByText(text.machine.history.done)).toBeVisible();
+  });
+
+  it("narrows a machine's grindings to the finished ones", async () => {
+    const finished = {
+      ...runningOperation,
+      id: 4,
+      shipment_number: "SH-3",
+      customer_name: "Client 3",
+      start_time: "2026-10-07T06:00:00.000Z",
+      end_time: "2026-10-07T12:00:00.000Z",
+    };
+    const asked: URLSearchParams[] = [];
+    server.use(
+      http.get(`${API}/grinding-operations/`, ({ request }) => {
+        const query = new URL(request.url).searchParams;
+        asked.push(query);
+        const running = query.get("is_running");
+        return page(
+          [runningOperation, finished].filter(
+            (operation) =>
+              running === null || (operation.end_time === null) === (running === "true"),
+          ),
+        );
+      }),
+    );
+    const user = userEvent.setup();
+    openAt("/fr/milling/projects/3/machines/1");
+
+    const heading = await screen.findByRole("heading", { name: text.machine.history.title });
+    const section = within(heading.closest("section") ?? document.body);
+    expect(asked.some((query) => query.get("grinder") === "7")).toBe(true);
+    await user.click(section.getByRole("link", { name: new RegExp(messages.filters.button) }));
+    await user.click(await section.findByRole("checkbox", { name: text.machine.history.done }));
+    await user.click(section.getByRole("button", { name: showResults }));
+
+    await waitFor(() => expect(section.queryByText("SH-1")).toBeNull());
+    expect(section.getByText("SH-3")).toBeVisible();
   });
 
   it("edits the running grinding from the machine page, its shipment and machine still offered", async () => {

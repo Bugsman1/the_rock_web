@@ -9,14 +9,18 @@ import {
   renderForm,
   saveFilledShipment,
   typeNoTransportCost,
+  customerPageFor,
 } from "./shipmentFormTesting";
 
 const replace = vi.fn();
-const { createShipmentMock, createCustomerMock, getInvoiceMock } = vi.hoisted(() => ({
-  createShipmentMock: vi.fn(),
-  createCustomerMock: vi.fn(),
-  getInvoiceMock: vi.fn(),
-}));
+const { customerPageMock, createShipmentMock, createCustomerMock, getInvoiceMock } = vi.hoisted(
+  () => ({
+    customerPageMock: vi.fn(),
+    createShipmentMock: vi.fn(),
+    createCustomerMock: vi.fn(),
+    getInvoiceMock: vi.fn(),
+  }),
+);
 
 vi.mock("./shipmentsApi", () => ({
   createShipment: createShipmentMock,
@@ -25,6 +29,7 @@ vi.mock("./shipmentsApi", () => ({
 vi.mock("@/lib/customersApi", () => ({
   createCustomer: createCustomerMock,
   updateCustomer: vi.fn(),
+  getCustomerPage: customerPageMock,
 }));
 
 vi.mock("@/i18n/navigation", () => ({
@@ -37,6 +42,7 @@ vi.mock("@/i18n/navigation", () => ({
 
 beforeEach(() => {
   replace.mockReset();
+  customerPageMock.mockImplementation(customerPageFor);
   createShipmentMock.mockReset();
   createShipmentMock.mockResolvedValue({ ok: true, id: "52", debtFailed: false });
   getInvoiceMock.mockReset();

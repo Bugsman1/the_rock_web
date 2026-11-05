@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { getRefiningOperations } from "./refiningApi";
+import { getRefiningOperations, getRefiningPage } from "./refiningApi";
 
 const OPERATIONS_URL = `${window.location.origin}/api/v1/refining-operations/`;
 const server = setupServer();
@@ -44,5 +44,45 @@ describe("getRefiningOperations", () => {
 
     expect(operations.map((operation) => operation.id)).toEqual(["5", "6"]);
     expect(requests[0]?.searchParams.get("ordering")).toBe("-refining_date");
+  });
+});
+
+describe("getRefiningPage", () => {
+  it("asks one page of 25, newest first, with the search and filters", async () => {
+    let asked = new URLSearchParams();
+    server.use(
+      http.get(OPERATIONS_URL, ({ request }) => {
+        asked = new URL(request.url).searchParams;
+        return HttpResponse.json({ count: 12, results: [apiOperation] });
+      }),
+    );
+
+    const slice = await getRefiningPage(
+      {
+        project: "3",
+        search: "Aicha",
+        goldWeighed: true,
+        grinder: "13",
+        customer: "4",
+        refinedFrom: "2026-10-01",
+        refinedTo: "2026-10-05",
+      },
+      1,
+    );
+
+    expect(slice.total).toBe(12);
+    expect(slice.refinings.map((refining) => refining.id)).toEqual(["5"]);
+    expect(Object.fromEntries(asked)).toEqual({
+      ordering: "-refining_date",
+      page: "1",
+      page_size: "25",
+      project: "3",
+      search: "Aicha",
+      gold_weighed: "true",
+      grinder: "13",
+      shipment__customer: "4",
+      refining_date__date__gte: "2026-10-01",
+      refining_date__date__lte: "2026-10-05",
+    });
   });
 });

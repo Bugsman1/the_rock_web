@@ -1,29 +1,37 @@
-import { useState } from "react";
 import { redirect, useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { CardGrid, KpiTile, LinkCard, StatGrid } from "@/components/ui/Cards";
 import { PageLayout, PageTitle } from "@/components/ui/PageHeader";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
-import { TablePanel } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { defaultLocale, isLocale } from "@/i18n/locales";
 import { localizedHref } from "@/i18n/navigation";
+import { getCustomer } from "@/lib/customersApi";
+import { listQueryFromParams, listQueryParams } from "@/lib/filters";
+import type { ListQuery } from "@/lib/filters";
 import { formatCount } from "@/lib/format";
-import { isInService } from "@/lib/projects";
-import { requireProject } from "@/lib/projectsApi";
-import type { RefiningOperation } from "@/lib/refining";
-import { editRefiningHref, REFINING_HREF, refiningProjectHref } from "@/lib/routes";
+import { machinesFromGrinders } from "@/lib/grinding";
+import { getGrindingOperation, getGrindingPage } from "@/lib/grindingApi";
+import { isInService, isRecordId } from "@/lib/projects";
+import { getGrinders, getProjects, requireProject } from "@/lib/projectsApi";
+import { getRefiningOperation, getRefiningPage } from "@/lib/refiningApi";
+import {
+  editRefiningHref,
+  REFINING_HREF,
+  refiningProjectHref,
+  startRefiningHref,
+} from "@/lib/routes";
 import { getOperators } from "@/lib/users";
-import { queueOfProject, refiningQueue, refiningsOfProject, refiningSummary } from "./refining";
-import { getRefiningData } from "./refiningApi";
+import { refiningGroups, refiningListFilter, refiningQueueFilter } from "./refining";
+import { getRefiningOverview } from "./refiningApi";
 import { RefiningForm } from "./RefiningForm";
-import { RefiningQueueTable, RefiningOperationsTable } from "./RefiningTables";
+import { RefiningQueueTable } from "./RefiningQueueTable";
+import { RefiningOperationsTable } from "./RefiningTables";
 
 export async function refiningLoader({ params }: LoaderFunctionArgs) {
-  const data = await getRefiningData();
-  const inService = data.projects.filter(isInService);
+  const inService = (await getProjects()).filter(isInService);
   const [onlyProject] = inService;
 
   if (inService.length === 1 && onlyProject !== undefined) {
@@ -31,58 +39,82 @@ export async function refiningLoader({ params }: LoaderFunctionArgs) {
     throw redirect(localizedHref(locale, refiningProjectHref(onlyProject.id)));
   }
 
-  return {
-    projects: inService,
-    queue: refiningQueue(data.grindings, data.refinings),
-    refinings: data.refinings,
-  };
+  return getRefiningOverview(inService, todayAsInputValue());
+}
+
+function pageParams(list: ListQuery, queueSearch: string): URLSearchParams {
+  const params = listQueryParams(list);
+
+  if (queueSearch !== "") params.set("queue", queueSearch);
+
+  return params;
+}
+
+async function editedRefining(id: string | null, project: string) {
+  const refining = id !== null && isRecordId(id) ? await getRefiningOperation(id) : undefined;
+
+  if (refining === undefined || refining.project !== project) {
+    return undefined;
+  }
+
+  const grinding = await getGrindingOperation(refining.grindingOperationId);
+
+  return grinding === undefined ? undefined : { refining, grinding };
+}
+
+async function waitingGrinding(id: string | null, project: string) {
+  const grinding = id !== null && isRecordId(id) ? await getGrindingOperation(id) : undefined;
+
+  return grinding?.endedAt !== undefined && grinding.project === project ? grinding : undefined;
 }
 
 export async function refiningProjectLoader({ params, request }: LoaderFunctionArgs) {
   const search = new URL(request.url).searchParams;
-  const grinding = search.get("grinding");
-  const editId = search.get("edit");
-  const [project, data] = await Promise.all([
-    requireProject(params.project ?? ""),
-    getRefiningData(),
+  const project = await requireProject(params.project ?? "");
+  const [projects, grinders] = await Promise.all([getProjects(), getGrinders(project.id)]);
+  const machines = machinesFromGrinders(grinders);
+  const list = listQueryFromParams(
+    search,
+    refiningGroups(machines.map((machine) => machine.grinderId)),
+  );
+  const queueSearch = (search.get("queue") ?? "").trim();
+  const filter = refiningListFilter(project.id, list);
+  const queueFilter = refiningQueueFilter(project.id, queueSearch);
+  const [queue, refinings, client, selected, editing] = await Promise.all([
+    getGrindingPage(queueFilter, 1),
+    getRefiningPage(filter, 1),
+    list.filters.client === "" ? undefined : getCustomer(list.filters.client),
+    waitingGrinding(search.get("grinding"), project.id),
+    editedRefining(search.get("edit"), project.id),
   ]);
-  const projectRefinings = refiningsOfProject(data.refinings, project.id);
-  const queue = queueOfProject(refiningQueue(data.grindings, data.refinings), project.id);
-  const selected = queue.find((operation) => operation.id === grinding);
-  const grindingOf = (refining: RefiningOperation) =>
-    data.grindings.find((operation) => operation.id === refining.grindingOperationId);
-  const editingRefining = projectRefinings.find((refining) => refining.id === editId);
-  const editingGrinding = editingRefining === undefined ? undefined : grindingOf(editingRefining);
   const workers =
-    selected === undefined && editingGrinding === undefined
+    selected === undefined && editing === undefined
       ? []
       : await getOperators(project.id, "refining");
 
   return {
     project,
-    hasOtherProjects: data.projects.filter(isInService).length > 1,
+    hasOtherProjects: projects.filter(isInService).length > 1,
+    machines,
+    list,
+    filter,
+    refinings,
+    queueSearch,
+    queueFilter,
     queue,
-    refinings: projectRefinings,
-    editableIds: projectRefinings
-      .filter((refining) => grindingOf(refining) !== undefined)
-      .map((refining) => refining.id),
+    clientName: client?.name,
     selected,
-    editing:
-      editingRefining === undefined || editingGrinding === undefined
-        ? undefined
-        : { refining: editingRefining, grinding: editingGrinding },
+    editing,
     workers,
   };
 }
 
 export function RefiningScreen() {
-  const { projects, queue, refinings } = useLoaderData<typeof refiningLoader>();
+  const { total, projects } = useLoaderData<typeof refiningLoader>();
   const t = useTranslations("refining");
   const common = useTranslations("common");
   const locale = useLocale();
-  const now = new Date().toISOString();
   const count = (value: number) => formatCount(value, locale);
-  const total = refiningSummary(queue, refinings, now);
 
   return (
     <div className="flex flex-col gap-6">
@@ -111,13 +143,7 @@ export function RefiningScreen() {
       </section>
 
       <CardGrid>
-        {projects.map((project) => {
-          const summary = refiningSummary(
-            queueOfProject(queue, project.id),
-            refiningsOfProject(refinings, project.id),
-            now,
-          );
-
+        {projects.map(({ project, summary }) => {
           return (
             <LinkCard
               key={project.id}
@@ -141,18 +167,30 @@ export function RefiningScreen() {
 }
 
 export function RefiningProjectScreen() {
-  const { project, hasOtherProjects, queue, refinings, editableIds, selected, editing, workers } =
-    useLoaderData<typeof refiningProjectLoader>();
+  const {
+    project,
+    hasOtherProjects,
+    machines,
+    list,
+    filter,
+    refinings,
+    queueSearch,
+    queueFilter,
+    queue,
+    clientName,
+    selected,
+    editing,
+    workers,
+  } = useLoaderData<typeof refiningProjectLoader>();
   const t = useTranslations("refining");
   const common = useTranslations("common");
-  const { close } = useRouteDrawer(refiningProjectHref(project.id));
+  const current = pageParams(list, queueSearch);
+  const { close } = useRouteDrawer(refiningProjectHref(project.id, current));
   const can = useCan();
   const refining = can("refining", "add") ? selected : undefined;
   const canEdit = can("refining", "edit");
   const edited = canEdit ? editing : undefined;
   const now = new Date();
-  const [queueQuery, setQueueQuery] = useState("");
-  const [operationsQuery, setOperationsQuery] = useState("");
 
   return (
     <PageLayout
@@ -160,37 +198,25 @@ export function RefiningProjectScreen() {
       backLabel={common("back")}
       title={common("projectTitle", { name: project.name })}
     >
-      <TablePanel
-        title={t("queueTitle")}
-        search={{
-          label: common("searchIn", { list: t("queueTitle") }),
-          placeholder: common("searchList"),
-          value: queueQuery,
-          onChange: setQueueQuery,
-        }}
-      >
-        <RefiningQueueTable queue={queue} query={queueQuery} />
-      </TablePanel>
+      <RefiningQueueTable
+        search={queueSearch}
+        filter={queueFilter}
+        first={queue}
+        hrefFor={(next) => refiningProjectHref(project.id, pageParams(list, next))}
+        startHrefOf={(operation) => startRefiningHref(project.id, operation.id, current)}
+      />
 
-      <TablePanel
-        title={t("operationsTitle")}
-        search={{
-          label: common("searchIn", { list: t("operationsTitle") }),
-          placeholder: common("searchList"),
-          value: operationsQuery,
-          onChange: setOperationsQuery,
-        }}
-      >
-        <RefiningOperationsTable
-          refinings={refinings}
-          query={operationsQuery}
-          editHrefOf={(operation) =>
-            canEdit && editableIds.includes(operation.id)
-              ? editRefiningHref(project.id, operation.id)
-              : undefined
-          }
-        />
-      </TablePanel>
+      <RefiningOperationsTable
+        list={list}
+        filter={filter}
+        first={refinings}
+        machines={machines}
+        clientName={clientName}
+        hrefFor={(next) => refiningProjectHref(project.id, pageParams(next, queueSearch))}
+        editHrefOf={(operation) =>
+          canEdit ? editRefiningHref(project.id, operation.id, current) : undefined
+        }
+      />
 
       <Drawer
         open={refining !== undefined}

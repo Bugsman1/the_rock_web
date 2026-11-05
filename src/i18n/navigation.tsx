@@ -24,6 +24,10 @@ export function usePathname(): string {
   return pathnameWithoutLocale(useLocation().pathname);
 }
 
+export function useSearch(): URLSearchParams {
+  return new URLSearchParams(useLocation().search);
+}
+
 export function pathnameWithoutLocale(pathname: string): string {
   const [, segment] = pathname.split("/");
 

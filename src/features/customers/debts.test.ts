@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { ApiSchema } from "@/lib/api/client";
+import { matchesFilters, noFilters, toggleFilter } from "@/lib/filters";
 import {
   createIncreaseSchema,
   createNewDebtSchema,
   createPaymentSchema,
   debtActions,
+  debtFilterFields,
   debtFromApi,
   debtHistoryFromApi,
   increaseErrorsFromApi,
@@ -95,6 +97,23 @@ describe("debtFromApi", () => {
   it("offers every action on an open debt and only an increase on a paid one", () => {
     expect(debtActions(debtFromApi(apiDebt))).toEqual(["increase", "decrease", "payOff"]);
     expect(debtActions(debtFromApi({ ...apiDebt, status: "paid" }))).toEqual(["increase"]);
+  });
+
+  it("keeps the debts of the chosen statuses, as the backend gives them", () => {
+    const open = debtFromApi({ ...apiDebt, status: "open" });
+    const partly = debtFromApi({ ...apiDebt, id: 2, status: "partially_paid" });
+    const paid = debtFromApi({ ...apiDebt, id: 3, status: "paid" });
+    const debts = [open, partly, paid];
+    const unpaid = toggleFilter(
+      toggleFilter(noFilters, "status", "open"),
+      "status",
+      "partially_paid",
+    );
+
+    expect(debts.filter((debt) => matchesFilters(debt, debtFilterFields, unpaid))).toEqual([
+      open,
+      partly,
+    ]);
   });
 
   it("accepts only the known actions from the address", () => {

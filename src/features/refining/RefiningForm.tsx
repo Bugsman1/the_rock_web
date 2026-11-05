@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
@@ -65,6 +66,7 @@ export function RefiningForm({
   const saveFailure = useSaveFailure();
   const [saved, setSaved] = useState(false);
   const [lossError, setLossError] = useState<string>();
+  const [goldUnreadable, setGoldUnreadable] = useState(false);
   const { superuser, userId } = useAccess();
   const mercuryGrams = operation.mercury?.total ?? 0;
   const weightBeforeFromMercury = mercuryGrams > 0;
@@ -123,6 +125,11 @@ export function RefiningForm({
       return;
     }
 
+    if (goldUnreadable) {
+      setError("goldWithoutMaterial", { message: t("errors.weightInvalid") });
+      return;
+    }
+
     saveFailure.clear();
     setLossError(undefined);
 
@@ -159,7 +166,15 @@ export function RefiningForm({
   function weightField(
     name: WeightFieldName,
     label: string,
-    { readOnly = false, required = true }: { readOnly?: boolean; required?: boolean } = {},
+    {
+      readOnly = false,
+      required = true,
+      onInput,
+    }: {
+      readOnly?: boolean;
+      required?: boolean;
+      onInput?: (event: FormEvent<HTMLInputElement>) => void;
+    } = {},
   ) {
     return (
       <TextField
@@ -171,6 +186,7 @@ export function RefiningForm({
         label={label}
         required={required}
         readOnly={readOnly}
+        onInput={onInput}
         error={errors[name]?.message}
         {...register(name, { valueAsNumber: true })}
       />
@@ -228,7 +244,10 @@ export function RefiningForm({
         {weightField("weightAfter", t("fields.weightAfter"))}
 
         {weightField("goldWithMaterial", t("fields.goldWithMaterial"))}
-        {weightField("goldWithoutMaterial", t("fields.goldWithoutMaterial"), { required: false })}
+        {weightField("goldWithoutMaterial", t("fields.goldWithoutMaterial"), {
+          required: false,
+          onInput: (event) => setGoldUnreadable(event.currentTarget.validity.badInput),
+        })}
         {loss === 0 ? (
           <FieldError id="refining-loss-error" message={lossError} />
         ) : loss !== undefined && loss < 0 ? (

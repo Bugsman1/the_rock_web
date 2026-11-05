@@ -4,7 +4,7 @@ import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { noAccess } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
@@ -30,7 +30,7 @@ const stamps = {
 
 const page = (results: readonly object[]) => HttpResponse.json({ count: results.length, results });
 
-function apiShipment(id: number, status: string) {
+function apiShipment(id: number, status: string, remaining = 10) {
   return {
     id,
     number: `SH-${id}`,
@@ -38,7 +38,11 @@ function apiShipment(id: number, status: string) {
     customer_phone: "+222 22 41 18 30",
     arrival_date: `2026-10-0${id}T08:00:00Z`,
     bags_count: 10,
+    remaining_bags: remaining,
     bag_transport_cost_per_bag: "100.00",
+    transport_total: "1000.00",
+    amount_left_to_pay: "1000.00",
+    is_fully_paid: false,
     transport_method: "truck",
     source: "zouerat",
     project: 3,
@@ -65,7 +69,11 @@ function answerProject() {
       HttpResponse.json({ id: 3, name: "Zouérat 1", site: "zouerat", status: "active", ...stamps }),
     ),
     http.get(`${API}/shipments/`, () =>
-      page([apiShipment(1, "pending"), apiShipment(2, "grinding"), apiShipment(3, "completed")]),
+      page([
+        apiShipment(1, "pending"),
+        apiShipment(2, "grinding", 8.5),
+        apiShipment(3, "completed", 0),
+      ]),
     ),
     http.get(`${API}/grinding-operations/`, () =>
       page([
@@ -98,6 +106,21 @@ function answerGrindingChoices() {
   );
 }
 
+function answerShipments(rows: readonly object[], total = rows.length) {
+  const asked: URLSearchParams[] = [];
+  server.use(
+    http.get(`${API}/shipments/`, ({ request }) => {
+      const query = new URL(request.url).searchParams;
+      if (!query.has("has_remaining_bags")) asked.push(query);
+      return HttpResponse.json({ count: total, results: rows });
+    }),
+  );
+
+  return asked;
+}
+
+const showResultsButton = () => screen.getByRole("button", { name: messages.filters.show });
+
 function openProject(path: string) {
   const router = createMemoryRouter(
     [
@@ -123,60 +146,97 @@ function openProject(path: string) {
 }
 
 describe("ProjectStorageScreen", () => {
-  it("finds a stored shipment by client, phone or number, keeping its place in line", async () => {
-    answerProjectList([apiProject(3, "Zouérat 1"), apiProject(4, "Zouérat 2")]);
-    server.use(
-      http.get(`${API}/grinding-operations/`, () => page([])),
-      http.get(`${API}/projects/3/`, () =>
-        HttpResponse.json({
-          id: 3,
-          name: "Zouérat 1",
-          site: "zouerat",
-          status: "active",
-          ...stamps,
-        }),
-      ),
-      http.get(`${API}/shipments/`, () =>
-        page([
-          apiShipment(1, "pending"),
-          { ...apiShipment(2, "pending"), customer_phone: "+222 46 00 00 01" },
-        ]),
-      ),
-    );
+  it("asks the backend for the typed search and hides the places in line", async () => {
+    answerProject();
+    const asked = answerShipments([apiShipment(2, "pending")]);
     const user = userEvent.setup();
-    openProject("/fr/shipments/projects/3");
+    const router = openProject("/fr/shipments/projects/3");
 
     const search = await screen.findByLabelText(
       messages.common.searchIn.replace("{list}", messages.shipments.project.queueTitle),
     );
     await user.type(search, "46 00");
 
-    const [, row] = screen.getAllByRole("row");
-    expect(row).toHaveTextContent("2SH-2");
-    expect(screen.queryByText("SH-1")).toBeNull();
-
-    await user.clear(search);
-    await user.type(search, "personne");
-    expect(screen.getByText(messages.common.noMatch)).toBeVisible();
+    await vi.waitFor(() => expect(router.state.location.search).toBe("?q=46+00"));
+    await vi.waitFor(() => expect(asked.at(-1)?.get("search")).toBe("46 00"));
+    await vi.waitFor(() =>
+      expect(
+        screen.queryByRole("columnheader", { name: messages.shipments.project.position }),
+      ).toBeNull(),
+    );
   });
 
-  it("lists the shipments still to grind with their bags left, like the grinding queue", async () => {
+  it("lists the shipments still to grind, oldest first, one page at a time", async () => {
     answerProject();
-    openProject("/fr/shipments/projects/3");
+    const asked = answerShipments([apiShipment(1, "pending"), apiShipment(2, "grinding", 8.5)], 30);
+    const user = userEvent.setup();
+    const router = openProject("/fr/shipments/projects/3");
 
     expect(await screen.findByText("SH-1")).toBeVisible();
+    expect(asked[0]?.get("status__in")).toBe("pending,grinding,refining");
+    expect(asked[0]?.get("ordering")).toBe("arrival_date");
+    expect(asked[0]?.get("page_size")).toBe("25");
     const [, waiting, started] = screen.getAllByRole("row");
+    expect(waiting).toHaveTextContent("1SH-1");
     expect(waiting).toHaveTextContent("10 sur 10");
     expect(waiting).toHaveTextContent(messages.shipments.statuses.pending);
-    expect(started).toHaveTextContent("SH-2");
     expect(started).toHaveTextContent("8,5 sur 10");
     expect(started).toHaveTextContent(messages.shipments.statuses.grinding);
-    expect(screen.queryByText("SH-3")).toBeNull();
     expect(screen.getByRole("link", { name: "SH-1" })).toHaveAttribute("href", "/fr/shipments/1");
     expect(waiting).toHaveTextContent(messages.shipments.payment.incomplete);
     expect(
       screen.getByRole("link", { name: `${messages.shipments.project.startMilling} SH-1` }),
     ).toHaveAttribute("href", "/fr/shipments/projects/3?grind=SH-1");
+
+    await user.click(screen.getByRole("button", { name: messages.common.showMore }));
+
+    await vi.waitFor(() => expect(asked.at(-1)?.get("page")).toBe("2"));
+    expect(asked.at(-1)?.get("page_size")).toBe("25");
+    expect(router.state.location.search).toBe("");
+    await vi.waitFor(() => expect(screen.getAllByRole("link", { name: "SH-1" })).toHaveLength(2));
+    expect(screen.getAllByRole("row")[3]).toHaveTextContent("3SH-1");
+  });
+
+  it("sends the chosen stages and payment to the backend and keeps them in the address", async () => {
+    answerProject();
+    const asked = answerShipments([apiShipment(2, "grinding", 8.5)]);
+    const user = userEvent.setup();
+    const router = openProject("/fr/shipments/projects/3");
+
+    await screen.findByText("SH-2");
+    await user.click(screen.getByRole("link", { name: new RegExp(messages.filters.button) }));
+    await user.click(
+      await screen.findByRole("checkbox", { name: messages.shipments.statuses.grinding }),
+    );
+    await user.click(screen.getByRole("checkbox", { name: messages.shipments.payment.incomplete }));
+    await user.click(
+      screen.getByRole("checkbox", { name: messages.shipments.transportMethods.truck }),
+    );
+    await user.click(
+      screen.getByRole("checkbox", { name: messages.shipments.transportMethods.hilux }),
+    );
+    await user.click(showResultsButton());
+
+    await vi.waitFor(() =>
+      expect(router.state.location.search).toBe("?status=grinding&payment=unpaid&transport=hilux"),
+    );
+    await vi.waitFor(() => expect(asked.at(-1)?.get("status__in")).toBe("grinding"));
+    expect(asked.at(-1)?.get("is_fully_paid")).toBe("false");
+    expect(asked.at(-1)?.get("transport_method")).toBe("hilux");
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("link", { name: new RegExp(messages.filters.button) }),
+      ).toHaveTextContent("3"),
+    );
+    expect(
+      screen.queryByRole("columnheader", { name: messages.shipments.project.position }),
+    ).toBeNull();
+    expect(
+      screen.getByRole("link", { name: `${messages.shipments.project.startMilling} SH-2` }),
+    ).toHaveAttribute(
+      "href",
+      "/fr/shipments/projects/3?status=grinding&payment=unpaid&transport=hilux&grind=SH-2",
+    );
   });
 
   it("asks the invoice language from the PDF button and says so when the download fails", async () => {
@@ -241,7 +301,7 @@ describe("ProjectStorageScreen", () => {
         }),
       ),
       http.get(`${API}/shipments/`, () =>
-        page([{ ...apiShipment(4, "grinding"), ground_bags: 10, is_ground: true }]),
+        page([{ ...apiShipment(4, "grinding", 0), ground_bags: 10, is_ground: true }]),
       ),
       http.get(`${API}/grinding-operations/`, () =>
         page([

@@ -90,6 +90,21 @@ describe("a project's employees", () => {
     );
   });
 
+  it("narrows the list to one job title, counting each", async () => {
+    serveProjects([11, 12]);
+    serveEmployeeData([apiEmployee(7), owing]);
+    const user = userEvent.setup();
+    openAt("/fr/employees/projects/11");
+
+    await screen.findByRole("cell", { name: "EMP-8" });
+    const job = screen.getByLabelText(text.fields.job);
+    await user.selectOptions(job, `${text.jobTitles.MOU} (1)`);
+
+    expect(screen.getByRole("cell", { name: "EMP-8" })).toBeVisible();
+    expect(screen.queryByRole("cell", { name: "EMP-7" })).toBeNull();
+    expect(screen.getByRole("option", { name: `${text.allJobs} (2)` })).toBeInTheDocument();
+  });
+
   it("finds an employee by the name of their job title", async () => {
     serveProjects([11, 12]);
     serveEmployeeData([apiEmployee(7), owing]);

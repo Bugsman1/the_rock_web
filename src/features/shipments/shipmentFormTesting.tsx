@@ -9,6 +9,7 @@ import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/ar.json";
 import frMessages from "@/messages/fr.json";
+import type { Page } from "@/lib/api/pagination";
 import type { Customer } from "@/lib/customers";
 import type { Project } from "@/lib/projects";
 import type { ShipmentRecord } from "@/lib/shipments";
@@ -58,6 +59,18 @@ export const customers: Customer[] = [
   },
 ];
 
+export async function customerPageFor(search: string): Promise<Page<Customer>> {
+  const text = search.trim().toLocaleLowerCase();
+  const digits = text.replace(/\D/g, "");
+  const items = customers.filter(
+    (customer) =>
+      customer.name.toLocaleLowerCase().includes(text) ||
+      (digits !== "" && customer.phone.replace(/\D/g, "").includes(digits)),
+  );
+
+  return { items, total: items.length, page: 1, pageCount: 1 };
+}
+
 export const projects: readonly Project[] = [
   { id: "2", name: "Zouérat 2", site: "zouerat", status: "active" },
   { id: "3", name: "Sfariyat 1", site: "sfariyat", status: "maintenance" },
@@ -74,7 +87,6 @@ export function renderForm(defaultProject?: string) {
               <NewShipmentForm
                 defaultArrivalDate="2026-10-07"
                 defaultArrivalTime="08:30"
-                customers={customers}
                 projects={projects}
                 defaultProject={defaultProject}
                 backHref={
@@ -96,7 +108,7 @@ export async function pickClient(
   customer: Customer = mohamed,
 ) {
   await user.type(screen.getByLabelText(form.customerName), customer.name.slice(0, 4));
-  await user.click(screen.getByRole("option", { name: new RegExp(customer.name) }));
+  await user.click(await screen.findByRole("option", { name: new RegExp(customer.name) }));
 }
 
 export async function typeNoTransportCost(user: ReturnType<typeof userEvent.setup>) {
@@ -142,18 +154,23 @@ export function shipmentRecord(overrides: Partial<ShipmentRecord>): ShipmentReco
   return {
     id: "1",
     shipmentNumber: "SHP-00001",
+    customerId: "1",
     customerName: "Ahmed",
     phone: "+222 22 41 18 30",
     arrivedAt: "2026-10-01T08:00:00Z",
     bagCount: 10,
     testBags: 0,
+    remainingBags: 10,
     project: "3",
     status: "pending",
     stage: "pending",
     source: "Chami",
+    transportMethod: "truck",
     notes: "",
     transportTotal: 1000,
     paid: 0,
+    amountLeft: 1000,
+    fullyPaid: false,
     debt: 0,
     ...overrides,
   };
@@ -195,6 +212,7 @@ export const cancelledByMed = {
 
 export function apiShipment(payments: Payments, debt = "350.00", overrides: object = {}) {
   const paid = payments.reduce((total, payment) => total + Number(payment.amount), 0);
+  const transportTotal = 10 * 300 + 200;
 
   return {
     id: 52,
@@ -211,6 +229,9 @@ export function apiShipment(payments: Payments, debt = "350.00", overrides: obje
     unloading_cost_per_bag: null,
     unloading_total: "0.00",
     current_payment: String(paid),
+    transport_total: String(transportTotal),
+    amount_left_to_pay: String(Math.max(0, transportTotal - paid)),
+    is_fully_paid: paid >= transportTotal,
     debt,
     debts:
       Number(debt) > 0

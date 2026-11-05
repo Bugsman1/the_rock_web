@@ -17,14 +17,13 @@ import {
   ProfileScreen,
   profileLoader,
   SettingsHomeScreen,
-  settingsHomeLoader,
   settingsSectionsFor,
 } from "./SettingsScreens";
 
 const allRights: Access = { ...noAccess, superuser: true };
 
 const settingsRoutes = [
-  { path: "settings", loader: settingsHomeLoader, element: <SettingsHomeScreen /> },
+  { path: "settings", element: <SettingsHomeScreen /> },
   { path: "settings/profile", loader: profileLoader, element: <ProfileScreen /> },
   { path: "settings/language", element: <LanguageScreen /> },
   { path: "settings/projects", loader: projectsLoader, element: <ProjectsScreen /> },
@@ -62,26 +61,6 @@ function viewing(viewable: readonly Module[]): Access {
 
 const everything = viewing(modules);
 const supervisor = viewing(["shipments", "grinding", "refining"]);
-
-function signInWith(viewable: readonly Module[]) {
-  server.use(
-    http.get(`${API}/auth/me/`, () =>
-      HttpResponse.json({
-        id: 4,
-        email: "aicha@mills.mr",
-        full_name: "Aicha",
-        phone: "",
-        is_superuser: false,
-        role: {
-          id: 2,
-          name: "Contrôleur",
-          is_project_scoped: false,
-          permissions: viewable.map((module) => ({ module, can_view: true })),
-        },
-      }),
-    ),
-  );
-}
 
 function answerProjects() {
   server.use(
@@ -134,8 +113,7 @@ describe("settingsSectionsFor", () => {
 
 describe("settings home", () => {
   it("opens each setting on its own page", async () => {
-    signInWith(modules);
-    openAt("/fr/settings");
+    openAt("/fr/settings", everything);
 
     expect(
       await screen.findByRole("link", { name: new RegExp(text.projects.title) }),
@@ -147,9 +125,8 @@ describe("settings home", () => {
   });
 
   it("filters the settings and says when nothing matches", async () => {
-    signInWith(modules);
     const user = userEvent.setup();
-    openAt("/fr/settings");
+    openAt("/fr/settings", everything);
 
     await user.type(await screen.findByLabelText(text.searchLabel), text.language.title);
 
@@ -161,8 +138,7 @@ describe("settings home", () => {
   });
 
   it("shows a role without the projects only their own settings", async () => {
-    signInWith(["shipments", "refining"]);
-    openAt("/fr/settings");
+    openAt("/fr/settings", viewing(["shipments", "refining"]));
 
     await screen.findByRole("link", { name: new RegExp(text.profile.title) });
     expect(

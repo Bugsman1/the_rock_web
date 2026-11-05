@@ -2,7 +2,6 @@ import { useLocale, useTranslations } from "use-intl";
 import { Icon } from "@/components/ui/Icon";
 import type { IconName } from "@/components/ui/Icon";
 import { formatMoney } from "@/lib/format";
-import { amountLeftToPay } from "@/lib/shipments";
 import type { ShipmentRecord, ShipmentStage } from "@/lib/shipments";
 
 const pillClasses =
@@ -11,7 +10,7 @@ const pillClasses =
 export function PaymentStatus({ shipment }: { shipment: ShipmentRecord }) {
   const t = useTranslations("shipments.payment");
 
-  return amountLeftToPay(shipment) === 0 ? (
+  return shipment.fullyPaid ? (
     <span className={`${pillClasses} border-success-300 bg-success-50 text-success-700`}>
       <Icon name="circle-check" className="h-4 w-4" />
       {t("complete")}

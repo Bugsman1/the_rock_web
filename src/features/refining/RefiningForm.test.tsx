@@ -161,4 +161,18 @@ describe("RefiningForm", () => {
     await user.click(screen.getByRole("button", { name: text.form.submit }));
     expect(api.createRefiningOperation).not.toHaveBeenCalled();
   });
+
+  it("refuses a gold without material the browser cannot read instead of saving it empty", async () => {
+    renderForm();
+    const goldWithout = screen.getByLabelText(fields.goldWithoutMaterial);
+    const user = await fillRefiningForm("10", "9", "1");
+    Object.defineProperty(goldWithout, "validity", { value: { badInput: true } });
+
+    await user.clear(goldWithout);
+    await user.type(goldWithout, "-");
+    await user.click(screen.getByRole("button", { name: text.form.submit }));
+
+    expect(await screen.findByText(text.errors.weightInvalid)).toBeVisible();
+    expect(api.createRefiningOperation).not.toHaveBeenCalled();
+  });
 });

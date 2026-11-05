@@ -19,7 +19,12 @@ import type { Machine, MillingOperation } from "@/lib/grinding";
 import type { Project } from "@/lib/projects";
 import { millingMachineHref, startRefiningHref } from "@/lib/routes";
 import type { Operator } from "@/lib/users";
-import { createEndMillingSchema, millingQueue, operationShipments } from "./milling";
+import {
+  createEndMillingSchema,
+  millingQueue,
+  operationShipments,
+  withBagsFreedBy,
+} from "./milling";
 import type { MillingShipment } from "./milling";
 import type { EndMillingValues } from "./milling";
 import { MercuryAdditionForm } from "./MercuryAdditions";
@@ -233,7 +238,9 @@ export function EditOperationDrawer({
         key={operation.id}
         operation={operation}
         projectName={project.name}
-        shipments={operationShipments(millingQueue(data.shipments, others, project.id), others)}
+        shipments={operationShipments(
+          millingQueue(withBagsFreedBy(data.shipments, operation), project.id),
+        )}
         idleMachines={idleMachines(machinesOfProject(data.machines, project.id), others)}
         operators={operators}
         defaultShipmentNumber={operation.shipmentNumber}

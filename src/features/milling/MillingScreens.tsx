@@ -7,12 +7,14 @@ import { defaultLocale, isLocale } from "@/i18n/locales";
 import { Link, localizedHref } from "@/i18n/navigation";
 import { cn } from "@/lib/cn";
 import { formatCount } from "@/lib/format";
-import { isSiteKey, siteKeys } from "@/lib/projects";
+import { todayAsInputValue } from "@/lib/datetime";
+import { isInService, isSiteKey, siteKeys } from "@/lib/projects";
+import { getProjects } from "@/lib/projectsApi";
 import { MILLING_HREF, millingProjectHref, millingSiteHref } from "@/lib/routes";
 import type { MachineStatus } from "@/lib/grinding";
 import { combineSummaries, isBacklogged, projectsForSite, projectSummary } from "./milling";
 import type { MillingSummary, SiteFilter } from "./milling";
-import { getMillingData } from "./millingApi";
+import { getMillingOverview } from "./millingApi";
 
 const machineStatusDots: Record<MachineStatus, string> = {
   running: "bg-success-700",
@@ -85,15 +87,17 @@ function siteFilterOf(value: string | null): SiteFilter {
 
 export async function millingLoader({ params, request }: LoaderFunctionArgs) {
   const site = new URL(request.url).searchParams.get("site");
-  const data = await getMillingData();
-  const [onlyProject] = data.projects;
+  const projects = (await getProjects()).filter(isInService);
+  const [onlyProject] = projects;
 
-  if (data.projects.length === 1 && onlyProject !== undefined) {
+  if (projects.length === 1 && onlyProject !== undefined) {
     const locale = isLocale(params.locale) ? params.locale : defaultLocale;
     throw redirect(localizedHref(locale, millingProjectHref(onlyProject.id)));
   }
 
-  return { site: siteFilterOf(site), data };
+  const overview = await getMillingOverview(todayAsInputValue());
+
+  return { site: siteFilterOf(site), data: { ...overview, projects } };
 }
 
 function SiteFilterNav({ current, sites }: { current: SiteFilter; sites: readonly SiteFilter[] }) {

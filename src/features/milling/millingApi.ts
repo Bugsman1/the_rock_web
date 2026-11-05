@@ -4,26 +4,24 @@ import { toDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import { machinesFromGrinders } from "@/lib/grinding";
 import type { MillingOperation } from "@/lib/grinding";
-import { getGrindingOperations } from "@/lib/grindingApi";
-import { isInService } from "@/lib/projects";
-import { getGrinders, getProjects } from "@/lib/projectsApi";
+import { getGrindingOperations, getGrindingsEndedOn } from "@/lib/grindingApi";
+import { getGrinders } from "@/lib/projectsApi";
 import { getShipments } from "@/lib/shipmentsApi";
-import { millingShipments } from "./milling";
+import { millingShipments, millingStatuses } from "./milling";
 import type { EndMillingValues, MercuryAdditionValues, MercuryValues } from "./milling";
 
-export async function getMillingData() {
-  const [projects, grinders, shipments, operations] = await Promise.all([
-    getProjects(),
+export async function getMillingOverview(today: string) {
+  const [grinders, shipments, running, endedToday] = await Promise.all([
     getGrinders(),
-    getShipments(),
-    getGrindingOperations(),
+    getShipments({ statuses: millingStatuses, hasRemainingBags: true }),
+    getGrindingOperations({ running: true }),
+    getGrindingsEndedOn(today),
   ]);
 
   return {
-    projects: projects.filter(isInService),
     machines: machinesFromGrinders(grinders),
     shipments: millingShipments(shipments),
-    operations,
+    operations: [...running, ...endedToday],
   };
 }
 

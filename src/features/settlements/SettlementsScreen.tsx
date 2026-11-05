@@ -11,23 +11,23 @@ import { getProjects } from "@/lib/projectsApi";
 import { settlementsProjectHref } from "@/lib/routes";
 import { getRefiningOperations } from "@/lib/refiningApi";
 import { getShipments } from "@/lib/shipmentsApi";
-import { projectSettlementSummary } from "./settlements";
+import { projectSettlementSummary, settleableStatuses } from "./settlements";
 import { getSettlements } from "./settlementsApi";
 
 export async function settlementsLoader({ params }: LoaderFunctionArgs) {
-  const [projects, shipments, settlements, refinings] = await Promise.all([
-    getProjects(),
-    getShipments(),
-    getSettlements(),
-    getRefiningOperations(),
-  ]);
-  const inService = projects.filter(isInService);
+  const inService = (await getProjects()).filter(isInService);
   const [onlyProject] = inService;
 
   if (inService.length === 1 && onlyProject !== undefined) {
     const locale = isLocale(params.locale) ? params.locale : defaultLocale;
     throw redirect(localizedHref(locale, settlementsProjectHref(onlyProject.id)));
   }
+
+  const [shipments, settlements, refinings] = await Promise.all([
+    getShipments({ statuses: settleableStatuses }),
+    getSettlements(),
+    getRefiningOperations({ goldWeighed: false }),
+  ]);
 
   return {
     projects: inService.map((project) => ({

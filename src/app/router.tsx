@@ -1,5 +1,5 @@
 import { Outlet, redirect, useLoaderData } from "react-router";
-import type { Params, RouteObject } from "react-router";
+import type { Params, RouteObject, ShouldRevalidateFunction } from "react-router";
 import { useLocale } from "use-intl";
 import { LoginScreen } from "@/features/auth";
 import {
@@ -51,7 +51,6 @@ import {
   ProjectsScreen,
   projectsLoader,
   SettingsHomeScreen,
-  settingsHomeLoader,
 } from "@/features/settings";
 import {
   NewSettlementScreen,
@@ -82,6 +81,7 @@ import type { Locale } from "@/i18n/locales";
 import { localizedHref, pathnameWithoutLocale, Redirect, usePathname } from "@/i18n/navigation";
 import { accessFromApi, canOpen, homeHref } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
+import { onlyFilterPageToggled } from "@/lib/filters";
 import { apiClient } from "@/lib/api/client";
 import { isUnreachableStatus } from "@/lib/api/connection";
 import { hasSession } from "@/lib/api/session";
@@ -212,7 +212,7 @@ const sectionRoutes: RouteObject[] = [
     element: <EmployeesProjectScreen />,
   },
   { path: "employees/:employee", loader: employeeLoader, element: <EmployeeScreen /> },
-  { path: "settings", loader: settingsHomeLoader, element: <SettingsHomeScreen /> },
+  { path: "settings", element: <SettingsHomeScreen /> },
   { path: "settings/profile", loader: profileLoader, element: <ProfileScreen /> },
   { path: "settings/language", element: <LanguageScreen /> },
   { path: "settings/projects", loader: projectsLoader, element: <ProjectsScreen /> },
@@ -235,6 +235,12 @@ const sectionRoutes: RouteObject[] = [
   },
 ];
 
+const skipFilterPageToggle: ShouldRevalidateFunction = ({
+  currentUrl,
+  nextUrl,
+  defaultShouldRevalidate,
+}) => (onlyFilterPageToggled(currentUrl, nextUrl) ? false : defaultShouldRevalidate);
+
 const emptySectionRoutes: RouteObject[] = sectionHrefs
   .map((href) => href.slice(1))
   .filter((path) => !sectionRoutes.some((route) => route.path === path))
@@ -253,11 +259,21 @@ export const routes: RouteObject[] = [
       { path: "login", loader: redirectSignedIn, element: <LoginScreen /> },
       {
         loader: loadSignedInUser,
+        shouldRevalidate: () => false,
         element: <SignedInLayout />,
         hydrateFallbackElement: <FirstLoad />,
         errorElement: <PageError />,
         children: [
-          { errorElement: <PageError />, children: [...sectionRoutes, ...emptySectionRoutes] },
+          {
+            errorElement: <PageError />,
+            children: [
+              ...sectionRoutes.map((route) => ({
+                ...route,
+                shouldRevalidate: skipFilterPageToggle,
+              })),
+              ...emptySectionRoutes,
+            ],
+          },
         ],
       },
     ],

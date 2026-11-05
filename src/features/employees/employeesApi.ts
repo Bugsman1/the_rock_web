@@ -70,6 +70,16 @@ export async function getEmployees(project?: ProjectId): Promise<readonly Employ
   return employees.map(employeeFromApi);
 }
 
+export async function countEmployees(project: ProjectId): Promise<number> {
+  const result = unwrap(
+    await apiClient.GET("/api/v1/employees/", {
+      params: { query: { page_size: 1, project: Number(project) } },
+    }),
+  );
+
+  return result.count;
+}
+
 export async function getEmployee(id: string): Promise<Employee | undefined> {
   if (!isRecordId(id)) {
     return undefined;

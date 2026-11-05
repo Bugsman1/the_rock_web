@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   createNewSettlementSchema,
-  customerOfShipment,
   projectSettlementSummary,
   settleableShipmentsOfProject,
   newSettlementToApi,
@@ -115,21 +114,6 @@ describe("shipments to settle", () => {
       waiting: 1,
       settled: 0,
     });
-  });
-
-  it("finds the customer of a shipment by phone, spaces or not", () => {
-    const customers = [
-      {
-        id: "7",
-        name: "Ahmed",
-        phone: "+222 22 41 18 30",
-        addedAt: "2026-10-01T08:00:00Z",
-        debt: 0,
-      },
-    ];
-
-    expect(customerOfShipment(customers, { phone: "+22222411830" })?.id).toBe("7");
-    expect(customerOfShipment(customers, { phone: "+22246109325" })).toBeUndefined();
   });
 
   it("lists each project of the shipments once", () => {

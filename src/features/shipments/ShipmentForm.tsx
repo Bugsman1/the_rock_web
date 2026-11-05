@@ -5,8 +5,8 @@ import { useLocale, useTranslations } from "use-intl";
 import { Drawer, DrawerActions } from "@/components/ui/Drawer";
 import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { useToast } from "@/components/ui/Toast";
+import { useCustomerChoices } from "@/components/customers/useCustomerSearch";
 import { useReplace } from "@/i18n/navigation";
-import type { Customer } from "@/lib/customers";
 import { formatCount, formatMoney } from "@/lib/format";
 import type { Project } from "@/lib/projects";
 import { createNewShipmentSchema, isShipmentField, transportMethodKeys } from "./shipments";
@@ -28,7 +28,6 @@ type ShipmentFormMode =
 
 type ShipmentFormProps = {
   defaultValues: NewShipmentValues;
-  customers: readonly Customer[];
   projects: readonly Project[];
   mode: ShipmentFormMode;
 };
@@ -36,7 +35,6 @@ type ShipmentFormProps = {
 type NewShipmentFormProps = {
   defaultArrivalDate: string;
   defaultArrivalTime: string;
-  customers: readonly Customer[];
   projects: readonly Project[];
   defaultProject: string | undefined;
   backHref: string;
@@ -45,7 +43,6 @@ type NewShipmentFormProps = {
 export function NewShipmentForm({
   defaultArrivalDate,
   defaultArrivalTime,
-  customers,
   projects,
   defaultProject,
   backHref,
@@ -70,7 +67,6 @@ export function NewShipmentForm({
         mill: defaultProject ?? projects[0]?.id ?? "",
         notes: "",
       }}
-      customers={customers}
       projects={projects}
       mode={{ kind: "create", backHref }}
     />
@@ -79,21 +75,14 @@ export function NewShipmentForm({
 
 type EditShipmentFormProps = {
   shipment: ShipmentDetail;
-  customers: readonly Customer[];
   projects: readonly Project[];
   onSaved: () => void;
 };
 
-export function EditShipmentForm({
-  shipment,
-  customers,
-  projects,
-  onSaved,
-}: EditShipmentFormProps) {
+export function EditShipmentForm({ shipment, projects, onSaved }: EditShipmentFormProps) {
   return (
     <ShipmentForm
       defaultValues={shipmentFormValues(shipment)}
-      customers={customers}
       projects={projects}
       mode={{
         kind: "edit",
@@ -106,7 +95,7 @@ export function EditShipmentForm({
   );
 }
 
-function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentFormProps) {
+function ShipmentForm({ defaultValues, projects, mode }: ShipmentFormProps) {
   const t = useTranslations("shipments.form");
   const common = useTranslations("common");
   const replace = useReplace();
@@ -146,7 +135,8 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
     defaultValues,
   });
   const { handleSubmit, formState, setError, reset } = form;
-  const newCustomer = useNewCustomer(form, customers);
+  const choices = useCustomerChoices();
+  const newCustomer = useNewCustomer(form, choices.customers);
 
   async function onSubmit(values: NewShipmentValues) {
     if (saveFailure.unknown) {
@@ -198,7 +188,7 @@ function ShipmentForm({ defaultValues, customers, projects, mode }: ShipmentForm
         onSubmit={handleSubmit(onSubmit)}
         className="rounded-card shadow-subtle border-line bg-surface flex w-full flex-col gap-5 border-[1.5px] p-6"
       >
-        <ShipmentClientFields form={form} customers={customers} newCustomer={newCustomer} />
+        <ShipmentClientFields form={form} choices={choices} newCustomer={newCustomer} />
         <ShipmentArrivalFields form={form} />
         <TransportCostFields
           form={form}

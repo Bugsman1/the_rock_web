@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ApiSchema } from "@/lib/api/client";
-import {
-  amountLeftToPay,
-  isInProgress,
-  shipmentFromApi,
-  stageOf,
-  totalBags,
-} from "@/lib/shipments";
+import { isInProgress, shipmentFromApi, stageOf, totalBags } from "@/lib/shipments";
 import { shipmentDetailFromApi, shipmentFormValues } from "./shipmentDetail";
 import {
   amountLeftAfter,
@@ -35,6 +29,9 @@ describe("shipment payments", () => {
     unloading_cost_per_bag: null,
     unloading_total: "0.00",
     current_payment: "2200.00",
+    transport_total: "3200.00",
+    amount_left_to_pay: "1000.00",
+    is_fully_paid: false,
     debt: "0.00",
     debts: [],
     payments: [
@@ -101,13 +98,15 @@ describe("shipment payments", () => {
     });
   });
 
-  it("reads a shipment with its fares and its payments, oldest first", () => {
+  it("reads a shipment with its fares, the backend's totals and its payments, oldest first", () => {
     const detail = shipmentDetailFromApi(apiShipment);
 
     expect(detail).toMatchObject({
       id: "52",
       transportTotal: 3200,
       paid: 2200,
+      amountLeft: 1000,
+      fullyPaid: false,
       debt: 0,
       bagFare: 300,
       passengerCount: 1,
@@ -118,7 +117,6 @@ describe("shipment payments", () => {
       { id: "1", amount: 1000, paidAt: "2026-10-10T08:30:00Z", notes: "" },
       { id: "2", amount: 1200, paidAt: "2026-10-12T10:00:00Z", notes: "Deuxième" },
     ]);
-    expect(amountLeftToPay(detail)).toBe(1000);
   });
 
   it("reads the unloading apart from the transport, and leaves it empty when there is none", () => {
@@ -133,7 +131,7 @@ describe("shipment payments", () => {
       unloadingTotal: 400,
       transportTotal: 3200,
     });
-    expect(amountLeftToPay(unloaded)).toBe(1000);
+    expect(unloaded.amountLeft).toBe(1000);
     expect(shipmentFormValues(unloaded).unloadingFare).toBe(40);
     expect(shipmentDetailFromApi(apiShipment).unloadingFare).toBeUndefined();
     expect(shipmentFormValues(shipmentDetailFromApi(apiShipment)).unloadingFare).toBeNaN();

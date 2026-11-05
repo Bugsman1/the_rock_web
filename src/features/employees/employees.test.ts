@@ -3,7 +3,6 @@ import {
   createEmployeeSchema,
   createRaiseSchema,
   createWithdrawalSchema,
-  employeeCount,
   employeeErrorsFromApi,
   employeeFromApi,
   employeeToApi,
@@ -239,14 +238,5 @@ describe("employees from and to the backend", () => {
       monthly_salary: "40000",
       effective_from: "2026-11-01",
     });
-  });
-
-  it("counts a project's employees", () => {
-    const employees = [apiEmployee(1), apiEmployee(2), apiEmployee(3, { project: 12 })].map(
-      employeeFromApi,
-    );
-
-    expect(employeeCount(employees, "11")).toBe(2);
-    expect(employeeCount(employees, "13")).toBe(0);
   });
 });

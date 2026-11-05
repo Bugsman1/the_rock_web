@@ -7,7 +7,8 @@ import { PageLayout } from "@/components/ui/PageHeader";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { useReplace } from "@/i18n/navigation";
-import { getCustomerChoices } from "@/lib/customersApi";
+import { useCustomerSearch } from "@/components/customers/useCustomerSearch";
+import { getCustomer } from "@/lib/customersApi";
 import { isRecordId } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
 import {
@@ -19,16 +20,16 @@ import {
 import { getRefiningOperations } from "@/lib/refiningApi";
 import { getShipments } from "@/lib/shipmentsApi";
 import { SettlementForm } from "./SettlementForm";
-import { projectsOfShipments, settleableShipments } from "./settlements";
+import { projectsOfShipments, settleableShipments, settleableStatuses } from "./settlements";
 import type { NewSettlementValues } from "./settlements";
 import { createSettlement, getSettlements } from "./settlementsApi";
 
 async function loadCustomerShipments(customerId: string, projectParam: string | null) {
   const [shipments, settlements, projects, refinings] = await Promise.all([
-    getShipments({ customer: customerId }),
+    getShipments({ customer: customerId, statuses: settleableStatuses }),
     getSettlements({ customer: customerId }),
     getProjects(),
-    getRefiningOperations(),
+    getRefiningOperations({ customer: customerId, goldWeighed: false }),
   ]);
   const open = settleableShipments(shipments, settlements, refinings);
   const projectIds = projectsOfShipments(open);
@@ -46,15 +47,11 @@ async function loadCustomerShipments(customerId: string, projectParam: string | 
 
 export async function newSettlementLoader({ request }: LoaderFunctionArgs) {
   const search = new URL(request.url).searchParams;
-  const customers = await getCustomerChoices();
   const customerParam = search.get("customer") ?? "";
   const projectParam = search.get("project") ?? "";
-  const customer = isRecordId(customerParam)
-    ? customers.find((candidate) => candidate.id === customerParam)
-    : undefined;
+  const customer = isRecordId(customerParam) ? await getCustomer(customerParam) : undefined;
 
   return {
-    customers,
     customer,
     fromProject: isRecordId(projectParam) ? projectParam : undefined,
     choice:
@@ -75,13 +72,14 @@ function emptyValues(shipmentIds: readonly string[]): NewSettlementValues {
 }
 
 export function NewSettlementScreen() {
-  const { customers, customer, fromProject, choice } = useLoaderData<typeof newSettlementLoader>();
+  const { customer, fromProject, choice } = useLoaderData<typeof newSettlementLoader>();
   const t = useTranslations("settlements");
   const toasts = useTranslations("toasts");
   const common = useTranslations("common");
   const replace = useReplace();
   const [customerText, setCustomerText] = useState(customer?.name ?? "");
   const [openedForCustomer] = useState(customer !== undefined);
+  const customerSearch = useCustomerSearch(undefined);
   const backHref =
     fromProject === undefined ? SETTLEMENTS_HREF : settlementsProjectHref(fromProject);
 
@@ -108,12 +106,11 @@ export function NewSettlementScreen() {
               required
               placeholder={t("form.customerPlaceholder")}
               value={customerText}
-              options={customers.map((option) => ({
-                value: option.id,
-                label: option.name,
-                hint: option.phone,
-              }))}
-              onChange={setCustomerText}
+              options={customerSearch.options}
+              onChange={(text) => {
+                setCustomerText(text);
+                customerSearch.onSearch?.(text);
+              }}
               onSelect={(option) =>
                 replace(
                   newSettlementHref({

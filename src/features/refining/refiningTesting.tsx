@@ -94,6 +94,30 @@ export const refined = {
   updated_at: "2026-10-07T10:00:00Z",
 };
 
+const grindings = [
+  grinding(1, "SH-1", "P3-1", null),
+  grinding(2, "SH-2", "P3-2", "2026-10-05T18:00:00Z"),
+  grinding(3, "SH-3", "P3-2", "2026-10-05T18:00:00Z"),
+  grinding(4, "SH-4", "P3-1", "2026-10-05T18:00:00Z", null),
+];
+
+export function grindingsAsked(query: URLSearchParams) {
+  return grindings.filter(
+    (operation) =>
+      (query.get("is_running") !== "false" || operation.end_time !== null) &&
+      (query.get("refined") !== "false" || operation.id !== refined.grinding_operation),
+  );
+}
+
+function refiningsAsked(query: URLSearchParams) {
+  const day = query.get("refining_date__date__gte");
+
+  return [refined].filter(
+    (operation) =>
+      query.get("project") === "3" && (day === null || operation.refining_date.startsWith(day)),
+  );
+}
+
 export function serveRefiningApi() {
   beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
   beforeEach(() => {
@@ -108,15 +132,29 @@ export function serveRefiningApi() {
           ...stamps,
         }),
       ),
-      http.get(`${API}/grinding-operations/`, () =>
+      http.get(`${API}/grinding-operations/`, ({ request }) =>
+        page(grindingsAsked(new URL(request.url).searchParams)),
+      ),
+      http.get(`${API}/grinding-operations/:id/`, ({ params }) => {
+        const found = grindings.find((operation) => String(operation.id) === params.id);
+        return found === undefined
+          ? HttpResponse.json({ detail: "not found" }, { status: 404 })
+          : HttpResponse.json(found);
+      }),
+      http.get(`${API}/refining-operations/`, ({ request }) =>
+        page(refiningsAsked(new URL(request.url).searchParams)),
+      ),
+      http.get(`${API}/refining-operations/:id/`, ({ params }) =>
+        params.id === "9"
+          ? HttpResponse.json(refined)
+          : HttpResponse.json({ detail: "not found" }, { status: 404 }),
+      ),
+      http.get(`${API}/grinders/`, () =>
         page([
-          grinding(1, "SH-1", "P3-1", null),
-          grinding(2, "SH-2", "P3-2", "2026-10-05T18:00:00Z"),
-          grinding(3, "SH-3", "P3-2", "2026-10-05T18:00:00Z"),
-          grinding(4, "SH-4", "P3-1", "2026-10-05T18:00:00Z", null),
+          { id: 12, project: 3, code: "P3-1", status: "active", ...stamps },
+          { id: 13, project: 3, code: "P3-2", status: "active", ...stamps },
         ]),
       ),
-      http.get(`${API}/refining-operations/`, () => page([refined])),
       http.get(`${API}/operators/`, ({ request }) =>
         HttpResponse.json(
           new URL(request.url).searchParams.get("project") === "3"
@@ -171,6 +209,8 @@ export function openAt(path: string, access: Access = allRights) {
       </AccessContext>
     </IntlProvider>,
   );
+
+  return router;
 }
 
 export function panel(title: string) {

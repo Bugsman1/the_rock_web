@@ -7,5 +7,4 @@ export {
   ProfileScreen,
   profileLoader,
   SettingsHomeScreen,
-  settingsHomeLoader,
 } from "./SettingsScreens";

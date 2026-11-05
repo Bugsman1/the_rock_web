@@ -14,6 +14,7 @@ import DownloadIcon from "@/icons/download.svg?react";
 import ClockIcon from "@/icons/clock.svg?react";
 import EyeIcon from "@/icons/eye.svg?react";
 import EyeOffIcon from "@/icons/eye-off.svg?react";
+import FilterIcon from "@/icons/filter.svg?react";
 import FileTypePdfIcon from "@/icons/file-type-pdf.svg?react";
 import FlagFrIcon from "@/icons/flag-fr.svg?react";
 import FlagMrIcon from "@/icons/flag-mr.svg?react";
@@ -68,6 +69,7 @@ const glyphs = {
   eye: EyeIcon,
   "eye-off": EyeOffIcon,
   "file-type-pdf": FileTypePdfIcon,
+  filter: FilterIcon,
   "flag-fr": FlagFrIcon,
   "flag-mr": FlagMrIcon,
   flame: FlameIcon,

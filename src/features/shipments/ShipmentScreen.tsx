@@ -11,12 +11,11 @@ import { TablePanel } from "@/components/ui/TablePanel";
 import { DataTable } from "@/components/ui/DataTable";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
-import { getCustomerChoices } from "@/lib/customersApi";
 import { formatCount, formatDateTime, formatMoney } from "@/lib/format";
 import { findProject, isInService } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
 import { shipmentsHistoryHref, shipmentsProjectHref } from "@/lib/routes";
-import { amountLeftToPay, isInProgress } from "@/lib/shipments";
+import { isInProgress } from "@/lib/shipments";
 import { CancelShipmentDialog } from "./CancelShipmentDialog";
 import { TestBagsDialog } from "./TestBagsDialog";
 import { EditShipmentForm } from "./ShipmentForm";
@@ -29,12 +28,11 @@ import { ShipmentDetails, ShipmentHeader } from "./ShipmentHeader";
 export async function shipmentLoader({ params, request }: LoaderFunctionArgs) {
   const fromHistory = new URL(request.url).searchParams.get("from") === "history";
   const shipment = await getShipment(params.shipment ?? "");
-  const [customers, projects] = await Promise.all([getCustomerChoices(), getProjects()]);
+  const projects = await getProjects();
 
   return {
     shipment,
     fromHistory,
-    customers,
     projects: projects.filter((project) => isInService(project) || project.id === shipment.project),
   };
 }
@@ -45,7 +43,7 @@ function PaymentsPanel({ shipment, onAdd }: { shipment: ShipmentDetail; onAdd: (
   const locale = useLocale();
   const can = useCan();
   const canAdd = can("shipments", "add");
-  const amountLeft = amountLeftToPay(shipment);
+  const amountLeft = shipment.amountLeft;
 
   return (
     <TablePanel title={t("paymentsTitle")}>
@@ -120,7 +118,7 @@ function PaymentsPanel({ shipment, onAdd }: { shipment: ShipmentDetail; onAdd: (
 }
 
 export function ShipmentScreen() {
-  const { shipment, fromHistory, customers, projects } = useLoaderData<typeof shipmentLoader>();
+  const { shipment, fromHistory, projects } = useLoaderData<typeof shipmentLoader>();
   const t = useTranslations("shipments.detail");
   const payment = useTranslations("shipments.paymentForm");
   const debtTitle = useTranslations("shipments.debtForm");
@@ -173,7 +171,6 @@ export function ShipmentScreen() {
           <EditShipmentForm
             key={`${shipment.bagCount}-${shipment.testBags}`}
             shipment={shipment}
-            customers={customers}
             projects={projects}
             onSaved={() => replace(shipmentsProjectHref(shipment.project))}
           />
@@ -227,7 +224,7 @@ export function ShipmentScreen() {
       >
         <PaymentForm
           shipmentId={shipment.id}
-          amountLeft={amountLeftToPay(shipment)}
+          amountLeft={shipment.amountLeft}
           onCancel={() => setAdding(false)}
           onSaved={() => {
             setAdding(false);

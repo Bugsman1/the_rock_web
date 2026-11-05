@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { listQueryFromParams } from "@/lib/filters";
 import { toDecimal } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
 import type { RefiningOperation } from "@/lib/refining";
@@ -6,11 +7,13 @@ import {
   createRefiningSchema,
   queueOfProject,
   refiningErrorsFromApi,
-  refiningQueue,
-  refiningsOfProject,
   refiningSummary,
   refiningToApi,
+  refiningGroups,
+  refiningListFilter,
+  refiningQueueFilter,
   refiningFormValues,
+  totalCounts,
   refiningLoss,
   refiningUpdateToApi,
 } from "./refining";
@@ -93,13 +96,9 @@ function errorsOf(input: RefiningValues) {
 
 describe("refining summary", () => {
   const queue = [grinding({ id: "a", bags: 1.5 }), grinding({ id: "b", bags: 2, project: "4" })];
-  const refinings = [
-    { ...refining("x"), refinedAt: "2026-10-13T09:00:00Z" },
-    { ...refining("y"), refinedAt: "2026-10-12T09:00:00Z", project: "4" },
-  ];
 
-  it("counts what waits, its bags, all refinings and those of today", () => {
-    expect(refiningSummary(queue, refinings, "2026-10-13T15:00:00Z")).toEqual({
+  it("counts what waits and its bags, with the refinings the backend counted", () => {
+    expect(refiningSummary(queue, { refined: 2, refinedToday: 1 })).toEqual({
       waiting: 2,
       waitingBags: 3.5,
       refined: 2,
@@ -107,55 +106,17 @@ describe("refining summary", () => {
     });
   });
 
-  it("keeps one project's waiting grindings and refinings", () => {
+  it("adds up the counts of every project", () => {
+    expect(
+      totalCounts([
+        { refined: 2, refinedToday: 1 },
+        { refined: 5, refinedToday: 0 },
+      ]),
+    ).toEqual({ refined: 7, refinedToday: 1 });
+  });
+
+  it("keeps one project's waiting grindings", () => {
     expect(queueOfProject(queue, "4").map((item) => item.id)).toEqual(["b"]);
-    expect(refiningsOfProject(refinings, "3").map((item) => item.grindingOperationId)).toEqual([
-      "x",
-    ]);
-  });
-});
-
-describe("refiningQueue", () => {
-  it("offers a grinding that ended, has its mercury and is not refined", () => {
-    expect(refiningQueue([grinding({ id: "ready" })], []).map((operation) => operation.id)).toEqual(
-      ["ready"],
-    );
-  });
-
-  it("leaves out a grinding that has not ended", () => {
-    expect(refiningQueue([grinding({ endedAt: undefined })], [])).toEqual([]);
-  });
-
-  it("leaves out a grinding whose mercury was not added", () => {
-    expect(refiningQueue([grinding({ mercury: undefined })], [])).toEqual([]);
-  });
-
-  it("leaves out a grinding that already has a refining", () => {
-    expect(refiningQueue([grinding({ id: "done" })], [refining("done")])).toEqual([]);
-  });
-
-  it("keeps the finished grinding operations not yet refined, oldest first", () => {
-    const operations = [
-      grinding({ id: "running", endedAt: undefined }),
-      grinding({ id: "late", endedAt: "2026-10-12T20:00:00Z" }),
-      grinding({ id: "refined", shipmentNumber: "SH-7" }),
-      grinding({ id: "early", shipmentNumber: "SH-8", endedAt: "2026-10-12T10:00:00Z" }),
-    ];
-
-    expect(
-      refiningQueue(operations, [refining("refined")]).map((operation) => operation.id),
-    ).toEqual(["early", "late"]);
-  });
-
-  it("matches a refining to its own grinding, not another of the same shipment and machine", () => {
-    const operations = [
-      grinding({ id: "first", endedAt: "2026-10-12T10:00:00Z" }),
-      grinding({ id: "second", endedAt: "2026-10-12T12:00:00Z" }),
-    ];
-
-    expect(
-      refiningQueue(operations, [refining("second")]).map((operation) => operation.id),
-    ).toEqual(["first"]);
   });
 });
 
@@ -291,5 +252,45 @@ describe("editing a refining", () => {
     expect(
       refiningFormValues({ ...saved, goldWithoutMaterial: undefined }, []).goldWithoutMaterial,
     ).toBeNaN();
+  });
+});
+
+describe("refining filters", () => {
+  const groups = refiningGroups(["12", "13"]);
+  const listOf = (query: string) => listQueryFromParams(new URLSearchParams(query), groups);
+
+  it("asks the project's refinings with the search only when nothing is chosen", () => {
+    expect(refiningListFilter("3", listOf("q=SH"))).toEqual({ project: "3", search: "SH" });
+  });
+
+  it("sends weighed or not only when one is chosen, a known machine, the client and dates", () => {
+    expect(
+      refiningListFilter(
+        "3",
+        listOf("gold=notWeighed&machine=13&client=7&from=2026-10-01&to=2026-10-05"),
+      ),
+    ).toEqual({
+      project: "3",
+      search: "",
+      goldWeighed: false,
+      grinder: "13",
+      customer: "7",
+      refinedFrom: "2026-10-01",
+      refinedTo: "2026-10-05",
+    });
+    expect(refiningListFilter("3", listOf("gold=notWeighed,weighed&machine=99"))).toEqual({
+      project: "3",
+      search: "",
+    });
+  });
+
+  it("asks the finished grindings of the project with no refining yet, oldest end first", () => {
+    expect(refiningQueueFilter("3", "SH")).toEqual({
+      project: "3",
+      search: "SH",
+      ordering: "end_time",
+      running: false,
+      refined: false,
+    });
   });
 });

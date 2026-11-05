@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/client";
+import type { FilterFields } from "@/lib/filters";
 import { fromDecimal, toMoneyDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 
@@ -27,6 +28,20 @@ export type CustomerDebt = {
 const DEBT_TEXT_MAX_LENGTH = 200;
 
 const NOTES_MAX_LENGTH = 1000;
+
+export const debtStatuses: readonly DebtStatus[] = ["open", "partially_paid", "paid"];
+
+export const debtFilterFields: FilterFields<CustomerDebt> = {
+  groups: [
+    {
+      key: "status",
+      options: debtStatuses.map((status) => ({
+        value: status,
+        matches: (debt) => debt.status === status,
+      })),
+    },
+  ],
+};
 
 export function debtFromApi(debt: ApiSchema<"CustomerDebt">): CustomerDebt {
   return {

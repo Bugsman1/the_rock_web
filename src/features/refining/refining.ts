@@ -1,37 +1,18 @@
 import { z } from "zod";
 import type { BackendFieldErrors, FieldErrors } from "@/lib/api/client";
-import {
-  isIsoDate,
-  isSameDay,
-  isTimeValue,
-  nowAsTimeValue,
-  todayAsInputValue,
-} from "@/lib/datetime";
+import { isIsoDate, isTimeValue, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
+import type { GroupChoices, ListQuery } from "@/lib/filters";
 import { toDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
+import type { GrindingListFilter } from "@/lib/grindingApi";
 import type { ProjectId } from "@/lib/projects";
 import type { RefiningOperation } from "@/lib/refining";
+import type { RefiningListFilter } from "@/lib/refiningApi";
 import type { Operator } from "@/lib/users";
 
 const TEXT_MAX_LENGTH = 500;
 const WEIGHT_PRECISION = 1000;
-
-export function refiningQueue(
-  grindings: readonly MillingOperation[],
-  refinings: readonly RefiningOperation[],
-): readonly MillingOperation[] {
-  const refined = new Set(refinings.map((refining) => refining.grindingOperationId));
-
-  return grindings
-    .filter(
-      (grinding) =>
-        grinding.endedAt !== undefined &&
-        grinding.mercury !== undefined &&
-        !refined.has(grinding.id),
-    )
-    .sort((a, b) => (a.endedAt ?? "").localeCompare(b.endedAt ?? ""));
-}
 
 export type RefiningSummary = {
   waiting: number;
@@ -40,17 +21,53 @@ export type RefiningSummary = {
   refinedToday: number;
 };
 
+export type RefiningCounts = {
+  refined: number;
+  refinedToday: number;
+};
+
 export function refiningSummary(
   queue: readonly MillingOperation[],
-  refinings: readonly RefiningOperation[],
-  now: IsoTimestamp,
+  counts: RefiningCounts,
 ): RefiningSummary {
   return {
     waiting: queue.length,
     waitingBags: queue.reduce((total, grinding) => total + grinding.bags, 0),
-    refined: refinings.length,
-    refinedToday: refinings.filter((refining) => isSameDay(refining.refinedAt, now)).length,
+    ...counts,
   };
+}
+
+export function totalCounts(counts: readonly RefiningCounts[]): RefiningCounts {
+  return {
+    refined: counts.reduce((total, count) => total + count.refined, 0),
+    refinedToday: counts.reduce((total, count) => total + count.refinedToday, 0),
+  };
+}
+
+export const goldStates = ["notWeighed", "weighed"] as const;
+
+export function refiningGroups(machines: readonly string[]): GroupChoices {
+  return { gold: goldStates, machine: machines };
+}
+
+export function refiningListFilter(project: ProjectId, list: ListQuery): RefiningListFilter {
+  const gold = list.filters.selection.gold ?? [];
+  const [machine] = list.filters.selection.machine ?? [];
+  const { client, from, to } = list.filters;
+
+  return {
+    project,
+    search: list.search,
+    ...(gold.length === 1 ? { goldWeighed: gold[0] === "weighed" } : {}),
+    ...(machine === undefined ? {} : { grinder: machine }),
+    ...(client === "" ? {} : { customer: client }),
+    ...(from === "" ? {} : { refinedFrom: from }),
+    ...(to === "" ? {} : { refinedTo: to }),
+  };
+}
+
+export function refiningQueueFilter(project: ProjectId, search: string): GrindingListFilter {
+  return { project, search, ordering: "end_time", running: false, refined: false };
 }
 
 export function queueOfProject(
@@ -58,13 +75,6 @@ export function queueOfProject(
   project: ProjectId,
 ): readonly MillingOperation[] {
   return queue.filter((grinding) => grinding.project === project);
-}
-
-export function refiningsOfProject(
-  refinings: readonly RefiningOperation[],
-  project: ProjectId,
-): readonly RefiningOperation[] {
-  return refinings.filter((refining) => refining.project === project);
 }
 
 export const lossReasonKeys = [

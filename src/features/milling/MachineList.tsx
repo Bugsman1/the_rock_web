@@ -3,10 +3,10 @@ import { useLocale, useTranslations } from "use-intl";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { Icon } from "@/components/ui/Icon";
 import { DataTable } from "@/components/ui/DataTable";
+import { FilterChips } from "@/components/ui/FilterChips";
 import type { DataColumn } from "@/components/ui/DataTable";
 import { Link } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
-import { cn } from "@/lib/cn";
 import { isSameDay } from "@/lib/datetime";
 import { formatCount, formatDateTime, formatTime } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
@@ -138,31 +138,12 @@ export function MachineList({ project, rows }: { project: string; rows: readonly
 
   return (
     <div className="flex flex-col gap-3">
-      <div role="group" aria-label={t("project.statusFilter")} className="flex flex-wrap gap-2">
-        {chips.map((chip) => {
-          const pressed = chip.value === filter;
-
-          return (
-            <button
-              key={chip.value}
-              type="button"
-              aria-pressed={pressed}
-              onClick={() => setFilter(chip.value)}
-              className={cn(
-                "inline-flex h-9 cursor-pointer items-center gap-2 rounded-full border-[1.5px] px-3.5 text-[14px] font-semibold",
-                pressed
-                  ? "border-brand-700 bg-brand-700 text-ink-inverted"
-                  : "border-line bg-surface text-ink-label hover:bg-surface-hover",
-              )}
-            >
-              {chip.label}{" "}
-              <span className={cn("text-[13px]", pressed ? "text-ink-inverted" : "text-ink-muted")}>
-                {chip.count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      <FilterChips
+        label={t("project.statusFilter")}
+        chips={chips}
+        value={filter}
+        onChange={setFilter}
+      />
 
       <div className="border-line rounded-field border-[1.5px]">
         <DataTable

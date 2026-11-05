@@ -1,41 +1,42 @@
 import { describe, expect, it } from "vitest";
-import type { MillingOperation } from "@/lib/grinding";
 import type { ShipmentRecord } from "@/lib/shipments";
 import {
   bagCount,
-  bagShare,
   clientBags,
-  isInStorage,
-  shipmentsByArrival,
   shipmentsOfProject,
   storedShipments,
-  topClientsByBags,
+  topCustomersFromApi,
+  topCustomersOf,
 } from "./shipmentStorage";
-import type { StoredShipment } from "./shipmentStorage";
 
 describe("storage", () => {
   function record(overrides: Partial<ShipmentRecord>): ShipmentRecord {
     return {
       id: "1",
       shipmentNumber: "SH-1",
+      customerId: "1",
       customerName: "a",
       phone: "+222 22 33 44 55",
       arrivedAt: "2026-10-01T00:00:00Z",
       bagCount: 10,
       testBags: 0,
+      remainingBags: 10,
       project: "zouerate1",
       status: "pending",
       stage: "pending",
       source: "Chami",
+      transportMethod: "truck",
       notes: "",
       transportTotal: 0,
       paid: 0,
+      amountLeft: 0,
+      fullyPaid: true,
       debt: 0,
       ...overrides,
     };
   }
 
-  function stored(overrides: Partial<ShipmentRecord>): StoredShipment {
+  function stored(overrides: Partial<ShipmentRecord>): ShipmentRecord {
     const base = record(overrides);
 
     return { ...base, remainingBags: base.bagCount };
@@ -62,24 +63,9 @@ describe("storage", () => {
     }),
   ];
 
-  describe("isInStorage", () => {
-    it("keeps the shipments waiting or in grinding", () => {
-      expect(isInStorage(record({ status: "pending" }))).toBe(true);
-      expect(isInStorage(record({ status: "grinding" }))).toBe(true);
-    });
-
-    it("drops completed shipments", () => {
-      expect(isInStorage(record({ status: "completed" }))).toBe(false);
-    });
-
-    it("drops cancelled shipments, whatever bags they have left", () => {
-      expect(isInStorage(record({ status: "cancelled", stage: "cancelled" }))).toBe(false);
-    });
-  });
-
   const mixed = [
     record({ shipmentNumber: "SH-10", status: "pending" }),
-    record({ shipmentNumber: "SH-11", status: "grinding" }),
+    record({ shipmentNumber: "SH-11", status: "grinding", remainingBags: 8 }),
     record({ shipmentNumber: "SH-12", status: "completed" }),
     record({ shipmentNumber: "SH-13", status: "pending", project: "sfariyat1" }),
   ];
@@ -88,36 +74,25 @@ describe("storage", () => {
     return list.map((item) => item.shipmentNumber);
   }
 
-  const grinding: MillingOperation = {
-    id: "op",
-    project: "zouerate1",
-    machine: 1,
-    shipmentNumber: "SH-11",
-    client: "a",
-    bags: 2,
-    operatorName: "Aicha",
-    startedAt: "2026-10-08T06:00:00.000Z",
-    estimatedEndAt: "2026-10-08T12:00:00.000Z",
-    notes: "",
-  };
-
   describe("storedShipments", () => {
-    it("keeps the project's shipments that still have bags to grind, with the bags left", () => {
-      const left = storedShipments(mixed, [grinding], "zouerate1");
+    it("keeps the project's shipments with bags still in storage, as the backend counts them", () => {
+      const left = storedShipments(mixed, "zouerate1");
 
       expect(numbers(left)).toEqual(["SH-10", "SH-11"]);
       expect(left.map((shipment) => shipment.remainingBags)).toEqual([10, 8]);
-      expect(storedShipments(mixed, [], "sfariyat2")).toEqual([]);
+      expect(storedShipments(mixed, "sfariyat2")).toEqual([]);
     });
 
     it("drops a shipment once all its bags are on machines or ground", () => {
-      expect(numbers(storedShipments(mixed, [{ ...grinding, bags: 10 }], "zouerate1"))).toEqual([
-        "SH-10",
-      ]);
+      const allOnMachines = mixed.map((shipment) =>
+        shipment.shipmentNumber === "SH-11" ? { ...shipment, remainingBags: 0 } : shipment,
+      );
+
+      expect(numbers(storedShipments(allOnMachines, "zouerate1"))).toEqual(["SH-10"]);
     });
 
     it("covers every project when none is given", () => {
-      expect(numbers(storedShipments(mixed, []))).toEqual(["SH-10", "SH-11", "SH-13"]);
+      expect(numbers(storedShipments(mixed))).toEqual(["SH-10", "SH-11", "SH-13"]);
     });
   });
 
@@ -153,45 +128,30 @@ describe("storage", () => {
     });
   });
 
-  describe("topClientsByBags", () => {
-    const clients = clientBags(records);
+  describe("top customers by bags", () => {
+    const rows = topCustomersFromApi([
+      {
+        project: 3,
+        project_name: "Zouérat 1",
+        total_bags: "20.0",
+        results: [
+          { id: 7, full_name: "Ahmed", phone: "+22222411830", bags: "5.0", percentage: "25.00" },
+          { id: 8, full_name: "Sidi", phone: "+22246109325", bags: "3.0", percentage: "15.00" },
+        ],
+      },
+      { project: 4, project_name: "Sfariyat 1", total_bags: "0.0", results: [] },
+    ]);
 
-    it("orders clients by the most bags first", () => {
-      expect(topClientsByBags(clients).map((client) => client.name)).toEqual(["a", "c", "b"]);
-    });
-
-    it("keeps only the requested number", () => {
-      expect(topClientsByBags(clients, 2).map((client) => client.name)).toEqual(["a", "c"]);
-    });
-  });
-
-  describe("shipmentsByArrival", () => {
-    it("queues the earliest arrival first", () => {
-      expect(shipmentsByArrival(records).map((item) => item.shipmentNumber)).toEqual([
-        "SH-2",
-        "SH-3",
-        "SH-1",
+    it("reads each project's customers with their share of its bags, in the backend's order", () => {
+      expect(topCustomersOf(rows, "3")).toEqual([
+        { id: "7", name: "Ahmed", bags: 5, percentage: 25 },
+        { id: "8", name: "Sidi", bags: 3, percentage: 15 },
       ]);
     });
 
-    it("leaves the source list untouched", () => {
-      const source = [...records];
-      shipmentsByArrival(source);
-      expect(source.map((item) => item.shipmentNumber)).toEqual(["SH-1", "SH-2", "SH-3"]);
-    });
-  });
-
-  describe("bagShare", () => {
-    it("fills the bar completely for the largest holder", () => {
-      expect(bagShare(50, 50)).toBe(100);
-    });
-
-    it("scales the rest against the largest", () => {
-      expect(bagShare(25, 50)).toBe(50);
-    });
-
-    it("stays at zero when there are no bags at all", () => {
-      expect(bagShare(0, 0)).toBe(0);
+    it("gives no customer to a project without bags or missing from the list", () => {
+      expect(topCustomersOf(rows, "4")).toEqual([]);
+      expect(topCustomersOf(rows, "9")).toEqual([]);
     });
   });
 });

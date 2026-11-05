@@ -1,14 +1,7 @@
 import { z } from "zod";
 import { combineDateAndTime, isIsoDate, isSameDay, isTimeValue } from "@/lib/datetime";
 import type { IsoTimestamp } from "@/lib/format";
-import {
-  isRunning,
-  machinesOfProject,
-  machineStatus,
-  operationsOfMachine,
-  operationsOfShipment,
-  remainingBags,
-} from "@/lib/grinding";
+import { isRunning, machinesOfProject, machineStatus } from "@/lib/grinding";
 import type { Machine, MachineStatus, MillingOperation, OperationShipment } from "@/lib/grinding";
 import type { Project, ProjectId, SiteKey } from "@/lib/projects";
 import type { ShipmentRecord, ShipmentStatusKey } from "@/lib/shipments";
@@ -23,11 +16,12 @@ export type MillingShipment = {
   client: string;
   project: ProjectId;
   bags: number;
+  remainingBags: number;
   arrivedAt: IsoTimestamp;
   started: boolean;
 };
 
-type ShipmentMillingStatus = "pending" | "partiallyMilled" | "milled";
+export type ShipmentMillingStatus = "pending" | "partiallyMilled" | "milled";
 
 export type MachineCounts = Record<MachineStatus, number> & { total: number };
 
@@ -44,16 +38,6 @@ function operationsOfProject(
   project: ProjectId,
 ): readonly MillingOperation[] {
   return operations.filter((operation) => operation.project === project);
-}
-
-export function operationHistory(
-  operations: readonly MillingOperation[],
-  project: ProjectId,
-  machine: number,
-): readonly MillingOperation[] {
-  return [...operationsOfMachine(operations, project, machine)].sort((a, b) =>
-    b.startedAt.localeCompare(a.startedAt),
-  );
 }
 
 export function bagsMilledOn(operations: readonly MillingOperation[], day: IsoTimestamp): number {
@@ -75,50 +59,44 @@ export function countMachines(
   return counts;
 }
 
-export function shipmentMillingStatus(
-  shipment: MillingShipment,
-  operations: readonly MillingOperation[],
-): ShipmentMillingStatus {
-  const related = operationsOfShipment(shipment.shipmentNumber, operations);
-
-  if (related.length === 0) {
-    return "pending";
-  }
-
-  return remainingBags(shipment, operations) === 0 && !related.some(isRunning)
-    ? "milled"
-    : "partiallyMilled";
-}
-
 export function millingQueue(
   shipments: readonly MillingShipment[],
-  operations: readonly MillingOperation[],
   project: ProjectId,
 ): readonly MillingShipment[] {
   return shipments
-    .filter((shipment) => shipment.project === project && remainingBags(shipment, operations) > 0)
+    .filter((shipment) => shipment.project === project && shipment.remainingBags > 0)
     .sort((a, b) => a.arrivedAt.localeCompare(b.arrivedAt));
+}
+
+export function withBagsFreedBy(
+  shipments: readonly MillingShipment[],
+  operation: MillingOperation,
+): readonly MillingShipment[] {
+  return shipments.map((shipment) =>
+    shipment.shipmentNumber === operation.shipmentNumber
+      ? { ...shipment, remainingBags: shipment.remainingBags + operation.bags }
+      : shipment,
+  );
 }
 
 export function operationShipments(
   queue: readonly MillingShipment[],
-  operations: readonly MillingOperation[],
 ): readonly OperationShipment[] {
   return queue.map((shipment) => ({
     id: shipment.id,
     shipmentNumber: shipment.shipmentNumber,
     client: shipment.client,
     bags: shipment.bags,
-    remainingBags: remainingBags(shipment, operations),
+    remainingBags: shipment.remainingBags,
     arrivedAt: shipment.arrivedAt,
   }));
 }
 
-const millingStatuses: readonly ShipmentStatusKey[] = ["pending", "grinding"];
+export const millingStatuses: readonly ShipmentStatusKey[] = ["pending", "grinding"];
 
 export function millingShipments(records: readonly ShipmentRecord[]): readonly MillingShipment[] {
   return records.flatMap(
-    ({ id, shipmentNumber, customerName, project, bagCount, arrivedAt, status }) =>
+    ({ id, shipmentNumber, customerName, project, bagCount, remainingBags, arrivedAt, status }) =>
       millingStatuses.includes(status)
         ? [
             {
@@ -127,6 +105,7 @@ export function millingShipments(records: readonly ShipmentRecord[]): readonly M
               client: customerName,
               project,
               bags: bagCount,
+              remainingBags,
               arrivedAt,
               started: status === "grinding",
             },
@@ -155,17 +134,14 @@ export function projectSummary(
   now: IsoTimestamp,
 ): MillingSummary {
   const operations = operationsOfProject(records.operations, project);
-  const queue = millingQueue(records.shipments, records.operations, project);
+  const queue = millingQueue(records.shipments, project);
 
   return {
     machines: countMachines(machinesOfProject(records.machines, project), records.operations),
     bagsMilling: operations
       .filter(isRunning)
       .reduce((total, operation) => total + operation.bags, 0),
-    bagsWaiting: queue.reduce(
-      (total, shipment) => total + remainingBags(shipment, records.operations),
-      0,
-    ),
+    bagsWaiting: queue.reduce((total, shipment) => total + shipment.remainingBags, 0),
     bagsMilledToday: bagsMilledOn(operations, now),
     waitingShipments: queue.length,
   };

@@ -6,31 +6,30 @@ import { CardGrid, KpiTile, LinkCard, StatGrid } from "@/components/ui/Cards";
 import type { Stat } from "@/components/ui/Cards";
 import { Icon } from "@/components/ui/Icon";
 import { PageTitle } from "@/components/ui/PageHeader";
+import { PanelError } from "@/components/ui/TablePanel";
 import { defaultLocale, isLocale } from "@/i18n/locales";
 import { localizedHref } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
+import { errorKind, tryLoad } from "@/lib/api/client";
+import type { Loaded } from "@/lib/api/client";
 import { formatCount } from "@/lib/format";
-import { getGrindingOperations } from "@/lib/grindingApi";
 import { isInService } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
 import { newShipmentHref, shipmentsProjectHref } from "@/lib/routes";
 import { getShipments } from "@/lib/shipmentsApi";
+import { getTopCustomersByBags } from "./shipmentsApi";
 import {
   bagCount,
-  bagShare,
   clientBags,
   shipmentsOfProject,
   storedShipments,
-  topClientsByBags,
+  storedStatuses,
+  topCustomersOf,
 } from "./shipmentStorage";
+import type { ProjectTopCustomers, TopCustomer } from "./shipmentStorage";
 
 export async function shipmentsLoader({ params }: LoaderFunctionArgs) {
-  const [projects, shipments, operations] = await Promise.all([
-    getProjects(),
-    getShipments(),
-    getGrindingOperations(),
-  ]);
-  const inService = projects.filter(isInService);
+  const inService = (await getProjects()).filter(isInService);
   const [onlyProject] = inService;
 
   if (inService.length === 1 && onlyProject !== undefined) {
@@ -38,25 +37,58 @@ export async function shipmentsLoader({ params }: LoaderFunctionArgs) {
     throw redirect(localizedHref(locale, shipmentsProjectHref(onlyProject.id)));
   }
 
-  return { projects: inService, stored: storedShipments(shipments, operations) };
-}
+  const [shipments, topCustomers] = await Promise.all([
+    getShipments({ statuses: storedStatuses, hasRemainingBags: true }),
+    tryLoad(() => getTopCustomersByBags()),
+  ]);
 
-type PanelClient = {
-  name: string;
-  value: string;
-  share: number;
-};
+  return { projects: inService, stored: storedShipments(shipments), topCustomers };
+}
 
 type StoragePanelProps = {
   name: string;
   href: string;
   stats: readonly Stat[];
-  clients: readonly PanelClient[];
+  customers: Loaded<readonly TopCustomer[]>;
 };
 
-function StoragePanel({ name, href, stats, clients }: StoragePanelProps) {
+function TopCustomers({ customers }: { customers: readonly TopCustomer[] }) {
+  const t = useTranslations("shipments");
+  const locale = useLocale();
+
+  if (customers.length === 0) {
+    return <p className="text-ink-muted text-[14px]">{t("noClients")}</p>;
+  }
+
+  return (
+    <ul className="flex flex-col gap-3">
+      {customers.map((customer) => (
+        <li key={customer.id} className="flex flex-col gap-1.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <span dir="auto" className="text-ink truncate text-[15px] font-bold">
+              {customer.name}
+            </span>
+            <span className="text-ink shrink-0 text-[15px] font-bold">
+              {t("topClientBags", { bags: formatCount(customer.bags, locale) })}
+            </span>
+          </div>
+
+          <div aria-hidden className="bg-brand-200 h-1.5 w-full rounded-full">
+            <div
+              style={{ width: `${Math.min(100, customer.percentage)}%` }}
+              className="bg-brand-700 h-1.5 rounded-full"
+            />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function StoragePanel({ name, href, stats, customers }: StoragePanelProps) {
   const t = useTranslations("shipments");
   const common = useTranslations("common");
+  const errors = useTranslations("errors");
 
   return (
     <LinkCard title={name} href={href} linkLabel={common("openProject")}>
@@ -65,34 +97,28 @@ function StoragePanel({ name, href, stats, clients }: StoragePanelProps) {
       <div className="border-line flex flex-col gap-4 border-t pt-4">
         <h3 className="text-ink-muted text-[14px] font-bold">{t("topClients")}</h3>
 
-        {clients.length === 0 ? (
-          <p className="text-ink-muted text-[14px]">{t("noClients")}</p>
+        {customers.ok ? (
+          <TopCustomers customers={customers.data} />
         ) : (
-          <ul className="flex flex-col gap-3">
-            {clients.map((client) => (
-              <li key={client.name} className="flex flex-col gap-1.5">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-ink truncate text-[15px] font-bold">{client.name}</span>
-                  <span className="text-ink shrink-0 text-[15px] font-bold">{client.value}</span>
-                </div>
-
-                <div aria-hidden className="bg-brand-200 h-1.5 w-full rounded-full">
-                  <div
-                    style={{ width: `${client.share}%` }}
-                    className="bg-brand-700 h-1.5 rounded-full"
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
+          <PanelError
+            message={errors(`${errorKind(customers.status)}.description`)}
+            code={errors("status", { status: String(customers.status) })}
+          />
         )}
       </div>
     </LinkCard>
   );
 }
 
+function customersOf(
+  loaded: Loaded<readonly ProjectTopCustomers[]>,
+  project: string,
+): Loaded<readonly TopCustomer[]> {
+  return loaded.ok ? { ok: true, data: topCustomersOf(loaded.data, project) } : loaded;
+}
+
 export function ShipmentsScreen() {
-  const { projects, stored } = useLoaderData<typeof shipmentsLoader>();
+  const { projects, stored, topCustomers } = useLoaderData<typeof shipmentsLoader>();
   const t = useTranslations("shipments");
   const locale = useLocale();
   const canAdd = useCan()("shipments", "add");
@@ -127,8 +153,6 @@ export function ShipmentsScreen() {
         {projects.map((project) => {
           const shipments = shipmentsOfProject(stored, project.id);
           const clients = clientBags(shipments);
-          const ranked = topClientsByBags(clients);
-          const largest = ranked[0]?.bagCount ?? 0;
 
           return (
             <StoragePanel
@@ -139,11 +163,7 @@ export function ShipmentsScreen() {
                 { label: t("clientsLabel"), value: formatCount(clients.length, locale) },
                 { label: t("bagsLabel"), value: formatCount(bagCount(shipments), locale) },
               ]}
-              clients={ranked.map((client) => ({
-                name: client.name,
-                value: formatCount(client.bagCount, locale),
-                share: bagShare(client.bagCount, largest),
-              }))}
+              customers={customersOf(topCustomers, project.id)}
             />
           );
         })}

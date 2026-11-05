@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "use-intl";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { DataTable } from "@/components/ui/DataTable";
+import { FilterMenu, useFilters } from "@/components/ui/FilterMenu";
 import type { DataColumn } from "@/components/ui/DataTable";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
@@ -15,7 +16,7 @@ import { notFound } from "@/lib/api/client";
 import { getCustomer } from "@/lib/customersApi";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { CUSTOMERS_HREF, customerHref } from "@/lib/routes";
-import { debtActions, isDebtAction } from "./debts";
+import { debtActions, debtFilterFields, debtStatuses, isDebtAction } from "./debts";
 import type { CustomerDebt, DebtAction } from "./debts";
 import { getCustomerDebts, getDebtHistory } from "./debtsApi";
 import { DebtActionForm, DebtDetails, DebtStatusBadge } from "./DebtDetails";
@@ -64,8 +65,11 @@ type DebtTableProps = {
 
 function DebtTable({ customerId, debts, canChange }: DebtTableProps) {
   const t = useTranslations("customers.debts");
+  const common = useTranslations("common");
   const locale = useLocale();
   const money = (amount: number) => formatMoney(amount, locale);
+  const filters = useFilters(debtFilterFields);
+  const shown = debts.filter(filters.matches);
   const columns: DataColumn<CustomerDebt>[] = [
     {
       key: "description",
@@ -135,13 +139,29 @@ function DebtTable({ customerId, debts, canChange }: DebtTableProps) {
   }
 
   return (
-    <DataTable
-      columns={columns}
-      rows={debts}
-      rowKey={(debt) => debt.id}
-      empty={t("empty")}
-      rowLink={(debt) => ({ href: customerHref(customerId, { debt: debt.id }) })}
-    />
+    <TablePanel
+      title={t("title")}
+      filter={
+        <FilterMenu
+          groups={[
+            {
+              key: "status",
+              label: t("columns.status"),
+              options: debtStatuses.map((value) => ({ value, label: t(`status.${value}`) })),
+            },
+          ]}
+          {...filters.menu}
+        />
+      }
+    >
+      <DataTable
+        columns={columns}
+        rows={shown}
+        rowKey={(debt) => debt.id}
+        empty={debts.length === 0 ? t("empty") : common("noMatch")}
+        rowLink={(debt) => ({ href: customerHref(customerId, { debt: debt.id }) })}
+      />
+    </TablePanel>
   );
 }
 
@@ -167,9 +187,7 @@ export function CustomerScreen() {
         ) : undefined
       }
     >
-      <TablePanel title={t("title")}>
-        <DebtTable customerId={customer.id} debts={debts} canChange={canAdd} />
-      </TablePanel>
+      <DebtTable customerId={customer.id} debts={debts} canChange={canAdd} />
 
       <Drawer
         open={viewing !== undefined}

@@ -5,7 +5,8 @@ import type { IconName } from "@/components/ui/Icon";
 import { Link, usePathname, useReplace } from "@/i18n/navigation";
 import { canOpen } from "@/lib/access";
 import type { Access } from "@/lib/access";
-import { clearSession } from "@/lib/api/session";
+import { revokeSession } from "@/lib/api/auth";
+import { clearSession, readSession } from "@/lib/api/session";
 import { cn } from "@/lib/cn";
 import { isWithinHref, LOGIN_HREF, SETTINGS_HREF } from "@/lib/routes";
 import { navGroupsFor } from "../navigation";
@@ -24,8 +25,14 @@ export function useLogOut(): () => void {
   const replace = useReplace();
 
   return () => {
+    const session = readSession();
+
     clearSession();
     replace(LOGIN_HREF);
+
+    if (session !== undefined) {
+      void revokeSession(session.refresh);
+    }
   };
 }
 

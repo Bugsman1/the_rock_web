@@ -1,19 +1,45 @@
 import { apiClient, saveOutcome } from "@/lib/api/client";
 import type { SaveResult } from "@/lib/api/client";
 import { getGrindingOperations } from "@/lib/grindingApi";
-import { getProjects } from "@/lib/projectsApi";
-import { getRefiningOperations } from "@/lib/refiningApi";
-import { refiningErrorsFromApi, refiningToApi, refiningUpdateToApi } from "./refining";
-import type { RefiningField, RefiningTarget, RefiningValues } from "./refining";
+import type { Project, ProjectId } from "@/lib/projects";
+import { countRefinings } from "@/lib/refiningApi";
+import {
+  queueOfProject,
+  refiningErrorsFromApi,
+  refiningSummary,
+  refiningToApi,
+  refiningUpdateToApi,
+  totalCounts,
+} from "./refining";
+import type { RefiningCounts, RefiningField, RefiningTarget, RefiningValues } from "./refining";
 
-export async function getRefiningData() {
-  const [projects, grindings, refinings] = await Promise.all([
-    getProjects(),
-    getGrindingOperations(),
-    getRefiningOperations(),
+async function projectCounts(project: ProjectId, today: string): Promise<RefiningCounts> {
+  const [refined, refinedToday] = await Promise.all([
+    countRefinings(project),
+    countRefinings(project, today),
   ]);
 
-  return { projects, grindings, refinings };
+  return { refined, refinedToday };
+}
+
+export async function getRefiningOverview(projects: readonly Project[], today: string) {
+  const [queue, counted] = await Promise.all([
+    getGrindingOperations({ running: false, refined: false }),
+    Promise.all(
+      projects.map(async (project) => ({
+        project,
+        counts: await projectCounts(project.id, today),
+      })),
+    ),
+  ]);
+
+  return {
+    total: refiningSummary(queue, totalCounts(counted.map(({ counts }) => counts))),
+    projects: counted.map(({ project, counts }) => ({
+      project,
+      summary: refiningSummary(queueOfProject(queue, project.id), counts),
+    })),
+  };
 }
 
 export async function createRefiningOperation(

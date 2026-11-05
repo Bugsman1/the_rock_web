@@ -2,12 +2,10 @@ import { useLocale, useTranslations } from "use-intl";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
-import type { Customer } from "@/lib/customers";
 import { formatCount, formatDate, formatMoney } from "@/lib/format";
 import type { ProjectId } from "@/lib/projects";
 import { newSettlementHref, settlementHref } from "@/lib/routes";
 import type { ShipmentRecord } from "@/lib/shipments";
-import { customerOfShipment } from "./settlements";
 import type { Settlement } from "./settlements";
 
 export function SettlementTable({
@@ -76,7 +74,6 @@ export function SettlementTable({
 type WaitingShipmentsTableProps = {
   project: ProjectId;
   shipments: readonly ShipmentRecord[];
-  customers: readonly Customer[];
   canSettle: boolean;
   emptyMessage: string;
 };
@@ -84,7 +81,6 @@ type WaitingShipmentsTableProps = {
 export function WaitingShipmentsTable({
   project,
   shipments,
-  customers,
   canSettle,
   emptyMessage,
 }: WaitingShipmentsTableProps) {
@@ -145,19 +141,15 @@ export function WaitingShipmentsTable({
       header: t("project.settle"),
       hideHeader: true,
       align: "end",
-      cell: (shipment) => {
-        const customer = customerOfShipment(customers, shipment);
-
-        return customer === undefined ? null : (
-          <ActionLink
-            href={newSettlementHref({ customer: customer.id, project })}
-            icon="receipt"
-            ariaLabel={t("project.settleLabel", { name: shipment.customerName })}
-          >
-            {t("project.settle")}
-          </ActionLink>
-        );
-      },
+      cell: (shipment) => (
+        <ActionLink
+          href={newSettlementHref({ customer: shipment.customerId, project })}
+          icon="receipt"
+          ariaLabel={t("project.settleLabel", { name: shipment.customerName })}
+        >
+          {t("project.settle")}
+        </ActionLink>
+      ),
     });
   }
 

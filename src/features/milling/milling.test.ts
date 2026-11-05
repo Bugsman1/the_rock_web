@@ -12,11 +12,10 @@ import {
   isBacklogged,
   millingQueue,
   operationShipments,
+  withBagsFreedBy,
   millingShipments,
-  operationHistory,
   projectsForSite,
   projectSummary,
-  shipmentMillingStatus,
 } from "./milling";
 import type { MillingShipment } from "./milling";
 
@@ -42,6 +41,7 @@ const shipment: MillingShipment = {
   client: "Client",
   project: "3",
   bags: 6,
+  remainingBags: 6,
   arrivedAt: "2026-10-08T01:00:00.000Z",
   started: true,
 };
@@ -56,29 +56,6 @@ describe("machines", () => {
 });
 
 describe("operations", () => {
-  it("lists every grinding of a machine, running ones included, newest first", () => {
-    const operations = [
-      operation({
-        id: "old",
-        startedAt: "2026-10-06T06:00:00.000Z",
-        endedAt: "2026-10-06T12:00:00.000Z",
-      }),
-      operation({
-        id: "older",
-        startedAt: "2026-10-05T06:00:00.000Z",
-        endedAt: "2026-10-05T12:00:00.000Z",
-      }),
-      operation({ id: "current" }),
-      operation({ id: "other machine", machine: 2, endedAt: "2026-10-07T12:00:00.000Z" }),
-    ];
-
-    expect(operationHistory(operations, "3", 1).map((item) => item.id)).toEqual([
-      "current",
-      "old",
-      "older",
-    ]);
-  });
-
   it("counts the bags finished on a given day", () => {
     const operations = [
       operation({ bags: 2 }),
@@ -91,43 +68,41 @@ describe("operations", () => {
 });
 
 describe("shipments in grinding", () => {
-  it("moves from partially ground to ground once every bag is done", () => {
-    const first = operation({ id: "a", bags: 4 });
-    const firstEnded = { ...first, endedAt: "2026-10-08T18:00:00.000Z" };
-    const second = operation({ id: "b", machine: 2, bags: 2 });
-    const secondEnded = { ...second, endedAt: "2026-10-08T18:00:00.000Z" };
-
-    expect(shipmentMillingStatus(shipment, [])).toBe("pending");
-    expect(shipmentMillingStatus(shipment, [first])).toBe("partiallyMilled");
-    expect(shipmentMillingStatus(shipment, [firstEnded, second])).toBe("partiallyMilled");
-    expect(shipmentMillingStatus(shipment, [firstEnded, secondEnded])).toBe("milled");
-  });
-
   it("queues this project's shipments with bags left, earliest arrival first", () => {
     const later = { ...shipment, shipmentNumber: "SH-2", arrivedAt: "2026-10-08T03:00:00.000Z" };
-    const done = { ...shipment, shipmentNumber: "SH-3", bags: 2 };
+    const done = { ...shipment, shipmentNumber: "SH-3", remainingBags: 0 };
     const elsewhere = { ...shipment, shipmentNumber: "SH-4", project: "4" };
-    const operations = [operation({ shipmentNumber: "SH-3", endedAt: "2026-10-08T12:00:00.000Z" })];
 
     expect(
-      millingQueue([later, done, elsewhere, shipment], operations, "3").map(
-        (item) => item.shipmentNumber,
-      ),
+      millingQueue([later, done, elsewhere, shipment], "3").map((item) => item.shipmentNumber),
     ).toEqual(["SH-1", "SH-2"]);
   });
 
-  it("gives the start and edit forms each queued shipment with the bags it has left", () => {
-    const operations = [operation({ shipmentNumber: "SH-1", bags: 1.5 })];
-
-    expect(operationShipments([shipment], operations)).toEqual([
+  it("gives the start and edit forms each queued shipment with the bags the backend left", () => {
+    expect(operationShipments([{ ...shipment, remainingBags: 4.5 }])).toEqual([
       {
         id: shipment.id,
         shipmentNumber: "SH-1",
         client: shipment.client,
         bags: shipment.bags,
-        remainingBags: shipment.bags - 1.5,
+        remainingBags: 4.5,
         arrivedAt: shipment.arrivedAt,
       },
+    ]);
+  });
+
+  it("gives an edited grinding's bags back to its own shipment only", () => {
+    const edited = operation({ shipmentNumber: "SH-1", bags: 2 });
+    const other = { ...shipment, shipmentNumber: "SH-2", remainingBags: 3 };
+
+    expect(
+      withBagsFreedBy([{ ...shipment, remainingBags: 0 }, other], edited).map((item) => [
+        item.shipmentNumber,
+        item.remainingBags,
+      ]),
+    ).toEqual([
+      ["SH-1", 2],
+      ["SH-2", 3],
     ]);
   });
 
@@ -135,18 +110,23 @@ describe("shipments in grinding", () => {
     const record: ShipmentRecord = {
       id: "12",
       shipmentNumber: "SH-12",
+      customerId: "1",
       customerName: "Sidi",
       phone: "+222 46 10 93 25",
       arrivedAt: "2026-10-08T01:00:00.000Z",
       bagCount: 16,
       testBags: 0,
+      remainingBags: 10,
       project: "3",
       status: "grinding",
       stage: "grinding",
       source: "Chami",
+      transportMethod: "truck",
       notes: "",
       transportTotal: 0,
       paid: 0,
+      amountLeft: 0,
+      fullyPaid: true,
       debt: 0,
     };
 
@@ -173,9 +153,9 @@ describe("summary", () => {
     { grinderId: "g4", project: "4", number: 1, inMaintenance: false },
   ];
   const shipments: MillingShipment[] = [
-    shipment,
-    { ...shipment, id: "2", shipmentNumber: "SH-2", bags: 3 },
-    { ...shipment, id: "3", shipmentNumber: "SH-3", project: "4", bags: 4 },
+    { ...shipment, remainingBags: 4 },
+    { ...shipment, id: "2", shipmentNumber: "SH-2", bags: 3, remainingBags: 0 },
+    { ...shipment, id: "3", shipmentNumber: "SH-3", project: "4", bags: 4, remainingBags: 4 },
   ];
   const operations = [
     operation({ bags: 2 }),

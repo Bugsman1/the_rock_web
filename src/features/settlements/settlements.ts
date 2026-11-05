@@ -2,11 +2,10 @@ import { z } from "zod";
 import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/client";
 import { amountOrZero, fromDecimal, toMoneyDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
-import type { Customer } from "@/lib/customers";
-import { formatPhone, isSamePhone } from "@/lib/phone";
+import { formatPhone } from "@/lib/phone";
 import type { ProjectId } from "@/lib/projects";
 import type { RefiningOperation } from "@/lib/refining";
-import type { ShipmentRecord } from "@/lib/shipments";
+import type { ShipmentRecord, ShipmentStatusKey } from "@/lib/shipments";
 
 const DEBT_DESCRIPTION_MAX_LENGTH = 200;
 
@@ -82,6 +81,8 @@ export function shipmentsAwaitingGold(
   );
 }
 
+export const settleableStatuses: readonly ShipmentStatusKey[] = ["completed"];
+
 export function settleableShipments(
   shipments: readonly ShipmentRecord[],
   settlements: readonly Settlement[],
@@ -124,13 +125,6 @@ export function projectSettlementSummary(
     waiting: settleableShipmentsOfProject(shipments, settlements, refinings, project).length,
     settled: settlements.filter((settlement) => settlement.project === project).length,
   };
-}
-
-export function customerOfShipment(
-  customers: readonly Customer[],
-  shipment: Pick<ShipmentRecord, "phone">,
-): Customer | undefined {
-  return customers.find((customer) => isSamePhone(customer.phone, shipment.phone));
 }
 
 export function projectsOfShipments(shipments: readonly ShipmentRecord[]): readonly ProjectId[] {

@@ -1,27 +1,22 @@
-import { useState } from "react";
+import { useCallback } from "react";
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
-import { ActionLink } from "@/components/ui/ActionLink";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { OperationForm } from "@/components/grinding/OperationForm";
-import {
-  DebtBadge,
-  PaymentStatus,
-  ShipmentStatusBadge,
-} from "@/components/shipments/ShipmentBadges";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
 import { PageLayout } from "@/components/ui/PageHeader";
+import { ShowMore, useShowMore } from "@/components/ui/Pagination";
+import { DelayedSearchField } from "@/components/ui/SearchField";
 import { TablePanel } from "@/components/ui/TablePanel";
-import { DataTable } from "@/components/ui/DataTable";
-import type { DataColumn } from "@/components/ui/DataTable";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
+import { getCustomer } from "@/lib/customersApi";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
-import { formatCount, formatDateTime } from "@/lib/format";
+import { isFiltered, listQueryFromParams, listQueryParams } from "@/lib/filters";
+import { formatCount } from "@/lib/format";
 import { idleMachines, machinesFromGrinders } from "@/lib/grinding";
-import type { MillingOperation } from "@/lib/grinding";
 import { getGrindingOperations } from "@/lib/grindingApi";
 import { isInService } from "@/lib/projects";
 import { getGrinders, getProjects, requireProject } from "@/lib/projectsApi";
@@ -29,179 +24,72 @@ import {
   millingProjectHref,
   newShipmentHref,
   SHIPMENTS_HREF,
-  shipmentHref,
   shipmentsHistoryHref,
   shipmentsProjectHref,
-  startGrindingHref,
 } from "@/lib/routes";
-import { getShipments } from "@/lib/shipmentsApi";
-import { matchesSearch } from "@/lib/search";
+import type { ShipmentRecord } from "@/lib/shipments";
+import { getShipmentPage, getShipments } from "@/lib/shipmentsApi";
 import { getOperators } from "@/lib/users";
-import { bagCount, clientBags, shipmentsByArrival, openShipments } from "./shipmentStorage";
-import type { StoredShipment } from "./shipmentStorage";
-import { InvoiceDownload } from "./InvoiceDownload";
+import { bagCount, clientBags, storedStatuses } from "./shipmentStorage";
+import { shipmentGroupChoices, shipmentListFilter } from "./shipmentHistory";
+import { ClientQueueTable } from "./ClientQueueTable";
+import { ShipmentFilterMenu } from "./ShipmentFilters";
 
-async function getGrindingChoices(project: string, operations: readonly MillingOperation[]) {
-  const [grinders, operators] = await Promise.all([
+async function getGrindingChoices(project: string) {
+  const [grinders, operators, running] = await Promise.all([
     getGrinders(project),
     getOperators(project, "grinding"),
+    getGrindingOperations({ project, running: true }),
   ]);
 
-  return { idle: idleMachines(machinesFromGrinders(grinders), operations), operators };
+  return { idle: idleMachines(machinesFromGrinders(grinders), running), operators };
 }
 
 type GrindingChoices = Awaited<ReturnType<typeof getGrindingChoices>> & { shipment: string };
 
 export async function projectStorageLoader({ params, request }: LoaderFunctionArgs) {
   const project = await requireProject(params.project ?? "");
-  const grind = new URL(request.url).searchParams.get("grind");
-  const [shipments, operations, projects] = await Promise.all([
-    getShipments({ project: project.id }),
-    getGrindingOperations(project.id),
+  const search = new URL(request.url).searchParams;
+  const grind = search.get("grind");
+  const list = listQueryFromParams(search, shipmentGroupChoices(storedStatuses));
+  const filter = shipmentListFilter(project.id, list, storedStatuses, "arrival_date");
+  const [slice, inStorage, projects, client, grinding] = await Promise.all([
+    getShipmentPage(filter, 1),
+    getShipments({ project: project.id, statuses: storedStatuses, hasRemainingBags: true }),
     getProjects(),
+    list.filters.client === "" ? undefined : getCustomer(list.filters.client),
+    grind === null ? undefined : getGrindingChoices(project.id),
   ]);
-  const grinding = grind === null ? undefined : await getGrindingChoices(project.id, operations);
-
   const choices: GrindingChoices | undefined =
     grinding === undefined || grind === null ? undefined : { ...grinding, shipment: grind };
 
   return {
     project,
-    shipments: shipmentsByArrival(openShipments(shipments, operations, project.id)),
+    list,
+    filter,
+    slice,
+    inStorage,
+    clientName: client?.name,
     grinding: choices,
     onlyProject: projects.filter(isInService).length === 1,
   };
-}
-
-function ClientQueueTable({
-  project,
-  shipments,
-  query,
-}: {
-  project: string;
-  shipments: readonly StoredShipment[];
-  query: string;
-}) {
-  const text = useTranslations("shipments.project");
-  const payment = useTranslations("shipments.payment");
-  const invoice = useTranslations("shipments.invoice");
-  const common = useTranslations("common");
-  const locale = useLocale();
-  const canStart = useCan()("grinding", "add");
-  const rows = shipments
-    .map((shipment, index) => ({ shipment, position: index + 1 }))
-    .filter(({ shipment }) =>
-      matchesSearch(
-        { texts: [shipment.shipmentNumber, shipment.customerName], phone: shipment.phone },
-        query,
-      ),
-    );
-
-  type Row = (typeof rows)[number];
-  const columns: DataColumn<Row>[] = [
-    {
-      key: "position",
-      header: text("position"),
-      className: "text-brand-700 font-bold",
-      cell: ({ position }) => formatCount(position, locale),
-    },
-    {
-      key: "shipment",
-      header: text("shipment"),
-      rowLink: true,
-      className: "text-ink font-bold",
-      cell: ({ shipment }) => shipment.shipmentNumber,
-    },
-    {
-      key: "client",
-      header: text("client"),
-      className: "text-ink font-bold",
-      cell: ({ shipment }) => <span dir="auto">{shipment.customerName}</span>,
-    },
-    {
-      key: "arrivedAt",
-      header: text("arrivedAt"),
-      className: "text-ink-muted font-semibold",
-      cell: ({ shipment }) => formatDateTime(shipment.arrivedAt, locale),
-    },
-    {
-      key: "remaining",
-      header: text("remaining"),
-      align: "end",
-      className: "text-ink font-bold",
-      cell: ({ shipment }) =>
-        text("remainingOf", {
-          remaining: formatCount(shipment.remainingBags, locale),
-          total: formatCount(shipment.bagCount, locale),
-        }),
-    },
-    {
-      key: "status",
-      header: text("status"),
-      cell: ({ shipment }) => <ShipmentStatusBadge status={shipment.stage} />,
-    },
-    {
-      key: "payment",
-      header: payment("column"),
-      cell: ({ shipment }) => (
-        <div className="flex flex-col items-start gap-1">
-          <PaymentStatus shipment={shipment} />
-          <DebtBadge amount={shipment.debt} />
-        </div>
-      ),
-    },
-    {
-      key: "invoice",
-      header: invoice("column"),
-      interactive: true,
-      cell: ({ shipment }) => <InvoiceDownload shipment={shipment} />,
-    },
-  ];
-
-  if (canStart) {
-    columns.push({
-      key: "action",
-      header: text("action"),
-      hideHeader: true,
-      align: "end",
-      interactive: true,
-      cell: ({ shipment }) =>
-        shipment.remainingBags > 0 ? (
-          <ActionLink
-            href={startGrindingHref(project, shipment.shipmentNumber)}
-            icon="player-play"
-            ariaLabel={`${text("startMilling")} ${shipment.shipmentNumber}`}
-          >
-            {text("startMilling")}
-          </ActionLink>
-        ) : null,
-    });
-  }
-
-  return (
-    <DataTable
-      columns={columns}
-      rows={rows}
-      rowKey={({ shipment }) => shipment.shipmentNumber}
-      empty={shipments.length === 0 ? text("empty") : common("noMatch")}
-      rowLink={({ shipment }) => ({ href: shipmentHref(shipment.id) })}
-    />
-  );
 }
 
 function StartGrindingDrawer({
   project,
   shipments,
   grinding,
+  closeHref,
 }: {
   project: { id: string; name: string };
-  shipments: readonly StoredShipment[];
+  shipments: readonly ShipmentRecord[];
   grinding: GrindingChoices | undefined;
+  closeHref: string;
 }) {
   const t = useTranslations("milling");
   const common = useTranslations("common");
   const replace = useReplace();
-  const { close } = useRouteDrawer(shipmentsProjectHref(project.id));
+  const { close } = useRouteDrawer(closeHref);
   const now = new Date();
 
   return (
@@ -237,17 +125,23 @@ function StartGrindingDrawer({
 }
 
 export function ProjectStorageScreen() {
-  const { project, shipments, grinding, onlyProject } =
+  const { project, list, filter, slice, inStorage, clientName, grinding, onlyProject } =
     useLoaderData<typeof projectStorageLoader>();
   const t = useTranslations("shipments");
   const history = useTranslations("shipments.history");
   const common = useTranslations("common");
   const locale = useLocale();
+  const replace = useReplace();
   const canAdd = useCan()("shipments", "add");
   const canStart = useCan()("grinding", "add");
-  const [query, setQuery] = useState("");
-
-  const inStorage = shipments.filter((shipment) => shipment.remainingBags > 0);
+  const listParams = listQueryParams(list);
+  const more = useShowMore(slice.shipments, slice.total, (page) =>
+    getShipmentPage(filter, page).then((next) => next.shipments),
+  );
+  const searchHref = useCallback(
+    (search: string) => shipmentsProjectHref(project.id, listQueryParams({ ...list, search })),
+    [project.id, list],
+  );
 
   return (
     <PageLayout
@@ -260,6 +154,14 @@ export function ProjectStorageScreen() {
             <Icon name="history" />
             {history("open")}
           </ButtonLink>
+          <ShipmentFilterMenu
+            statuses={storedStatuses}
+            state={list.filters}
+            clientName={clientName}
+            onApply={(filters) =>
+              replace(shipmentsProjectHref(project.id, listQueryParams({ ...list, filters })))
+            }
+          />
           {canAdd ? (
             <ButtonLink href={newShipmentHref(project.id)} variant="primary">
               <Icon name="plus" />
@@ -276,19 +178,31 @@ export function ProjectStorageScreen() {
       <TablePanel
         title={t("project.queueTitle")}
         search={{
-          label: common("searchIn", { list: t("project.queueTitle") }),
-          placeholder: common("searchList"),
-          value: query,
-          onChange: setQuery,
+          field: (
+            <DelayedSearchField
+              id="storage-search"
+              label={common("searchIn", { list: t("project.queueTitle") })}
+              placeholder={common("searchList")}
+              query={list.search}
+              hrefFor={searchHref}
+            />
+          ),
         }}
       >
-        <ClientQueueTable project={project.id} shipments={shipments} query={query} />
+        <ClientQueueTable
+          project={project.id}
+          shipments={more.rows}
+          listParams={listParams}
+          filtered={isFiltered(list)}
+        />
+        <ShowMore control={more} />
       </TablePanel>
 
       <StartGrindingDrawer
         project={project}
         shipments={inStorage}
         grinding={canStart ? grinding : undefined}
+        closeHref={shipmentsProjectHref(project.id, listParams)}
       />
     </PageLayout>
   );

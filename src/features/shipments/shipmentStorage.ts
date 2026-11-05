@@ -1,5 +1,5 @@
-import { remainingBags } from "@/lib/grinding";
-import type { MillingOperation } from "@/lib/grinding";
+import type { ApiSchema } from "@/lib/api/client";
+import { fromDecimal } from "@/lib/format";
 import type { ProjectId } from "@/lib/projects";
 import type { ShipmentRecord, ShipmentStatusKey } from "@/lib/shipments";
 
@@ -8,40 +8,22 @@ type ClientBags = {
   bagCount: number;
 };
 
-const storedStatuses: readonly ShipmentStatusKey[] = ["pending", "grinding"];
-
-export type StoredShipment = ShipmentRecord & { remainingBags: number };
-
-const TOP_CLIENTS_LIMIT = 6;
-
-export function isInStorage(record: ShipmentRecord): boolean {
-  return storedStatuses.includes(record.status);
-}
-
-export function openShipments(
-  records: readonly ShipmentRecord[],
-  operations: readonly MillingOperation[],
-  project?: ProjectId,
-): readonly StoredShipment[] {
-  return records
-    .filter(
-      (record) => isInStorage(record) && (project === undefined || record.project === project),
-    )
-    .map((record) => ({
-      ...record,
-      remainingBags: remainingBags(
-        { shipmentNumber: record.shipmentNumber, bags: record.bagCount },
-        operations,
-      ),
-    }));
-}
+export const storedStatuses = [
+  "pending",
+  "grinding",
+  "refining",
+] as const satisfies readonly ShipmentStatusKey[];
 
 export function storedShipments(
   records: readonly ShipmentRecord[],
-  operations: readonly MillingOperation[],
   project?: ProjectId,
-): readonly StoredShipment[] {
-  return openShipments(records, operations, project).filter((record) => record.remainingBags > 0);
+): readonly ShipmentRecord[] {
+  return records.filter(
+    (record) =>
+      storedStatuses.some((status) => status === record.status) &&
+      record.remainingBags > 0 &&
+      (project === undefined || record.project === project),
+  );
 }
 
 export function shipmentsOfProject<Shipment extends ShipmentRecord>(
@@ -51,11 +33,11 @@ export function shipmentsOfProject<Shipment extends ShipmentRecord>(
   return records.filter((record) => record.project === project);
 }
 
-export function bagCount(records: readonly StoredShipment[]): number {
+export function bagCount(records: readonly ShipmentRecord[]): number {
   return records.reduce((total, record) => total + record.remainingBags, 0);
 }
 
-export function clientBags(records: readonly StoredShipment[]): readonly ClientBags[] {
+export function clientBags(records: readonly ShipmentRecord[]): readonly ClientBags[] {
   const totals = new Map<string, number>();
 
   for (const record of records) {
@@ -65,21 +47,35 @@ export function clientBags(records: readonly StoredShipment[]): readonly ClientB
   return [...totals].map(([name, bags]) => ({ name, bagCount: bags }));
 }
 
-export function topClientsByBags(
-  clients: readonly ClientBags[],
-  limit: number = TOP_CLIENTS_LIMIT,
-): readonly ClientBags[] {
-  return [...clients].sort((a, b) => b.bagCount - a.bagCount).slice(0, limit);
+export type TopCustomer = {
+  id: string;
+  name: string;
+  bags: number;
+  percentage: number;
+};
+
+export type ProjectTopCustomers = {
+  project: ProjectId;
+  customers: readonly TopCustomer[];
+};
+
+export function topCustomersFromApi(
+  rows: readonly ApiSchema<"ProjectTopCustomersByBags">[],
+): readonly ProjectTopCustomers[] {
+  return rows.map((row) => ({
+    project: String(row.project),
+    customers: row.results.map((customer) => ({
+      id: String(customer.id),
+      name: customer.full_name,
+      bags: fromDecimal(customer.bags),
+      percentage: fromDecimal(customer.percentage),
+    })),
+  }));
 }
 
-export function shipmentsByArrival<Shipment extends ShipmentRecord>(
-  records: readonly Shipment[],
-): readonly Shipment[] {
-  return [...records].sort((a, b) => a.arrivedAt.localeCompare(b.arrivedAt));
-}
-
-export function bagShare(bags: number, largestBagCount: number): number {
-  if (largestBagCount <= 0) return 0;
-
-  return Math.min(100, Math.round((bags / largestBagCount) * 100));
+export function topCustomersOf(
+  rows: readonly ProjectTopCustomers[],
+  project: ProjectId,
+): readonly TopCustomer[] {
+  return rows.find((row) => row.project === project)?.customers ?? [];
 }

@@ -1,33 +1,73 @@
 import { useLocale, useTranslations } from "use-intl";
+import { useCustomerSearch } from "@/components/customers/useCustomerSearch";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
-import { StatusBadge } from "@/components/ui/TablePanel";
+import { FilterMenu } from "@/components/ui/FilterMenu";
+import type { FilterData } from "@/components/ui/FilterMenu";
+import { useShowMore } from "@/components/ui/Pagination";
+import { ListPanel, StatusBadge } from "@/components/ui/TablePanel";
 import { durationParts } from "@/lib/datetime";
+import { isFiltered, listQueryParams } from "@/lib/filters";
+import type { ListQuery } from "@/lib/filters";
 import { formatCount, formatDateTime } from "@/lib/format";
-import { matchesSearch } from "@/lib/search";
 import type { MillingOperation } from "@/lib/grinding";
+import { getGrindingPage } from "@/lib/grindingApi";
+import type { GrindingListFilter, GrindingSlice } from "@/lib/grindingApi";
+import { millingMachineHref } from "@/lib/routes";
+import { runStates } from "./millingFilters";
+
+function HistoryFilterMenu({
+  menu,
+  clientName,
+}: {
+  menu: FilterData;
+  clientName: string | undefined;
+}) {
+  const t = useTranslations("milling.machine");
+  const clients = useCustomerSearch(clientName);
+
+  return (
+    <FilterMenu
+      {...menu}
+      clients={clients}
+      dateLabel={t("history.start")}
+      groups={[
+        {
+          key: "runState",
+          label: t("history.status"),
+          options: runStates.map((value) => ({ value, label: t(`history.${value}`) })),
+        },
+      ]}
+    />
+  );
+}
+
+type MachineHistoryTableProps = {
+  project: string;
+  machine: number;
+  list: ListQuery;
+  filter: GrindingListFilter;
+  first: GrindingSlice;
+  clientName: string | undefined;
+};
 
 export function MachineHistoryTable({
-  history,
-  query,
-}: {
-  history: readonly MillingOperation[];
-  query: string;
-}) {
+  project,
+  machine,
+  list,
+  filter,
+  first,
+  clientName,
+}: MachineHistoryTableProps) {
   const t = useTranslations("milling.machine");
   const mercury = useTranslations("milling.mercury");
   const common = useTranslations("common");
   const locale = useLocale();
   const count = (value: number) => formatCount(value, locale);
-  const operations = history.filter((operation) =>
-    matchesSearch(
-      {
-        texts: [operation.shipmentNumber, operation.client, operation.operatorName],
-        phone: "",
-      },
-      query,
-    ),
+  const more = useShowMore(first.operations, first.total, (page) =>
+    getGrindingPage(filter, page).then((next) => next.operations),
   );
+  const operations = more.rows;
 
   const columns: DataColumn<MillingOperation>[] = [
     {
@@ -102,16 +142,28 @@ export function MachineHistoryTable({
   ];
 
   return (
-    <DataTable
-      columns={columns}
-      rows={operations}
-      rowKey={(operation) => operation.id}
-      empty={history.length === 0 ? t("history.empty") : common("noMatch")}
-      total={{
-        label: common("total"),
-        column: "bags",
-        value: count(operations.reduce((total, operation) => total + operation.bags, 0)),
-      }}
-    />
+    <ListPanel
+      title={t("history.title")}
+      list={list}
+      hrefFor={(next) => millingMachineHref(project, machine, listQueryParams(next))}
+      more={more}
+      filterMenu={(menu) => <HistoryFilterMenu menu={menu} clientName={clientName} />}
+    >
+      <DataTable
+        columns={columns}
+        rows={operations}
+        rowKey={(operation) => operation.id}
+        empty={isFiltered(list) ? common("noMatch") : t("history.empty")}
+        {...(more.canShowMore
+          ? {}
+          : {
+              total: {
+                label: common("total"),
+                column: "bags",
+                value: count(operations.reduce((total, operation) => total + operation.bags, 0)),
+              },
+            })}
+      />
+    </ListPanel>
   );
 }

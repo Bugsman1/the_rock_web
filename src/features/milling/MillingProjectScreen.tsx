@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
@@ -7,27 +6,39 @@ import { OperationForm } from "@/components/grinding/OperationForm";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
 import { BackLink, PageTitle } from "@/components/ui/PageHeader";
-import { TablePanel } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
 import { notFound } from "@/lib/api/client";
+import { getCustomer } from "@/lib/customersApi";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
+import { listQueryFromParams, listQueryParams } from "@/lib/filters";
 import { formatCount } from "@/lib/format";
-import { findProject, isRecordId } from "@/lib/projects";
-import { getOperators } from "@/lib/users";
-import { MILLING_HREF, millingProjectHref, newMillingOperationHref } from "@/lib/routes";
 import {
   activeOperationOf,
   idleMachines,
-  machinesOfProject,
+  machinesFromGrinders,
   machineStatus,
-  remainingBags,
 } from "@/lib/grinding";
-import { countMachines, millingQueue, operationShipments, shipmentMillingStatus } from "./milling";
-import { getMillingData } from "./millingApi";
+import { getGrindingOperations } from "@/lib/grindingApi";
+import { findProject, isInService, isRecordId } from "@/lib/projects";
+import { getGrinders, getProjects } from "@/lib/projectsApi";
+import { MILLING_HREF, millingProjectHref, newMillingOperationHref } from "@/lib/routes";
+import { getShipmentPage, getShipments } from "@/lib/shipmentsApi";
+import { getOperators } from "@/lib/users";
+import { countMachines, millingShipments, millingStatuses, operationShipments } from "./milling";
+import { millingQueueFilter, queueGroups } from "./millingFilters";
 import { MillingQueueTable } from "./MillingQueueTable";
 import { MachineList } from "./MachineList";
 
 export const MACHINE_NUMBER = /^\d+$/;
+
+async function newOperationChoices(project: string) {
+  const [operators, waiting] = await Promise.all([
+    getOperators(project, "grinding"),
+    getShipments({ project, statuses: millingStatuses, hasRemainingBags: true }),
+  ]);
+
+  return { operators, shipments: operationShipments(millingShipments(waiting)) };
+}
 
 export async function millingProjectLoader({ params, request }: LoaderFunctionArgs) {
   const projectId = params.project ?? "";
@@ -39,15 +50,28 @@ export async function millingProjectLoader({ params, request }: LoaderFunctionAr
   const search = new URL(request.url).searchParams;
   const creating = search.get("operation") === "new";
   const machine = search.get("machine");
-  const [data, operators] = await Promise.all([
-    getMillingData(),
-    creating ? getOperators(projectId, "grinding") : [],
+  const list = listQueryFromParams(search, queueGroups);
+  const filter = millingQueueFilter(projectId, list);
+  const [projects, grinders, running, first, client, choices] = await Promise.all([
+    getProjects(),
+    getGrinders(projectId),
+    getGrindingOperations({ project: projectId, running: true }),
+    getShipmentPage(filter, 1),
+    list.filters.client === "" ? undefined : getCustomer(list.filters.client),
+    creating ? newOperationChoices(projectId) : undefined,
   ]);
+  const inService = projects.filter(isInService);
 
   return {
-    project: findProject(data.projects, projectId) ?? notFound(),
-    data,
-    operators,
+    project: findProject(inService, projectId) ?? notFound(),
+    hasOtherProjects: inService.length > 1,
+    machines: machinesFromGrinders(grinders),
+    running,
+    list,
+    filter,
+    first,
+    clientName: client?.name,
+    choices,
     newOperation: creating
       ? {
           shipmentNumber: search.get("shipment") ?? undefined,
@@ -58,27 +82,38 @@ export async function millingProjectLoader({ params, request }: LoaderFunctionAr
 }
 
 export function MillingProjectScreen() {
-  const { project, data, operators, newOperation } = useLoaderData<typeof millingProjectLoader>();
+  const {
+    project,
+    hasOtherProjects,
+    machines,
+    running,
+    list,
+    filter,
+    first,
+    clientName,
+    choices,
+    newOperation,
+  } = useLoaderData<typeof millingProjectLoader>();
   const t = useTranslations("milling");
   const common = useTranslations("common");
   const locale = useLocale();
-  const { close } = useRouteDrawer(millingProjectHref(project.id));
+  const { close } = useRouteDrawer(millingProjectHref(project.id, listQueryParams(list)));
   const canStart = useCan()("grinding", "add");
   const count = (value: number) => formatCount(value, locale);
-  const machines = machinesOfProject(data.machines, project.id);
-  const counts = countMachines(machines, data.operations);
-  const queue = millingQueue(data.shipments, data.operations, project.id);
+  const counts = countMachines(machines, running);
   const now = new Date();
-  const [query, setQuery] = useState("");
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        {data.projects.length > 1 ? <BackLink href={MILLING_HREF} label={common("back")} /> : null}
+        {hasOtherProjects ? <BackLink href={MILLING_HREF} label={common("back")} /> : null}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <PageTitle>{common("projectTitle", { name: project.name })}</PageTitle>
           {canStart ? (
-            <ButtonLink href={newMillingOperationHref(project.id)} variant="primary">
+            <ButtonLink
+              href={newMillingOperationHref(project.id, { list: listQueryParams(list) })}
+              variant="primary"
+            >
               <Icon name="plus" />
               {t("project.newOperation")}
             </ButtonLink>
@@ -99,41 +134,22 @@ export function MillingProjectScreen() {
           project={project.id}
           rows={machines.map((machine) => ({
             number: machine.number,
-            status: machineStatus(machine, data.operations),
-            operation: activeOperationOf(data.operations, project.id, machine.number),
+            status: machineStatus(machine, running),
+            operation: activeOperationOf(running, project.id, machine.number),
           }))}
         />
       </section>
 
-      <TablePanel
-        title={t("project.queueTitle")}
-        search={{
-          label: common("searchIn", { list: t("project.queueTitle") }),
-          placeholder: common("searchList"),
-          value: query,
-          onChange: setQuery,
-        }}
-      >
-        <MillingQueueTable
-          query={query}
-          queue={queue.map((shipment, index) => ({
-            position: index + 1,
-            shipmentNumber: shipment.shipmentNumber,
-            client: shipment.client,
-            remaining: t("project.remainingOf", {
-              remaining: count(remainingBags(shipment, data.operations)),
-              total: count(shipment.bags),
-            }),
-            status: shipmentMillingStatus(shipment, data.operations),
-            startHref: newMillingOperationHref(project.id, {
-              shipmentNumber: shipment.shipmentNumber,
-            }),
-          }))}
-        />
-      </TablePanel>
+      <MillingQueueTable
+        project={project.id}
+        list={list}
+        filter={filter}
+        first={first}
+        clientName={clientName}
+      />
 
       <Drawer
-        open={newOperation !== undefined && canStart}
+        open={newOperation !== undefined && canStart && choices !== undefined}
         title={t("operation.title")}
         closeLabel={common("close")}
         onClose={close}
@@ -141,9 +157,9 @@ export function MillingProjectScreen() {
         <OperationForm
           key={`${newOperation?.shipmentNumber ?? ""}-${newOperation?.machine ?? ""}`}
           projectName={project.name}
-          shipments={operationShipments(queue, data.operations)}
-          idleMachines={idleMachines(machines, data.operations)}
-          operators={operators}
+          shipments={choices?.shipments ?? []}
+          idleMachines={idleMachines(machines, running)}
+          operators={choices?.operators ?? []}
           defaultShipmentNumber={newOperation?.shipmentNumber}
           defaultMachine={newOperation?.machine}
           defaultDate={todayAsInputValue(now)}

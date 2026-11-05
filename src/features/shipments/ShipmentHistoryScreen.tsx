@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
@@ -7,49 +6,68 @@ import {
   PaymentStatus,
   ShipmentStatusBadge,
 } from "@/components/shipments/ShipmentBadges";
-import { Combobox } from "@/components/ui/Combobox";
-import { DateField } from "@/components/ui/DateField";
-import { Icon } from "@/components/ui/Icon";
+import { ShowMore, useShowMore } from "@/components/ui/Pagination";
 import { BackLink, PageTitle } from "@/components/ui/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
+import { useReplace } from "@/i18n/navigation";
+import { getCustomer } from "@/lib/customersApi";
+import { listQueryFromParams, listQueryParams } from "@/lib/filters";
+import type { ListQuery } from "@/lib/filters";
 import { formatCount, formatDateTime } from "@/lib/format";
 import { requireProject } from "@/lib/projectsApi";
-import { shipmentHref, shipmentsProjectHref } from "@/lib/routes";
+import { shipmentHref, shipmentsHistoryHref, shipmentsProjectHref } from "@/lib/routes";
 import type { ShipmentRecord } from "@/lib/shipments";
-import { getShipments } from "@/lib/shipmentsApi";
-import { shipmentsOfProject } from "./shipmentStorage";
-import {
-  finishedShipments,
-  emptyHistoryFilter,
-  filterShipments,
-  historyClients,
-  isFilterActive,
-} from "./shipmentHistory";
-import type { HistoryFilter } from "./shipmentHistory";
+import { getShipmentPage } from "@/lib/shipmentsApi";
+import type { ShipmentListFilter, ShipmentSlice } from "@/lib/shipmentsApi";
+import { historyStatuses, shipmentGroupChoices, shipmentListFilter } from "./shipmentHistory";
 import { InvoiceDownload } from "./InvoiceDownload";
+import { ShipmentFilterMenu } from "./ShipmentFilters";
 
-export async function projectShipmentsLoader({ params }: LoaderFunctionArgs) {
+export async function projectShipmentsLoader({ params, request }: LoaderFunctionArgs) {
   const project = await requireProject(params.project ?? "");
+  const list = listQueryFromParams(
+    new URL(request.url).searchParams,
+    shipmentGroupChoices(historyStatuses),
+  );
+  const filter = shipmentListFilter(project.id, list, historyStatuses, "-arrival_date");
+  const [slice, client] = await Promise.all([
+    getShipmentPage(filter, 1),
+    list.filters.client === "" ? undefined : getCustomer(list.filters.client),
+  ]);
 
-  return {
-    project,
-    shipments: finishedShipments(
-      shipmentsOfProject(await getShipments({ project: project.id }), project.id),
-    ),
-  };
+  return { project, list, filter, slice, clientName: client?.name };
 }
 
-export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[] }) {
+type ShipmentHistoryProps = {
+  project: string;
+  list: ListQuery;
+  filter: ShipmentListFilter;
+  slice: ShipmentSlice;
+  clientName: string | undefined;
+};
+
+export function ShipmentHistory({
+  project,
+  list,
+  filter,
+  slice,
+  clientName,
+}: ShipmentHistoryProps) {
   const t = useTranslations("shipments.history");
   const payment = useTranslations("shipments.payment");
   const invoice = useTranslations("shipments.invoice");
   const common = useTranslations("common");
   const locale = useLocale();
-  const [filter, setFilter] = useState<HistoryFilter>(emptyHistoryFilter);
-  const [clientText, setClientText] = useState("");
-  const results = filterShipments(records, filter);
+  const replace = useReplace();
+  const more = useShowMore(slice.shipments, slice.total, (page) =>
+    getShipmentPage(filter, page).then((next) => next.shipments),
+  );
+  const results = more.rows;
+  const complete = !more.canShowMore;
   const bags = results.reduce((total, record) => total + record.bagCount, 0);
+  const listHref = (changes: Partial<ListQuery>) =>
+    shipmentsHistoryHref(project, listQueryParams({ ...list, ...changes }));
 
   const columns: DataColumn<ShipmentRecord>[] = [
     {
@@ -117,73 +135,23 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
     },
   ];
 
-  function update(changes: Partial<HistoryFilter>) {
-    setFilter((current) => ({ ...current, ...changes }));
-  }
-
-  function typeClient(text: string) {
-    setClientText(text);
-    update({ clientPhone: "" });
-  }
-
-  function clearFilters() {
-    setFilter(emptyHistoryFilter);
-    setClientText("");
-  }
-
   return (
     <div className="rounded-card shadow-subtle border-line bg-surface flex flex-col border-[1.5px]">
-      <div className="border-line grid gap-4 border-b-[1.5px] p-4 md:grid-cols-[2fr_1fr_1fr]">
-        <Combobox
-          id="historyClient"
-          label={t("columns.client")}
-          placeholder={t("allClients")}
-          value={clientText}
-          options={historyClients(records).map((client) => ({
-            value: client.phone,
-            label: client.name,
-            hint: client.phone,
-          }))}
-          onChange={typeClient}
-          onSelect={(option) => update({ clientPhone: option.value })}
-        />
-        <DateField
-          id="historyFrom"
-          label={t("from")}
-          pickerLabel={common("openCalendar")}
-          placeholder={common("datePlaceholder")}
-          value={filter.from}
-          onChange={(from) => update({ from })}
-        />
-        <DateField
-          id="historyTo"
-          label={t("to")}
-          pickerLabel={common("openCalendar")}
-          placeholder={common("datePlaceholder")}
-          value={filter.to}
-          onChange={(to) => update({ to })}
-        />
-      </div>
-
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <p role="status" className="text-ink-muted text-[14px] font-semibold">
-          {filter.clientPhone === ""
-            ? t("count", { count: formatCount(results.length, locale) })
-            : t("clientCount", {
-                shipments: formatCount(results.length, locale),
+        <ShipmentFilterMenu
+          statuses={historyStatuses}
+          clientName={clientName}
+          state={list.filters}
+          onApply={(filters) => replace(listHref({ filters }))}
+        />
+        <p role="status" className="text-ink-muted text-sm font-semibold">
+          {list.filters.client !== "" && complete
+            ? t("clientCount", {
+                shipments: formatCount(slice.total, locale),
                 bags: formatCount(bags, locale),
-              })}
+              })
+            : t("count", { count: formatCount(slice.total, locale) })}
         </p>
-        {isFilterActive(filter) ? (
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="text-brand-700 hover:text-brand-800 inline-flex cursor-pointer items-center gap-1.5 text-[14px] font-semibold"
-          >
-            <Icon name="x" className="h-4 w-4" />
-            {t("clear")}
-          </button>
-        ) : null}
       </div>
 
       <div className="border-line border-t">
@@ -193,19 +161,25 @@ export function ShipmentHistory({ records }: { records: readonly ShipmentRecord[
           rowKey={(record) => record.id}
           empty={t("empty")}
           rowLink={(record) => ({ href: shipmentHref(record.id, "history") })}
-          total={{
-            label: common("total"),
-            column: "bags",
-            value: formatCount(bags, locale),
-          }}
+          {...(complete
+            ? {
+                total: {
+                  label: common("total"),
+                  column: "bags",
+                  value: formatCount(bags, locale),
+                },
+              }
+            : {})}
         />
+        <ShowMore control={more} />
       </div>
     </div>
   );
 }
 
 export function ShipmentHistoryScreen() {
-  const { project, shipments } = useLoaderData<typeof projectShipmentsLoader>();
+  const { project, list, filter, slice, clientName } =
+    useLoaderData<typeof projectShipmentsLoader>();
   const t = useTranslations("shipments.history");
   const common = useTranslations("common");
 
@@ -216,7 +190,13 @@ export function ShipmentHistoryScreen() {
         <PageTitle>{t("title", { project: project.name })}</PageTitle>
       </div>
 
-      <ShipmentHistory records={shipments} />
+      <ShipmentHistory
+        project={project.id}
+        list={list}
+        filter={filter}
+        slice={slice}
+        clientName={clientName}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import type { SessionTokens } from "./session";
 
 const LOGIN_PATH = "/api/v1/auth/login/";
 const REFRESH_PATH = "/api/v1/auth/refresh/";
+const LOGOUT_PATH = "/api/v1/auth/logout/";
 
 const tokensSchema = z.object({ access: z.string().min(1), refresh: z.string().min(1) });
 const refreshedSchema = z.object({
@@ -65,4 +66,8 @@ export async function refreshTokens(refresh: string): Promise<SessionTokens | un
   return parsed.success
     ? { access: parsed.data.access, refresh: parsed.data.refresh ?? refresh }
     : undefined;
+}
+
+export async function revokeSession(refresh: string): Promise<void> {
+  await postJson(LOGOUT_PATH, { refresh });
 }

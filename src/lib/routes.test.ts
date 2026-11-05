@@ -20,6 +20,7 @@ import {
   shipmentHref,
   shipmentsProjectHref,
   startGrindingHref,
+  editRefiningHref,
   refiningProjectHref,
   startRefiningHref,
   usersHref,
@@ -89,6 +90,16 @@ describe("shipments routes", () => {
     expect(shipmentHref("52", "history")).toBe("/shipments/52?from=history");
     expect(shipmentsHistoryHref("3")).toBe("/shipments/projects/3/history");
   });
+
+  it("keeps the list's search, filters and rows shown", () => {
+    const list = new URLSearchParams("q=SH&status=grinding");
+
+    expect(shipmentsProjectHref("3", list)).toBe("/shipments/projects/3?q=SH&status=grinding");
+    expect(shipmentsHistoryHref("3", new URLSearchParams())).toBe("/shipments/projects/3/history");
+    expect(startGrindingHref("3", "SH-2", list)).toBe(
+      "/shipments/projects/3?q=SH&status=grinding&grind=SH-2",
+    );
+  });
 });
 
 describe("milling routes", () => {
@@ -121,6 +132,23 @@ describe("refining routes", () => {
   it("opens the refining drawer of a finished grinding operation", () => {
     expect(refiningProjectHref("3")).toBe("/refining/projects/3");
     expect(startRefiningHref("3", "5")).toBe("/refining/projects/3?grinding=5");
+  });
+
+  it("keeps the lists' search and filters in the refining and grinding pages", () => {
+    const list = new URLSearchParams("q=SH&gold=weighed");
+
+    expect(refiningProjectHref("3", list)).toBe("/refining/projects/3?q=SH&gold=weighed");
+    expect(startRefiningHref("3", "5", list)).toBe(
+      "/refining/projects/3?q=SH&gold=weighed&grinding=5",
+    );
+    expect(editRefiningHref("3", "9", list)).toBe("/refining/projects/3?q=SH&gold=weighed&edit=9");
+    expect(millingProjectHref("3", list)).toBe("/milling/projects/3?q=SH&gold=weighed");
+    expect(millingMachineHref("3", 2, list)).toBe(
+      "/milling/projects/3/machines/2?q=SH&gold=weighed",
+    );
+    expect(newMillingOperationHref("3", { shipmentNumber: "SH-1", list })).toBe(
+      "/milling/projects/3?q=SH&gold=weighed&operation=new&shipment=SH-1",
+    );
   });
 });
 

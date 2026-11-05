@@ -1,101 +1,20 @@
 import { useLocale, useTranslations } from "use-intl";
-import { ActionLink } from "@/components/ui/ActionLink";
+import { useCustomerSearch } from "@/components/customers/useCustomerSearch";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
-import { useCan } from "@/lib/accessContext";
+import { FilterMenu } from "@/components/ui/FilterMenu";
+import type { FilterData } from "@/components/ui/FilterMenu";
+import { useShowMore } from "@/components/ui/Pagination";
+import { ListPanel } from "@/components/ui/TablePanel";
+import { isFiltered } from "@/lib/filters";
+import type { ListQuery } from "@/lib/filters";
 import { formatCount, formatDateTime, formatQuantity } from "@/lib/format";
-import type { MillingOperation } from "@/lib/grinding";
+import type { Machine } from "@/lib/grinding";
 import { parseGrinderCode } from "@/lib/projects";
 import type { RefiningOperation } from "@/lib/refining";
-import { startRefiningHref } from "@/lib/routes";
-import { matchesSearch } from "@/lib/search";
-import { isLossReasonKey } from "./refining";
-
-export function RefiningQueueTable({
-  queue,
-  query,
-}: {
-  queue: readonly MillingOperation[];
-  query: string;
-}) {
-  const t = useTranslations("refining");
-  const common = useTranslations("common");
-  const locale = useLocale();
-  const canStart = useCan()("refining", "add");
-  const machineName = (machine: number) =>
-    t("machineNumber", { number: formatCount(machine, locale) });
-  const operations = queue.filter((operation) =>
-    matchesSearch(
-      {
-        texts: [operation.shipmentNumber, operation.client, machineName(operation.machine)],
-        phone: "",
-      },
-      query,
-    ),
-  );
-
-  const columns: DataColumn<MillingOperation>[] = [
-    {
-      key: "shipment",
-      header: t("fields.shipment"),
-      className: "text-ink font-bold",
-      cell: (operation) => operation.shipmentNumber,
-    },
-    {
-      key: "client",
-      header: t("fields.client"),
-      className: "text-ink font-bold",
-      cell: (operation) => <span dir="auto">{operation.client}</span>,
-    },
-    {
-      key: "machine",
-      header: t("fields.machine"),
-      className: "text-ink font-semibold",
-      cell: (operation) => machineName(operation.machine),
-    },
-    {
-      key: "bags",
-      header: t("fields.bags"),
-      align: "end",
-      className: "text-ink font-bold",
-      cell: (operation) => formatCount(operation.bags, locale),
-    },
-    {
-      key: "groundAt",
-      header: t("fields.groundAt"),
-      className: "text-ink-muted font-semibold",
-      cell: (operation) =>
-        operation.endedAt === undefined ? "—" : formatDateTime(operation.endedAt, locale),
-    },
-  ];
-
-  if (canStart) {
-    columns.push({
-      key: "action",
-      header: t("fields.action"),
-      hideHeader: true,
-      align: "end",
-      cell: (operation) => (
-        <ActionLink
-          href={startRefiningHref(operation.project, operation.id)}
-          icon="flame"
-          ariaLabel={t("startLabel", { number: operation.shipmentNumber })}
-        >
-          {t("start")}
-        </ActionLink>
-      ),
-    });
-  }
-
-  return (
-    <DataTable
-      columns={columns}
-      rows={operations}
-      rowKey={(operation) => operation.id}
-      empty={queue.length === 0 ? t("queueEmpty") : common("noMatch")}
-    />
-  );
-}
+import { getRefiningPage } from "@/lib/refiningApi";
+import type { RefiningListFilter, RefiningSlice } from "@/lib/refiningApi";
+import { goldStates, isLossReasonKey } from "./refining";
 
 function TruncatedText({ value }: { value: string }) {
   return value === "" ? (
@@ -107,15 +26,64 @@ function TruncatedText({ value }: { value: string }) {
   );
 }
 
-export function RefiningOperationsTable({
-  refinings,
-  query,
-  editHrefOf,
+function RefiningFilterMenu({
+  menu,
+  machines,
+  clientName,
 }: {
-  refinings: readonly RefiningOperation[];
-  query: string;
-  editHrefOf: (refining: RefiningOperation) => string | undefined;
+  menu: FilterData;
+  machines: readonly Machine[];
+  clientName: string | undefined;
 }) {
+  const t = useTranslations("refining");
+  const locale = useLocale();
+  const clients = useCustomerSearch(clientName);
+
+  return (
+    <FilterMenu
+      {...menu}
+      clients={clients}
+      dateLabel={t("fields.refinedAt")}
+      oneLine
+      groups={[
+        {
+          key: "gold",
+          label: t("fields.goldWithoutMaterial"),
+          options: goldStates.map((value) => ({ value, label: t(`goldFilter.${value}`) })),
+        },
+        {
+          key: "machine",
+          label: t("fields.machine"),
+          allLabel: t("allMachines"),
+          options: machines.map((machine) => ({
+            value: machine.grinderId,
+            label: t("machineNumber", { number: formatCount(machine.number, locale) }),
+          })),
+        },
+      ]}
+    />
+  );
+}
+
+type RefiningOperationsTableProps = {
+  list: ListQuery;
+  filter: RefiningListFilter;
+  first: RefiningSlice;
+  machines: readonly Machine[];
+  clientName: string | undefined;
+  hrefFor: (list: ListQuery) => string;
+  editHrefOf: (refining: RefiningOperation) => string | undefined;
+};
+
+export function RefiningOperationsTable({
+  list,
+  filter,
+  first,
+  machines,
+  clientName,
+  hrefFor,
+  editHrefOf,
+}: RefiningOperationsTableProps) {
   const t = useTranslations("refining");
   const common = useTranslations("common");
   const locale = useLocale();
@@ -127,19 +95,8 @@ export function RefiningOperationsTable({
       ? code
       : t("machineNumber", { number: formatCount(machine.number, locale) });
   };
-  const operations = refinings.filter((operation) =>
-    matchesSearch(
-      {
-        texts: [
-          operation.shipmentNumber,
-          operation.client,
-          machineName(operation.grinderCode),
-          operation.workerName,
-        ],
-        phone: "",
-      },
-      query,
-    ),
+  const more = useShowMore(first.refinings, first.total, (page) =>
+    getRefiningPage(filter, page).then((next) => next.refinings),
   );
 
   const weight = (
@@ -220,18 +177,28 @@ export function RefiningOperationsTable({
   ];
 
   return (
-    <DataTable
-      columns={columns}
-      rows={operations}
-      rowKey={(operation) => operation.id}
-      empty={refinings.length === 0 ? t("operationsEmpty") : common("noMatch")}
-      rowLink={(operation) => {
-        const href = editHrefOf(operation);
+    <ListPanel
+      title={t("operationsTitle")}
+      list={list}
+      hrefFor={hrefFor}
+      more={more}
+      filterMenu={(menu) => (
+        <RefiningFilterMenu menu={menu} machines={machines} clientName={clientName} />
+      )}
+    >
+      <DataTable
+        columns={columns}
+        rows={more.rows}
+        rowKey={(operation) => operation.id}
+        empty={isFiltered(list) ? common("noMatch") : t("operationsEmpty")}
+        rowLink={(operation) => {
+          const href = editHrefOf(operation);
 
-        return href === undefined
-          ? undefined
-          : { href, label: t("editLabel", { shipment: operation.shipmentNumber }) };
-      }}
-    />
+          return href === undefined
+            ? undefined
+            : { href, label: t("editLabel", { shipment: operation.shipmentNumber }) };
+        }}
+      />
+    </ListPanel>
   );
 }

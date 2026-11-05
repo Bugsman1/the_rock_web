@@ -1,76 +1,130 @@
-import { useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
+import { useCustomerSearch } from "@/components/customers/useCustomerSearch";
 import { ActionLink } from "@/components/ui/ActionLink";
-import { Icon } from "@/components/ui/Icon";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
-import { StatusBadge } from "@/components/ui/TablePanel";
+import { FilterMenu } from "@/components/ui/FilterMenu";
+import type { FilterData } from "@/components/ui/FilterMenu";
+import { useShowMore } from "@/components/ui/Pagination";
+import { ListPanel, StatusBadge } from "@/components/ui/TablePanel";
 import type { StatusTone } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
+import { isFiltered, listQueryParams } from "@/lib/filters";
+import type { ListQuery } from "@/lib/filters";
 import { formatCount } from "@/lib/format";
-import { matchesSearch } from "@/lib/search";
-import type { shipmentMillingStatus } from "./milling";
+import { millingProjectHref, newMillingOperationHref } from "@/lib/routes";
+import type { ShipmentRecord } from "@/lib/shipments";
+import { getShipmentPage } from "@/lib/shipmentsApi";
+import type { ShipmentListFilter, ShipmentSlice } from "@/lib/shipmentsApi";
+import type { ShipmentMillingStatus } from "./milling";
+import { millingStatuses } from "./milling";
 
-export const QUEUE_PREVIEW_LIMIT = 8;
-
-export type QueueRow = {
-  position: number;
-  shipmentNumber: string;
-  client: string;
-  remaining: string;
-  status: ReturnType<typeof shipmentMillingStatus>;
-  startHref: string;
-};
-
-export const queueStatusTones: Record<QueueRow["status"], StatusTone> = {
+export const queueStatusTones: Record<ShipmentMillingStatus, StatusTone> = {
   pending: "warning",
   partiallyMilled: "active",
   milled: "success",
 };
 
-export function MillingQueueTable({ queue, query }: { queue: readonly QueueRow[]; query: string }) {
+function queueStatusOf(shipment: ShipmentRecord): ShipmentMillingStatus {
+  return shipment.status === "grinding" ? "partiallyMilled" : "pending";
+}
+
+function QueueFilterMenu({
+  menu,
+  clientName,
+}: {
+  menu: FilterData;
+  clientName: string | undefined;
+}) {
+  const t = useTranslations("milling.project");
+  const statuses = useTranslations("milling.shipmentStatuses");
+  const clients = useCustomerSearch(clientName);
+
+  return (
+    <FilterMenu
+      {...menu}
+      clients={clients}
+      groups={[
+        {
+          key: "status",
+          label: t("queueColumns.status"),
+          options: millingStatuses.map((status) => ({
+            value: status,
+            label: statuses(status === "grinding" ? "partiallyMilled" : "pending"),
+          })),
+        },
+      ]}
+    />
+  );
+}
+
+type MillingQueueTableProps = {
+  project: string;
+  list: ListQuery;
+  filter: ShipmentListFilter;
+  first: ShipmentSlice;
+  clientName: string | undefined;
+};
+
+export function MillingQueueTable({
+  project,
+  list,
+  filter,
+  first,
+  clientName,
+}: MillingQueueTableProps) {
   const t = useTranslations("milling.project");
   const statuses = useTranslations("milling.shipmentStatuses");
   const common = useTranslations("common");
   const locale = useLocale();
+  const count = (value: number) => formatCount(value, locale);
   const canStart = useCan()("grinding", "add");
-  const [expanded, setExpanded] = useState(false);
-  const rows = queue.filter((row) =>
-    matchesSearch({ texts: [row.shipmentNumber, row.client], phone: "" }, query),
+  const filtered = isFiltered(list);
+  const listParams = listQueryParams(list);
+  const more = useShowMore(first.shipments, first.total, (page) =>
+    getShipmentPage(filter, page).then((next) => next.shipments),
   );
+  const rows = more.rows.map((shipment, index) => ({ shipment, position: index + 1 }));
 
-  const visible = expanded ? rows : rows.slice(0, QUEUE_PREVIEW_LIMIT);
-  const columns: DataColumn<QueueRow>[] = [
-    {
-      key: "position",
-      header: t("queueColumns.position"),
-      className: "text-brand-700 font-bold",
-      cell: (row) => formatCount(row.position, locale),
-    },
+  type Row = (typeof rows)[number];
+  const positionColumn: DataColumn<Row> = {
+    key: "position",
+    header: t("queueColumns.position"),
+    className: "text-brand-700 font-bold",
+    cell: ({ position }) => count(position),
+  };
+  const columns: DataColumn<Row>[] = [
+    ...(filtered ? [] : [positionColumn]),
     {
       key: "shipment",
       header: t("queueColumns.shipment"),
       className: "text-ink font-bold",
-      cell: (row) => row.shipmentNumber,
+      cell: ({ shipment }) => shipment.shipmentNumber,
     },
     {
       key: "client",
       header: t("queueColumns.client"),
       className: "text-ink font-bold",
-      cell: (row) => <span dir="auto">{row.client}</span>,
+      cell: ({ shipment }) => <span dir="auto">{shipment.customerName}</span>,
     },
     {
       key: "remaining",
       header: t("queueColumns.remaining"),
       className: "text-ink font-bold",
-      cell: (row) => row.remaining,
+      cell: ({ shipment }) =>
+        t("remainingOf", {
+          remaining: count(shipment.remainingBags),
+          total: count(shipment.bagCount),
+        }),
     },
     {
       key: "status",
       header: t("queueColumns.status"),
-      cell: (row) => (
-        <StatusBadge label={statuses(row.status)} tone={queueStatusTones[row.status]} />
-      ),
+      cell: ({ shipment }) => {
+        const status = queueStatusOf(shipment);
+
+        return <StatusBadge label={statuses(status)} tone={queueStatusTones[status]} />;
+      },
     },
   ];
 
@@ -80,8 +134,14 @@ export function MillingQueueTable({ queue, query }: { queue: readonly QueueRow[]
       header: t("queueColumns.action"),
       hideHeader: true,
       align: "end",
-      cell: (row) => (
-        <ActionLink href={row.startHref} icon="player-play">
+      cell: ({ shipment }) => (
+        <ActionLink
+          href={newMillingOperationHref(project, {
+            shipmentNumber: shipment.shipmentNumber,
+            list: listParams,
+          })}
+          icon="player-play"
+        >
           {t("start")}
         </ActionLink>
       ),
@@ -89,25 +149,19 @@ export function MillingQueueTable({ queue, query }: { queue: readonly QueueRow[]
   }
 
   return (
-    <div className="flex flex-col">
+    <ListPanel
+      title={t("queueTitle")}
+      list={list}
+      hrefFor={(next) => millingProjectHref(project, listQueryParams(next))}
+      more={more}
+      filterMenu={(menu) => <QueueFilterMenu menu={menu} clientName={clientName} />}
+    >
       <DataTable
         columns={columns}
-        rows={visible}
-        rowKey={(row) => row.shipmentNumber}
-        empty={queue.length === 0 ? t("queueEmpty") : common("noMatch")}
+        rows={rows}
+        rowKey={({ shipment }) => shipment.shipmentNumber}
+        empty={filtered ? common("noMatch") : t("queueEmpty")}
       />
-
-      {rows.length > QUEUE_PREVIEW_LIMIT ? (
-        <button
-          type="button"
-          aria-expanded={expanded}
-          onClick={() => setExpanded((current) => !current)}
-          className="border-line text-brand-700 hover:bg-surface-hover inline-flex h-12 cursor-pointer items-center justify-center gap-2 border-t-[1.5px] text-[14px] font-semibold"
-        >
-          {expanded ? t("showLess") : t("showAll", { count: formatCount(rows.length, locale) })}
-          <Icon name="chevron-down" className={expanded ? "h-4 w-4 rotate-180" : "h-4 w-4"} />
-        </button>
-      ) : null}
-    </div>
+    </ListPanel>
   );
 }

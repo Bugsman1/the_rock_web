@@ -1,5 +1,7 @@
 {
   "common": {
+    "showMore": "Afficher plus",
+    "loadMoreFailed": "Chargement impossible, réessayez.",
     "appName": "Système Moulins Ehl Taya",
     "companyName": "Moulins Ehl Taya",
     "language": "Langue",
@@ -43,6 +45,15 @@
       "confirm": "Abandonner les modifications",
       "keep": "Continuer la saisie"
     }
+  },
+  "filters": {
+    "show": "Afficher les résultats",
+    "button": "Filtres",
+    "clear": "Effacer les filtres",
+    "client": "Client",
+    "allClients": "Tous les clients",
+    "from": "Du",
+    "to": "Au"
   },
   "auth": {
     "login": {
@@ -438,6 +449,7 @@
     "totalBags": "Total des sacs dans tous les projets",
     "clientsLabel": "Clients",
     "bagsLabel": "Sacs",
+    "topClientBags": "{bags} sacs",
     "topClients": "Principaux clients par nombre de sacs",
     "transportMethods": {
       "truck": "Camion",
@@ -468,12 +480,8 @@
     "history": {
       "open": "Historique",
       "title": "Historique des expéditions · {project}",
-      "allClients": "Tous les clients",
-      "from": "Du",
-      "to": "Au",
       "count": "Expéditions : {count}",
       "clientCount": "Expéditions : {shipments} · Sacs : {bags}",
-      "clear": "Effacer les filtres",
       "empty": "Aucune expédition ne correspond à ces filtres.",
       "columns": {
         "shipment": "N° d'expédition",
@@ -573,6 +581,10 @@
       "tooMany": "Les sacs d'essai doivent être moins nombreux que les sacs de l'expédition ({total})",
       "submit": "Enregistrer les sacs d'essai",
       "saving": "Enregistrement"
+    },
+    "filters": {
+      "payment": "Paiement",
+      "status": "Statut"
     }
   },
   "milling": {
@@ -624,9 +636,7 @@
         "status": "Statut",
         "action": "Action"
       },
-      "remainingOf": "{remaining} sur {total}",
-      "showAll": "Afficher tout ({count})",
-      "showLess": "Afficher moins"
+      "remainingOf": "{remaining} sur {total}"
     },
     "operation": {
       "title": "Nouvelle opération de broyage",
@@ -746,6 +756,7 @@
     }
   },
   "refining": {
+    "allMachines": "Toutes les machines",
     "title": "Affinage",
     "new": "Nouvelle opération d'affinage",
     "editTitle": "Modifier l'affinage",
@@ -808,6 +819,10 @@
       "waitingBags": "{bags} sacs",
       "refinedToday": "Affinés aujourd'hui",
       "refined": "Opérations d'affinage"
+    },
+    "goldFilter": {
+      "notWeighed": "Non pesé",
+      "weighed": "Pesé"
     }
   },
   "employees": {
@@ -959,7 +974,8 @@
       "debts": "Dettes",
       "deductions": "Retenues",
       "salaries": "Salaires"
-    }
+    },
+    "allJobs": "Tous les postes"
   },
   "inventory": {
     "title": "Inventaire",

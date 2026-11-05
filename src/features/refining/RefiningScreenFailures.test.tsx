@@ -62,6 +62,11 @@ describe("RefiningScreen when data fails or changes", () => {
     let refinings = [refined];
     server.use(
       http.get(`${API}/refining-operations/`, () => page(refinings)),
+      http.get(`${API}/refining-operations/9/`, () =>
+        refinings.length === 0
+          ? HttpResponse.json({ detail: "Not found." }, { status: 404 })
+          : HttpResponse.json(refined),
+      ),
       http.patch(`${API}/refining-operations/9/`, () => {
         refinings = [];
         return HttpResponse.json({ detail: "Not found." }, { status: 404 });

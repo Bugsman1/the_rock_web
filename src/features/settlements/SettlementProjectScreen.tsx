@@ -10,7 +10,6 @@ import { DelayedSearchField } from "@/components/ui/SearchField";
 import { TablePanel } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
 import { parsePageNumber } from "@/lib/api/pagination";
-import { getCustomerChoices } from "@/lib/customersApi";
 import { formatCount } from "@/lib/format";
 import { getProjects, requireProject } from "@/lib/projectsApi";
 import { isInService } from "@/lib/projects";
@@ -18,7 +17,7 @@ import { newSettlementHref, SETTLEMENTS_HREF, settlementsProjectHref } from "@/l
 import { matchesSearch } from "@/lib/search";
 import { getRefiningOperations } from "@/lib/refiningApi";
 import { getShipments } from "@/lib/shipmentsApi";
-import { settleableShipmentsOfProject } from "./settlements";
+import { settleableShipmentsOfProject, settleableStatuses } from "./settlements";
 import { getSettlementPage, getSettlements } from "./settlementsApi";
 import { SettlementTable, WaitingShipmentsTable } from "./SettlementTables";
 
@@ -27,29 +26,26 @@ export async function settlementProjectLoader({ params, request }: LoaderFunctio
   const query = (search.get("q") ?? "").trim();
   const page = parsePageNumber(search.get("page"));
   const project = await requireProject(params.project ?? "");
-  const [projects, shipments, settlements, settlementPage, customers, refinings] =
-    await Promise.all([
-      getProjects(),
-      getShipments({ project: project.id }),
-      getSettlements({ project: project.id }),
-      getSettlementPage(query, page, project.id),
-      getCustomerChoices(),
-      getRefiningOperations(),
-    ]);
+  const [projects, shipments, settlements, settlementPage, refinings] = await Promise.all([
+    getProjects(),
+    getShipments({ project: project.id, statuses: settleableStatuses }),
+    getSettlements({ project: project.id }),
+    getSettlementPage(query, page, project.id),
+    getRefiningOperations({ project: project.id, goldWeighed: false }),
+  ]);
 
   return {
     project,
     query,
     page,
     settlementPage,
-    customers,
     waiting: settleableShipmentsOfProject(shipments, settlements, refinings, project.id),
     hasOtherProjects: projects.filter(isInService).length > 1,
   };
 }
 
 export function SettlementProjectScreen() {
-  const { project, query, page, settlementPage, customers, waiting, hasOtherProjects } =
+  const { project, query, page, settlementPage, waiting, hasOtherProjects } =
     useLoaderData<typeof settlementProjectLoader>();
   const t = useTranslations("settlements");
   const common = useTranslations("common");
@@ -94,7 +90,6 @@ export function SettlementProjectScreen() {
         <WaitingShipmentsTable
           project={project.id}
           shipments={shownWaiting}
-          customers={customers}
           canSettle={canAdd}
           emptyMessage={waitingQuery === "" ? t("project.waitingEmpty") : common("noMatch")}
         />

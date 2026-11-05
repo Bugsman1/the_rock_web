@@ -10,8 +10,9 @@ import { languageName } from "@/i18n/languageName";
 import { locales } from "@/i18n/locales";
 import type { Locale } from "@/i18n/locales";
 import { Link } from "@/i18n/navigation";
-import { accessFromApi, canOpen } from "@/lib/access";
+import { canOpen } from "@/lib/access";
 import type { Access } from "@/lib/access";
+import { useAccess } from "@/lib/accessContext";
 import { apiClient, unwrap } from "@/lib/api/client";
 import { cn } from "@/lib/cn";
 import { profileFromApi } from "@/lib/profile";
@@ -36,12 +37,8 @@ export function settingsSectionsFor(access: Access) {
   return settingsSections.filter((section) => canOpen(access, section.href));
 }
 
-export async function settingsHomeLoader() {
-  return { access: accessFromApi(unwrap(await apiClient.GET("/api/v1/auth/me/"))) };
-}
-
 export function SettingsHomeScreen() {
-  const { access } = useLoaderData<typeof settingsHomeLoader>();
+  const access = useAccess();
   const t = useTranslations("settings");
   const [query, setQuery] = useState("");
   const cards = settingsSectionsFor(access)

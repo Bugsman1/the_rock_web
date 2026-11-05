@@ -10,7 +10,6 @@ import {
   machineStatus,
   isHalfBagCount,
   operationFromApi,
-  remainingBags,
 } from "./grinding";
 import type { Machine, MillingOperation } from "./grinding";
 
@@ -92,23 +91,6 @@ describe("bag counts", () => {
     expect(isHalfBagCount(3)).toBe(true);
     expect(isHalfBagCount(0.7)).toBe(false);
     expect(isHalfBagCount(0)).toBe(false);
-  });
-});
-
-describe("remainingBags", () => {
-  const shipment = { shipmentNumber: "SH-1", bags: 6 };
-
-  it("is the full count before any grinding", () => {
-    expect(remainingBags(shipment, [])).toBe(6);
-  });
-
-  it("reserves the bags of running operations", () => {
-    expect(remainingBags(shipment, [operation({}), operation({ machine: 2, bags: 3 })])).toBe(1);
-  });
-
-  it("ignores other shipments and never goes below zero", () => {
-    expect(remainingBags(shipment, [operation({ shipmentNumber: "SH-2" })])).toBe(6);
-    expect(remainingBags(shipment, [operation({ bags: 9 })])).toBe(0);
   });
 });
 

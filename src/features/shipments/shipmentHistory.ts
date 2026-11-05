@@ -1,54 +1,38 @@
-import { isIsoDate } from "@/lib/datetime";
-import { isSamePhone } from "@/lib/phone";
-import type { ShipmentRecord } from "@/lib/shipments";
+import type { GroupChoices, ListQuery } from "@/lib/filters";
+import type { ProjectId } from "@/lib/projects";
+import type { ShipmentStatusKey } from "@/lib/shipments";
+import type { ShipmentListFilter } from "@/lib/shipmentsApi";
+import { transportMethodKeys } from "./shipments";
 
-export type HistoryFilter = {
-  from: string;
-  to: string;
-  clientPhone: string;
-};
+export const historyStatuses = ["completed", "cancelled"] as const;
 
-export type HistoryClient = {
-  name: string;
-  phone: string;
-};
+const paymentChoices = ["unpaid", "paid"] as const;
 
-export const emptyHistoryFilter: HistoryFilter = { from: "", to: "", clientPhone: "" };
-
-export function isFilterActive(filter: HistoryFilter): boolean {
-  return filter.from !== "" || filter.to !== "" || filter.clientPhone !== "";
+export function shipmentGroupChoices(statuses: readonly ShipmentStatusKey[]): GroupChoices {
+  return { status: statuses, payment: paymentChoices, transport: transportMethodKeys };
 }
 
-export function historyClients(records: readonly ShipmentRecord[]): readonly HistoryClient[] {
-  return records
-    .reduce<HistoryClient[]>(
-      (clients, record) =>
-        clients.some((client) => isSamePhone(client.phone, record.phone))
-          ? clients
-          : [...clients, { name: record.customerName, phone: record.phone }],
-      [],
-    )
-    .sort((a, b) => a.name.localeCompare(b.name));
-}
+export function shipmentListFilter(
+  project: ProjectId,
+  list: ListQuery,
+  statuses: readonly ShipmentStatusKey[],
+  ordering: ShipmentListFilter["ordering"],
+): ShipmentListFilter {
+  const chosen = (group: string) => list.filters.selection[group] ?? [];
+  const picked = statuses.filter((status) => chosen("status").includes(status));
+  const payment = chosen("payment");
+  const transport = transportMethodKeys.find((method) => chosen("transport").includes(method));
+  const { client, from, to } = list.filters;
 
-function arrivalDay(record: ShipmentRecord): string {
-  return record.arrivedAt.slice(0, 10);
-}
-
-export function filterShipments(
-  records: readonly ShipmentRecord[],
-  filter: HistoryFilter,
-): readonly ShipmentRecord[] {
-  const from = isIsoDate(filter.from) ? filter.from : undefined;
-  const to = isIsoDate(filter.to) ? filter.to : undefined;
-
-  return records
-    .filter((record) => from === undefined || arrivalDay(record) >= from)
-    .filter((record) => to === undefined || arrivalDay(record) <= to)
-    .filter((record) => filter.clientPhone === "" || isSamePhone(record.phone, filter.clientPhone))
-    .sort((a, b) => b.arrivedAt.localeCompare(a.arrivedAt));
-}
-
-export function finishedShipments(records: readonly ShipmentRecord[]): readonly ShipmentRecord[] {
-  return records.filter((record) => record.status === "completed" || record.status === "cancelled");
+  return {
+    project,
+    statuses: picked.length === 0 ? statuses : picked,
+    ordering,
+    search: list.search,
+    ...(client === "" ? {} : { customer: client }),
+    ...(from === "" ? {} : { arrivedFrom: from }),
+    ...(to === "" ? {} : { arrivedTo: to }),
+    ...(payment.length === 1 ? { fullyPaid: payment[0] === "paid" } : {}),
+    ...(transport === undefined ? {} : { transport }),
+  };
 }

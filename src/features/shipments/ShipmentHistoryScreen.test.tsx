@@ -1,58 +1,94 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
+import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
-import { describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { listQueryFromParams } from "@/lib/filters";
 import messages from "@/messages/fr.json";
 import type { ShipmentRecord } from "@/lib/shipments";
+import { historyStatuses, shipmentGroupChoices } from "./shipmentHistory";
 import { ShipmentHistory } from "./ShipmentHistoryScreen";
 
 const history = messages.shipments.history;
+const filters = messages.filters;
+const HISTORY_PATH = "/fr/shipments/projects/3/history";
 
-function record(
-  shipmentNumber: string,
-  customerName: string,
-  arrivedAt: string,
-  phone = "+222 22 41 18 30",
-): ShipmentRecord {
+const server = setupServer();
+
+beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+function record(shipmentNumber: string, customerName: string, arrivedAt: string): ShipmentRecord {
   return {
     id: shipmentNumber,
     shipmentNumber,
+    customerId: "1",
     customerName,
-    phone,
+    phone: "+222 22 41 18 30",
     arrivedAt,
     bagCount: 10,
     testBags: 0,
-    project: "zouerate1",
+    remainingBags: 0,
+    project: "3",
     status: "completed",
     stage: "completed",
     source: "Chami",
+    transportMethod: "truck",
     notes: "",
     transportTotal: 0,
     paid: 0,
+    amountLeft: 0,
+    fullyPaid: true,
     debt: 0,
   };
 }
 
 const records = [
-  record("SH-1012", "Ahmed", "2026-09-08T09:30:00Z"),
-  record("SH-1033", "Fatima", "2026-09-28T11:40:00Z", "+222 46 10 93 25"),
-  record("SH-1052", "Mariem", "2026-10-06T16:45:00Z", "+222 36 52 11 07"),
-  record("SH-1041", "Ahmed", "2026-10-02T08:15:00Z"),
   record("SH-1060", "Ahmed", "2026-10-09T08:15:00Z"),
+  record("SH-1052", "Mariem", "2026-10-06T16:45:00Z"),
+  record("SH-1012", "Ahmed", "2026-09-08T09:30:00Z"),
 ];
 
-function renderHistory(shown: readonly ShipmentRecord[] = records) {
+type Options = { query?: string; total?: number; clientName?: string };
+
+function renderHistory(shown: readonly ShipmentRecord[] = records, options: Options = {}) {
+  const list = listQueryFromParams(
+    new URLSearchParams(options.query ?? ""),
+    shipmentGroupChoices(historyStatuses),
+  );
   const router = createMemoryRouter(
-    [{ path: "/fr/history", element: <ShipmentHistory records={shown} /> }],
-    { initialEntries: ["/fr/history"] },
+    [
+      {
+        path: HISTORY_PATH,
+        element: (
+          <ShipmentHistory
+            project="3"
+            list={list}
+            filter={{
+              project: "3",
+              statuses: historyStatuses,
+              ordering: "-arrival_date",
+              search: "",
+            }}
+            slice={{ shipments: shown, total: options.total ?? shown.length }}
+            clientName={options.clientName}
+          />
+        ),
+      },
+    ],
+    { initialEntries: [`${HISTORY_PATH}?${options.query ?? ""}`] },
   );
 
-  return render(
+  render(
     <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
       <RouterProvider router={router} />
     </IntlProvider>,
   );
+
+  return { router, user: userEvent.setup() };
 }
 
 function shownShipments() {
@@ -62,67 +98,156 @@ function shownShipments() {
   return rows.map((row) => within(row).getAllByRole("cell")[0]?.textContent);
 }
 
+async function openFilters(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("link", { name: new RegExp(filters.button) }));
+  await screen.findByRole("heading", { name: filters.button });
+}
+
+async function showResults(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: filters.show }));
+}
+
 describe("ShipmentHistory", () => {
-  it("lists every shipment of the project, newest first", () => {
+  it("lists the shipments in the backend's order with their count and bags", () => {
     renderHistory();
 
-    const shown = shownShipments();
-    expect(shown).toHaveLength(records.length);
-    expect(shown[0]).toBe("SH-1060");
-    expect(screen.getByRole("status")).toHaveTextContent(String(records.length));
+    expect(shownShipments()).toEqual(["SH-1060", "SH-1052", "SH-1012"]);
+    expect(screen.getByRole("status")).toHaveTextContent(history.count.replace("{count}", "3"));
+    expect(screen.getByRole("row", { name: /Total/ })).toHaveTextContent("30");
   });
 
-  it("narrows the list to the typed date range", async () => {
-    const user = userEvent.setup();
-    renderHistory();
+  it("adds the next rows on demand, with no partial total", async () => {
+    let asked: string | null = null;
+    server.use(
+      http.get(`${window.location.origin}/api/v1/shipments/`, ({ request }) => {
+        asked = new URL(request.url).searchParams.get("page");
+        return HttpResponse.json({
+          count: 4,
+          results: [
+            {
+              id: 99,
+              number: "SH-0999",
+              customer: 7,
+              customer_name: "Sidi",
+              customer_phone: "+22222411830",
+              arrival_date: "2026-08-01T08:00:00Z",
+              bags_count: 10,
+              remaining_bags: 0,
+              bag_transport_cost_per_bag: "100.00",
+              transport_total: "1000.00",
+              amount_left_to_pay: "0.00",
+              is_fully_paid: true,
+              transport_method: "truck",
+              source: "Chami",
+              project: 3,
+              status: "completed",
+              is_ground: true,
+            },
+          ],
+        });
+      }),
+    );
+    const { user } = renderHistory(records, { total: 4 });
 
-    await user.type(screen.getByLabelText(history.from), "01092026");
-    await user.type(screen.getByLabelText(history.to), "15092026");
+    expect(screen.getByRole("status")).toHaveTextContent(history.count.replace("{count}", "4"));
+    expect(screen.queryByRole("row", { name: /Total/ })).toBeNull();
 
-    expect(shownShipments()).toEqual(["SH-1012"]);
+    await user.click(screen.getByRole("button", { name: messages.common.showMore }));
+
+    expect(await screen.findByText("SH-0999")).toBeVisible();
+    expect(asked).toBe("2");
+    expect(shownShipments()).toEqual(["SH-1060", "SH-1052", "SH-1012", "SH-0999"]);
+    expect(screen.queryByRole("button", { name: messages.common.showMore })).toBeNull();
+    expect(screen.getByRole("row", { name: /Total/ })).toHaveTextContent("40");
   });
 
-  it("shows one client's shipments with how many shipments and bags they brought", async () => {
-    const user = userEvent.setup();
-    renderHistory();
+  it("says so when the next rows cannot be loaded, and lets the user try again", async () => {
+    server.use(
+      http.get(`${window.location.origin}/api/v1/shipments/`, () =>
+        HttpResponse.json({ detail: "error" }, { status: 500 }),
+      ),
+    );
+    const { user } = renderHistory(records, { total: 4 });
 
-    await user.type(screen.getByLabelText(history.columns.client), "ahm");
-    await user.click(screen.getByRole("option", { name: /Ahmed/ }));
+    await user.click(screen.getByRole("button", { name: messages.common.showMore }));
 
-    expect(shownShipments()).toEqual(["SH-1060", "SH-1041", "SH-1012"]);
+    expect(await screen.findByText(messages.common.loadMoreFailed)).toBeVisible();
+    expect(screen.getByRole("button", { name: messages.common.showMore })).toBeVisible();
+  });
+
+  it("puts the chosen dates, statuses, payment and transport in the address", async () => {
+    const { router, user } = renderHistory();
+
+    await openFilters(user);
+    await user.type(screen.getByLabelText(filters.from), "01092026");
+    await user.type(screen.getByLabelText(filters.to), "15092026");
+    await user.click(screen.getByRole("checkbox", { name: messages.shipments.statuses.cancelled }));
+    await user.click(screen.getByRole("checkbox", { name: messages.shipments.payment.incomplete }));
+    await user.click(
+      screen.getByRole("checkbox", { name: messages.shipments.transportMethods.hilux }),
+    );
+    await showResults(user);
+
+    expect(router.state.location.search).toBe(
+      "?status=cancelled&payment=unpaid&transport=hilux&from=2026-09-01&to=2026-09-15",
+    );
+  });
+
+  it("finds the client on the server and filters on the one picked", async () => {
+    let searched: string | null = null;
+    server.use(
+      http.get(`${window.location.origin}/api/v1/customers/`, ({ request }) => {
+        searched = new URL(request.url).searchParams.get("search");
+        return HttpResponse.json({
+          count: 1,
+          results: [
+            {
+              id: 7,
+              full_name: "Ahmed",
+              phone: "+22222411830",
+              debt_remaining: "0.00",
+              is_active: true,
+              created_at: "2026-10-02T08:00:00Z",
+              updated_at: "2026-10-02T08:00:00Z",
+            },
+          ],
+        });
+      }),
+    );
+    const { router, user } = renderHistory();
+
+    await openFilters(user);
+    await user.type(screen.getByLabelText(filters.client), "ahm");
+    await user.click(await screen.findByRole("option", { name: /Ahmed/ }));
+    await showResults(user);
+
+    expect(searched).toBe("ahm");
+    expect(router.state.location.search).toBe("?client=7");
+  });
+
+  it("gives one client's shipments and bags, and clears every filter", async () => {
+    const { router, user } = renderHistory(records, {
+      query: "client=7&status=completed",
+      clientName: "Ahmed",
+    });
+
     expect(screen.getByRole("status")).toHaveTextContent(
       history.clientCount.replace("{shipments}", "3").replace("{bags}", "30"),
     );
-  });
 
-  it("combines the client and the dates, then clears both", async () => {
-    const user = userEvent.setup();
-    renderHistory();
+    await openFilters(user);
+    expect(screen.getByLabelText(filters.client)).toHaveValue("Ahmed");
+    await user.click(screen.getByRole("button", { name: filters.clear }));
+    expect(screen.getByLabelText(filters.client)).toHaveValue("");
+    await showResults(user);
 
-    await user.type(screen.getByLabelText(history.columns.client), "ahm");
-    await user.click(screen.getByRole("option", { name: /Ahmed/ }));
-    await user.type(screen.getByLabelText(history.from), "01102026");
-
-    expect(shownShipments()).toEqual(["SH-1060", "SH-1041"]);
-    expect(screen.getByRole("status")).toHaveTextContent(
-      history.clientCount.replace("{shipments}", "2").replace("{bags}", "20"),
-    );
-
-    await user.click(screen.getByRole("button", { name: history.clear }));
-
-    expect(screen.getByLabelText(history.columns.client)).toHaveValue("");
-    expect(shownShipments()).toHaveLength(records.length);
+    await vi.waitFor(() => expect(router.state.location.search).toBe(""));
   });
 
   it("shows whether each shipment is fully paid and whether it has a debt", () => {
     renderHistory([
-      { ...record("SH-1", "Ahmed", "2026-09-08T09:30:00Z"), transportTotal: 500, paid: 200 },
-      {
-        ...record("SH-2", "Sidi", "2026-09-09T09:30:00Z"),
-        transportTotal: 500,
-        paid: 500,
-        debt: 300,
-      },
+      { ...record("SH-2", "Sidi", "2026-09-09T09:30:00Z"), fullyPaid: true, debt: 300 },
+      { ...record("SH-1", "Ahmed", "2026-09-08T09:30:00Z"), fullyPaid: false, amountLeft: 300 },
     ]);
 
     const [, paid, unpaid] = screen.getAllByRole("row");
@@ -131,10 +256,8 @@ describe("ShipmentHistory", () => {
       expect.stringMatching(/300/),
     );
     expect(paid).toHaveTextContent(messages.shipments.debt.badge);
-    expect(unpaid).not.toHaveTextContent(messages.shipments.debt.badge);
-    expect(paid).toHaveTextContent("SH-2");
     expect(paid).toHaveTextContent(messages.shipments.payment.complete);
-    expect(unpaid).toHaveTextContent("SH-1");
+    expect(unpaid).not.toHaveTextContent(messages.shipments.debt.badge);
     expect(unpaid).toHaveTextContent(messages.shipments.payment.incomplete);
   });
 
@@ -147,13 +270,8 @@ describe("ShipmentHistory", () => {
     );
   });
 
-  it("says so when nothing matches", async () => {
-    const user = userEvent.setup();
-    renderHistory();
-
-    await user.type(screen.getByLabelText(history.columns.client), "fat");
-    await user.click(screen.getByRole("option", { name: /Fatima/ }));
-    await user.type(screen.getByLabelText(history.from), "01102026");
+  it("says so when nothing matches", () => {
+    renderHistory([], { query: "client=7" });
 
     expect(screen.getByText(history.empty)).toBeVisible();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
@@ -161,9 +279,9 @@ describe("ShipmentHistory", () => {
 
   it("shows each shipment as completed or cancelled", () => {
     renderHistory([
-      record("SH-1012", "Ahmed", "2026-09-08T09:30:00Z"),
+      record("SH-1070", "Fatima", "2026-10-10T08:00:00Z"),
       {
-        ...record("SH-1070", "Fatima", "2026-10-10T08:00:00Z"),
+        ...record("SH-1012", "Ahmed", "2026-09-08T09:30:00Z"),
         status: "cancelled",
         stage: "cancelled",
       },
@@ -171,10 +289,10 @@ describe("ShipmentHistory", () => {
 
     const statuses = messages.shipments.statuses;
     expect(
-      within(screen.getByRole("row", { name: /SH-1070/ })).getByText(statuses.cancelled),
+      within(screen.getByRole("row", { name: /SH-1012/ })).getByText(statuses.cancelled),
     ).toBeVisible();
     expect(
-      within(screen.getByRole("row", { name: /SH-1012/ })).getByText(statuses.completed),
+      within(screen.getByRole("row", { name: /SH-1070/ })).getByText(statuses.completed),
     ).toBeVisible();
   });
 });

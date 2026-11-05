@@ -2,14 +2,17 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import messages from "@/messages/ar.json";
-import { customers, form, mohamed, renderForm } from "./shipmentFormTesting";
+import { form, mohamed, renderForm, customerPageFor } from "./shipmentFormTesting";
 
 const replace = vi.fn();
-const { createShipmentMock, createCustomerMock, getInvoiceMock } = vi.hoisted(() => ({
-  createShipmentMock: vi.fn(),
-  createCustomerMock: vi.fn(),
-  getInvoiceMock: vi.fn(),
-}));
+const { customerPageMock, createShipmentMock, createCustomerMock, getInvoiceMock } = vi.hoisted(
+  () => ({
+    customerPageMock: vi.fn(),
+    createShipmentMock: vi.fn(),
+    createCustomerMock: vi.fn(),
+    getInvoiceMock: vi.fn(),
+  }),
+);
 
 vi.mock("./shipmentsApi", () => ({
   createShipment: createShipmentMock,
@@ -18,6 +21,7 @@ vi.mock("./shipmentsApi", () => ({
 vi.mock("@/lib/customersApi", () => ({
   createCustomer: createCustomerMock,
   updateCustomer: vi.fn(),
+  getCustomerPage: customerPageMock,
 }));
 
 vi.mock("@/i18n/navigation", () => ({
@@ -30,6 +34,7 @@ vi.mock("@/i18n/navigation", () => ({
 
 beforeEach(() => {
   replace.mockReset();
+  customerPageMock.mockImplementation(customerPageFor);
   createShipmentMock.mockReset();
   createShipmentMock.mockResolvedValue({ ok: true, id: "52" });
   getInvoiceMock.mockReset();
@@ -45,7 +50,7 @@ describe("ShipmentClientFields", () => {
     const customer = mohamed;
 
     await user.type(screen.getByLabelText(form.customerName), customer.name.slice(0, 4));
-    await user.click(screen.getByRole("option", { name: new RegExp(customer.name) }));
+    await user.click(await screen.findByRole("option", { name: new RegExp(customer.name) }));
 
     expect(screen.getByLabelText(form.customerName)).toHaveValue(customer.name);
     expect(screen.getByLabelText(form.phone)).toHaveValue(customer.phone);
@@ -57,6 +62,7 @@ describe("ShipmentClientFields", () => {
 
     await user.type(screen.getByLabelText(form.customerName), "4118");
 
+    await screen.findByRole("option", { name: /22 41 18 30/ });
     const options = within(screen.getByRole("listbox")).getAllByRole("option");
     expect(options).toHaveLength(2);
     expect(options[0]).toHaveTextContent(/22 41 18 30/);
@@ -69,6 +75,7 @@ describe("ShipmentClientFields", () => {
 
     const name = screen.getByLabelText(form.customerName);
     await user.type(name, "ahm");
+    await screen.findByRole("option", { name: /Ahmed Salem/ });
     await user.keyboard("{ArrowDown}{Enter}");
     expect(name).toHaveValue("Ahmed Salem");
     await user.tab();
@@ -82,8 +89,8 @@ describe("ShipmentClientFields", () => {
     expect(reopened[0]?.querySelector("svg")).not.toBeNull();
 
     await user.clear(name);
-    expect(within(screen.getByRole("listbox")).getAllByRole("option")).toHaveLength(
-      customers.length + 1,
+    await waitFor(() =>
+      expect(within(screen.getByRole("listbox")).getAllByRole("option")).toHaveLength(1),
     );
   });
 
@@ -107,7 +114,7 @@ describe("ShipmentClientFields", () => {
 
     const name = screen.getByLabelText(form.customerName);
     await user.type(name, "4118");
-    await user.click(screen.getByRole("option", { name: /22 41 18 30/ }));
+    await user.click(await screen.findByRole("option", { name: /22 41 18 30/ }));
     await user.click(name);
     await user.click(screen.getByRole("option", { name: messages.customers.new }));
 
@@ -146,8 +153,8 @@ describe("ShipmentClientFields", () => {
         .map((option) => option.textContent),
     ).toEqual([messages.customers.new]);
 
-    await user.clear(screen.getByLabelText(form.customerName));
-    expect(screen.getByRole("option", { name: /سيدي ولد إبراهيم/ })).toBeVisible();
+    await user.type(screen.getByLabelText(form.customerName), " ولد");
+    expect(await screen.findByRole("option", { name: /سيدي ولد إبراهيم/ })).toBeVisible();
   });
 
   it("keeps the new client form open with the reason when the client cannot be added", async () => {
@@ -179,6 +186,7 @@ describe("ShipmentClientFields", () => {
 
     await user.type(screen.getByLabelText(form.customerName), "aHMed");
 
+    await screen.findByRole("option", { name: /Zeinebou/ });
     expect(
       within(screen.getByRole("listbox"))
         .getAllByRole("option")
@@ -201,7 +209,7 @@ describe("ShipmentClientFields", () => {
 
     const name = screen.getByLabelText(form.customerName);
     await user.type(name, "ahmed salem");
-    expect(phone).toHaveValue("+222 33 70 55 62");
+    await waitFor(() => expect(phone).toHaveValue("+222 33 70 55 62"));
 
     await user.type(name, "x");
     expect(phone).toHaveValue("");

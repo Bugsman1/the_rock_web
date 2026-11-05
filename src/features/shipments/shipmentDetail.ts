@@ -4,7 +4,7 @@ import { fromDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import { shipmentFromApi, totalBags } from "@/lib/shipments";
 import type { ShipmentRecord } from "@/lib/shipments";
-import type { NewShipmentValues, transportMethodKeys } from "./shipments";
+import type { NewShipmentValues } from "./shipments";
 
 export type ShipmentPayment = {
   id: string;
@@ -37,7 +37,6 @@ function cancellationFromApi(shipment: ApiSchema<"Shipment">): Cancellation | un
 }
 
 export type ShipmentDetail = ShipmentRecord & {
-  transportMethod: (typeof transportMethodKeys)[number];
   cancellation: Cancellation | undefined;
   bagFare: number;
   passengerCount: number;
@@ -51,7 +50,6 @@ export type ShipmentDetail = ShipmentRecord & {
 export function shipmentDetailFromApi(shipment: ApiSchema<"Shipment">): ShipmentDetail {
   return {
     ...shipmentFromApi(shipment),
-    transportMethod: shipment.transport_method,
     cancellation: cancellationFromApi(shipment),
     bagFare: fromDecimal(shipment.bag_transport_cost_per_bag),
     passengerCount: shipment.passengers_count ?? 0,
