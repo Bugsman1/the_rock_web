@@ -1,23 +1,15 @@
-import { useId, useState } from "react";
-import type { Dispatch, SetStateAction } from "react";
+import { createContext, use, useEffect, useId, useState } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
+import { createPortal } from "react-dom";
 import { useLocale, useTranslations } from "use-intl";
 import { Button } from "./Button";
-import { ButtonLink } from "./ButtonLink";
-import { Checkbox } from "./Checkbox";
 import { Combobox } from "./Combobox";
 import { DateField } from "./DateField";
 import { Icon } from "./Icon";
-import { PageLayout } from "./PageHeader";
-import { SlotPage } from "./PageSlot";
+import { LoadingDots } from "./LoadingDots";
+import { MultiSelect } from "./MultiSelect";
 import { Select } from "./Select";
-import { usePathname, useReplace, useSearch } from "@/i18n/navigation";
-import {
-  activeFilterCount,
-  FILTER_PAGE_PARAM,
-  matchesFilters,
-  noFilters,
-  toggleFilter,
-} from "@/lib/filters";
+import { activeFilterCount, matchesFilters, noFilters, toggleFilter } from "@/lib/filters";
 import type { FilterFields, FilterState } from "@/lib/filters";
 import { formatCount } from "@/lib/format";
 
@@ -25,7 +17,6 @@ export type FilterMenuGroup = {
   key: string;
   label: string;
   single?: boolean;
-  allLabel?: string;
   options: readonly { value: string; label: string }[];
 };
 
@@ -41,15 +32,30 @@ type DraftChange = Dispatch<SetStateAction<FilterState>>;
 
 export type FilterData = {
   state: FilterState;
-  onApply: (state: FilterState) => void;
+  onApply: (state: FilterState) => void | Promise<void>;
 };
 
 type FilterMenuProps = FilterData & {
   groups: readonly FilterMenuGroup[];
   clients?: ClientFilter;
   dateLabel?: string;
-  oneLine?: boolean;
 };
+
+type Slot = { target: HTMLElement | null; setTarget: (target: HTMLElement | null) => void };
+
+const FilterSlotContext = createContext<Slot | null>(null);
+
+export function FilterSlot({ children }: { children: ReactNode }) {
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+
+  return <FilterSlotContext value={{ target, setTarget }}>{children}</FilterSlotContext>;
+}
+
+export function FilterSlotTarget() {
+  const slot = use(FilterSlotContext);
+
+  return <div ref={slot?.setTarget} className="contents" />;
+}
 
 export function useFilters<Row>(fields: FilterFields<Row>): {
   menu: FilterData;
@@ -81,22 +87,30 @@ function ClientPicker({
         clients.chosenLabel ??
         ""),
   );
+  const [firstText] = useState(text);
+  const { onSearch } = clients;
   const choose = (client: string) => onChange((current) => ({ ...current, client }));
 
+  useEffect(() => {
+    onSearch?.(firstText);
+  }, [onSearch, firstText]);
+
   return (
-    <Combobox
-      id={id}
-      label={t("client")}
-      placeholder={t("allClients")}
-      value={text}
-      options={clients.options}
-      onChange={(typed) => {
-        setText(typed);
-        choose("");
-        clients.onSearch?.(typed);
-      }}
-      onSelect={(client) => choose(client.value)}
-    />
+    <div className="w-full sm:w-64">
+      <Combobox
+        id={id}
+        label={t("client")}
+        placeholder={t("allClients")}
+        value={text}
+        options={clients.options}
+        onChange={(typed) => {
+          setText(typed);
+          choose("");
+          clients.onSearch?.(typed);
+        }}
+        onSelect={(client) => choose(client.value)}
+      />
+    </div>
   );
 }
 
@@ -124,8 +138,8 @@ function DateRange({
   );
 
   return (
-    <fieldset className="flex flex-col gap-2">
-      <legend className="text-ink mb-2 text-base font-bold">{label}</legend>
+    <fieldset className="flex w-full flex-col gap-1.5 sm:w-80">
+      <legend className="sr-only">{label}</legend>
       <div className="grid grid-cols-2 gap-3">
         {field("from")}
         {field("to")}
@@ -143,68 +157,78 @@ function ChoiceGroup({
   draft: FilterState;
   onChange: DraftChange;
 }) {
+  const t = useTranslations("filters");
   const id = useId();
   const chosen = draft.selection[group.key] ?? [];
 
-  if (group.allLabel !== undefined) {
-    return (
-      <Select
-        id={id}
-        label={group.label}
-        value={chosen[0] ?? ""}
-        options={[{ value: "", label: group.allLabel }, ...group.options]}
-        onChange={(event) => {
-          const value = event.target.value;
-
-          onChange((current) => ({
-            ...current,
-            selection: { ...current.selection, [group.key]: value === "" ? [] : [value] },
-          }));
-        }}
-      />
-    );
-  }
-
   return (
-    <fieldset className="flex flex-col">
-      <legend className="text-ink mb-1 text-base font-bold">{group.label}</legend>
-      {group.options.map((option) => (
-        <Checkbox
-          key={option.value}
-          id={`${id}-${option.value}`}
-          label={option.label}
-          checked={chosen.includes(option.value)}
-          onChange={() =>
-            onChange((current) =>
-              toggleFilter(current, group.key, option.value, group.single === true),
-            )
-          }
+    <div className="w-full sm:w-56">
+      {group.single === true ? (
+        <Select
+          id={id}
+          label={group.label}
+          value={chosen[0] ?? ""}
+          options={[{ value: "", label: t("all") }, ...group.options]}
+          onChange={(event) => {
+            const value = event.target.value;
+
+            onChange((current) => ({
+              ...current,
+              selection: { ...current.selection, [group.key]: value === "" ? [] : [value] },
+            }));
+          }}
         />
-      ))}
-    </fieldset>
+      ) : (
+        <MultiSelect
+          id={id}
+          label={group.label}
+          allLabel={t("all")}
+          options={group.options}
+          chosen={chosen}
+          onToggle={(value) => onChange((current) => toggleFilter(current, group.key, value))}
+        />
+      )}
+    </div>
   );
 }
 
-function FilterForm({ groups, clients, dateLabel, oneLine, state, onApply }: FilterMenuProps) {
+function FilterCard({
+  groups,
+  clients,
+  dateLabel,
+  state,
+  onApply,
+  onClose,
+}: FilterMenuProps & { onClose: () => void }) {
   const t = useTranslations("filters");
+  const common = useTranslations("common");
   const [draft, setDraft] = useState(state);
   const [resets, setResets] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  async function apply(next: FilterState) {
+    setLoading(true);
+
+    try {
+      await onApply(next);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function clear() {
     setDraft(noFilters);
     setResets((count) => count + 1);
+    void apply(noFilters);
   }
 
   return (
-    <section className="rounded-card border-line bg-surface shadow-subtle flex flex-col gap-6 border-[1.5px] p-6">
-      <div
-        key={resets}
-        className={
-          oneLine === true
-            ? "flex flex-wrap items-start gap-6 *:min-w-60 *:flex-1"
-            : "grid gap-6 md:grid-cols-2"
-        }
-      >
+    <section
+      aria-label={t("button")}
+      aria-busy={loading}
+      className="rounded-card border-line bg-surface shadow-subtle flex flex-col gap-4 border-[1.5px] p-4"
+    >
+      <div key={resets} className="flex flex-wrap items-start gap-4">
         {clients === undefined ? null : (
           <ClientPicker clients={clients} draft={draft} onChange={setDraft} />
         )}
@@ -216,49 +240,47 @@ function FilterForm({ groups, clients, dateLabel, oneLine, state, onApply }: Fil
         ))}
       </div>
 
-      <div className="border-line flex flex-wrap items-center gap-3 border-t-[1.5px] pt-5">
-        <Button variant="primary" width="auto" onClick={() => onApply(draft)}>
-          <Icon name="filter" />
-          {t("show")}
-        </Button>
-        {activeFilterCount(draft) > 0 ? (
-          <Button variant="secondary" width="auto" onClick={clear}>
+      <div className="flex flex-wrap items-center gap-3">
+        {loading ? (
+          <div className="w-50">
+            <LoadingDots label={common("loading")} />
+          </div>
+        ) : (
+          <Button variant="primary" width="auto" onClick={() => void apply(draft)}>
+            <Icon name="filter" />
+            {t("show")}
+          </Button>
+        )}
+        {activeFilterCount(draft) > 0 || activeFilterCount(state) > 0 ? (
+          <Button variant="secondary" width="auto" disabled={loading} onClick={clear}>
             <Icon name="x" />
             {t("clear")}
           </Button>
         ) : null}
+        <Button variant="secondary" width="auto" onClick={onClose}>
+          {common("close")}
+        </Button>
       </div>
     </section>
   );
 }
 
-function hrefWith(pathname: string, search: URLSearchParams, open: boolean): string {
-  const params = new URLSearchParams(search);
-
-  if (open) {
-    params.set(FILTER_PAGE_PARAM, "1");
-  } else {
-    params.delete(FILTER_PAGE_PARAM);
-  }
-
-  const query = params.toString();
-
-  return query === "" ? pathname : `${pathname}?${query}`;
-}
-
 export function FilterMenu(props: FilterMenuProps) {
   const t = useTranslations("filters");
-  const common = useTranslations("common");
   const locale = useLocale();
-  const pathname = usePathname();
-  const search = useSearch();
-  const replace = useReplace();
+  const slot = use(FilterSlotContext);
+  const [open, setOpen] = useState(false);
   const active = activeFilterCount(props.state);
-  const closeHref = hrefWith(pathname, search, false);
+  const card = open ? <FilterCard {...props} onClose={() => setOpen(false)} /> : null;
 
   return (
     <>
-      <ButtonLink href={hrefWith(pathname, search, true)} variant="secondary">
+      <Button
+        variant="secondary"
+        width="auto"
+        aria-expanded={open}
+        onClick={() => setOpen((previous) => !previous)}
+      >
         <Icon name="filter" />
         {t("button")}
         {active > 0 ? (
@@ -266,21 +288,9 @@ export function FilterMenu(props: FilterMenuProps) {
             {formatCount(active, locale)}
           </span>
         ) : null}
-      </ButtonLink>
+      </Button>
 
-      {search.get(FILTER_PAGE_PARAM) === "1" ? (
-        <SlotPage>
-          <PageLayout backHref={closeHref} backLabel={common("back")} title={t("button")}>
-            <FilterForm
-              {...props}
-              onApply={(state) => {
-                replace(closeHref);
-                props.onApply(state);
-              }}
-            />
-          </PageLayout>
-        </SlotPage>
-      ) : null}
+      {slot === null || slot.target === null ? card : createPortal(card, slot.target)}
     </>
   );
 }

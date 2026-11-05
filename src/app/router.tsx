@@ -1,5 +1,5 @@
 import { Outlet, redirect, useLoaderData } from "react-router";
-import type { Params, RouteObject, ShouldRevalidateFunction } from "react-router";
+import type { Params, RouteObject } from "react-router";
 import { useLocale } from "use-intl";
 import { LoginScreen } from "@/features/auth";
 import {
@@ -81,7 +81,6 @@ import type { Locale } from "@/i18n/locales";
 import { localizedHref, pathnameWithoutLocale, Redirect, usePathname } from "@/i18n/navigation";
 import { accessFromApi, canOpen, homeHref } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
-import { onlyFilterPageToggled } from "@/lib/filters";
 import { apiClient } from "@/lib/api/client";
 import { isUnreachableStatus } from "@/lib/api/connection";
 import { hasSession } from "@/lib/api/session";
@@ -235,12 +234,6 @@ const sectionRoutes: RouteObject[] = [
   },
 ];
 
-const skipFilterPageToggle: ShouldRevalidateFunction = ({
-  currentUrl,
-  nextUrl,
-  defaultShouldRevalidate,
-}) => (onlyFilterPageToggled(currentUrl, nextUrl) ? false : defaultShouldRevalidate);
-
 const emptySectionRoutes: RouteObject[] = sectionHrefs
   .map((href) => href.slice(1))
   .filter((path) => !sectionRoutes.some((route) => route.path === path))
@@ -264,16 +257,7 @@ export const routes: RouteObject[] = [
         hydrateFallbackElement: <FirstLoad />,
         errorElement: <PageError />,
         children: [
-          {
-            errorElement: <PageError />,
-            children: [
-              ...sectionRoutes.map((route) => ({
-                ...route,
-                shouldRevalidate: skipFilterPageToggle,
-              })),
-              ...emptySectionRoutes,
-            ],
-          },
+          { errorElement: <PageError />, children: [...sectionRoutes, ...emptySectionRoutes] },
         ],
       },
     ],

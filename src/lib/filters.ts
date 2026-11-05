@@ -136,20 +136,3 @@ export function listQueryParams({ search, filters }: ListQuery): URLSearchParams
 export function isFiltered({ search, filters }: ListQuery): boolean {
   return search !== "" || activeFilterCount(filters) > 0;
 }
-
-export const FILTER_PAGE_PARAM = "filters";
-
-function withoutFilterPage(url: URL): string {
-  const params = new URLSearchParams(url.search);
-  params.delete(FILTER_PAGE_PARAM);
-  params.sort();
-
-  return `${url.pathname}?${params}`;
-}
-
-export function onlyFilterPageToggled(current: URL, next: URL): boolean {
-  return (
-    current.searchParams.get(FILTER_PAGE_PARAM) !== next.searchParams.get(FILTER_PAGE_PARAM) &&
-    withoutFilterPage(current) === withoutFilterPage(next)
-  );
-}

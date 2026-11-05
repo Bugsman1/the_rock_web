@@ -173,10 +173,12 @@ describe("CustomerScreen", () => {
 
     await screen.findByRole("link", { name: "Avance en espèces" });
     const choose = async (...names: readonly string[]) => {
-      await user.click(screen.getByRole("link", { name: new RegExp(messages.filters.button) }));
-      const statuses = within(await screen.findByRole("group", { name: text.columns.status }));
+      if (screen.queryByRole("region", { name: messages.filters.button }) === null) {
+        await user.click(screen.getByRole("button", { name: new RegExp(messages.filters.button) }));
+      }
+      await user.click(screen.getByRole("button", { name: text.columns.status }));
       for (const name of names) {
-        await user.click(statuses.getByRole("checkbox", { name }));
+        await user.click(screen.getByRole("checkbox", { name }));
       }
       await user.click(
         screen.getByRole("button", {

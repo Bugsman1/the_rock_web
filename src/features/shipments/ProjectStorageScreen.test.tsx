@@ -204,16 +204,14 @@ describe("ProjectStorageScreen", () => {
     const router = openProject("/fr/shipments/projects/3");
 
     await screen.findByText("SH-2");
-    await user.click(screen.getByRole("link", { name: new RegExp(messages.filters.button) }));
-    await user.click(
-      await screen.findByRole("checkbox", { name: messages.shipments.statuses.grinding }),
-    );
+    await user.click(screen.getByRole("button", { name: new RegExp(messages.filters.button) }));
+    await user.click(screen.getByRole("button", { name: messages.shipments.filters.status }));
+    await user.click(screen.getByRole("checkbox", { name: messages.shipments.statuses.grinding }));
+    await user.click(screen.getByRole("button", { name: messages.shipments.filters.payment }));
     await user.click(screen.getByRole("checkbox", { name: messages.shipments.payment.incomplete }));
-    await user.click(
-      screen.getByRole("checkbox", { name: messages.shipments.transportMethods.truck }),
-    );
-    await user.click(
-      screen.getByRole("checkbox", { name: messages.shipments.transportMethods.hilux }),
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: messages.shipments.form.transportMethod }),
+      messages.shipments.transportMethods.hilux,
     );
     await user.click(showResultsButton());
 
@@ -225,7 +223,7 @@ describe("ProjectStorageScreen", () => {
     expect(asked.at(-1)?.get("transport_method")).toBe("hilux");
     await vi.waitFor(() =>
       expect(
-        screen.getByRole("link", { name: new RegExp(messages.filters.button) }),
+        screen.getByRole("button", { name: new RegExp(messages.filters.button) }),
       ).toHaveTextContent("3"),
     );
     expect(

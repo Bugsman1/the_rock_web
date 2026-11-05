@@ -7,6 +7,7 @@ import {
   ShipmentStatusBadge,
 } from "@/components/shipments/ShipmentBadges";
 import { ShowMore, useShowMore } from "@/components/ui/Pagination";
+import { FilterSlot, FilterSlotTarget } from "@/components/ui/FilterMenu";
 import { BackLink, PageTitle } from "@/components/ui/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
@@ -136,44 +137,47 @@ export function ShipmentHistory({
   ];
 
   return (
-    <div className="rounded-card shadow-subtle border-line bg-surface flex flex-col border-[1.5px]">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <ShipmentFilterMenu
-          statuses={historyStatuses}
-          clientName={clientName}
-          state={list.filters}
-          onApply={(filters) => replace(listHref({ filters }))}
-        />
-        <p role="status" className="text-ink-muted text-sm font-semibold">
-          {list.filters.client !== "" && complete
-            ? t("clientCount", {
-                shipments: formatCount(slice.total, locale),
-                bags: formatCount(bags, locale),
-              })
-            : t("count", { count: formatCount(slice.total, locale) })}
-        </p>
-      </div>
+    <FilterSlot>
+      <FilterSlotTarget />
+      <div className="rounded-card shadow-subtle border-line bg-surface flex flex-col border-[1.5px]">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+          <ShipmentFilterMenu
+            statuses={historyStatuses}
+            clientName={clientName}
+            state={list.filters}
+            onApply={(filters) => replace(listHref({ filters }))}
+          />
+          <p role="status" className="text-ink-muted text-sm font-semibold">
+            {list.filters.client !== "" && complete
+              ? t("clientCount", {
+                  shipments: formatCount(slice.total, locale),
+                  bags: formatCount(bags, locale),
+                })
+              : t("count", { count: formatCount(slice.total, locale) })}
+          </p>
+        </div>
 
-      <div className="border-line border-t">
-        <DataTable
-          columns={columns}
-          rows={results}
-          rowKey={(record) => record.id}
-          empty={t("empty")}
-          rowLink={(record) => ({ href: shipmentHref(record.id, "history") })}
-          {...(complete
-            ? {
-                total: {
-                  label: common("total"),
-                  column: "bags",
-                  value: formatCount(bags, locale),
-                },
-              }
-            : {})}
-        />
-        <ShowMore control={more} />
+        <div className="border-line border-t">
+          <DataTable
+            columns={columns}
+            rows={results}
+            rowKey={(record) => record.id}
+            empty={t("empty")}
+            rowLink={(record) => ({ href: shipmentHref(record.id, "history") })}
+            {...(complete
+              ? {
+                  total: {
+                    label: common("total"),
+                    column: "bags",
+                    value: formatCount(bags, locale),
+                  },
+                }
+              : {})}
+          />
+          <ShowMore control={more} />
+        </div>
       </div>
-    </div>
+    </FilterSlot>
   );
 }
 

@@ -47,6 +47,7 @@
     }
   },
   "filters": {
+    "all": "Tous",
     "show": "Afficher les résultats",
     "button": "Filtres",
     "clear": "Effacer les filtres",
@@ -756,7 +757,6 @@
     }
   },
   "refining": {
-    "allMachines": "Toutes les machines",
     "title": "Affinage",
     "new": "Nouvelle opération d'affinage",
     "editTitle": "Modifier l'affinage",

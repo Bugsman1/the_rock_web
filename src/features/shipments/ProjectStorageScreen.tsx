@@ -6,6 +6,7 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { OperationForm } from "@/components/grinding/OperationForm";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
+import { FilterSlot, FilterSlotTarget } from "@/components/ui/FilterMenu";
 import { PageLayout } from "@/components/ui/PageHeader";
 import { ShowMore, useShowMore } from "@/components/ui/Pagination";
 import { DelayedSearchField } from "@/components/ui/SearchField";
@@ -144,66 +145,69 @@ export function ProjectStorageScreen() {
   );
 
   return (
-    <PageLayout
-      title={project.name}
-      backLabel={common("back")}
-      {...(onlyProject ? {} : { backHref: SHIPMENTS_HREF })}
-      action={
-        <div className="flex flex-wrap gap-3">
-          <ButtonLink href={shipmentsHistoryHref(project.id)} variant="secondary">
-            <Icon name="history" />
-            {history("open")}
-          </ButtonLink>
-          <ShipmentFilterMenu
-            statuses={storedStatuses}
-            state={list.filters}
-            clientName={clientName}
-            onApply={(filters) =>
-              replace(shipmentsProjectHref(project.id, listQueryParams({ ...list, filters })))
-            }
-          />
-          {canAdd ? (
-            <ButtonLink href={newShipmentHref(project.id)} variant="primary">
-              <Icon name="plus" />
-              {t("addNew")}
+    <FilterSlot>
+      <PageLayout
+        title={project.name}
+        backLabel={common("back")}
+        {...(onlyProject ? {} : { backHref: SHIPMENTS_HREF })}
+        action={
+          <div className="flex flex-wrap gap-3">
+            <ButtonLink href={shipmentsHistoryHref(project.id)} variant="secondary">
+              <Icon name="history" />
+              {history("open")}
             </ButtonLink>
-          ) : null}
-        </div>
-      }
-      stats={[
-        { label: t("clientsLabel"), value: formatCount(clientBags(inStorage).length, locale) },
-        { label: t("bagsLabel"), value: formatCount(bagCount(inStorage), locale) },
-      ]}
-    >
-      <TablePanel
-        title={t("project.queueTitle")}
-        search={{
-          field: (
-            <DelayedSearchField
-              id="storage-search"
-              label={common("searchIn", { list: t("project.queueTitle") })}
-              placeholder={common("searchList")}
-              query={list.search}
-              hrefFor={searchHref}
+            <ShipmentFilterMenu
+              statuses={storedStatuses}
+              state={list.filters}
+              clientName={clientName}
+              onApply={(filters) =>
+                replace(shipmentsProjectHref(project.id, listQueryParams({ ...list, filters })))
+              }
             />
-          ),
-        }}
+            {canAdd ? (
+              <ButtonLink href={newShipmentHref(project.id)} variant="primary">
+                <Icon name="plus" />
+                {t("addNew")}
+              </ButtonLink>
+            ) : null}
+          </div>
+        }
+        stats={[
+          { label: t("clientsLabel"), value: formatCount(clientBags(inStorage).length, locale) },
+          { label: t("bagsLabel"), value: formatCount(bagCount(inStorage), locale) },
+        ]}
       >
-        <ClientQueueTable
-          project={project.id}
-          shipments={more.rows}
-          listParams={listParams}
-          filtered={isFiltered(list)}
-        />
-        <ShowMore control={more} />
-      </TablePanel>
+        <FilterSlotTarget />
+        <TablePanel
+          title={t("project.queueTitle")}
+          search={{
+            field: (
+              <DelayedSearchField
+                id="storage-search"
+                label={common("searchIn", { list: t("project.queueTitle") })}
+                placeholder={common("searchList")}
+                query={list.search}
+                hrefFor={searchHref}
+              />
+            ),
+          }}
+        >
+          <ClientQueueTable
+            project={project.id}
+            shipments={more.rows}
+            listParams={listParams}
+            filtered={isFiltered(list)}
+          />
+          <ShowMore control={more} />
+        </TablePanel>
 
-      <StartGrindingDrawer
-        project={project}
-        shipments={inStorage}
-        grinding={canStart ? grinding : undefined}
-        closeHref={shipmentsProjectHref(project.id, listParams)}
-      />
-    </PageLayout>
+        <StartGrindingDrawer
+          project={project}
+          shipments={inStorage}
+          grinding={canStart ? grinding : undefined}
+          closeHref={shipmentsProjectHref(project.id, listParams)}
+        />
+      </PageLayout>
+    </FilterSlot>
   );
 }

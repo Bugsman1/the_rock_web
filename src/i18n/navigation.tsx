@@ -24,17 +24,13 @@ export function usePathname(): string {
   return pathnameWithoutLocale(useLocation().pathname);
 }
 
-export function useSearch(): URLSearchParams {
-  return new URLSearchParams(useLocation().search);
-}
-
 export function pathnameWithoutLocale(pathname: string): string {
   const [, segment] = pathname.split("/");
 
   return isLocale(segment) ? pathname.slice(segment.length + 1) || "/" : pathname;
 }
 
-export function useReplace(): (href: string) => void {
+export function useReplace(): (href: string) => void | Promise<void> {
   const navigate = useNavigate();
   const locale = useLocale();
 

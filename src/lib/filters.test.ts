@@ -7,7 +7,6 @@ import {
   isWithinDays,
   matchesFilters,
   noFilters,
-  onlyFilterPageToggled,
   toggleFilter,
 } from "./filters";
 import type { FilterFields } from "./filters";
@@ -125,22 +124,5 @@ describe("list query", () => {
 
     expect(listQueryParams(list).toString()).toBe("status=pending%2Cgrinding&client=7");
     expect(listQueryParams({ ...list, filters: noFilters }).toString()).toBe("");
-  });
-});
-
-describe("onlyFilterPageToggled", () => {
-  const at = (path: string) => new URL(path, "http://app.test");
-
-  it("is true when only the filter page opens or closes", () => {
-    expect(onlyFilterPageToggled(at("/p?q=a&status=x"), at("/p?status=x&q=a&filters=1"))).toBe(
-      true,
-    );
-    expect(onlyFilterPageToggled(at("/p?q=a&filters=1"), at("/p?q=a"))).toBe(true);
-  });
-
-  it("is false when the list or the page changes, or when the same address reloads", () => {
-    expect(onlyFilterPageToggled(at("/p?filters=1"), at("/p?status=x"))).toBe(false);
-    expect(onlyFilterPageToggled(at("/p"), at("/o?filters=1"))).toBe(false);
-    expect(onlyFilterPageToggled(at("/p?q=a"), at("/p?q=a"))).toBe(false);
   });
 });

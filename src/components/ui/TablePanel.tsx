@@ -1,6 +1,7 @@
 import { useCallback, useId } from "react";
 import type { ReactNode } from "react";
 import { useTranslations } from "use-intl";
+import { FilterSlot, FilterSlotTarget } from "./FilterMenu";
 import type { FilterData } from "./FilterMenu";
 import { ShowMore } from "./Pagination";
 import type { ShowMoreControl } from "./Pagination";
@@ -27,35 +28,38 @@ export function TablePanel({ title, search, action, filter, children }: TablePan
   const searchId = useId();
 
   return (
-    <section className="rounded-card shadow-subtle border-line bg-surface overflow-hidden border-[1.5px]">
-      <div className="border-line flex flex-wrap items-center justify-between gap-3 border-b-[1.5px] p-4">
-        <h2 className="text-ink text-[16px] font-bold">{title}</h2>
-        {action}
-        {search === undefined && filter === undefined ? null : (
-          <div className="flex w-full items-center gap-3 sm:w-auto">
-            {filter}
-            {search === undefined ? null : (
-              <div className="min-w-0 flex-1 sm:w-72 sm:flex-none">
-                {"field" in search ? (
-                  search.field
-                ) : (
-                  <SearchField
-                    id={searchId}
-                    label={search.label}
-                    placeholder={search.placeholder}
-                    autoComplete="off"
-                    value={search.value}
-                    onChange={(event) => search.onChange(event.target.value)}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+    <FilterSlot>
+      <FilterSlotTarget />
+      <section className="rounded-card shadow-subtle border-line bg-surface overflow-hidden border-[1.5px]">
+        <div className="border-line flex flex-wrap items-center justify-between gap-3 border-b-[1.5px] p-4">
+          <h2 className="text-ink text-[16px] font-bold">{title}</h2>
+          {action}
+          {search === undefined && filter === undefined ? null : (
+            <div className="flex w-full items-center gap-3 sm:w-auto">
+              {filter}
+              {search === undefined ? null : (
+                <div className="min-w-0 flex-1 sm:w-72 sm:flex-none">
+                  {"field" in search ? (
+                    search.field
+                  ) : (
+                    <SearchField
+                      id={searchId}
+                      label={search.label}
+                      placeholder={search.placeholder}
+                      autoComplete="off"
+                      value={search.value}
+                      onChange={(event) => search.onChange(event.target.value)}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
-      {children}
-    </section>
+        {children}
+      </section>
+    </FilterSlot>
   );
 }
 

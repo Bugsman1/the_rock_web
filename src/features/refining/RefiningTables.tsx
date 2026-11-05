@@ -44,7 +44,6 @@ function RefiningFilterMenu({
       {...menu}
       clients={clients}
       dateLabel={t("fields.refinedAt")}
-      oneLine
       groups={[
         {
           key: "gold",
@@ -54,7 +53,7 @@ function RefiningFilterMenu({
         {
           key: "machine",
           label: t("fields.machine"),
-          allLabel: t("allMachines"),
+          single: true,
           options: machines.map((machine) => ({
             value: machine.grinderId,
             label: t("machineNumber", { number: formatCount(machine.number, locale) }),

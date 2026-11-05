@@ -223,12 +223,13 @@ describe("RefiningScreen", () => {
 
     await screen.findAllByRole("link", { name: text.editLabel.replace("{shipment}", "SH-3") });
     const done = panel(text.operationsTitle);
-    await user.click(done.getByRole("link", { name: new RegExp(messages.filters.button) }));
-    await user.click(await done.findByRole("checkbox", { name: text.goldFilter.notWeighed }));
-    const machine = done.getByRole("combobox", { name: text.fields.machine });
-    expect(machine).toHaveDisplayValue(text.allMachines);
+    await user.click(done.getByRole("button", { name: new RegExp(messages.filters.button) }));
+    await user.click(screen.getByRole("button", { name: text.fields.goldWithoutMaterial }));
+    await user.click(screen.getByRole("checkbox", { name: text.goldFilter.notWeighed }));
+    const machine = screen.getByRole("combobox", { name: text.fields.machine });
+    expect(machine).toHaveDisplayValue(messages.filters.all);
     await user.selectOptions(machine, text.machineNumber.replace("{number}", "2"));
-    await user.click(done.getByRole("button", { name: messages.filters.show }));
+    await user.click(screen.getByRole("button", { name: messages.filters.show }));
 
     await waitFor(() => expect(router.state.location.search).toBe("?gold=notWeighed&machine=13"));
     expect(asked.get("gold_weighed")).toBe("false");
@@ -238,11 +239,14 @@ describe("RefiningScreen", () => {
 
   it("drops the machine filter when every machine is chosen again", async () => {
     const user = userEvent.setup();
-    const router = openAt("/fr/refining/projects/3?machine=13&filters=1");
+    const router = openAt("/fr/refining/projects/3?machine=13");
 
-    const machine = await screen.findByRole("combobox", { name: text.fields.machine });
+    await user.click(
+      await screen.findByRole("button", { name: new RegExp(messages.filters.button) }),
+    );
+    const machine = screen.getByRole("combobox", { name: text.fields.machine });
     expect(machine).toHaveDisplayValue(text.machineNumber.replace("{number}", "2"));
-    await user.selectOptions(machine, text.allMachines);
+    await user.selectOptions(machine, messages.filters.all);
     await user.click(screen.getByRole("button", { name: messages.filters.show }));
 
     await waitFor(() => expect(router.state.location.search).toBe(""));

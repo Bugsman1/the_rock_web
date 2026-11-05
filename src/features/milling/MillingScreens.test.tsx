@@ -294,11 +294,10 @@ describe("milling screens", () => {
       messages.common.searchIn.replace("{list}", text.project.queueTitle),
     );
     const queue = within(search.closest("section") ?? document.body);
-    await user.click(queue.getByRole("link", { name: new RegExp(messages.filters.button) }));
-    await user.click(
-      await queue.findByRole("checkbox", { name: text.shipmentStatuses.partiallyMilled }),
-    );
-    await user.click(queue.getByRole("button", { name: showResults }));
+    await user.click(queue.getByRole("button", { name: new RegExp(messages.filters.button) }));
+    await user.click(screen.getByRole("button", { name: text.project.queueColumns.status }));
+    await user.click(screen.getByRole("checkbox", { name: text.shipmentStatuses.partiallyMilled }));
+    await user.click(screen.getByRole("button", { name: showResults }));
 
     await waitFor(() => expect(queue.queryByText("SH-4")).toBeNull());
     expect(queue.getByText("SH-1")).toBeVisible();
@@ -379,9 +378,10 @@ describe("milling screens", () => {
     const heading = await screen.findByRole("heading", { name: text.machine.history.title });
     const section = within(heading.closest("section") ?? document.body);
     expect(asked.some((query) => query.get("grinder") === "7")).toBe(true);
-    await user.click(section.getByRole("link", { name: new RegExp(messages.filters.button) }));
-    await user.click(await section.findByRole("checkbox", { name: text.machine.history.done }));
-    await user.click(section.getByRole("button", { name: showResults }));
+    await user.click(section.getByRole("button", { name: new RegExp(messages.filters.button) }));
+    await user.click(screen.getByRole("button", { name: text.machine.history.status }));
+    await user.click(screen.getByRole("checkbox", { name: text.machine.history.done }));
+    await user.click(screen.getByRole("button", { name: showResults }));
 
     await waitFor(() => expect(section.queryByText("SH-1")).toBeNull());
     expect(section.getByText("SH-3")).toBeVisible();

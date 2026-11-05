@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { useNavigation, useRevalidator } from "react-router";
 import { useTranslations } from "use-intl";
 import { ConnectionBanner } from "@/components/ui/ConnectionBanner";
-import { PageSlot } from "@/components/ui/PageSlot";
 import { ToastProvider } from "@/components/ui/Toast";
 import type { Access } from "@/lib/access";
 import { isConnectionLost, subscribeToConnection } from "@/lib/api/connection";
@@ -70,7 +69,7 @@ export function AppShell({ access, userName, roleName, children }: AppShellProps
             onNavigate={() => setMobileOpen(false)}
           />
           <main ref={mainRef} className="relative min-w-0 flex-1 overflow-y-auto p-4 md:p-6">
-            <PageSlot>{children}</PageSlot>
+            {children}
           </main>
         </div>
       </div>

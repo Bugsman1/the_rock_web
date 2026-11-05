@@ -99,8 +99,7 @@ function shownShipments() {
 }
 
 async function openFilters(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("link", { name: new RegExp(filters.button) }));
-  await screen.findByRole("heading", { name: filters.button });
+  await user.click(screen.getByRole("button", { name: new RegExp(filters.button) }));
 }
 
 async function showResults(user: ReturnType<typeof userEvent.setup>) {
@@ -181,10 +180,13 @@ describe("ShipmentHistory", () => {
     await openFilters(user);
     await user.type(screen.getByLabelText(filters.from), "01092026");
     await user.type(screen.getByLabelText(filters.to), "15092026");
+    await user.click(screen.getByRole("button", { name: messages.shipments.filters.status }));
     await user.click(screen.getByRole("checkbox", { name: messages.shipments.statuses.cancelled }));
+    await user.click(screen.getByRole("button", { name: messages.shipments.filters.payment }));
     await user.click(screen.getByRole("checkbox", { name: messages.shipments.payment.incomplete }));
-    await user.click(
-      screen.getByRole("checkbox", { name: messages.shipments.transportMethods.hilux }),
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: messages.shipments.form.transportMethod }),
+      messages.shipments.transportMethods.hilux,
     );
     await showResults(user);
 
@@ -193,35 +195,39 @@ describe("ShipmentHistory", () => {
     );
   });
 
-  it("finds the client on the server and filters on the one picked", async () => {
-    let searched: string | null = null;
+  it("lists the latest clients when the filters open, then finds one on the server", async () => {
+    const asked: (string | null)[] = [];
+    const client = (id: number, name: string) => ({
+      id,
+      full_name: name,
+      phone: "+22222411830",
+      debt_remaining: "0.00",
+      is_active: true,
+      created_at: "2026-10-02T08:00:00Z",
+      updated_at: "2026-10-02T08:00:00Z",
+    });
     server.use(
       http.get(`${window.location.origin}/api/v1/customers/`, ({ request }) => {
-        searched = new URL(request.url).searchParams.get("search");
+        const search = new URL(request.url).searchParams.get("search");
+        asked.push(search);
         return HttpResponse.json({
           count: 1,
-          results: [
-            {
-              id: 7,
-              full_name: "Ahmed",
-              phone: "+22222411830",
-              debt_remaining: "0.00",
-              is_active: true,
-              created_at: "2026-10-02T08:00:00Z",
-              updated_at: "2026-10-02T08:00:00Z",
-            },
-          ],
+          results: [search === "ahm" ? client(7, "Ahmed") : client(8, "Sidi")],
         });
       }),
     );
     const { router, user } = renderHistory();
 
     await openFilters(user);
+    await user.click(screen.getByLabelText(filters.client));
+    expect(await screen.findByRole("option", { name: /Sidi/ })).toBeVisible();
+    expect(asked).toEqual([null]);
+
     await user.type(screen.getByLabelText(filters.client), "ahm");
     await user.click(await screen.findByRole("option", { name: /Ahmed/ }));
     await showResults(user);
 
-    expect(searched).toBe("ahm");
+    expect(asked).toContain("ahm");
     expect(router.state.location.search).toBe("?client=7");
   });
 
