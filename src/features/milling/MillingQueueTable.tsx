@@ -5,7 +5,7 @@ import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
 import { FilterMenu } from "@/components/ui/FilterMenu";
 import type { FilterData } from "@/components/ui/FilterMenu";
-import { useShowMore } from "@/components/ui/Pagination";
+import { useTablePages } from "@/components/ui/Pagination";
 import { ListPanel, StatusBadge } from "@/components/ui/TablePanel";
 import type { StatusTone } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
@@ -81,10 +81,13 @@ export function MillingQueueTable({
   const canStart = useCan()("grinding", "add");
   const filtered = isFiltered(list);
   const listParams = listQueryParams(list);
-  const more = useShowMore(first.shipments, first.total, (page) =>
+  const pages = useTablePages(first.shipments, first.total, (page) =>
     getShipmentPage(filter, page).then((next) => next.shipments),
   );
-  const rows = more.rows.map((shipment, index) => ({ shipment, position: index + 1 }));
+  const rows = pages.rows.map((shipment, index) => ({
+    shipment,
+    position: pages.offset + index + 1,
+  }));
 
   type Row = (typeof rows)[number];
   const positionColumn: DataColumn<Row> = {
@@ -153,7 +156,7 @@ export function MillingQueueTable({
       title={t("queueTitle")}
       list={list}
       hrefFor={(next) => millingProjectHref(project, listQueryParams(next))}
-      more={more}
+      pages={pages}
       filterMenu={(menu) => <QueueFilterMenu menu={menu} clientName={clientName} />}
     >
       <DataTable

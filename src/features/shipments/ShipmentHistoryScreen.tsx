@@ -6,7 +6,7 @@ import {
   PaymentStatus,
   ShipmentStatusBadge,
 } from "@/components/shipments/ShipmentBadges";
-import { ShowMore, useShowMore } from "@/components/ui/Pagination";
+import { TablePager, useTablePages } from "@/components/ui/Pagination";
 import { FilterSlot, FilterSlotTarget } from "@/components/ui/FilterMenu";
 import { BackLink, PageTitle } from "@/components/ui/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
@@ -61,11 +61,11 @@ export function ShipmentHistory({
   const common = useTranslations("common");
   const locale = useLocale();
   const replace = useReplace();
-  const more = useShowMore(slice.shipments, slice.total, (page) =>
+  const pages = useTablePages(slice.shipments, slice.total, (page) =>
     getShipmentPage(filter, page).then((next) => next.shipments),
   );
-  const results = more.rows;
-  const complete = !more.canShowMore;
+  const results = pages.rows;
+  const complete = pages.pageCount === 1;
   const bags = results.reduce((total, record) => total + record.bagCount, 0);
   const listHref = (changes: Partial<ListQuery>) =>
     shipmentsHistoryHref(project, listQueryParams({ ...list, ...changes }));
@@ -174,7 +174,7 @@ export function ShipmentHistory({
                 }
               : {})}
           />
-          <ShowMore control={more} />
+          <TablePager control={pages} />
         </div>
       </div>
     </FilterSlot>

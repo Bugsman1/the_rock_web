@@ -16,11 +16,13 @@ import { InvoiceDownload } from "./InvoiceDownload";
 export function ClientQueueTable({
   project,
   shipments,
+  firstPosition,
   listParams,
   filtered,
 }: {
   project: string;
   shipments: readonly ShipmentRecord[];
+  firstPosition: number;
   listParams: URLSearchParams;
   filtered: boolean;
 }) {
@@ -30,7 +32,7 @@ export function ClientQueueTable({
   const common = useTranslations("common");
   const locale = useLocale();
   const canStart = useCan()("grinding", "add");
-  const rows = shipments.map((shipment, index) => ({ shipment, position: index + 1 }));
+  const rows = shipments.map((shipment, index) => ({ shipment, position: firstPosition + index }));
 
   type Row = (typeof rows)[number];
   const positionColumn: DataColumn<Row> = {

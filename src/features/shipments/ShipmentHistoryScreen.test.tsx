@@ -115,13 +115,13 @@ describe("ShipmentHistory", () => {
     expect(screen.getByRole("row", { name: /Total/ })).toHaveTextContent("30");
   });
 
-  it("adds the next rows on demand, with no partial total", async () => {
-    let asked: string | null = null;
+  it("moves between pages with previous and next, with no partial total", async () => {
+    const asked: (string | null)[] = [];
     server.use(
       http.get(`${window.location.origin}/api/v1/shipments/`, ({ request }) => {
-        asked = new URL(request.url).searchParams.get("page");
+        asked.push(new URL(request.url).searchParams.get("page"));
         return HttpResponse.json({
-          count: 4,
+          count: 28,
           results: [
             {
               id: 99,
@@ -146,32 +146,43 @@ describe("ShipmentHistory", () => {
         });
       }),
     );
-    const { user } = renderHistory(records, { total: 4 });
+    const { user } = renderHistory(records, { total: 28 });
+    const pageOf = (page: string) =>
+      messages.common.pageOf.replace("{page}", page).replace("{count}", "2");
 
-    expect(screen.getByRole("status")).toHaveTextContent(history.count.replace("{count}", "4"));
+    expect(screen.getByRole("status")).toHaveTextContent(history.count.replace("{count}", "28"));
     expect(screen.queryByRole("row", { name: /Total/ })).toBeNull();
+    expect(screen.getByText(pageOf("1"))).toBeVisible();
+    expect(screen.queryByRole("button", { name: messages.common.previousPage })).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: messages.common.showMore }));
+    await user.click(screen.getByRole("button", { name: messages.common.nextPage }));
 
     expect(await screen.findByText("SH-0999")).toBeVisible();
-    expect(asked).toBe("2");
-    expect(shownShipments()).toEqual(["SH-1060", "SH-1052", "SH-1012", "SH-0999"]);
-    expect(screen.queryByRole("button", { name: messages.common.showMore })).toBeNull();
-    expect(screen.getByRole("row", { name: /Total/ })).toHaveTextContent("40");
+    expect(asked).toEqual(["2"]);
+    expect(shownShipments()).toEqual(["SH-0999"]);
+    expect(screen.getByText(pageOf("2"))).toBeVisible();
+    expect(screen.queryByRole("button", { name: messages.common.nextPage })).toBeNull();
+    expect(screen.queryByRole("row", { name: /Total/ })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: messages.common.previousPage }));
+
+    expect(shownShipments()).toEqual(["SH-1060", "SH-1052", "SH-1012"]);
+    expect(asked).toEqual(["2"]);
   });
 
-  it("says so when the next rows cannot be loaded, and lets the user try again", async () => {
+  it("says so when the next page cannot be loaded, and lets the user try again", async () => {
     server.use(
       http.get(`${window.location.origin}/api/v1/shipments/`, () =>
         HttpResponse.json({ detail: "error" }, { status: 500 }),
       ),
     );
-    const { user } = renderHistory(records, { total: 4 });
+    const { user } = renderHistory(records, { total: 28 });
 
-    await user.click(screen.getByRole("button", { name: messages.common.showMore }));
+    await user.click(screen.getByRole("button", { name: messages.common.nextPage }));
 
     expect(await screen.findByText(messages.common.loadMoreFailed)).toBeVisible();
-    expect(screen.getByRole("button", { name: messages.common.showMore })).toBeVisible();
+    expect(shownShipments()).toEqual(["SH-1060", "SH-1052", "SH-1012"]);
+    expect(screen.getByRole("button", { name: messages.common.nextPage })).toBeVisible();
   });
 
   it("puts the chosen dates, statuses, payment and transport in the address", async () => {

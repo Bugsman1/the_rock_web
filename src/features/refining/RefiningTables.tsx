@@ -4,7 +4,7 @@ import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
 import { FilterMenu } from "@/components/ui/FilterMenu";
 import type { FilterData } from "@/components/ui/FilterMenu";
-import { useShowMore } from "@/components/ui/Pagination";
+import { useTablePages } from "@/components/ui/Pagination";
 import { ListPanel } from "@/components/ui/TablePanel";
 import { isFiltered } from "@/lib/filters";
 import type { ListQuery } from "@/lib/filters";
@@ -94,7 +94,7 @@ export function RefiningOperationsTable({
       ? code
       : t("machineNumber", { number: formatCount(machine.number, locale) });
   };
-  const more = useShowMore(first.refinings, first.total, (page) =>
+  const pages = useTablePages(first.refinings, first.total, (page) =>
     getRefiningPage(filter, page).then((next) => next.refinings),
   );
 
@@ -187,14 +187,14 @@ export function RefiningOperationsTable({
       title={t("operationsTitle")}
       list={list}
       hrefFor={hrefFor}
-      more={more}
+      pages={pages}
       filterMenu={(menu) => (
         <RefiningFilterMenu menu={menu} machines={machines} clientName={clientName} />
       )}
     >
       <DataTable
         columns={columns}
-        rows={more.rows}
+        rows={pages.rows}
         rowKey={(operation) => operation.id}
         empty={isFiltered(list) ? common("noMatch") : t("operationsEmpty")}
         rowLink={(operation) => {

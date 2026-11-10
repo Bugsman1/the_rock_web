@@ -226,13 +226,13 @@ describe("ProjectStorageScreen", () => {
       screen.getByRole("link", { name: `${messages.shipments.project.startMilling} SH-1` }),
     ).toHaveAttribute("href", "/fr/shipments/projects/3?grind=SH-1");
 
-    await user.click(screen.getByRole("button", { name: messages.common.showMore }));
+    await user.click(screen.getByRole("button", { name: messages.common.nextPage }));
 
     await vi.waitFor(() => expect(asked.at(-1)?.get("page")).toBe("2"));
     expect(asked.at(-1)?.get("page_size")).toBe("25");
     expect(router.state.location.search).toBe("");
-    await vi.waitFor(() => expect(screen.getAllByRole("link", { name: "SH-1" })).toHaveLength(2));
-    expect(screen.getAllByRole("row")[3]).toHaveTextContent("3SH-1");
+    await vi.waitFor(() => expect(screen.getAllByRole("row")[1]).toHaveTextContent("26SH-1"));
+    expect(screen.getAllByRole("link", { name: "SH-1" })).toHaveLength(1);
   });
 
   it("sends the chosen stages and payment to the backend and keeps them in the address", async () => {

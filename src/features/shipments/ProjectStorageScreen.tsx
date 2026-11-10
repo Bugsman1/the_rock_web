@@ -8,7 +8,7 @@ import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
 import { FilterSlot, FilterSlotTarget } from "@/components/ui/FilterMenu";
 import { PageLayout } from "@/components/ui/PageHeader";
-import { ShowMore, useShowMore } from "@/components/ui/Pagination";
+import { TablePager, useTablePages } from "@/components/ui/Pagination";
 import { DelayedSearchField } from "@/components/ui/SearchField";
 import { TablePanel } from "@/components/ui/TablePanel";
 import { useReplace } from "@/i18n/navigation";
@@ -136,7 +136,7 @@ export function ProjectStorageScreen() {
   const canAdd = useCan()("shipments", "add");
   const canStart = useCan()("grinding", "add");
   const listParams = listQueryParams(list);
-  const more = useShowMore(slice.shipments, slice.total, (page) =>
+  const pages = useTablePages(slice.shipments, slice.total, (page) =>
     getShipmentPage(filter, page).then((next) => next.shipments),
   );
   const searchHref = useCallback(
@@ -194,11 +194,12 @@ export function ProjectStorageScreen() {
         >
           <ClientQueueTable
             project={project.id}
-            shipments={more.rows}
+            shipments={pages.rows}
+            firstPosition={pages.offset + 1}
             listParams={listParams}
             filtered={isFiltered(list)}
           />
-          <ShowMore control={more} />
+          <TablePager control={pages} />
         </TablePanel>
 
         <StartGrindingDrawer

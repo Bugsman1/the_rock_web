@@ -2,7 +2,7 @@ import { useLocale, useTranslations } from "use-intl";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
-import { useShowMore } from "@/components/ui/Pagination";
+import { useTablePages } from "@/components/ui/Pagination";
 import { ListPanel } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
 import { noFilters } from "@/lib/filters";
@@ -33,7 +33,7 @@ export function RefiningQueueTable({
   const canStart = useCan()("refining", "add");
   const machineName = (machine: number) =>
     t("machineNumber", { number: formatCount(machine, locale) });
-  const more = useShowMore(first.operations, first.total, (page) =>
+  const pages = useTablePages(first.operations, first.total, (page) =>
     getGrindingPage(filter, page).then((next) => next.operations),
   );
   const list: ListQuery = { search, filters: noFilters };
@@ -96,11 +96,11 @@ export function RefiningQueueTable({
       title={t("queueTitle")}
       list={list}
       hrefFor={(next) => hrefFor(next.search)}
-      more={more}
+      pages={pages}
     >
       <DataTable
         columns={columns}
-        rows={more.rows}
+        rows={pages.rows}
         rowKey={(operation) => operation.id}
         empty={search === "" ? t("queueEmpty") : common("noMatch")}
       />

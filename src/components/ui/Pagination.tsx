@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { useTranslations } from "use-intl";
+import type { ReactNode } from "react";
+import { useLocale, useTranslations } from "use-intl";
 import { Icon } from "./Icon";
 import { LoadingDots } from "./LoadingDots";
 import { Link } from "@/i18n/navigation";
+import { PAGE_SIZE } from "@/lib/api/pagination";
 import { cn } from "@/lib/cn";
+import { formatCount } from "@/lib/format";
+
+type PageTarget = string | (() => void) | undefined;
 
 type PaginationProps = {
   summary: string;
@@ -14,7 +19,7 @@ type PaginationProps = {
 };
 
 type PageLinkProps = {
-  href?: string;
+  target: PageTarget;
   label: string;
   direction: "previous" | "next";
 };
@@ -22,7 +27,12 @@ type PageLinkProps = {
 const linkClasses =
   "rounded-action border-line inline-flex h-9 items-center gap-1.5 border-[1.5px] px-3 text-[14px] font-semibold";
 
-function PageLink({ href, label, direction }: PageLinkProps) {
+const activeLinkClasses = cn(
+  linkClasses,
+  "bg-surface text-brand-700 hover:bg-surface-hover cursor-pointer",
+);
+
+function PageLink({ target, label, direction }: PageLinkProps) {
   const content =
     direction === "previous" ? (
       <>
@@ -36,17 +46,46 @@ function PageLink({ href, label, direction }: PageLinkProps) {
       </>
     );
 
-  return href === undefined ? (
-    <span aria-disabled className={cn(linkClasses, "text-ink-faint")}>
-      {content}
-    </span>
-  ) : (
-    <Link
-      href={href}
-      className={cn(linkClasses, "bg-surface text-brand-700 hover:bg-surface-hover")}
-    >
+  if (target === undefined) {
+    return (
+      <span aria-disabled className={cn(linkClasses, "text-ink-faint")}>
+        {content}
+      </span>
+    );
+  }
+
+  return typeof target === "string" ? (
+    <Link href={target} className={activeLinkClasses}>
       {content}
     </Link>
+  ) : (
+    <button type="button" onClick={target} className={activeLinkClasses}>
+      {content}
+    </button>
+  );
+}
+
+type PagerBarProps = {
+  label: string;
+  summary: ReactNode;
+  previousLabel: string;
+  nextLabel: string;
+  previous: PageTarget;
+  next: PageTarget;
+};
+
+function PagerBar({ label, summary, previousLabel, nextLabel, previous, next }: PagerBarProps) {
+  return (
+    <nav
+      aria-label={label}
+      className="border-line flex items-center justify-between gap-3 border-t-[1.5px] px-4 py-3"
+    >
+      <PageLink target={previous} label={previousLabel} direction="previous" />
+      <div className="text-ink-muted flex flex-1 justify-center text-center text-[14px] font-semibold">
+        {summary}
+      </div>
+      <PageLink target={next} label={nextLabel} direction="next" />
+    </nav>
   );
 }
 
@@ -58,44 +97,43 @@ export function Pagination({
   nextHref,
 }: PaginationProps) {
   return (
-    <nav
-      aria-label={summary}
-      className="border-line flex flex-wrap items-center justify-between gap-3 border-t-[1.5px] px-4 py-3"
-    >
-      <p className="text-ink-muted text-[14px] font-semibold">{summary}</p>
-
-      <div className="flex items-center gap-2">
-        <PageLink href={previousHref} label={previousLabel} direction="previous" />
-        <PageLink href={nextHref} label={nextLabel} direction="next" />
-      </div>
-    </nav>
+    <PagerBar
+      label={summary}
+      summary={<p>{summary}</p>}
+      previousLabel={previousLabel}
+      nextLabel={nextLabel}
+      previous={previousHref}
+      next={nextHref}
+    />
   );
 }
 
-type MoreStatus = "idle" | "loading" | "failed";
+type PageStatus = "idle" | "loading" | "failed";
 
-export type ShowMoreControl<Row> = {
+export type TablePagesControl<Row> = {
   rows: readonly Row[];
-  canShowMore: boolean;
-  status: MoreStatus;
-  showMore: () => void;
+  offset: number;
+  page: number;
+  pageCount: number;
+  status: PageStatus;
+  goTo: (page: number) => void;
 };
 
-export function useShowMore<Row>(
+export function useTablePages<Row>(
   first: readonly Row[],
   total: number,
   loadPage: (page: number) => Promise<readonly Row[]>,
-): ShowMoreControl<Row> {
+): TablePagesControl<Row> {
   const [source, setSource] = useState(first);
-  const [more, setMore] = useState<readonly Row[]>([]);
-  const [pages, setPages] = useState(1);
-  const [status, setStatus] = useState<MoreStatus>("idle");
+  const [loaded, setLoaded] = useState<ReadonlyMap<number, readonly Row[]>>(new Map());
+  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState<PageStatus>("idle");
   const latest = useRef(first);
 
   if (source !== first) {
     setSource(first);
-    setMore([]);
-    setPages(1);
+    setLoaded(new Map());
+    setPage(1);
     setStatus("idle");
   }
 
@@ -103,54 +141,70 @@ export function useShowMore<Row>(
     latest.current = first;
   }, [first]);
 
-  const rows = [...first, ...more];
+  function show(target: number, rows: readonly Row[]) {
+    setLoaded((current) => new Map(current).set(target, rows));
+    setPage(target);
+    setStatus("idle");
+  }
 
-  function showMore() {
+  function goTo(target: number) {
+    const known = target === 1 ? first : loaded.get(target);
+    if (known !== undefined) {
+      show(target, known);
+      return;
+    }
+
     const asked = first;
     setStatus("loading");
-    loadPage(pages + 1)
+    loadPage(target)
       .then((found) => {
-        if (latest.current === asked) {
-          setMore((current) => [...current, ...found]);
-          setPages((count) => count + 1);
-          setStatus("idle");
-        }
+        if (latest.current === asked) show(target, found);
       })
       .catch(() => {
         if (latest.current === asked) setStatus("failed");
       });
   }
 
-  return { rows, canShowMore: rows.length < total, status, showMore };
+  return {
+    rows: (page === 1 ? undefined : loaded.get(page)) ?? first,
+    offset: (page - 1) * PAGE_SIZE,
+    page,
+    pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+    status,
+    goTo,
+  };
 }
 
-export function ShowMore<Row>({ control }: { control: ShowMoreControl<Row> }) {
+export function TablePager<Row>({ control }: { control: TablePagesControl<Row> }) {
   const t = useTranslations("common");
+  const locale = useLocale();
 
-  if (!control.canShowMore) {
+  if (control.pageCount <= 1) {
     return null;
   }
 
+  const { page, pageCount, status, goTo } = control;
+  const ready = status !== "loading";
+  const pageLabel = t("pageOf", {
+    page: formatCount(page, locale),
+    count: formatCount(pageCount, locale),
+  });
+
   return (
-    <div className="flex flex-col items-center gap-1 py-2">
-      {control.status === "failed" ? (
-        <p role="alert" className="text-danger-700 text-sm font-semibold">
+    <div>
+      {status === "failed" ? (
+        <p role="alert" className="text-danger-700 px-4 pt-3 text-center text-sm font-semibold">
           {t("loadMoreFailed")}
         </p>
       ) : null}
-      {control.status === "loading" ? (
-        <LoadingDots label={t("loading")} />
-      ) : (
-        <button
-          type="button"
-          aria-label={t("showMore")}
-          title={t("showMore")}
-          onClick={control.showMore}
-          className="text-brand-700 hover:bg-surface-hover rounded-action inline-flex size-11 cursor-pointer items-center justify-center"
-        >
-          <Icon name="chevron-down" className="h-6 w-6" />
-        </button>
-      )}
+      <PagerBar
+        label={pageLabel}
+        summary={ready ? <p>{pageLabel}</p> : <LoadingDots label={t("loading")} />}
+        previousLabel={t("previousPage")}
+        nextLabel={t("nextPage")}
+        previous={ready && page > 1 ? () => goTo(page - 1) : undefined}
+        next={ready && page < pageCount ? () => goTo(page + 1) : undefined}
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useLocale, useTranslations } from "use-intl";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
-import { ShowMore, useShowMore } from "@/components/ui/Pagination";
+import { TablePager, useTablePages } from "@/components/ui/Pagination";
 import { PanelError, TablePanel } from "@/components/ui/TablePanel";
 import { errorKind } from "@/lib/api/client";
 import type { Loaded } from "@/lib/api/client";
@@ -20,7 +20,7 @@ function RefiningsTable({ employee, first }: { employee: Employee; first: Refini
   const t = useTranslations("employees");
   const refining = useTranslations("refining");
   const locale = useLocale();
-  const more = useShowMore(first.refinings, first.total, (page) =>
+  const pages = useTablePages(first.refinings, first.total, (page) =>
     getRefiningPage(refinerFilter(employee), page).then((next) => next.refinings),
   );
   const grams = (value: number | undefined) =>
@@ -85,11 +85,11 @@ function RefiningsTable({ employee, first }: { employee: Employee; first: Refini
     <>
       <DataTable
         columns={columns}
-        rows={more.rows}
+        rows={pages.rows}
         rowKey={(operation) => operation.id}
         empty={t("refinings.empty")}
       />
-      <ShowMore control={more} />
+      <TablePager control={pages} />
     </>
   );
 }

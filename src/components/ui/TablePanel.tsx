@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import { useTranslations } from "use-intl";
 import { FilterSlot, FilterSlotTarget } from "./FilterMenu";
 import type { FilterData } from "./FilterMenu";
-import { ShowMore } from "./Pagination";
-import type { ShowMoreControl } from "./Pagination";
+import { TablePager } from "./Pagination";
+import type { TablePagesControl } from "./Pagination";
 import { DelayedSearchField, SearchField } from "./SearchField";
 import { useReplace } from "@/i18n/navigation";
 import type { ListQuery } from "@/lib/filters";
@@ -67,7 +67,7 @@ type ListPanelProps<Row> = {
   title: string;
   list: ListQuery;
   hrefFor: (list: ListQuery) => string;
-  more: ShowMoreControl<Row>;
+  pages: TablePagesControl<Row>;
   filterMenu?: (menu: FilterData) => ReactNode;
   children: ReactNode;
 };
@@ -76,7 +76,7 @@ export function ListPanel<Row>({
   title,
   list,
   hrefFor,
-  more,
+  pages,
   filterMenu,
   children,
 }: ListPanelProps<Row>) {
@@ -105,7 +105,7 @@ export function ListPanel<Row>({
       })}
     >
       {children}
-      <ShowMore control={more} />
+      <TablePager control={pages} />
     </TablePanel>
   );
 }

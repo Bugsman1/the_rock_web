@@ -4,7 +4,7 @@ import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
 import { FilterMenu } from "@/components/ui/FilterMenu";
 import type { FilterData } from "@/components/ui/FilterMenu";
-import { useShowMore } from "@/components/ui/Pagination";
+import { useTablePages } from "@/components/ui/Pagination";
 import { ListPanel, StatusBadge } from "@/components/ui/TablePanel";
 import { durationParts } from "@/lib/datetime";
 import { isFiltered, listQueryParams } from "@/lib/filters";
@@ -64,10 +64,10 @@ export function MachineHistoryTable({
   const common = useTranslations("common");
   const locale = useLocale();
   const count = (value: number) => formatCount(value, locale);
-  const more = useShowMore(first.operations, first.total, (page) =>
+  const pages = useTablePages(first.operations, first.total, (page) =>
     getGrindingPage(filter, page).then((next) => next.operations),
   );
-  const operations = more.rows;
+  const operations = pages.rows;
 
   const columns: DataColumn<MillingOperation>[] = [
     {
@@ -146,7 +146,7 @@ export function MachineHistoryTable({
       title={t("history.title")}
       list={list}
       hrefFor={(next) => millingMachineHref(project, machine, listQueryParams(next))}
-      more={more}
+      pages={pages}
       filterMenu={(menu) => <HistoryFilterMenu menu={menu} clientName={clientName} />}
     >
       <DataTable
@@ -154,7 +154,7 @@ export function MachineHistoryTable({
         rows={operations}
         rowKey={(operation) => operation.id}
         empty={isFiltered(list) ? common("noMatch") : t("history.empty")}
-        {...(more.canShowMore
+        {...(pages.pageCount > 1
           ? {}
           : {
               total: {
