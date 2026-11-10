@@ -1,19 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { listQueryFromParams } from "@/lib/filters";
 import { toDecimal } from "@/lib/format";
-import type { MillingOperation } from "@/lib/grinding";
 import type { RefiningOperation } from "@/lib/refining";
 import {
   createRefiningSchema,
-  queueOfProject,
   refiningErrorsFromApi,
-  refiningSummary,
+  refiningOf,
+  refiningSummaryFromApi,
   refiningToApi,
   refiningGroups,
   refiningListFilter,
   refiningQueueFilter,
   refiningFormValues,
-  totalCounts,
+  totalRefining,
   refiningLoss,
   refiningUpdateToApi,
 } from "./refining";
@@ -30,6 +29,7 @@ const messages = {
 
 const values: RefiningValues = {
   workerId: "2",
+  refinerId: "",
   date: "2026-10-12",
   time: "09:30",
   weightBefore: 120.5,
@@ -39,30 +39,6 @@ const values: RefiningValues = {
   lossReason: "normalShortage",
   notes: "",
 };
-
-function grinding(overrides: Partial<MillingOperation>): MillingOperation {
-  return {
-    id: "5",
-    project: "3",
-    machine: 2,
-    shipmentNumber: "SH-4",
-    client: "Sidi",
-    bags: 4,
-    operatorName: "Aicha",
-    startedAt: "2026-10-12T06:00:00Z",
-    estimatedEndAt: "2026-10-12T18:00:00Z",
-    notes: "",
-    endedAt: "2026-10-12T18:00:00Z",
-    mercury: {
-      addedAt: "2026-10-12T08:00:00Z",
-      byName: "Aicha",
-      quantity: 120,
-      total: 120,
-      additions: [],
-    },
-    ...overrides,
-  };
-}
 
 function refining(grindingOperationId: string): RefiningOperation {
   return {
@@ -74,6 +50,9 @@ function refining(grindingOperationId: string): RefiningOperation {
     project: "3",
     projectName: "Zouérat 1",
     workerName: "Aicha",
+    refinerId: undefined,
+    refinerName: "",
+    refinerEarned: undefined,
     bags: 4,
     refinedAt: "2026-10-13T09:00:00Z",
     weightBefore: 10,
@@ -95,10 +74,28 @@ function errorsOf(input: RefiningValues) {
 }
 
 describe("refining summary", () => {
-  const queue = [grinding({ id: "a", bags: 1.5 }), grinding({ id: "b", bags: 2, project: "4" })];
+  const rows = refiningSummaryFromApi([
+    {
+      project: 3,
+      project_name: "Zouérat 1",
+      grindings_waiting: 2,
+      bags_waiting: "3.5",
+      refined_today: 1,
+      refinings_total: 2,
+    },
+    {
+      project: 4,
+      project_name: "Sfariyat 1",
+      grindings_waiting: 1,
+      bags_waiting: "2.0",
+      refined_today: 0,
+      refinings_total: 5,
+    },
+  ]);
 
-  it("counts what waits and its bags, with the refinings the backend counted", () => {
-    expect(refiningSummary(queue, { refined: 2, refinedToday: 1 })).toEqual({
+  it("reads what waits, its bags and the refinings from the backend's summary", () => {
+    expect(refiningOf(rows, "3")).toEqual({
+      project: "3",
       waiting: 2,
       waitingBags: 3.5,
       refined: 2,
@@ -106,17 +103,22 @@ describe("refining summary", () => {
     });
   });
 
-  it("adds up the counts of every project", () => {
-    expect(
-      totalCounts([
-        { refined: 2, refinedToday: 1 },
-        { refined: 5, refinedToday: 0 },
-      ]),
-    ).toEqual({ refined: 7, refinedToday: 1 });
+  it("gives zeros to a project missing from the summary", () => {
+    expect(refiningOf(rows, "9")).toEqual({
+      waiting: 0,
+      waitingBags: 0,
+      refined: 0,
+      refinedToday: 0,
+    });
   });
 
-  it("keeps one project's waiting grindings", () => {
-    expect(queueOfProject(queue, "4").map((item) => item.id)).toEqual(["b"]);
+  it("adds up the projects given", () => {
+    expect(totalRefining([refiningOf(rows, "3"), refiningOf(rows, "4")])).toEqual({
+      waiting: 3,
+      waitingBags: 5.5,
+      refined: 7,
+      refinedToday: 1,
+    });
   });
 });
 
@@ -179,6 +181,7 @@ describe("refiningToApi", () => {
     ).toEqual({
       grinding_operation: 5,
       worker: 2,
+      refiner: null,
       refining_date: "2026-10-12T09:30:00.000Z",
       weight_before: "120.500",
       weight_after: "118.250",
@@ -187,6 +190,13 @@ describe("refiningToApi", () => {
       loss_reason: "normalShortage",
       notes: "",
     });
+  });
+
+  it("sends the gold refiner chosen, or none", () => {
+    const target = { grindingOperationId: "5", refinedAt: "2026-10-12T09:30:00.000Z" };
+
+    expect(refiningToApi({ ...values, refinerId: "9" }, target).refiner).toBe(9);
+    expect(refiningToApi(values, target).refiner).toBeNull();
   });
 
   it("sends no loss reason when nothing was lost or more came back", () => {
@@ -206,9 +216,10 @@ describe("refiningErrorsFromApi", () => {
     expect(
       refiningErrorsFromApi({
         gold_weight_without_mercury: "Trop lourd.",
+        refiner: "Pas un affineur.",
         other: "x",
       }),
-    ).toEqual({ goldWithoutMaterial: "Trop lourd." });
+    ).toEqual({ goldWithoutMaterial: "Trop lourd.", refinerId: "Pas un affineur." });
   });
 });
 
@@ -229,6 +240,7 @@ describe("editing a refining", () => {
   it("sends only what can change after the refining was recorded, an empty gold as not weighed", () => {
     expect(refiningUpdateToApi({ ...values, goldWithoutMaterial: Number.NaN })).toEqual({
       worker: Number(values.workerId),
+      refiner: null,
       weight_after: toDecimal(values.weightAfter),
       gold_weight_with_mercury: toDecimal(values.goldWithMaterial),
       gold_weight_without_mercury: null,
@@ -247,6 +259,8 @@ describe("editing a refining", () => {
     ]);
 
     expect(form.workerId).toBe("4");
+    expect(form.refinerId).toBe("");
+    expect(refiningFormValues({ ...saved, refinerId: "9" }, []).refinerId).toBe("9");
     expect(form.goldWithoutMaterial).toBe(0);
     expect(form.weightAfter).toBe(saved.weightAfter);
     expect(

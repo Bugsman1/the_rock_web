@@ -1,130 +1,36 @@
 import { describe, expect, it } from "vitest";
-import type { ShipmentRecord } from "@/lib/shipments";
 import {
-  bagCount,
-  clientBags,
-  shipmentsOfProject,
-  storedShipments,
+  bagsInStorage,
+  storageFromApi,
+  storageOf,
   topCustomersFromApi,
   topCustomersOf,
 } from "./shipmentStorage";
 
 describe("storage", () => {
-  function record(overrides: Partial<ShipmentRecord>): ShipmentRecord {
-    return {
-      id: "1",
-      shipmentNumber: "SH-1",
-      customerId: "1",
-      customerName: "a",
-      phone: "+222 22 33 44 55",
-      arrivedAt: "2026-10-01T00:00:00Z",
-      bagCount: 10,
-      testBags: 0,
-      remainingBags: 10,
-      project: "zouerate1",
-      status: "pending",
-      stage: "pending",
-      source: "Chami",
-      transportMethod: "truck",
-      notes: "",
-      transportTotal: 0,
-      paid: 0,
-      amountLeft: 0,
-      fullyPaid: true,
-      debt: 0,
-      ...overrides,
-    };
-  }
+  const storage = storageFromApi([
+    { project: 3, project_name: "Zouérat 1", customers_with_bags: 2, bags_in_storage: "8.5" },
+    { project: 4, project_name: "Sfariyat 1", customers_with_bags: 0, bags_in_storage: "0.0" },
+    { project: 5, project_name: "Ancien", customers_with_bags: 1, bags_in_storage: "4.0" },
+  ]);
 
-  function stored(overrides: Partial<ShipmentRecord>): ShipmentRecord {
-    const base = record(overrides);
-
-    return { ...base, remainingBags: base.bagCount };
-  }
-
-  const records = [
-    stored({
-      shipmentNumber: "SH-1",
-      customerName: "b",
-      bagCount: 20,
-      arrivedAt: "2026-10-03T00:00:00Z",
-    }),
-    stored({
-      shipmentNumber: "SH-2",
-      customerName: "a",
-      bagCount: 50,
-      arrivedAt: "2026-10-01T00:00:00Z",
-    }),
-    stored({
-      shipmentNumber: "SH-3",
-      customerName: "c",
-      bagCount: 35,
-      arrivedAt: "2026-10-02T00:00:00Z",
-    }),
-  ];
-
-  const mixed = [
-    record({ shipmentNumber: "SH-10", status: "pending" }),
-    record({ shipmentNumber: "SH-11", status: "grinding", remainingBags: 8 }),
-    record({ shipmentNumber: "SH-12", status: "completed" }),
-    record({ shipmentNumber: "SH-13", status: "pending", project: "sfariyat1" }),
-  ];
-
-  function numbers(list: readonly ShipmentRecord[]) {
-    return list.map((item) => item.shipmentNumber);
-  }
-
-  describe("storedShipments", () => {
-    it("keeps the project's shipments with bags still in storage, as the backend counts them", () => {
-      const left = storedShipments(mixed, "zouerate1");
-
-      expect(numbers(left)).toEqual(["SH-10", "SH-11"]);
-      expect(left.map((shipment) => shipment.remainingBags)).toEqual([10, 8]);
-      expect(storedShipments(mixed, "sfariyat2")).toEqual([]);
+  describe("storageOf", () => {
+    it("reads a project's clients and bags in storage from the backend's summary", () => {
+      expect(storageOf(storage, "3")).toEqual({ project: "3", customers: 2, bags: 8.5 });
     });
 
-    it("drops a shipment once all its bags are on machines or ground", () => {
-      const allOnMachines = mixed.map((shipment) =>
-        shipment.shipmentNumber === "SH-11" ? { ...shipment, remainingBags: 0 } : shipment,
-      );
-
-      expect(numbers(storedShipments(allOnMachines, "zouerate1"))).toEqual(["SH-10"]);
-    });
-
-    it("covers every project when none is given", () => {
-      expect(numbers(storedShipments(mixed))).toEqual(["SH-10", "SH-11", "SH-13"]);
+    it("gives no client and no bag to a project missing from the summary", () => {
+      expect(storageOf(storage, "9")).toEqual({ customers: 0, bags: 0 });
     });
   });
 
-  describe("shipmentsOfProject", () => {
-    it("keeps every shipment of the project, whatever its status", () => {
-      expect(numbers(shipmentsOfProject(mixed, "zouerate1"))).toEqual(["SH-10", "SH-11", "SH-12"]);
-    });
-  });
-
-  describe("bagCount", () => {
-    it("sums the bags left", () => {
-      expect(bagCount(records)).toBe(105);
-      expect(bagCount([{ ...stored({}), remainingBags: 1.5 }])).toBe(1.5);
+  describe("bagsInStorage", () => {
+    it("adds up the bags of the projects given", () => {
+      expect(bagsInStorage([storageOf(storage, "3"), storageOf(storage, "5")])).toBe(12.5);
     });
 
-    it("is zero with no shipments", () => {
-      expect(bagCount([])).toBe(0);
-    });
-  });
-
-  describe("clientBags", () => {
-    it("adds up the shipments of the same client", () => {
-      expect(
-        clientBags([
-          ...records,
-          stored({ shipmentNumber: "SH-4", customerName: "b", bagCount: 5 }),
-        ]),
-      ).toEqual([
-        { name: "b", bagCount: 25 },
-        { name: "a", bagCount: 50 },
-        { name: "c", bagCount: 35 },
-      ]);
+    it("is zero with no project", () => {
+      expect(bagsInStorage([])).toBe(0);
     });
   });
 

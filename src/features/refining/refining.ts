@@ -1,11 +1,11 @@
 import { z } from "zod";
-import type { BackendFieldErrors, FieldErrors } from "@/lib/api/client";
+import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/client";
 import { isIsoDate, isTimeValue, nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import type { GroupChoices, ListQuery } from "@/lib/filters";
-import { toDecimal } from "@/lib/format";
+import { fromDecimal, toDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
-import type { MillingOperation } from "@/lib/grinding";
 import type { GrindingListFilter } from "@/lib/grindingApi";
+import { rowOfProject } from "@/lib/projects";
 import type { ProjectId } from "@/lib/projects";
 import type { RefiningOperation } from "@/lib/refining";
 import type { RefiningListFilter } from "@/lib/refiningApi";
@@ -14,34 +14,46 @@ import type { Operator } from "@/lib/users";
 const TEXT_MAX_LENGTH = 500;
 const WEIGHT_PRECISION = 1000;
 
-export type RefiningSummary = {
+type RefiningSummary = {
   waiting: number;
   waitingBags: number;
   refined: number;
   refinedToday: number;
 };
 
-export type RefiningCounts = {
-  refined: number;
-  refinedToday: number;
-};
+type ProjectRefiningSummary = RefiningSummary & { project: ProjectId };
 
-export function refiningSummary(
-  queue: readonly MillingOperation[],
-  counts: RefiningCounts,
-): RefiningSummary {
-  return {
-    waiting: queue.length,
-    waitingBags: queue.reduce((total, grinding) => total + grinding.bags, 0),
-    ...counts,
-  };
+const noRefining: RefiningSummary = { waiting: 0, waitingBags: 0, refined: 0, refinedToday: 0 };
+
+export function refiningSummaryFromApi(
+  rows: readonly ApiSchema<"ProjectRefiningSummary">[],
+): readonly ProjectRefiningSummary[] {
+  return rows.map((row) => ({
+    project: String(row.project),
+    waiting: row.grindings_waiting,
+    waitingBags: fromDecimal(row.bags_waiting),
+    refined: row.refinings_total,
+    refinedToday: row.refined_today,
+  }));
 }
 
-export function totalCounts(counts: readonly RefiningCounts[]): RefiningCounts {
-  return {
-    refined: counts.reduce((total, count) => total + count.refined, 0),
-    refinedToday: counts.reduce((total, count) => total + count.refinedToday, 0),
-  };
+export function refiningOf(
+  rows: readonly ProjectRefiningSummary[],
+  project: ProjectId,
+): RefiningSummary {
+  return rowOfProject(rows, project) ?? noRefining;
+}
+
+export function totalRefining(summaries: readonly RefiningSummary[]): RefiningSummary {
+  return summaries.reduce<RefiningSummary>(
+    (total, summary) => ({
+      waiting: total.waiting + summary.waiting,
+      waitingBags: total.waitingBags + summary.waitingBags,
+      refined: total.refined + summary.refined,
+      refinedToday: total.refinedToday + summary.refinedToday,
+    }),
+    noRefining,
+  );
 }
 
 export const goldStates = ["notWeighed", "weighed"] as const;
@@ -68,13 +80,6 @@ export function refiningListFilter(project: ProjectId, list: ListQuery): Refinin
 
 export function refiningQueueFilter(project: ProjectId, search: string): GrindingListFilter {
   return { project, search, ordering: "end_time", running: false, refined: false };
-}
-
-export function queueOfProject(
-  queue: readonly MillingOperation[],
-  project: ProjectId,
-): readonly MillingOperation[] {
-  return queue.filter((grinding) => grinding.project === project);
 }
 
 export const lossReasonKeys = [
@@ -118,6 +123,7 @@ export function createRefiningSchema(messages: {
   return z
     .object({
       workerId: z.string().min(1, messages.required),
+      refinerId: z.string(),
       date: z
         .string()
         .min(1, { message: messages.required, abort: true })
@@ -167,6 +173,33 @@ export type RefiningValues = z.infer<ReturnType<typeof createRefiningSchema>>;
 
 export type RefiningField = keyof RefiningValues | "loss";
 
+const refiningFields: readonly (keyof RefiningValues)[] = [
+  "workerId",
+  "refinerId",
+  "date",
+  "time",
+  "weightBefore",
+  "weightAfter",
+  "goldWithMaterial",
+  "goldWithoutMaterial",
+  "lossReason",
+  "notes",
+];
+
+export function isRefiningField(value: string): value is keyof RefiningValues {
+  return refiningFields.some((field) => field === value);
+}
+
+export type Refiner = {
+  id: string;
+  name: string;
+  matricule: string;
+};
+
+export function refinerFromApi(refiner: ApiSchema<"Refiner">): Refiner {
+  return { id: String(refiner.id), name: refiner.full_name, matricule: refiner.matricule };
+}
+
 export type RefiningTarget = {
   grindingOperationId: string;
   refinedAt: IsoTimestamp;
@@ -175,6 +208,7 @@ export type RefiningTarget = {
 export function refiningUpdateToApi(values: RefiningValues) {
   return {
     worker: Number(values.workerId),
+    refiner: values.refinerId === "" ? null : Number(values.refinerId),
     weight_after: toDecimal(values.weightAfter),
     gold_weight_with_mercury: toDecimal(values.goldWithMaterial),
     gold_weight_without_mercury: Number.isFinite(values.goldWithoutMaterial)
@@ -202,6 +236,7 @@ export function refiningFormValues(
 
   return {
     workerId: workers.find((worker) => worker.name === refining.workerName)?.id ?? "",
+    refinerId: refining.refinerId ?? "",
     date: todayAsInputValue(refinedAt),
     time: nowAsTimeValue(refinedAt),
     weightBefore: refining.weightBefore,
@@ -216,6 +251,7 @@ export function refiningFormValues(
 export function refiningErrorsFromApi(errors: BackendFieldErrors): FieldErrors<RefiningField> {
   return {
     ...(errors.worker === undefined ? {} : { workerId: errors.worker }),
+    ...(errors.refiner === undefined ? {} : { refinerId: errors.refiner }),
     ...(errors.refining_date === undefined ? {} : { date: errors.refining_date }),
     ...(errors.weight_before === undefined ? {} : { weightBefore: errors.weight_before }),
     ...(errors.weight_after === undefined ? {} : { weightAfter: errors.weight_after }),

@@ -44,6 +44,7 @@ function SettlementTotals({ settlement }: { settlement: Settlement }) {
   const lines: readonly TotalLine[] = [
     { label: t("totals.bagsTransport"), value: totals.bagsTransport },
     { label: t("totals.passengersTransport"), value: totals.passengersTransport },
+    { label: t("totals.unloading"), value: totals.unloading },
     { label: t("totals.shipmentsDebt"), value: totals.shipmentsDebt },
     {
       label: t("totals.grindingCost"),

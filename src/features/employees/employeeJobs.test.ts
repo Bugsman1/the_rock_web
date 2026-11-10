@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isJobFilter, isJobTitle, matchesJob } from "./employeeJobs";
+import { isJobFilter, isJobTitle, isPaidPerGram, jobChoices, matchesJob } from "./employeeJobs";
 
 describe("job titles", () => {
   it("knows the backend's job title codes only", () => {
@@ -14,5 +14,17 @@ describe("job titles", () => {
     expect(isJobFilter("all")).toBe(true);
     expect(isJobFilter("SAF")).toBe(true);
     expect(isJobFilter("Chauffeur")).toBe(false);
+  });
+
+  it("pays only the gold refiners per gram", () => {
+    expect(isPaidPerGram("SAF")).toBe(true);
+    expect(isPaidPerGram("CHF")).toBe(false);
+  });
+
+  it("offers every job to a new employee, and never a move to or from gold refiner", () => {
+    expect(jobChoices(undefined)).toContain("SAF");
+    expect(jobChoices(true)).toEqual(["SAF"]);
+    expect(jobChoices(false)).not.toContain("SAF");
+    expect(jobChoices(false)).toContain("CHF");
   });
 });

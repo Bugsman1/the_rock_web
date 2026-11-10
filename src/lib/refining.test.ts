@@ -10,6 +10,10 @@ const apiOperation = {
   grinder_code: "P3-2",
   project_name: "Zouérat 1",
   worker_name: "Aicha",
+  refiner: 9,
+  refiner_name: "Brahim",
+  refiner_matricule: "SAF-1",
+  refiner_earned: 572,
   bags_count: 4,
   refining_date: "2026-10-12T09:30:00Z",
   weight_before: "120.500",
@@ -35,6 +39,9 @@ describe("refiningOperationFromApi", () => {
       project: "3",
       projectName: "Zouérat 1",
       workerName: "Aicha",
+      refinerId: "9",
+      refinerName: "Brahim",
+      refinerEarned: 572,
       bags: 4,
       refinedAt: "2026-10-12T09:30:00Z",
       weightBefore: 120.5,
@@ -75,5 +82,16 @@ describe("refiningOperationFromApi", () => {
       refiningOperationFromApi({ ...apiOperation, gold_weight_without_mercury: "0.000" })
         .goldWithoutMaterial,
     ).toBe(0);
+  });
+
+  it("has no refiner when none was named", () => {
+    expect(
+      refiningOperationFromApi({
+        ...apiOperation,
+        refiner: null,
+        refiner_name: "",
+        refiner_earned: null,
+      }),
+    ).toMatchObject({ refinerId: undefined, refinerName: "", refinerEarned: undefined });
   });
 });

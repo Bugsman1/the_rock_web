@@ -1,8 +1,11 @@
 import { z } from "zod";
-import { combineDateAndTime, isIsoDate, isSameDay, isTimeValue } from "@/lib/datetime";
+import type { ApiSchema } from "@/lib/api/client";
+import { combineDateAndTime, isIsoDate, isTimeValue } from "@/lib/datetime";
+import { fromDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
-import { isRunning, machinesOfProject, machineStatus } from "@/lib/grinding";
+import { machineStatus } from "@/lib/grinding";
 import type { Machine, MachineStatus, MillingOperation, OperationShipment } from "@/lib/grinding";
+import { rowOfProject } from "@/lib/projects";
 import type { Project, ProjectId, SiteKey } from "@/lib/projects";
 import type { ShipmentRecord, ShipmentStatusKey } from "@/lib/shipments";
 
@@ -31,19 +34,6 @@ export function findMachine(
   number: number,
 ): Machine | undefined {
   return machines.find((machine) => machine.project === project && machine.number === number);
-}
-
-function operationsOfProject(
-  operations: readonly MillingOperation[],
-  project: ProjectId,
-): readonly MillingOperation[] {
-  return operations.filter((operation) => operation.project === project);
-}
-
-export function bagsMilledOn(operations: readonly MillingOperation[], day: IsoTimestamp): number {
-  return operations
-    .filter((operation) => operation.endedAt !== undefined && isSameDay(operation.endedAt, day))
-    .reduce((total, operation) => total + operation.bags, 0);
 }
 
 export function countMachines(
@@ -115,36 +105,44 @@ export function millingShipments(records: readonly ShipmentRecord[]): readonly M
 }
 
 export type MillingSummary = {
-  machines: MachineCounts;
-  bagsMilling: number;
   bagsWaiting: number;
-  bagsMilledToday: number;
   waitingShipments: number;
+  bagsMilling: number;
+  bagsMilledToday: number;
+  machinesRunning: number;
+  machinesInService: number;
 };
 
-type MillingRecords = {
-  machines: readonly Machine[];
-  operations: readonly MillingOperation[];
-  shipments: readonly MillingShipment[];
+type ProjectMillingSummary = MillingSummary & { project: ProjectId };
+
+const noMilling: MillingSummary = {
+  bagsWaiting: 0,
+  waitingShipments: 0,
+  bagsMilling: 0,
+  bagsMilledToday: 0,
+  machinesRunning: 0,
+  machinesInService: 0,
 };
 
-export function projectSummary(
-  records: MillingRecords,
+export function millingSummaryFromApi(
+  rows: readonly ApiSchema<"ProjectGrindingSummary">[],
+): readonly ProjectMillingSummary[] {
+  return rows.map((row) => ({
+    project: String(row.project),
+    bagsWaiting: fromDecimal(row.bags_waiting),
+    waitingShipments: row.waiting_shipments,
+    bagsMilling: fromDecimal(row.bags_grinding),
+    bagsMilledToday: fromDecimal(row.bags_ground_today),
+    machinesRunning: row.machines_running,
+    machinesInService: row.machines_in_service,
+  }));
+}
+
+export function millingOf(
+  rows: readonly ProjectMillingSummary[],
   project: ProjectId,
-  now: IsoTimestamp,
 ): MillingSummary {
-  const operations = operationsOfProject(records.operations, project);
-  const queue = millingQueue(records.shipments, project);
-
-  return {
-    machines: countMachines(machinesOfProject(records.machines, project), records.operations),
-    bagsMilling: operations
-      .filter(isRunning)
-      .reduce((total, operation) => total + operation.bags, 0),
-    bagsWaiting: queue.reduce((total, shipment) => total + shipment.remainingBags, 0),
-    bagsMilledToday: bagsMilledOn(operations, now),
-    waitingShipments: queue.length,
-  };
+  return rowOfProject(rows, project) ?? noMilling;
 }
 
 const BACKLOG_BAGS = 50;
@@ -156,24 +154,14 @@ export function isBacklogged(bagsWaiting: number): boolean {
 export function combineSummaries(summaries: readonly MillingSummary[]): MillingSummary {
   return summaries.reduce<MillingSummary>(
     (total, summary) => ({
-      machines: {
-        running: total.machines.running + summary.machines.running,
-        idle: total.machines.idle + summary.machines.idle,
-        maintenance: total.machines.maintenance + summary.machines.maintenance,
-        total: total.machines.total + summary.machines.total,
-      },
-      bagsMilling: total.bagsMilling + summary.bagsMilling,
       bagsWaiting: total.bagsWaiting + summary.bagsWaiting,
-      bagsMilledToday: total.bagsMilledToday + summary.bagsMilledToday,
       waitingShipments: total.waitingShipments + summary.waitingShipments,
+      bagsMilling: total.bagsMilling + summary.bagsMilling,
+      bagsMilledToday: total.bagsMilledToday + summary.bagsMilledToday,
+      machinesRunning: total.machinesRunning + summary.machinesRunning,
+      machinesInService: total.machinesInService + summary.machinesInService,
     }),
-    {
-      machines: { running: 0, idle: 0, maintenance: 0, total: 0 },
-      bagsMilling: 0,
-      bagsWaiting: 0,
-      bagsMilledToday: 0,
-      waitingShipments: 0,
-    },
+    noMilling,
   );
 }
 

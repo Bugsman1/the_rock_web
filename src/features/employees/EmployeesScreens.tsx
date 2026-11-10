@@ -11,13 +11,15 @@ import { TablePanel } from "@/components/ui/TablePanel";
 import { defaultLocale, isLocale } from "@/i18n/locales";
 import { localizedHref } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
+import { notFound } from "@/lib/api/client";
 import { formatCount } from "@/lib/format";
-import { isInService } from "@/lib/projects";
-import { getProjects, requireProject } from "@/lib/projectsApi";
+import { findProject, isInService } from "@/lib/projects";
+import { getProjects } from "@/lib/projectsApi";
 import { EMPLOYEES_HREF, employeesProjectHref } from "@/lib/routes";
 import { DeleteDrawer } from "./DeleteDrawer";
 import { EmployeeForm } from "./EmployeeForm";
-import { countEmployees, deleteEmployee, getEmployees } from "./employeesApi";
+import { employeesOf } from "./employees";
+import { deleteEmployee, getEmployeeCounts, getEmployees } from "./employeesApi";
 import { EmployeesTable } from "./EmployeesTable";
 
 export async function employeesLoader({ params }: LoaderFunctionArgs) {
@@ -29,13 +31,10 @@ export async function employeesLoader({ params }: LoaderFunctionArgs) {
     throw redirect(localizedHref(locale, employeesProjectHref(onlyProject.id)));
   }
 
+  const counts = await getEmployeeCounts();
+
   return {
-    projects: await Promise.all(
-      inService.map(async (project) => ({
-        project,
-        employees: await countEmployees(project.id),
-      })),
-    ),
+    projects: inService.map((project) => ({ project, employees: employeesOf(counts, project.id) })),
   };
 }
 
@@ -80,10 +79,8 @@ export function EmployeesScreen() {
 
 export async function employeesProjectLoader({ params, request }: LoaderFunctionArgs) {
   const search = new URL(request.url).searchParams;
-  const [project, projects] = await Promise.all([
-    requireProject(params.project ?? ""),
-    getProjects(),
-  ]);
+  const projects = await getProjects();
+  const project = findProject(projects, params.project ?? "") ?? notFound();
   const employees = await getEmployees(project.id);
 
   return {

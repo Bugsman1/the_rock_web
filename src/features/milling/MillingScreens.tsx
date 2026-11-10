@@ -7,14 +7,13 @@ import { defaultLocale, isLocale } from "@/i18n/locales";
 import { Link, localizedHref } from "@/i18n/navigation";
 import { cn } from "@/lib/cn";
 import { formatCount } from "@/lib/format";
-import { todayAsInputValue } from "@/lib/datetime";
 import { isInService, isSiteKey, siteKeys } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
 import { MILLING_HREF, millingProjectHref, millingSiteHref } from "@/lib/routes";
 import type { MachineStatus } from "@/lib/grinding";
-import { combineSummaries, isBacklogged, projectsForSite, projectSummary } from "./milling";
+import { combineSummaries, isBacklogged, millingOf, projectsForSite } from "./milling";
 import type { MillingSummary, SiteFilter } from "./milling";
-import { getMillingOverview } from "./millingApi";
+import { getMillingSummary } from "./millingApi";
 
 const machineStatusDots: Record<MachineStatus, string> = {
   running: "bg-success-700",
@@ -74,8 +73,8 @@ function FlowCards({ summary }: { summary: MillingSummary }) {
       <KpiTile
         icon="player-play"
         label={t("kpis.machinesRunning")}
-        value={count(summary.machines.running)}
-        detail={t("outOf", { total: count(summary.machines.total) })}
+        value={count(summary.machinesRunning)}
+        detail={t("outOf", { total: count(summary.machinesInService) })}
       />
     </section>
   );
@@ -95,9 +94,7 @@ export async function millingLoader({ params, request }: LoaderFunctionArgs) {
     throw redirect(localizedHref(locale, millingProjectHref(onlyProject.id)));
   }
 
-  const overview = await getMillingOverview(todayAsInputValue());
-
-  return { site: siteFilterOf(site), data: { ...overview, projects } };
+  return { site: siteFilterOf(site), projects, milling: await getMillingSummary() };
 }
 
 function SiteFilterNav({ current, sites }: { current: SiteFilter; sites: readonly SiteFilter[] }) {
@@ -129,21 +126,19 @@ function SiteFilterNav({ current, sites }: { current: SiteFilter; sites: readonl
 }
 
 export function MillingScreen() {
-  const { site, data } = useLoaderData<typeof millingLoader>();
+  const { site, projects: inService, milling } = useLoaderData<typeof millingLoader>();
   const t = useTranslations("milling");
   const common = useTranslations("common");
   const locale = useLocale();
-  const now = new Date().toISOString();
-  const projects = projectsForSite(data.projects, site);
-  const summaries = projects.map((project) => ({
+  const summaries = projectsForSite(inService, site).map((project) => ({
     project,
-    summary: projectSummary(data, project.id, now),
+    summary: millingOf(milling, project.id),
   }));
   const total = combineSummaries(summaries.map((item) => item.summary));
   const count = (value: number) => formatCount(value, locale);
   const sites: readonly SiteFilter[] = [
     "all",
-    ...siteKeys.filter((key) => projectsForSite(data.projects, key).length > 0),
+    ...siteKeys.filter((key) => projectsForSite(inService, key).length > 0),
   ];
 
   return (
@@ -165,10 +160,10 @@ export function MillingScreen() {
           >
             <p className="flex flex-wrap items-baseline gap-x-2">
               <span className="text-brand-700 text-[28px] leading-tight font-bold">
-                {count(summary.machines.running)}
+                {count(summary.machinesRunning)}
               </span>
               <span className="text-ink-muted text-[15px] font-semibold">
-                {t("outOf", { total: count(summary.machines.total) })}
+                {t("outOf", { total: count(summary.machinesInService) })}
               </span>
               <span className="text-ink text-[15px] font-semibold">
                 {t("project.machinesRunning")}

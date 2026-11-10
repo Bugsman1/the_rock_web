@@ -1,12 +1,8 @@
 import type { ApiSchema } from "@/lib/api/client";
 import { fromDecimal } from "@/lib/format";
+import { rowOfProject } from "@/lib/projects";
 import type { ProjectId } from "@/lib/projects";
-import type { ShipmentRecord, ShipmentStatusKey } from "@/lib/shipments";
-
-type ClientBags = {
-  name: string;
-  bagCount: number;
-};
+import type { ShipmentStatusKey } from "@/lib/shipments";
 
 export const storedStatuses = [
   "pending",
@@ -14,37 +10,31 @@ export const storedStatuses = [
   "refining",
 ] as const satisfies readonly ShipmentStatusKey[];
 
-export function storedShipments(
-  records: readonly ShipmentRecord[],
-  project?: ProjectId,
-): readonly ShipmentRecord[] {
-  return records.filter(
-    (record) =>
-      storedStatuses.some((status) => status === record.status) &&
-      record.remainingBags > 0 &&
-      (project === undefined || record.project === project),
-  );
+type StorageSummary = {
+  customers: number;
+  bags: number;
+};
+
+export type ProjectStorage = StorageSummary & {
+  project: ProjectId;
+};
+
+export function storageFromApi(
+  rows: readonly ApiSchema<"ProjectStorageSummary">[],
+): readonly ProjectStorage[] {
+  return rows.map((row) => ({
+    project: String(row.project),
+    customers: row.customers_with_bags,
+    bags: fromDecimal(row.bags_in_storage),
+  }));
 }
 
-export function shipmentsOfProject<Shipment extends ShipmentRecord>(
-  records: readonly Shipment[],
-  project: ProjectId,
-): readonly Shipment[] {
-  return records.filter((record) => record.project === project);
+export function storageOf(rows: readonly ProjectStorage[], project: ProjectId): StorageSummary {
+  return rowOfProject(rows, project) ?? { customers: 0, bags: 0 };
 }
 
-export function bagCount(records: readonly ShipmentRecord[]): number {
-  return records.reduce((total, record) => total + record.remainingBags, 0);
-}
-
-export function clientBags(records: readonly ShipmentRecord[]): readonly ClientBags[] {
-  const totals = new Map<string, number>();
-
-  for (const record of records) {
-    totals.set(record.customerName, (totals.get(record.customerName) ?? 0) + record.remainingBags);
-  }
-
-  return [...totals].map(([name, bags]) => ({ name, bagCount: bags }));
+export function bagsInStorage(rows: readonly StorageSummary[]): number {
+  return rows.reduce((total, row) => total + row.bags, 0);
 }
 
 export type TopCustomer = {
@@ -77,5 +67,5 @@ export function topCustomersOf(
   rows: readonly ProjectTopCustomers[],
   project: ProjectId,
 ): readonly TopCustomer[] {
-  return rows.find((row) => row.project === project)?.customers ?? [];
+  return rowOfProject(rows, project)?.customers ?? [];
 }

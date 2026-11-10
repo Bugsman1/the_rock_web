@@ -5,8 +5,9 @@ import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { PageLayout } from "@/components/ui/PageHeader";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
-import { notFound } from "@/lib/api/client";
+import { notFound, tryLoad } from "@/lib/api/client";
 import { formatDateTime, formatMoney } from "@/lib/format";
+import { getRefiningPage } from "@/lib/refiningApi";
 import { employeeHref, employeesProjectHref } from "@/lib/routes";
 import { AbsenceDrawers } from "./AbsencesTab";
 import { WithdrawalForm } from "./AmountForms";
@@ -25,6 +26,7 @@ import {
   getWithdrawals,
 } from "./employeesApi";
 import { RaiseForm } from "./RaiseForm";
+import { refinerFilter } from "./RefiningsTab";
 
 function recordDrawers<Row extends { id: string }>(
   rows: readonly Row[],
@@ -40,12 +42,13 @@ function recordDrawers<Row extends { id: string }>(
 
 export async function employeeLoader({ params, request }: LoaderFunctionArgs) {
   const employee = (await getEmployee(params.employee ?? "")) ?? notFound();
-  const [withdrawals, absences, debts, payments, monthlySalaries] = await Promise.all([
+  const [withdrawals, absences, debts, payments, monthlySalaries, refinings] = await Promise.all([
     getWithdrawals(employee.id),
-    getAbsences(employee.id),
+    employee.paidPerGram ? [] : getAbsences(employee.id),
     getDebts(employee.id),
     getDebtPayments(employee.id),
-    getMonthlySalaries(employee.id),
+    employee.paidPerGram ? [] : getMonthlySalaries(employee.id),
+    employee.paidPerGram ? tryLoad(() => getRefiningPage(refinerFilter(employee), 1)) : undefined,
   ]);
   const search = new URL(request.url).searchParams;
 
@@ -56,6 +59,7 @@ export async function employeeLoader({ params, request }: LoaderFunctionArgs) {
     debts,
     payments,
     monthlySalaries,
+    refinings,
     editing: search.get("edit") === "1",
     removing: search.get("delete") === "1",
     withdrawing: search.get("withdraw") === "1",
@@ -90,6 +94,7 @@ export function EmployeeScreen() {
     debts,
     payments,
     monthlySalaries,
+    refinings,
     editing,
     removing,
     withdrawing,
@@ -127,9 +132,12 @@ export function EmployeeScreen() {
         payments={payments}
         absences={absences}
         monthlySalaries={monthlySalaries}
+        refinings={refinings}
       />
 
-      <AbsenceDrawers employee={employee} drawers={absenceDrawers} />
+      {employee.paidPerGram ? null : (
+        <AbsenceDrawers employee={employee} drawers={absenceDrawers} />
+      )}
 
       <DebtDrawers employee={employee} debtDrawers={debtDrawers} paymentDrawers={paymentDrawers} />
 
@@ -149,7 +157,7 @@ export function EmployeeScreen() {
 
       <Drawer
         open={raising && adding}
-        title={t("raises.newTitle")}
+        title={employee.paidPerGram ? t("refiningCosts.newTitle") : t("raises.newTitle")}
         closeLabel={common("close")}
         onClose={close}
       >

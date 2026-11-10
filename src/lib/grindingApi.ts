@@ -1,7 +1,6 @@
 import { apiClient, saveOutcome, unwrap } from "./api/client";
 import type { BackendFieldErrors, FieldErrors, SaveResult } from "./api/client";
 import { fetchAllPages, MAX_PAGE_SIZE, PAGE_SIZE } from "./api/pagination";
-import { todayAsInputValue } from "./datetime";
 import { operationFromApi } from "./grinding";
 import type { MillingOperation, NewOperationValues } from "./grinding";
 import type { IsoTimestamp } from "./format";
@@ -35,30 +34,6 @@ export async function getGrindingOperations({
   );
 
   return operations.flatMap(operationFromApi);
-}
-
-export async function getGrindingsEndedOn(day: string): Promise<readonly MillingOperation[]> {
-  const ended: MillingOperation[] = [];
-  let page = 1;
-  let done = false;
-
-  while (!done) {
-    const result = unwrap(
-      await apiClient.GET("/api/v1/grinding-operations/", {
-        params: { query: { is_running: false, ordering: "-end_time", page, page_size: PAGE_SIZE } },
-      }),
-    );
-    const operations = result.results.flatMap(operationFromApi);
-    const ofDay = operations.filter(
-      (operation) =>
-        operation.endedAt !== undefined && todayAsInputValue(new Date(operation.endedAt)) === day,
-    );
-    ended.push(...ofDay);
-    done = ofDay.length < operations.length || page * PAGE_SIZE >= result.count;
-    page += 1;
-  }
-
-  return ended;
 }
 
 export type GrindingListFilter = {

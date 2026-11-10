@@ -10,6 +10,8 @@ type ShipmentFilter = {
   customer?: string;
   statuses?: readonly ShipmentStatusKey[];
   hasRemainingBags?: boolean;
+  settleable?: boolean;
+  ordering?: "arrival_date" | "-arrival_date";
 };
 
 export async function getShipments(
@@ -20,7 +22,7 @@ export async function getShipments(
       await apiClient.GET("/api/v1/shipments/", {
         params: {
           query: {
-            ordering: "-arrival_date",
+            ordering: filter.ordering ?? "-arrival_date",
             page,
             page_size: MAX_PAGE_SIZE,
             ...(filter.project === undefined ? {} : { project: Number(filter.project) }),
@@ -29,6 +31,7 @@ export async function getShipments(
             ...(filter.hasRemainingBags === undefined
               ? {}
               : { has_remaining_bags: filter.hasRemainingBags }),
+            ...(filter.settleable === undefined ? {} : { settleable: filter.settleable }),
           },
         },
         querySerializer: { array: { style: "form", explode: false } },

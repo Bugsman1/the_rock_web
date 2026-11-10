@@ -2,7 +2,7 @@ import type { PdfFile } from "@/components/ui/PdfPreview";
 import type { Locale } from "@/i18n/locales";
 import { apiClient, attachmentFileName, saveFailed, saveOutcome, unwrap } from "@/lib/api/client";
 import type { SaveResult } from "@/lib/api/client";
-import { fetchAllPages, MAX_PAGE_SIZE, PAGE_SIZE, toPage } from "@/lib/api/pagination";
+import { PAGE_SIZE, toPage } from "@/lib/api/pagination";
 import type { Page } from "@/lib/api/pagination";
 import { isRecordId } from "@/lib/projects";
 import type { ProjectId } from "@/lib/projects";
@@ -11,24 +11,13 @@ import {
   settlementAmountsToApi,
   settlementErrorsFromApi,
   settlementFromApi,
+  settlementSummaryFromApi,
 } from "./settlements";
 import type { NewSettlementValues, Settlement, SettlementAmountsValues } from "./settlements";
 
 type SaveSettlementResult = SaveResult<keyof NewSettlementValues>;
 
 type Failure = Extract<SaveSettlementResult, { ok: false }>;
-
-type SettlementFilter = {
-  customer?: string;
-  project?: ProjectId;
-};
-
-function filterToQuery({ customer, project }: SettlementFilter) {
-  return {
-    ...(customer === undefined ? {} : { customer: Number(customer) }),
-    ...(project === undefined ? {} : { project: Number(project) }),
-  };
-}
 
 export async function getSettlementPage(
   search: string,
@@ -41,7 +30,7 @@ export async function getSettlementPage(
         ordering: "-created_at",
         page,
         page_size: PAGE_SIZE,
-        ...filterToQuery({ project }),
+        project: Number(project),
         ...(search.trim() === "" ? {} : { search: search.trim() }),
       },
     },
@@ -50,18 +39,8 @@ export async function getSettlementPage(
   return toPage(unwrap(result), page, settlementFromApi);
 }
 
-export async function getSettlements(
-  filter: SettlementFilter = {},
-): Promise<readonly Settlement[]> {
-  const settlements = await fetchAllPages(async (page) =>
-    unwrap(
-      await apiClient.GET("/api/v1/settlements/", {
-        params: { query: { ...filterToQuery(filter), page, page_size: MAX_PAGE_SIZE } },
-      }),
-    ),
-  );
-
-  return settlements.map(settlementFromApi);
+export async function getSettlementSummary() {
+  return settlementSummaryFromApi(unwrap(await apiClient.GET("/api/v1/settlements/summary/")));
 }
 
 export async function getSettlement(id: string): Promise<Settlement | undefined> {

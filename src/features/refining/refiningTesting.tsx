@@ -72,6 +72,18 @@ export function withTwoProjects() {
   );
 }
 
+export function refiningSummary(project: number, overrides: object = {}) {
+  return {
+    project,
+    project_name: `Projet ${project}`,
+    grindings_waiting: 0,
+    bags_waiting: "0.0",
+    refined_today: 0,
+    refinings_total: 0,
+    ...overrides,
+  };
+}
+
 export const refined = {
   id: 9,
   grinding_operation: 3,
@@ -80,6 +92,10 @@ export const refined = {
   grinder_code: "P3-2",
   project_name: "Zouérat 1",
   worker_name: "Aicha",
+  refiner: 21,
+  refiner_name: "Brahim",
+  refiner_matricule: "SAF-1",
+  refiner_earned: 572,
   bags_count: 4,
   refining_date: "2026-10-07T09:30:00Z",
   weight_before: "120.500",
@@ -123,14 +139,11 @@ export function serveRefiningApi() {
   beforeEach(() => {
     server.use(
       http.get(`${API}/projects/`, () => page([zouerat])),
-      http.get(`${API}/projects/3/`, () =>
-        HttpResponse.json({
-          id: 3,
-          name: "Zouérat 1",
-          site: "zouerat",
-          status: "active",
-          ...stamps,
-        }),
+      http.get(`${API}/refining-operations/summary/`, () =>
+        HttpResponse.json([
+          refiningSummary(3, { grindings_waiting: 2, bags_waiting: "8.0", refinings_total: 1 }),
+          refiningSummary(4),
+        ]),
       ),
       http.get(`${API}/grinding-operations/`, ({ request }) =>
         page(grindingsAsked(new URL(request.url).searchParams)),
@@ -148,6 +161,21 @@ export function serveRefiningApi() {
         params.id === "9"
           ? HttpResponse.json(refined)
           : HttpResponse.json({ detail: "not found" }, { status: 404 }),
+      ),
+      http.get(`${API}/refiners/`, ({ request }) =>
+        HttpResponse.json(
+          new URL(request.url).searchParams.get("project") === "3"
+            ? [
+                {
+                  id: 21,
+                  matricule: "SAF-1",
+                  full_name: "Brahim",
+                  project: 3,
+                  project_name: "Zouérat 1",
+                },
+              ]
+            : [],
+        ),
       ),
       http.get(`${API}/grinders/`, () =>
         page([
@@ -256,6 +284,7 @@ export function renderRefiningForm(
                   operation={operation}
                   projectName="Zouérat 1"
                   workers={[{ id: "4", name: "Aicha" }]}
+                  refiners={[{ id: "21", name: "Brahim", matricule: "SAF-1" }]}
                   defaultDate="2026-10-12"
                   defaultTime="09:30"
                   onSaved={onSaved}

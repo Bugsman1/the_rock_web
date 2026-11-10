@@ -9,7 +9,8 @@ import { noAccess } from "@/lib/access";
 import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
-import { endOperation, getMillingOverview } from "./millingApi";
+import { getGrindingOperations } from "@/lib/grindingApi";
+import { endOperation } from "./millingApi";
 import { MillingScreen, millingLoader } from "./MillingScreens";
 import { MillingProjectScreen, millingProjectLoader } from "./MillingProjectScreen";
 import { MachineDetailScreen, machineLoader } from "./MachineScreen";
@@ -65,6 +66,22 @@ const runningOperation = {
 };
 
 const zouerat = { id: 3, name: "Zouérat 1", site: "zouerat", status: "active", ...stamps };
+
+const grindingSummary = (project: number, overrides: object = {}) => ({
+  project,
+  project_name: `Projet ${project}`,
+  bags_waiting: "0.0",
+  waiting_shipments: 0,
+  bags_grinding: "0.0",
+  bags_ground_today: "0.0",
+  machines_running: 0,
+  machines_in_service: 0,
+  ...overrides,
+});
+
+function answerGrindingSummary(rows: readonly object[]) {
+  server.use(http.get(`${API}/grinding-operations/summary/`, () => HttpResponse.json(rows)));
+}
 
 const withTwoProjects = () =>
   server.use(
@@ -144,16 +161,6 @@ function openAt(path: string, access: Access = allRights) {
   );
 }
 
-describe("getMillingOverview", () => {
-  it("keeps the waiting and grinding shipments and places each operation on its machine", async () => {
-    const data = await getMillingOverview("2026-10-08");
-
-    expect(data.shipments.map((item) => item.shipmentNumber)).toEqual(["SH-1", "SH-2", "SH-4"]);
-    expect(data.machines.map((machine) => machine.number)).toEqual([1, 2, 3]);
-    expect(data.operations).toMatchObject([{ id: "5", machine: 1, operatorName: "Ahmed" }]);
-  });
-});
-
 describe("endOperation", () => {
   it("records the end and leaves the shipment's status to the backend", async () => {
     let ended: unknown;
@@ -163,7 +170,7 @@ describe("endOperation", () => {
         return HttpResponse.json({});
       }),
     );
-    const [operation] = (await getMillingOverview("2026-10-08")).operations;
+    const [operation] = await getGrindingOperations({ running: true });
 
     if (operation === undefined) {
       throw new Error("operation missing");
@@ -204,6 +211,7 @@ describe("milling screens", () => {
 
   it("sums the machines and bags of every project", async () => {
     withTwoProjects();
+    answerGrindingSummary([grindingSummary(3), grindingSummary(4)]);
     openAt("/fr/milling");
 
     expect(await screen.findByRole("heading", { name: /Zouérat 1/ })).toBeVisible();
@@ -214,24 +222,49 @@ describe("milling screens", () => {
     );
   });
 
-  it("shows the bags waiting, grinding and ground today, and the machines running", async () => {
+  it("shows the backend's bags waiting, grinding and ground today, and machines running", async () => {
     withTwoProjects();
+    answerGrindingSummary([
+      grindingSummary(3, {
+        bags_waiting: "11.0",
+        waiting_shipments: 3,
+        bags_grinding: "2.0",
+        bags_ground_today: "1.5",
+        machines_running: 1,
+        machines_in_service: 2,
+      }),
+      grindingSummary(4, { bags_waiting: "4.0", waiting_shipments: 1, machines_in_service: 1 }),
+    ]);
     openAt("/fr/milling");
 
     const flow = within(await screen.findByRole("region", { name: text.flow.title }));
     const cards = flow.getAllByRole("term").map((card) => card.parentElement?.textContent);
 
     expect(cards).toEqual([
-      `${text.flow.waiting}11${text.flow.bags}`,
+      `${text.flow.waiting}15${text.flow.bags}`,
       `${text.flow.milling}2${text.flow.bags}`,
-      `${text.flow.milledToday}0${text.flow.bags}`,
+      `${text.flow.milledToday}1,5${text.flow.bags}`,
       `${text.kpis.machinesRunning}1sur 3`,
     ]);
-    expect(flow.getByText("sur 3")).toBeVisible();
+  });
+
+  it("shows only the projects of the chosen site in the figures", async () => {
+    withTwoProjects();
+    answerGrindingSummary([
+      grindingSummary(3, { bags_waiting: "11.0", machines_in_service: 2 }),
+      grindingSummary(4, { bags_waiting: "4.0", machines_in_service: 1 }),
+    ]);
+    openAt("/fr/milling?site=sfariyat");
+
+    const flow = within(await screen.findByRole("region", { name: text.flow.title }));
+
+    expect(flow.getByText("4")).toBeVisible();
+    expect(flow.getByText("sur 1")).toBeVisible();
+    expect(screen.queryByRole("heading", { name: /Zouérat 1/ })).toBeNull();
   });
 
   it("marks a backlog once 50 bags are waiting", async () => {
-    server.use(http.get(`${API}/shipments/`, () => page([shipment(4, "pending", 50)])));
+    answerGrindingSummary([grindingSummary(3, { bags_waiting: "50.0" })]);
     withTwoProjects();
     openAt("/fr/milling");
 

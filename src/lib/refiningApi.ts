@@ -1,57 +1,8 @@
 import { apiClient, unwrap } from "./api/client";
-import { fetchAllPages, MAX_PAGE_SIZE, PAGE_SIZE } from "./api/pagination";
+import { PAGE_SIZE } from "./api/pagination";
 import type { ProjectId } from "./projects";
 import { refiningOperationFromApi } from "./refining";
 import type { RefiningOperation } from "./refining";
-
-export type RefiningOperationsFilter = {
-  project?: ProjectId;
-  customer?: string;
-  goldWeighed?: boolean;
-};
-
-export async function getRefiningOperations({
-  project,
-  customer,
-  goldWeighed,
-}: RefiningOperationsFilter = {}): Promise<readonly RefiningOperation[]> {
-  const operations = await fetchAllPages(async (page) =>
-    unwrap(
-      await apiClient.GET("/api/v1/refining-operations/", {
-        params: {
-          query: {
-            ordering: "-refining_date",
-            page,
-            page_size: MAX_PAGE_SIZE,
-            ...(project === undefined ? {} : { project: Number(project) }),
-            ...(customer === undefined ? {} : { shipment__customer: Number(customer) }),
-            ...(goldWeighed === undefined ? {} : { gold_weighed: goldWeighed }),
-          },
-        },
-      }),
-    ),
-  );
-
-  return operations.map(refiningOperationFromApi);
-}
-
-export async function countRefinings(project: ProjectId, day?: string): Promise<number> {
-  const result = unwrap(
-    await apiClient.GET("/api/v1/refining-operations/", {
-      params: {
-        query: {
-          page_size: 1,
-          project: Number(project),
-          ...(day === undefined
-            ? {}
-            : { refining_date__date__gte: day, refining_date__date__lte: day }),
-        },
-      },
-    }),
-  );
-
-  return result.count;
-}
 
 export type RefiningListFilter = {
   project: ProjectId;
@@ -61,6 +12,7 @@ export type RefiningListFilter = {
   customer?: string;
   refinedFrom?: string;
   refinedTo?: string;
+  refiner?: string;
 };
 
 export type RefiningSlice = {
@@ -88,6 +40,7 @@ export async function getRefiningPage(
             ? {}
             : { refining_date__date__gte: filter.refinedFrom }),
           ...(filter.refinedTo === undefined ? {} : { refining_date__date__lte: filter.refinedTo }),
+          ...(filter.refiner === undefined ? {} : { refiner: Number(filter.refiner) }),
         },
       },
     }),

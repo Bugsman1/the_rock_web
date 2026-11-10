@@ -62,12 +62,29 @@ function answerProjectList(projects: readonly object[]) {
   server.use(http.get(`${API}/projects/`, () => page(projects)));
 }
 
+function answerStorage() {
+  const asked: URLSearchParams[] = [];
+  server.use(
+    http.get(`${API}/shipments/summary/`, ({ request }) => {
+      asked.push(new URL(request.url).searchParams);
+      return HttpResponse.json([
+        {
+          project: 3,
+          project_name: "Zouérat 1",
+          customers_with_bags: 2,
+          bags_in_storage: "18.5",
+        },
+      ]);
+    }),
+  );
+
+  return asked;
+}
+
 function answerProject() {
   answerProjectList([apiProject(3, "Zouérat 1"), apiProject(4, "Zouérat 2")]);
+  answerStorage();
   server.use(
-    http.get(`${API}/projects/3/`, () =>
-      HttpResponse.json({ id: 3, name: "Zouérat 1", site: "zouerat", status: "active", ...stamps }),
-    ),
     http.get(`${API}/shipments/`, () =>
       page([
         apiShipment(1, "pending"),
@@ -164,6 +181,27 @@ describe("ProjectStorageScreen", () => {
         screen.queryByRole("columnheader", { name: messages.shipments.project.position }),
       ).toBeNull(),
     );
+  });
+
+  it("shows the project's clients and bags in storage from the backend's summary", async () => {
+    answerProjectList([apiProject(3, "Zouérat 1"), apiProject(4, "Zouérat 2")]);
+    const summary = answerStorage();
+    const asked = answerShipments([apiShipment(1, "pending")]);
+    openProject("/fr/shipments/projects/3");
+
+    expect(await screen.findByText("SH-1")).toBeVisible();
+    expect(summary[0]?.get("project")).toBe("3");
+    expect(screen.getByText("18,5")).toBeVisible();
+    expect(screen.getByText("2")).toBeVisible();
+    expect(asked).toHaveLength(1);
+  });
+
+  it("answers not found for a project the user cannot see", async () => {
+    answerProjectList([apiProject(4, "Zouérat 2")]);
+    const router = openProject("/fr/shipments/projects/3");
+
+    await vi.waitFor(() => expect(router.state.errors).not.toBeNull());
+    expect(Object.values(router.state.errors ?? {})[0]).toMatchObject({ status: 404 });
   });
 
   it("lists the shipments still to grind, oldest first, one page at a time", async () => {
@@ -288,16 +326,8 @@ describe("ProjectStorageScreen", () => {
 
   it("keeps a fully ground shipment in the list as refining, with no grinding to start", async () => {
     answerProjectList([apiProject(3, "Zouérat 1"), apiProject(4, "Zouérat 2")]);
+    answerStorage();
     server.use(
-      http.get(`${API}/projects/3/`, () =>
-        HttpResponse.json({
-          id: 3,
-          name: "Zouérat 1",
-          site: "zouerat",
-          status: "active",
-          ...stamps,
-        }),
-      ),
       http.get(`${API}/shipments/`, () =>
         page([{ ...apiShipment(4, "grinding", 0), ground_bags: 10, is_ground: true }]),
       ),

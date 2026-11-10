@@ -11,27 +11,24 @@ import { TablePanel } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
 import { parsePageNumber } from "@/lib/api/pagination";
 import { formatCount } from "@/lib/format";
-import { getProjects, requireProject } from "@/lib/projectsApi";
-import { isInService } from "@/lib/projects";
+import { notFound } from "@/lib/api/client";
+import { getProjects } from "@/lib/projectsApi";
+import { findProject, isInService } from "@/lib/projects";
 import { newSettlementHref, SETTLEMENTS_HREF, settlementsProjectHref } from "@/lib/routes";
 import { matchesSearch } from "@/lib/search";
-import { getRefiningOperations } from "@/lib/refiningApi";
 import { getShipments } from "@/lib/shipmentsApi";
-import { settleableShipmentsOfProject, settleableStatuses } from "./settlements";
-import { getSettlementPage, getSettlements } from "./settlementsApi";
+import { getSettlementPage } from "./settlementsApi";
 import { SettlementTable, WaitingShipmentsTable } from "./SettlementTables";
 
 export async function settlementProjectLoader({ params, request }: LoaderFunctionArgs) {
   const search = new URL(request.url).searchParams;
   const query = (search.get("q") ?? "").trim();
   const page = parsePageNumber(search.get("page"));
-  const project = await requireProject(params.project ?? "");
-  const [projects, shipments, settlements, settlementPage, refinings] = await Promise.all([
-    getProjects(),
-    getShipments({ project: project.id, statuses: settleableStatuses }),
-    getSettlements({ project: project.id }),
+  const projects = await getProjects();
+  const project = findProject(projects, params.project ?? "") ?? notFound();
+  const [waiting, settlementPage] = await Promise.all([
+    getShipments({ project: project.id, settleable: true, ordering: "arrival_date" }),
     getSettlementPage(query, page, project.id),
-    getRefiningOperations({ project: project.id, goldWeighed: false }),
   ]);
 
   return {
@@ -39,7 +36,7 @@ export async function settlementProjectLoader({ params, request }: LoaderFunctio
     query,
     page,
     settlementPage,
-    waiting: settleableShipmentsOfProject(shipments, settlements, refinings, project.id),
+    waiting,
     hasOtherProjects: projects.filter(isInService).length > 1,
   };
 }

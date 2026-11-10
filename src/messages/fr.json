@@ -780,6 +780,7 @@
       "date": "Date d'affinage",
       "time": "Heure d'affinage",
       "worker": "Responsable",
+      "refiner": "Affineur",
       "weightBefore": "Poids avant affinage (g)",
       "weightAfter": "Poids après affinage (g)",
       "goldWithMaterial": "Or avec matière (g)",
@@ -794,6 +795,7 @@
     },
     "form": {
       "workerPlaceholder": "Choisir le responsable",
+      "noRefiner": "Aucun affineur",
       "submit": "Enregistrer l'affinage",
       "saving": "Enregistrement de l'affinage",
       "lossReasonPlaceholder": "Choisir la raison de la perte",
@@ -865,7 +867,9 @@
       "from": "Du",
       "to": "Au",
       "days": "Jours",
-      "repayment": "Remboursement"
+      "repayment": "Remboursement",
+      "costPerGram": "Coût par gramme",
+      "refinedGold": "Or raffiné"
     },
     "form": {
       "newTitle": "Nouvel employé",
@@ -879,7 +883,8 @@
       "salaryInvalid": "Saisissez un salaire supérieur à zéro",
       "amountInvalid": "Saisissez un montant supérieur à zéro",
       "endBeforeStart": "La date de fin ne peut pas précéder la date d'embauche",
-      "absenceEndBeforeStart": "La date de fin ne peut pas précéder la date de début"
+      "absenceEndBeforeStart": "La date de fin ne peut pas précéder la date de début",
+      "costInvalid": "Saisissez un coût supérieur à zéro"
     },
     "remove": {
       "title": "Supprimer l'employé",
@@ -909,6 +914,20 @@
       "from": "À partir du",
       "create": "Enregistrer l'augmentation",
       "empty": "Aucun salaire"
+    },
+    "refiningCosts": {
+      "title": "Historique du coût par gramme",
+      "new": "Changer le coût",
+      "newTitle": "Changer le coût par gramme",
+      "current": "Coût actuel",
+      "newCost": "Nouveau coût par gramme",
+      "create": "Enregistrer le coût",
+      "empty": "Aucun coût"
+    },
+    "refinings": {
+      "title": "Affinages",
+      "earned": "Gagné",
+      "empty": "Aucun affinage"
     },
     "absences": {
       "title": "Jours retenus",
@@ -973,9 +992,13 @@
       "withdrawals": "Retraits",
       "debts": "Dettes",
       "deductions": "Retenues",
-      "salaries": "Salaires"
+      "salaries": "Salaires",
+      "refiningCosts": "Coût par gramme",
+      "refinings": "Affinages"
     },
-    "allJobs": "Tous les postes"
+    "allJobs": "Tous les postes",
+    "grams": "{grams} g",
+    "perGram": "{amount} / g"
   },
   "inventory": {
     "title": "Inventaire",
@@ -1093,6 +1116,7 @@
       "amount": "Montant",
       "bagsTransport": "Transport des sacs",
       "passengersTransport": "Transport des passagers",
+      "unloading": "Déchargement des sacs",
       "shipmentsDebt": "Dettes des expéditions",
       "grindingCost": "Coût du broyage",
       "refiningCost": "Coût du raffinage",
@@ -1221,6 +1245,7 @@
     "employeeDebtDeleted": "Dette supprimée",
     "debtPaymentAdded": "Paiement enregistré",
     "debtPaymentUpdated": "Paiement modifié",
-    "debtPaymentDeleted": "Paiement supprimé"
+    "debtPaymentDeleted": "Paiement supprimé",
+    "refiningCostAdded": "Coût par gramme enregistré"
   }
 }

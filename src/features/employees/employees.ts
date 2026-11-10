@@ -4,13 +4,14 @@ import { isIsoDate, isTimeValue } from "@/lib/datetime";
 import { fromDecimal, toMoneyDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import { formatPhone, isValidPhone, phoneToApi } from "@/lib/phone";
+import { rowOfProject } from "@/lib/projects";
 import type { ProjectId } from "@/lib/projects";
-import { isJobTitle } from "./employeeJobs";
+import { isJobTitle, isPaidPerGram } from "./employeeJobs";
 import type { JobTitle } from "./employeeJobs";
 
-export type Salary = {
+export type PayRate = {
   id: string;
-  monthlySalary: number;
+  amount: number;
   from: string;
 };
 
@@ -21,8 +22,12 @@ export type Employee = {
   name: string;
   job: JobTitle;
   phone: string;
-  monthlySalary: number;
-  salaries: readonly Salary[];
+  paidPerGram: boolean;
+  monthlySalary: number | undefined;
+  salaries: readonly PayRate[];
+  costPerGram: number | undefined;
+  refiningCosts: readonly PayRate[];
+  refinedGold: number;
   startedAt: IsoTimestamp;
   endedOn: string | undefined;
   accruedUntil: string;
@@ -71,14 +76,22 @@ export function requiredTime(messages: { required: string; timeInvalid: string }
     .refine(isTimeValue, messages.timeInvalid);
 }
 
-export function createEmployeeSchema(messages: {
-  required: string;
-  phoneInvalid: string;
-  dateInvalid: string;
-  timeInvalid: string;
-  salaryInvalid: string;
-  endBeforeStart: string;
-}) {
+function pay(required: boolean, message: string) {
+  return required ? z.number({ error: message }).positive(message) : z.union([z.nan(), z.number()]);
+}
+
+export function createEmployeeSchema(
+  messages: {
+    required: string;
+    phoneInvalid: string;
+    dateInvalid: string;
+    timeInvalid: string;
+    salaryInvalid: string;
+    costInvalid: string;
+    endBeforeStart: string;
+  },
+  paidPerGram: boolean,
+) {
   return z
     .object({
       name: z.string().trim().min(1, messages.required).max(TEXT_MAX_LENGTH),
@@ -88,7 +101,8 @@ export function createEmployeeSchema(messages: {
         .trim()
         .min(1, { message: messages.required, abort: true })
         .refine(isValidPhone, messages.phoneInvalid),
-      monthlySalary: z.number({ error: messages.salaryInvalid }).positive(messages.salaryInvalid),
+      monthlySalary: pay(!paidPerGram, messages.salaryInvalid),
+      costPerGram: pay(paidPerGram, messages.costInvalid),
       startedOn: requiredIsoDate(messages),
       startTime: requiredTime(messages),
       endedOn: z.string().refine((value) => value === "" || isIsoDate(value), messages.dateInvalid),
@@ -108,6 +122,7 @@ const employeeFields: readonly (keyof EmployeeValues)[] = [
   "job",
   "phone",
   "monthlySalary",
+  "costPerGram",
   "startedOn",
   "startTime",
   "endedOn",
@@ -139,23 +154,8 @@ export function isWithdrawalField(value: string): value is keyof WithdrawalValue
   return withdrawalFields.some((field) => field === value);
 }
 
-export function createRaiseSchema(messages: {
-  required: string;
-  dateInvalid: string;
-  salaryInvalid: string;
-}) {
-  return z.object({
-    monthlySalary: z.number({ error: messages.salaryInvalid }).positive(messages.salaryInvalid),
-    from: requiredIsoDate(messages),
-  });
-}
-
-export type RaiseValues = z.infer<ReturnType<typeof createRaiseSchema>>;
-
-const raiseFields: readonly (keyof RaiseValues)[] = ["monthlySalary", "from"];
-
-export function isRaiseField(value: string): value is keyof RaiseValues {
-  return raiseFields.some((field) => field === value);
+function optionalDecimal(value: string | null | undefined): number | undefined {
+  return value === null || value === undefined ? undefined : fromDecimal(value);
 }
 
 export function employeeFromApi(employee: ApiSchema<"Employee">): Employee {
@@ -166,12 +166,20 @@ export function employeeFromApi(employee: ApiSchema<"Employee">): Employee {
     name: employee.full_name,
     job: employee.job_title,
     phone: formatPhone(employee.phone),
-    monthlySalary: fromDecimal(employee.monthly_salary),
+    paidPerGram: employee.paid_per_gram,
+    monthlySalary: optionalDecimal(employee.monthly_salary),
     salaries: employee.salaries.map((salary) => ({
       id: String(salary.id),
-      monthlySalary: fromDecimal(salary.monthly_salary),
+      amount: fromDecimal(salary.monthly_salary),
       from: salary.effective_from,
     })),
+    costPerGram: optionalDecimal(employee.refining_cost_per_gram),
+    refiningCosts: employee.refining_costs.map((cost) => ({
+      id: String(cost.id),
+      amount: fromDecimal(cost.cost_per_gram),
+      from: cost.effective_from,
+    })),
+    refinedGold: fromDecimal(employee.refined_gold),
     startedAt: employee.start_date,
     endedOn: employee.end_date ?? undefined,
     accruedUntil: employee.accrued_until,
@@ -185,6 +193,10 @@ export function employeeFromApi(employee: ApiSchema<"Employee">): Employee {
     salaryDebtLeft: fromDecimal(employee.remaining_salary_debt),
     otherDebtLeft: fromDecimal(employee.remaining_other_debt),
   };
+}
+
+export function currentPay(employee: Employee): number {
+  return (employee.paidPerGram ? employee.costPerGram : employee.monthlySalary) ?? 0;
 }
 
 export function employeeToApi(values: EmployeeValues, startedAt: IsoTimestamp) {
@@ -205,7 +217,9 @@ export function newEmployeeToApi(
   return {
     ...employeeToApi(values, startedAt),
     project: Number(project),
-    monthly_salary: toMoneyDecimal(values.monthlySalary),
+    ...(isPaidPerGram(values.job)
+      ? { refining_cost_per_gram: toMoneyDecimal(values.costPerGram) }
+      : { monthly_salary: toMoneyDecimal(values.monthlySalary) }),
   };
 }
 
@@ -217,6 +231,9 @@ export function employeeErrorsFromApi(
     ...(errors.job_title === undefined ? {} : { job: errors.job_title }),
     ...(errors.phone === undefined ? {} : { phone: errors.phone }),
     ...(errors.monthly_salary === undefined ? {} : { monthlySalary: errors.monthly_salary }),
+    ...(errors.refining_cost_per_gram === undefined
+      ? {}
+      : { costPerGram: errors.refining_cost_per_gram }),
     ...(errors.start_date === undefined ? {} : { startedOn: errors.start_date }),
     ...(errors.end_date === undefined ? {} : { endedOn: errors.end_date }),
   };
@@ -260,17 +277,14 @@ export function monthlySalaryFromApi(salary: ApiSchema<"EmployeeMonthlySalary">)
   };
 }
 
-export function raiseToApi(employee: string, values: RaiseValues) {
-  return {
-    employee: Number(employee),
-    monthly_salary: toMoneyDecimal(values.monthlySalary),
-    effective_from: values.from,
-  };
+type ProjectEmployees = { project: ProjectId; employees: number };
+
+export function employeeCountsFromApi(
+  rows: readonly ApiSchema<"ProjectEmployeesSummary">[],
+): readonly ProjectEmployees[] {
+  return rows.map((row) => ({ project: String(row.project), employees: row.employees }));
 }
 
-export function raiseErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof RaiseValues> {
-  return {
-    ...(errors.monthly_salary === undefined ? {} : { monthlySalary: errors.monthly_salary }),
-    ...(errors.effective_from === undefined ? {} : { from: errors.effective_from }),
-  };
+export function employeesOf(rows: readonly ProjectEmployees[], project: ProjectId): number {
+  return rowOfProject(rows, project)?.employees ?? 0;
 }

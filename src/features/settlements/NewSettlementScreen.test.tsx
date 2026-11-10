@@ -19,17 +19,20 @@ const select = (number: string) =>
   screen.getByLabelText(text.form.select.replace("{number}", number));
 
 function answerShipments(shipments: readonly object[]) {
-  server.use(http.get(`${API}/shipments/`, () => page(shipments)));
+  const asked: URLSearchParams[] = [];
+  server.use(
+    http.get(`${API}/shipments/`, ({ request }) => {
+      asked.push(new URL(request.url).searchParams);
+      return page(shipments);
+    }),
+  );
+
+  return asked;
 }
 
 describe("NewSettlementScreen", () => {
-  it("lists the chosen customer's fully ground and refined shipments not settled yet", async () => {
-    answerShipments([
-      apiShipment(1, "completed"),
-      apiShipment(3, "completed"),
-      apiShipment(6, "grinding"),
-      { ...apiShipment(8, "refining"), is_ground: true },
-    ]);
+  it("lists the chosen customer's shipments the backend says a settlement can take", async () => {
+    const asked = answerShipments([apiShipment(3, "completed")]);
     const router = openAt("/fr/settlements/new");
     const user = userEvent.setup();
 
@@ -38,10 +41,9 @@ describe("NewSettlementScreen", () => {
 
     expect(await screen.findByText("SHP-00003")).toBeVisible();
     expect(router.state.location.search).toBe("?customer=7");
-    expect(screen.queryByText("SHP-00001")).not.toBeInTheDocument();
+    expect(asked.at(-1)?.get("customer")).toBe("7");
+    expect(asked.at(-1)?.get("settleable")).toBe("true");
     expect(select("SHP-00003")).toBeChecked();
-    expect(screen.queryByText("SHP-00006")).not.toBeInTheDocument();
-    expect(screen.queryByText("SHP-00008")).not.toBeInTheDocument();
     expect(screen.queryByLabelText(text.fields.project)).not.toBeInTheDocument();
   });
 
@@ -97,7 +99,7 @@ describe("NewSettlementScreen", () => {
   });
 
   it("says when the customer has nothing left to settle", async () => {
-    answerShipments([apiShipment(1, "completed"), apiShipment(6, "grinding")]);
+    answerShipments([]);
     openAt("/fr/settlements/new?customer=7");
 
     expect(await screen.findByText(text.form.noShipments)).toBeVisible();

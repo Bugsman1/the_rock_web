@@ -5,6 +5,7 @@ import { CardGrid, KpiTile, LinkCard, StatGrid } from "@/components/ui/Cards";
 import { PageLayout, PageTitle } from "@/components/ui/PageHeader";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { useCan } from "@/lib/accessContext";
+import { notFound } from "@/lib/api/client";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { defaultLocale, isLocale } from "@/i18n/locales";
 import { localizedHref } from "@/i18n/navigation";
@@ -14,8 +15,8 @@ import type { ListQuery } from "@/lib/filters";
 import { formatCount } from "@/lib/format";
 import { machinesFromGrinders } from "@/lib/grinding";
 import { getGrindingOperation, getGrindingPage } from "@/lib/grindingApi";
-import { isInService, isRecordId } from "@/lib/projects";
-import { getGrinders, getProjects, requireProject } from "@/lib/projectsApi";
+import { findProject, isInService, isRecordId } from "@/lib/projects";
+import { getGrinders, getProjects } from "@/lib/projectsApi";
 import { getRefiningOperation, getRefiningPage } from "@/lib/refiningApi";
 import {
   editRefiningHref,
@@ -24,8 +25,14 @@ import {
   startRefiningHref,
 } from "@/lib/routes";
 import { getOperators } from "@/lib/users";
-import { refiningGroups, refiningListFilter, refiningQueueFilter } from "./refining";
-import { getRefiningOverview } from "./refiningApi";
+import {
+  refiningGroups,
+  refiningListFilter,
+  refiningOf,
+  refiningQueueFilter,
+  totalRefining,
+} from "./refining";
+import { getRefiners, getRefiningSummary } from "./refiningApi";
 import { RefiningForm } from "./RefiningForm";
 import { RefiningQueueTable } from "./RefiningQueueTable";
 import { RefiningOperationsTable } from "./RefiningTables";
@@ -39,7 +46,13 @@ export async function refiningLoader({ params }: LoaderFunctionArgs) {
     throw redirect(localizedHref(locale, refiningProjectHref(onlyProject.id)));
   }
 
-  return getRefiningOverview(inService, todayAsInputValue());
+  const summary = await getRefiningSummary();
+  const projects = inService.map((project) => ({
+    project,
+    summary: refiningOf(summary, project.id),
+  }));
+
+  return { total: totalRefining(projects.map((card) => card.summary)), projects };
 }
 
 function pageParams(list: ListQuery, queueSearch: string): URLSearchParams {
@@ -70,8 +83,9 @@ async function waitingGrinding(id: string | null, project: string) {
 
 export async function refiningProjectLoader({ params, request }: LoaderFunctionArgs) {
   const search = new URL(request.url).searchParams;
-  const project = await requireProject(params.project ?? "");
-  const [projects, grinders] = await Promise.all([getProjects(), getGrinders(project.id)]);
+  const projects = await getProjects();
+  const project = findProject(projects, params.project ?? "") ?? notFound();
+  const grinders = await getGrinders(project.id);
   const machines = machinesFromGrinders(grinders);
   const list = listQueryFromParams(
     search,
@@ -87,10 +101,10 @@ export async function refiningProjectLoader({ params, request }: LoaderFunctionA
     waitingGrinding(search.get("grinding"), project.id),
     editedRefining(search.get("edit"), project.id),
   ]);
-  const workers =
+  const [workers, refiners] =
     selected === undefined && editing === undefined
-      ? []
-      : await getOperators(project.id, "refining");
+      ? [[], []]
+      : await Promise.all([getOperators(project.id, "refining"), getRefiners(project.id)]);
 
   return {
     project,
@@ -106,6 +120,7 @@ export async function refiningProjectLoader({ params, request }: LoaderFunctionA
     selected,
     editing,
     workers,
+    refiners,
   };
 }
 
@@ -181,6 +196,7 @@ export function RefiningProjectScreen() {
     selected,
     editing,
     workers,
+    refiners,
   } = useLoaderData<typeof refiningProjectLoader>();
   const t = useTranslations("refining");
   const common = useTranslations("common");
@@ -230,6 +246,7 @@ export function RefiningProjectScreen() {
             operation={refining}
             projectName={project.name}
             workers={workers}
+            refiners={refiners}
             defaultDate={todayAsInputValue(now)}
             defaultTime={nowAsTimeValue(now)}
             onCancel={close}
@@ -251,6 +268,7 @@ export function RefiningProjectScreen() {
             refining={edited.refining}
             projectName={project.name}
             workers={workers}
+            refiners={refiners}
             defaultDate={todayAsInputValue(now)}
             defaultTime={nowAsTimeValue(now)}
             onCancel={close}

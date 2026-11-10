@@ -35,26 +35,8 @@ function answerProjectList(projects: readonly object[]) {
   server.use(http.get(`${API}/projects/`, () => page(projects)));
 }
 
-function apiShipment(id: number, project: number, remaining: number) {
-  return {
-    id,
-    number: `SH-${id}`,
-    customer_name: `Client ${id}`,
-    customer_phone: "+222 22 41 18 30",
-    arrival_date: "2026-10-01T08:00:00Z",
-    bags_count: 10,
-    remaining_bags: remaining,
-    bag_transport_cost_per_bag: "0",
-    transport_total: "0",
-    amount_left_to_pay: "0",
-    is_fully_paid: true,
-    transport_method: "truck",
-    source: "Chami",
-    project,
-    status: "pending",
-    notes: "",
-    ...stamps,
-  };
+function apiStorage(project: number, name: string, customers: number, bags: string) {
+  return { project, project_name: name, customers_with_bags: customers, bags_in_storage: bags };
 }
 
 const topCustomers = [
@@ -104,38 +86,37 @@ async function cardOf(name: string) {
 describe("ShipmentsScreen", () => {
   it("opens the only project of a user limited to one project", async () => {
     answerProjectList([apiProject(3, "Zouérat 1")]);
-    server.use(
-      http.get(`${API}/shipments/`, () => page([])),
-      http.get(`${API}/customers/top-by-bags/per-project/`, () => HttpResponse.json([])),
-    );
     const router = openOverview();
 
     expect(await screen.findByRole("heading", { name: "project page" })).toBeVisible();
     expect(router.state.location.pathname).toBe("/fr/shipments/projects/3");
   });
 
-  it("asks only for the shipments not finished with bags still in storage", async () => {
+  it("shows each project's clients and bags in storage, and the total of the projects shown", async () => {
     answerProjectList([apiProject(3, "Zouérat 1"), apiProject(4, "Zouérat 2")]);
-    let asked: URLSearchParams | undefined;
     server.use(
-      http.get(`${API}/shipments/`, ({ request }) => {
-        asked = new URL(request.url).searchParams;
-        return page([apiShipment(1, 3, 6), apiShipment(2, 3, 2.5)]);
-      }),
+      http.get(`${API}/shipments/summary/`, () =>
+        HttpResponse.json([
+          apiStorage(3, "Zouérat 1", 2, "8.5"),
+          apiStorage(4, "Zouérat 2", 1, "4.0"),
+          apiStorage(5, "Ancien", 1, "1.0"),
+        ]),
+      ),
       http.get(`${API}/customers/top-by-bags/per-project/`, () => HttpResponse.json(topCustomers)),
     );
     openOverview();
 
     const card = await cardOf("Zouérat 1");
-    expect(asked?.get("status__in")).toBe("pending,grinding,refining");
-    expect(asked?.get("has_remaining_bags")).toBe("true");
     expect(card.getByText("8,5")).toBeVisible();
+    expect(card.getByText("2")).toBeVisible();
+    expect((await cardOf("Zouérat 2")).getByText("4")).toBeVisible();
+    expect(screen.getByText("12,5")).toBeVisible();
   });
 
   it("shows each project's top customers by their share of its bags", async () => {
     answerProjectList([apiProject(3, "Zouérat 1"), apiProject(4, "Zouérat 2")]);
     server.use(
-      http.get(`${API}/shipments/`, () => page([])),
+      http.get(`${API}/shipments/summary/`, () => HttpResponse.json([])),
       http.get(`${API}/customers/top-by-bags/per-project/`, () => HttpResponse.json(topCustomers)),
     );
     openOverview();
@@ -154,7 +135,9 @@ describe("ShipmentsScreen", () => {
   it("keeps the cards when the top customers cannot be loaded, and says why", async () => {
     answerProjectList([apiProject(3, "Zouérat 1"), apiProject(4, "Zouérat 2")]);
     server.use(
-      http.get(`${API}/shipments/`, () => page([apiShipment(1, 3, 6)])),
+      http.get(`${API}/shipments/summary/`, () =>
+        HttpResponse.json([apiStorage(3, "Zouérat 1", 1, "6.0")]),
+      ),
       http.get(
         `${API}/customers/top-by-bags/per-project/`,
         () => new HttpResponse(null, { status: 403 }),

@@ -6,6 +6,7 @@ import {
   API,
   apiEmployee,
   apiMonthlySalary,
+  apiRefiner,
   apiWithdrawal,
   capture,
   cellsOf,
@@ -205,6 +206,51 @@ describe("one employee", () => {
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(deleted).toBe(true);
+  });
+
+  it("shows a gold refiner's cost per gram, refined gold and cost history, with no days off", async () => {
+    serveProjects([11]);
+    serveEmployeeData([apiRefiner(9)]);
+    openAt("/fr/employees/9");
+
+    expect(await screen.findByRole("heading", { name: "Brahim" })).toBeVisible();
+    expect(detail(text.fields.costPerGram)).toHaveTextContent(money(40));
+    expect(detail(text.fields.refinedGold)).toHaveTextContent("12,5 g");
+    expect(screen.queryByText(text.fields.monthlySalary, { selector: "dt" })).toBeNull();
+    expect(screen.queryByText(text.fields.absentDays, { selector: "dt" })).toBeNull();
+    expect(screen.queryByRole("link", { name: text.absences.new })).toBeNull();
+    expect(screen.queryByRole("tab", { name: text.tabs.deductions })).toBeNull();
+    expect(screen.queryByRole("tab", { name: text.tabs.salaries })).toBeNull();
+    await openTab(text.tabs.refiningCosts);
+    expect(rowsOf(text.refiningCosts.title).map(cellsOf)).toEqual([
+      ["01/01/2026", money(35)],
+      ["01/10/2026", money(40)],
+    ]);
+  });
+
+  it("changes a gold refiner's cost per gram from a date", async () => {
+    serveProjects([11]);
+    serveEmployeeData([apiRefiner(9)]);
+    const sent = capture(
+      "post",
+      "/employee-refining-costs/",
+      HttpResponse.json({}, { status: 201 }),
+    );
+    const user = userEvent.setup();
+    openAt("/fr/employees/9?raise=1");
+
+    const drawer = within(await screen.findByRole("dialog", { name: text.refiningCosts.newTitle }));
+    expect(drawer.getByText(text.refiningCosts.current).nextSibling).toHaveTextContent(money(40));
+    await user.click(drawer.getByRole("button", { name: text.refiningCosts.create }));
+    expect(drawer.getByText(text.errors.costInvalid)).toBeVisible();
+
+    await user.type(drawer.getByLabelText(text.refiningCosts.newCost), "45");
+    await user.type(drawer.getByLabelText(text.raises.from), "01/11/2026");
+    await user.click(drawer.getByRole("button", { name: text.refiningCosts.create }));
+
+    await waitFor(() =>
+      expect(sent).toEqual([{ employee: 9, cost_per_gram: "45", effective_from: "2026-11-01" }]),
+    );
   });
 
   it("offers no withdrawal, raise, edit or delete to a role that can only view", async () => {

@@ -780,6 +780,7 @@
       "date": "تاريخ التصفية",
       "time": "وقت التصفية",
       "worker": "المسؤول",
+      "refiner": "الصفّاي",
       "weightBefore": "وزن المادة قبل التصفية (غ)",
       "weightAfter": "وزن المادة بعد التصفية (غ)",
       "goldWithMaterial": "الذهب مع المادة (غ)",
@@ -794,6 +795,7 @@
     },
     "form": {
       "workerPlaceholder": "اختر المسؤول",
+      "noRefiner": "بدون صفّاي",
       "submit": "تسجيل التصفية",
       "saving": "جارٍ تسجيل التصفية",
       "lossReasonPlaceholder": "اختر سبب الخسارة",
@@ -865,7 +867,9 @@
       "from": "من",
       "to": "إلى",
       "days": "الأيام",
-      "repayment": "طريقة السداد"
+      "repayment": "طريقة السداد",
+      "costPerGram": "السعر للغرام",
+      "refinedGold": "الذهب المصفّى"
     },
     "form": {
       "newTitle": "موظف جديد",
@@ -879,7 +883,8 @@
       "salaryInvalid": "أدخل راتبًا أكبر من صفر",
       "amountInvalid": "أدخل مبلغًا أكبر من صفر",
       "endBeforeStart": "تاريخ النهاية لا يمكن أن يسبق تاريخ البدء",
-      "absenceEndBeforeStart": "تاريخ النهاية لا يمكن أن يسبق تاريخ البداية"
+      "absenceEndBeforeStart": "تاريخ النهاية لا يمكن أن يسبق تاريخ البداية",
+      "costInvalid": "أدخل سعرًا أكبر من صفر"
     },
     "remove": {
       "title": "حذف الموظف",
@@ -909,6 +914,20 @@
       "from": "ابتداءً من",
       "create": "تسجيل الزيادة",
       "empty": "لا توجد رواتب"
+    },
+    "refiningCosts": {
+      "title": "سجل السعر للغرام",
+      "new": "تغيير السعر",
+      "newTitle": "تغيير السعر للغرام",
+      "current": "السعر الحالي",
+      "newCost": "السعر الجديد للغرام",
+      "create": "حفظ السعر",
+      "empty": "لا يوجد سعر"
+    },
+    "refinings": {
+      "title": "التصفيات",
+      "earned": "المستحق",
+      "empty": "لا توجد تصفية"
     },
     "absences": {
       "title": "الأيام المخصومة",
@@ -973,9 +992,13 @@
       "withdrawals": "السحوبات",
       "debts": "الديون",
       "deductions": "الخصومات",
-      "salaries": "الرواتب"
+      "salaries": "الرواتب",
+      "refiningCosts": "السعر للغرام",
+      "refinings": "التصفيات"
     },
-    "allJobs": "كل الوظائف"
+    "allJobs": "كل الوظائف",
+    "grams": "{grams} غ",
+    "perGram": "{amount} / غ"
   },
   "inventory": {
     "title": "المخزون",
@@ -1093,6 +1116,7 @@
       "amount": "المبلغ",
       "bagsTransport": "نقل الأكياس",
       "passengersTransport": "نقل الركاب",
+      "unloading": "تكلفة حط الدبش",
       "shipmentsDebt": "ديون الشحنات",
       "grindingCost": "تكلفة الطحن",
       "refiningCost": "تكلفة التصفية",
@@ -1221,6 +1245,7 @@
     "employeeDebtDeleted": "تم حذف الدين",
     "debtPaymentAdded": "تم تسجيل التسديد",
     "debtPaymentUpdated": "تم حفظ التسديد",
-    "debtPaymentDeleted": "تم حذف التسديد"
+    "debtPaymentDeleted": "تم حذف التسديد",
+    "refiningCostAdded": "تم تسجيل السعر للغرام"
   }
 }

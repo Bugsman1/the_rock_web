@@ -67,11 +67,15 @@ export function apiEmployee(
     project: 11,
     project_name: "Projet 11",
     phone: "+22236520714",
+    paid_per_gram: false,
     monthly_salary: "40000.00",
     salaries: [
       { id: 1, monthly_salary: "39999.00", effective_from: "2026-01-01", notes: "" },
       { id: 2, monthly_salary: "40000.00", effective_from: "2026-10-01", notes: "" },
     ],
+    refining_cost_per_gram: null,
+    refining_costs: [],
+    refined_gold: "0",
     start_date: "2026-01-01T08:00:00Z",
     end_date: null,
     accrued_until: "2026-10-28",
@@ -91,6 +95,55 @@ export function apiEmployee(
     created_by_name: "admin",
     created_at: "2026-01-01T08:00:00Z",
     updated_at: "2026-01-01T08:00:00Z",
+    ...changes,
+  };
+}
+
+export function apiRefiner(id: number, changes: Partial<ApiSchema<"Employee">> = {}) {
+  return apiEmployee(id, {
+    full_name: "Brahim",
+    job_title: "SAF",
+    job_title_name: "Affineurs",
+    paid_per_gram: true,
+    monthly_salary: null,
+    salaries: [],
+    refining_cost_per_gram: "40.00",
+    refining_costs: [
+      { id: 3, cost_per_gram: "35.00", effective_from: "2026-01-01", notes: "" },
+      { id: 4, cost_per_gram: "40.00", effective_from: "2026-10-01", notes: "" },
+    ],
+    refined_gold: "12.500",
+    accrued_salary: "500.00",
+    balance: "500.00",
+    ...changes,
+  });
+}
+
+export function apiRefining(
+  id: number,
+  changes: Partial<ApiSchema<"RefiningOperation">> = {},
+): ApiSchema<"RefiningOperation"> {
+  return {
+    id,
+    grinding_operation: id,
+    grinding_sequence: 1,
+    shipment_number: `SH-${id}`,
+    customer_name: `Client ${id}`,
+    grinder_code: "P11-2",
+    project_name: "Projet 11",
+    worker_name: "Aicha",
+    refiner: 9,
+    refiner_name: "Brahim",
+    refiner_matricule: "SAF-1",
+    refiner_earned: null,
+    bags_count: 2,
+    refining_date: "2026-10-05T09:30:00Z",
+    weight_before: "120.000",
+    weight_after: "118.000",
+    weight_loss: "2.000",
+    loss: "2.000",
+    created_at: "2026-10-05T09:30:00Z",
+    updated_at: "2026-10-05T09:30:00Z",
     ...changes,
   };
 }
@@ -239,6 +292,7 @@ export function serveEmployeeData(
         : HttpResponse.json(employee);
     }),
     ofEmployee("employee-withdrawals", withdrawals),
+    http.get(`${API}/refining-operations/`, () => HttpResponse.json({ count: 0, results: [] })),
   );
   serveEmployeeRecords({});
 }

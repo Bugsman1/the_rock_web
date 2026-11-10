@@ -1,28 +1,13 @@
-import { apiClient, saveOutcome } from "@/lib/api/client";
+import { apiClient, saveOutcome, unwrap } from "@/lib/api/client";
 import type { BackendFieldErrors, FieldErrors, SaveResult } from "@/lib/api/client";
 import { toDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
-import { machinesFromGrinders } from "@/lib/grinding";
 import type { MillingOperation } from "@/lib/grinding";
-import { getGrindingOperations, getGrindingsEndedOn } from "@/lib/grindingApi";
-import { getGrinders } from "@/lib/projectsApi";
-import { getShipments } from "@/lib/shipmentsApi";
-import { millingShipments, millingStatuses } from "./milling";
+import { millingSummaryFromApi } from "./milling";
 import type { EndMillingValues, MercuryAdditionValues, MercuryValues } from "./milling";
 
-export async function getMillingOverview(today: string) {
-  const [grinders, shipments, running, endedToday] = await Promise.all([
-    getGrinders(),
-    getShipments({ statuses: millingStatuses, hasRemainingBags: true }),
-    getGrindingOperations({ running: true }),
-    getGrindingsEndedOn(today),
-  ]);
-
-  return {
-    machines: machinesFromGrinders(grinders),
-    shipments: millingShipments(shipments),
-    operations: [...running, ...endedToday],
-  };
+export async function getMillingSummary() {
+  return millingSummaryFromApi(unwrap(await apiClient.GET("/api/v1/grinding-operations/summary/")));
 }
 
 function endErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof EndMillingValues> {

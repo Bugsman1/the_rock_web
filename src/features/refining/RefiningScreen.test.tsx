@@ -11,6 +11,7 @@ import {
   page,
   panel,
   refined,
+  refiningSummary,
   serveRefiningApi,
   server,
   text,
@@ -37,16 +38,25 @@ describe("RefiningScreen", () => {
     );
   });
 
-  it("sums what the backend gives as waiting and the refinings it counts, then a card per project, with no loss", async () => {
+  it("sums the backend's summary of each project, then a card per project, with no loss", async () => {
     withTwoProjects();
+    server.use(
+      http.get(`${API}/refining-operations/summary/`, () =>
+        HttpResponse.json([
+          refiningSummary(3, { grindings_waiting: 2, bags_waiting: "6.5", refinings_total: 1 }),
+          refiningSummary(4, { bags_waiting: "1.5", refined_today: 2, refinings_total: 3 }),
+          refiningSummary(5, { grindings_waiting: 9, refinings_total: 9 }),
+        ]),
+      ),
+    );
     openAt("/fr/refining");
 
     const summary = within(await screen.findByRole("region", { name: text.overview.title }));
     expect(summary.getByText(text.overview.waiting).nextElementSibling).toHaveTextContent(
       /^2\s*8 sacs$/,
     );
-    expect(summary.getByText(text.overview.refined).nextElementSibling).toHaveTextContent("1");
-    expect(summary.getByText(text.overview.refinedToday).nextElementSibling).toHaveTextContent("0");
+    expect(summary.getByText(text.overview.refined).nextElementSibling).toHaveTextContent("4");
+    expect(summary.getByText(text.overview.refinedToday).nextElementSibling).toHaveTextContent("2");
     expect(
       screen
         .getAllByRole("link", { name: messages.common.openProject })
@@ -84,6 +94,7 @@ describe("RefiningScreen", () => {
       text.fields.client,
       text.fields.machine,
       text.fields.worker,
+      text.fields.refiner,
       text.fields.bags,
       text.fields.weightBefore,
       text.fields.weightAfter,
@@ -109,6 +120,7 @@ describe("RefiningScreen", () => {
       "Client SH-3",
       text.machineNumber.replace("{number}", "2"),
       "Aicha",
+      "Brahim",
       "4",
       "120,5",
       "118,25",
@@ -203,7 +215,7 @@ describe("RefiningScreen", () => {
     const goldOf = (id: number) => {
       const row = rowLinks.find((link) => link.getAttribute("href")?.endsWith(`edit=${id}`));
 
-      return within(row?.closest("tr") ?? document.body).getAllByRole("cell")[9]?.textContent;
+      return within(row?.closest("tr") ?? document.body).getAllByRole("cell")[10]?.textContent;
     };
 
     expect(goldOf(9)).toBe("0");
@@ -277,6 +289,7 @@ describe("RefiningScreen", () => {
 
     const dialog = within(await screen.findByRole("dialog", { name: text.editTitle }));
     expect(dialog.getByLabelText(text.fields.worker)).toHaveValue("4");
+    expect(dialog.getByLabelText(text.fields.refiner)).toHaveValue("21");
     expect(dialog.getByLabelText(text.fields.weightBefore)).toHaveAttribute("readonly");
     expect(dialog.getByLabelText(text.fields.goldWithoutMaterial)).toHaveValue(null);
 
@@ -286,6 +299,7 @@ describe("RefiningScreen", () => {
     await waitFor(() => {
       expect(sent).toEqual({
         worker: 4,
+        refiner: 21,
         weight_after: "118.250",
         gold_weight_with_mercury: "20.000",
         gold_weight_without_mercury: "14.300",

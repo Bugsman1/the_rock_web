@@ -15,13 +15,12 @@ import type { ProjectId } from "@/lib/projects";
 import { absenceErrorsFromApi, absenceFromApi, absenceToApi } from "./employeeAbsences";
 import type { Absence, AbsenceValues } from "./employeeAbsences";
 import {
+  employeeCountsFromApi,
   employeeErrorsFromApi,
   employeeFromApi,
   employeeToApi,
   monthlySalaryFromApi,
   newEmployeeToApi,
-  raiseErrorsFromApi,
-  raiseToApi,
   withdrawalErrorsFromApi,
   withdrawalFromApi,
   withdrawalToApi,
@@ -30,10 +29,11 @@ import type {
   Employee,
   EmployeeValues,
   MonthlySalary,
-  RaiseValues,
   Withdrawal,
   WithdrawalValues,
 } from "./employees";
+import { raiseErrorsFromApi, raiseToApi, refiningCostToApi } from "./employeePay";
+import type { RaiseValues } from "./employeePay";
 
 export type DeleteResult = { ok: true } | { ok: false; reason: string | undefined };
 
@@ -70,14 +70,8 @@ export async function getEmployees(project?: ProjectId): Promise<readonly Employ
   return employees.map(employeeFromApi);
 }
 
-export async function countEmployees(project: ProjectId): Promise<number> {
-  const result = unwrap(
-    await apiClient.GET("/api/v1/employees/", {
-      params: { query: { page_size: 1, project: Number(project) } },
-    }),
-  );
-
-  return result.count;
+export async function getEmployeeCounts() {
+  return employeeCountsFromApi(unwrap(await apiClient.GET("/api/v1/employees/summary/")));
 }
 
 export async function getEmployee(id: string): Promise<Employee | undefined> {
@@ -151,6 +145,19 @@ export async function addRaise(
   const { response, error } = await apiClient.POST("/api/v1/employee-salaries/", {
     params: idempotent(key),
     body: raiseToApi(employee, values),
+  });
+
+  return saveOutcome(response, error, raiseErrorsFromApi);
+}
+
+export async function addRefiningCost(
+  employee: string,
+  values: RaiseValues,
+  key: string,
+): Promise<SaveResult<keyof RaiseValues>> {
+  const { response, error } = await apiClient.POST("/api/v1/employee-refining-costs/", {
+    params: idempotent(key),
+    body: refiningCostToApi(employee, values),
   });
 
   return saveOutcome(response, error, raiseErrorsFromApi);

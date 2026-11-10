@@ -75,6 +75,25 @@ describe("RefiningForm", () => {
     );
   });
 
+  it("names the gold refiner chosen, and none until one is chosen", async () => {
+    renderForm();
+    const refiner = screen.getByLabelText(fields.refiner);
+
+    expect(refiner).toHaveValue("");
+    expect(screen.getByRole("option", { name: "Brahim · SAF-1" })).toBeInTheDocument();
+
+    const user = await fillRefiningForm("120.5", "118.25", "14.3");
+    await user.selectOptions(refiner, "21");
+    await user.click(screen.getByRole("button", { name: text.form.submit }));
+
+    await waitFor(() =>
+      expect(api.createRefiningOperation).toHaveBeenCalledWith(
+        expect.objectContaining({ refinerId: "21" }),
+        expect.anything(),
+      ),
+    );
+  });
+
   it("records a non-admin as the responsible worker without asking", async () => {
     const user = userEvent.setup();
     renderForm(grindingToRefine, { ...noAccess, userId: "9" });

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { EmployeeValues } from "./employees";
 import {
   addRaise,
+  addRefiningCost,
   addWithdrawal,
   createEmployee,
   deleteEmployee,
@@ -28,6 +29,7 @@ const values: EmployeeValues = {
   job: "CHF",
   phone: "46109325",
   monthlySalary: 15000,
+  costPerGram: Number.NaN,
   startedOn: "2026-10-01",
   startTime: "08:30",
   endedOn: "",
@@ -123,7 +125,7 @@ describe("employees API", () => {
     const withdrawal = { amount: 5000, date: "2026-10-20", time: "11:15", note: "Avance" };
     const at = "2026-10-20T11:15:00.000Z";
 
-    await addRaise("7", { monthlySalary: 40000, from: "2026-11-01" }, "key-2");
+    await addRaise("7", { amount: 40000, from: "2026-11-01" }, "key-2");
     await addWithdrawal("7", withdrawal, at, "key-3");
     await updateWithdrawal("3", { ...withdrawal, amount: 6000 }, at);
 
@@ -144,5 +146,15 @@ describe("employees API", () => {
       withdrawal_date: at,
       notes: "Avance",
     });
+  });
+
+  it("records a gold refiner's new cost per gram once, with its key", async () => {
+    const costs = capture("post", "/employee-refining-costs/");
+
+    await addRefiningCost("9", { amount: 45, from: "2026-11-01" }, "key-4");
+
+    expect(costs).toEqual([
+      { key: "key-4", body: { employee: 9, cost_per_gram: "45", effective_from: "2026-11-01" } },
+    ]);
   });
 });

@@ -15,6 +15,7 @@ import {
   projectErrorsFromApi,
   projectFromApi,
   projectToApi,
+  rowOfProject,
 } from "./projects";
 import type { Grinder, Project } from "./projects";
 
@@ -58,6 +59,21 @@ describe("findProject", () => {
   it("finds a project by id", () => {
     expect(findProject(projects, "2")?.name).toBe("Sfariyat 1");
     expect(findProject(projects, "9")).toBeUndefined();
+  });
+});
+
+describe("rowOfProject", () => {
+  const rows = [
+    { project: "3", bags: 2 },
+    { project: "4", bags: 5 },
+  ];
+
+  it("finds the row of the project", () => {
+    expect(rowOfProject(rows, "4")).toEqual({ project: "4", bags: 5 });
+  });
+
+  it("finds nothing for a project missing from the rows", () => {
+    expect(rowOfProject(rows, "9")).toBeUndefined();
   });
 });
 

@@ -40,6 +40,16 @@ describe("getShipments", () => {
 
     expect(requested[0]?.has("status__in")).toBe(false);
     expect(requested[0]?.get("customer")).toBe("3");
+    expect(requested[0]?.get("ordering")).toBe("-arrival_date");
+  });
+
+  it("asks the backend for the shipments a settlement can take, oldest first", async () => {
+    const requested = captureQuery();
+
+    await getShipments({ project: "6", settleable: true, ordering: "arrival_date" });
+
+    expect(requested[0]?.get("settleable")).toBe("true");
+    expect(requested[0]?.get("ordering")).toBe("arrival_date");
   });
 });
 

@@ -7,36 +7,35 @@ import type { DataColumn } from "@/components/ui/DataTable";
 import { formatDate, formatDateTime, formatMoney } from "@/lib/format";
 import { useCan } from "@/lib/accessContext";
 import { employeeHref } from "@/lib/routes";
-import type { Employee, MonthlySalary, Salary, Withdrawal } from "./employees";
+import type { Employee, MonthlySalary, PayRate, Withdrawal } from "./employees";
 
-export function SalariesTable({ salaries }: { salaries: readonly Salary[] }) {
+type PayRatesTableProps = {
+  rates: readonly PayRate[];
+  amountHeader: string;
+  empty: string;
+};
+
+export function PayRatesTable({ rates, amountHeader, empty }: PayRatesTableProps) {
   const t = useTranslations("employees");
   const locale = useLocale();
 
-  const columns: DataColumn<Salary>[] = [
+  const columns: DataColumn<PayRate>[] = [
     {
       key: "from",
       header: t("raises.from"),
       className: "text-ink-muted font-semibold",
-      cell: (salary) => formatDate(salary.from, locale),
+      cell: (rate) => formatDate(rate.from, locale),
     },
     {
-      key: "salary",
-      header: t("fields.monthlySalary"),
+      key: "amount",
+      header: amountHeader,
       align: "end",
       className: "text-ink font-bold",
-      cell: (salary) => formatMoney(salary.monthlySalary, locale),
+      cell: (rate) => formatMoney(rate.amount, locale),
     },
   ];
 
-  return (
-    <DataTable
-      columns={columns}
-      rows={salaries}
-      rowKey={(salary) => salary.id}
-      empty={t("raises.empty")}
-    />
-  );
+  return <DataTable columns={columns} rows={rates} rowKey={(rate) => rate.id} empty={empty} />;
 }
 
 type RecordActionsProps = {

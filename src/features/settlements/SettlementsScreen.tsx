@@ -9,10 +9,8 @@ import { formatCount } from "@/lib/format";
 import { isInService } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
 import { settlementsProjectHref } from "@/lib/routes";
-import { getRefiningOperations } from "@/lib/refiningApi";
-import { getShipments } from "@/lib/shipmentsApi";
-import { projectSettlementSummary, settleableStatuses } from "./settlements";
-import { getSettlements } from "./settlementsApi";
+import { settlementsOf } from "./settlements";
+import { getSettlementSummary } from "./settlementsApi";
 
 export async function settlementsLoader({ params }: LoaderFunctionArgs) {
   const inService = (await getProjects()).filter(isInService);
@@ -23,16 +21,12 @@ export async function settlementsLoader({ params }: LoaderFunctionArgs) {
     throw redirect(localizedHref(locale, settlementsProjectHref(onlyProject.id)));
   }
 
-  const [shipments, settlements, refinings] = await Promise.all([
-    getShipments({ statuses: settleableStatuses }),
-    getSettlements(),
-    getRefiningOperations({ goldWeighed: false }),
-  ]);
+  const summary = await getSettlementSummary();
 
   return {
     projects: inService.map((project) => ({
       project,
-      summary: projectSettlementSummary(shipments, settlements, refinings, project.id),
+      summary: settlementsOf(summary, project.id),
     })),
   };
 }

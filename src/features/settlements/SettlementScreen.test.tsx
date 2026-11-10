@@ -43,6 +43,7 @@ describe("SettlementScreen", () => {
     expect(rows.map((row) => cellsOf(row))).toEqual([
       [text.totals.bagsTransport, money(21000)],
       [text.totals.passengersTransport, money(3000)],
+      [text.totals.unloading, money(400)],
       [text.totals.shipmentsDebt, money(250)],
       [`${text.totals.grindingCost}20 sacs × ${money(250)}`, money(5000)],
       [`${text.totals.refiningCost}12,25 g × ${money(1500)}`, money(18375)],

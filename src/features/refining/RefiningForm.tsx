@@ -2,38 +2,27 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
-import { useLocale, useTranslations } from "use-intl";
+import { useTranslations } from "use-intl";
 import { useToast } from "@/components/ui/Toast";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { FieldError, SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
-import { ReadOnlyDateAndTime, ReadOnlyField } from "@/components/ui/ReadOnlyField";
+import { ReadOnlyDateAndTime } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { TextArea, TextField } from "@/components/ui/TextField";
 import { useAccess } from "@/lib/accessContext";
 import { combineDateAndTime } from "@/lib/datetime";
-import { formatCount, formatDateTime, formatQuantity } from "@/lib/format";
 import type { MillingOperation } from "@/lib/grinding";
 import type { RefiningOperation } from "@/lib/refining";
 import type { Operator } from "@/lib/users";
-import { createRefiningSchema, lossReasonKeys, refiningFormValues, refiningLoss } from "./refining";
-import type { RefiningValues } from "./refining";
+import {
+  createRefiningSchema,
+  isRefiningField,
+  refiningFormValues,
+  refiningLoss,
+} from "./refining";
+import type { Refiner, RefiningValues } from "./refining";
 import { createRefiningOperation, updateRefiningOperation } from "./refiningApi";
-
-const refiningFields: readonly (keyof RefiningValues)[] = [
-  "workerId",
-  "date",
-  "time",
-  "weightBefore",
-  "weightAfter",
-  "goldWithMaterial",
-  "goldWithoutMaterial",
-  "lossReason",
-  "notes",
-];
-
-function isRefiningField(value: string): value is keyof RefiningValues {
-  return refiningFields.some((field) => field === value);
-}
+import { GrindingFacts, LossFields } from "./RefiningFormSections";
 
 type WeightFieldName = "weightBefore" | "weightAfter" | "goldWithMaterial" | "goldWithoutMaterial";
 
@@ -42,6 +31,7 @@ type RefiningFormProps = {
   refining?: RefiningOperation;
   projectName: string;
   workers: readonly Operator[];
+  refiners: readonly Refiner[];
   defaultDate: string;
   defaultTime: string;
   onSaved: () => void;
@@ -53,6 +43,7 @@ export function RefiningForm({
   refining,
   projectName,
   workers,
+  refiners,
   defaultDate,
   defaultTime,
   onSaved,
@@ -62,7 +53,6 @@ export function RefiningForm({
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
   const toast = useToast();
-  const locale = useLocale();
   const saveFailure = useSaveFailure();
   const [saved, setSaved] = useState(false);
   const [lossError, setLossError] = useState<string>();
@@ -92,6 +82,7 @@ export function RefiningForm({
         refining === undefined
           ? {
               workerId: superuser ? "" : userId,
+              refinerId: "",
               date: defaultDate,
               time: defaultTime,
               weightBefore: weightBeforeFromMercury ? mercuryGrams : Number.NaN,
@@ -196,23 +187,7 @@ export function RefiningForm({
   return (
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <div className="grid gap-x-4 gap-y-4 sm:grid-cols-2">
-        <ReadOnlyField label={t("fields.shipment")} value={operation.shipmentNumber} />
-        <ReadOnlyField label={t("fields.client")} value={operation.client} />
-        <ReadOnlyField label={t("fields.project")} value={projectName} />
-        <ReadOnlyField
-          label={t("fields.machine")}
-          value={t("machineNumber", { number: formatCount(operation.machine, locale) })}
-        />
-        <ReadOnlyField label={t("fields.operator")} value={operation.operatorName} />
-        <ReadOnlyField label={t("fields.bagsGround")} value={formatCount(operation.bags, locale)} />
-        <ReadOnlyField
-          label={t("fields.groundFrom")}
-          value={formatDateTime(operation.startedAt, locale)}
-        />
-        <ReadOnlyField
-          label={t("fields.groundAt")}
-          value={operation.endedAt === undefined ? "—" : formatDateTime(operation.endedAt, locale)}
-        />
+        <GrindingFacts operation={operation} projectName={projectName} />
 
         {superuser ? (
           <Select
@@ -225,6 +200,20 @@ export function RefiningForm({
             {...register("workerId")}
           />
         ) : null}
+
+        <Select
+          id="refining-refiner"
+          label={t("fields.refiner")}
+          options={[
+            { value: "", label: t("form.noRefiner") },
+            ...refiners.map((refiner) => ({
+              value: refiner.id,
+              label: `${refiner.name} · ${refiner.matricule}`,
+            })),
+          ]}
+          error={errors.refinerId?.message}
+          {...register("refinerId")}
+        />
 
         <ReadOnlyDateAndTime
           dateLabel={t("fields.date")}
@@ -248,41 +237,12 @@ export function RefiningForm({
           required: false,
           onInput: (event) => setGoldUnreadable(event.currentTarget.validity.badInput),
         })}
-        {loss === 0 ? (
-          <FieldError id="refining-loss-error" message={lossError} />
-        ) : loss !== undefined && loss < 0 ? (
-          <div className="flex flex-col gap-1.5">
-            <ReadOnlyField
-              label={t("fields.surplus")}
-              value={`+${formatQuantity(-loss, locale)}`}
-              emphasis
-            />
-            <FieldError id="refining-loss-error" message={lossError} />
-          </div>
-        ) : (
-          <>
-            <div className="flex flex-col gap-1.5">
-              <ReadOnlyField
-                label={t("fields.loss")}
-                value={loss === undefined ? "—" : formatQuantity(loss, locale)}
-                emphasis={loss !== undefined}
-              />
-              <FieldError id="refining-loss-error" message={lossError} />
-            </div>
-
-            <Select
-              id="refining-loss-reason"
-              label={t("fields.lossReason")}
-              required
-              placeholder={t("form.lossReasonPlaceholder")}
-              options={lossReasonKeys
-                .filter((key) => key !== "noLoss")
-                .map((key) => ({ value: key, label: t(`lossReasons.${key}`) }))}
-              error={errors.lossReason?.message}
-              {...register("lossReason")}
-            />
-          </>
-        )}
+        <LossFields
+          loss={loss}
+          lossError={lossError}
+          reasonError={errors.lossReason?.message}
+          reason={register("lossReason")}
+        />
 
         <div className="sm:col-span-2">
           <TextArea

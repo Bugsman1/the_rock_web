@@ -1,12 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import {
-  getGrindingOperations,
-  getGrindingPage,
-  getGrindingsEndedOn,
-  startOperation,
-} from "./grindingApi";
+import { getGrindingOperations, getGrindingPage, startOperation } from "./grindingApi";
 
 const API = `${window.location.origin}/api/v1`;
 const server = setupServer();
@@ -50,44 +45,6 @@ describe("getGrindingOperations", () => {
     expect(operations).toMatchObject([
       { id: "5", project: "6", machine: 2, shipmentNumber: "SHP-2026-00002", bags: 10 },
     ]);
-  });
-});
-
-describe("getGrindingsEndedOn", () => {
-  const ended = (id: number, end: string) => ({
-    id,
-    shipment_number: `SH-${id}`,
-    customer_name: "sidi",
-    grinder_code: "P6-2",
-    project_name: "Zouérat 1",
-    bags_count: 3,
-    start_time: "2026-10-11T06:00:00Z",
-    end_time: end,
-    operator_name: "med",
-    grinding_cost: "150000.00",
-    notes: "",
-    created_at: "2026-10-11T06:00:00Z",
-    updated_at: "2026-10-11T06:00:00Z",
-  });
-
-  it("reads the finished grindings, latest end first, and stops at the first of another day", async () => {
-    const asked: URLSearchParams[] = [];
-    server.use(
-      http.get(`${API}/grinding-operations/`, ({ request }) => {
-        asked.push(new URL(request.url).searchParams);
-        return HttpResponse.json({
-          count: 60,
-          results: [ended(7, "2026-10-12T15:00:00Z"), ended(6, "2026-10-11T20:00:00Z")],
-        });
-      }),
-    );
-
-    const operations = await getGrindingsEndedOn("2026-10-12");
-
-    expect(operations.map((operation) => operation.id)).toEqual(["7"]);
-    expect(asked).toHaveLength(1);
-    expect(asked[0]?.get("is_running")).toBe("false");
-    expect(asked[0]?.get("ordering")).toBe("-end_time");
   });
 });
 

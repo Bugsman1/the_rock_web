@@ -1,45 +1,27 @@
-import { apiClient, saveOutcome } from "@/lib/api/client";
+import { apiClient, saveOutcome, unwrap } from "@/lib/api/client";
 import type { SaveResult } from "@/lib/api/client";
-import { getGrindingOperations } from "@/lib/grindingApi";
-import type { Project, ProjectId } from "@/lib/projects";
-import { countRefinings } from "@/lib/refiningApi";
+import type { ProjectId } from "@/lib/projects";
 import {
-  queueOfProject,
+  refinerFromApi,
   refiningErrorsFromApi,
-  refiningSummary,
+  refiningSummaryFromApi,
   refiningToApi,
   refiningUpdateToApi,
-  totalCounts,
 } from "./refining";
-import type { RefiningCounts, RefiningField, RefiningTarget, RefiningValues } from "./refining";
+import type { Refiner, RefiningField, RefiningTarget, RefiningValues } from "./refining";
 
-async function projectCounts(project: ProjectId, today: string): Promise<RefiningCounts> {
-  const [refined, refinedToday] = await Promise.all([
-    countRefinings(project),
-    countRefinings(project, today),
-  ]);
-
-  return { refined, refinedToday };
+export async function getRefiningSummary() {
+  return refiningSummaryFromApi(
+    unwrap(await apiClient.GET("/api/v1/refining-operations/summary/")),
+  );
 }
 
-export async function getRefiningOverview(projects: readonly Project[], today: string) {
-  const [queue, counted] = await Promise.all([
-    getGrindingOperations({ running: false, refined: false }),
-    Promise.all(
-      projects.map(async (project) => ({
-        project,
-        counts: await projectCounts(project.id, today),
-      })),
-    ),
-  ]);
+export async function getRefiners(project: ProjectId): Promise<readonly Refiner[]> {
+  const result = await apiClient.GET("/api/v1/refiners/", {
+    params: { query: { project: Number(project) } },
+  });
 
-  return {
-    total: refiningSummary(queue, totalCounts(counted.map(({ counts }) => counts))),
-    projects: counted.map(({ project, counts }) => ({
-      project,
-      summary: refiningSummary(queueOfProject(queue, project.id), counts),
-    })),
-  };
+  return unwrap(result).map(refinerFromApi);
 }
 
 export async function createRefiningOperation(

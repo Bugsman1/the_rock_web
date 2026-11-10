@@ -3,19 +3,19 @@ import type { Machine, MillingOperation } from "@/lib/grinding";
 import type { Project } from "@/lib/projects";
 import type { ShipmentRecord } from "@/lib/shipments";
 import {
-  bagsMilledOn,
   combineSummaries,
   createMercuryAdditionSchema,
   createMercurySchema,
   mercuryTotalAfter,
   findMachine,
   isBacklogged,
+  millingOf,
   millingQueue,
   operationShipments,
   withBagsFreedBy,
   millingShipments,
+  millingSummaryFromApi,
   projectsForSite,
-  projectSummary,
 } from "./milling";
 import type { MillingShipment } from "./milling";
 
@@ -52,18 +52,6 @@ describe("machines", () => {
 
     expect(findMachine([machine], "4", 1)).toEqual(machine);
     expect(findMachine([machine], "4", 9)).toBeUndefined();
-  });
-});
-
-describe("operations", () => {
-  it("counts the bags finished on a given day", () => {
-    const operations = [
-      operation({ bags: 2 }),
-      operation({ bags: 1, endedAt: "2026-10-08T05:00:00.000Z" }),
-      operation({ bags: 2, endedAt: "2026-10-07T23:00:00.000Z" }),
-    ];
-
-    expect(bagsMilledOn(operations, "2026-10-08T15:00:00.000Z")).toBe(1);
   });
 });
 
@@ -145,49 +133,63 @@ describe("shipments in grinding", () => {
 });
 
 describe("summary", () => {
-  const NOW = "2026-10-08T15:00:00.000Z";
-  const machines: Machine[] = [
-    { grinderId: "g1", project: "3", number: 1, inMaintenance: false },
-    { grinderId: "g2", project: "3", number: 2, inMaintenance: false },
-    { grinderId: "g3", project: "3", number: 3, inMaintenance: true },
-    { grinderId: "g4", project: "4", number: 1, inMaintenance: false },
-  ];
-  const shipments: MillingShipment[] = [
-    { ...shipment, remainingBags: 4 },
-    { ...shipment, id: "2", shipmentNumber: "SH-2", bags: 3, remainingBags: 0 },
-    { ...shipment, id: "3", shipmentNumber: "SH-3", project: "4", bags: 4, remainingBags: 4 },
-  ];
-  const operations = [
-    operation({ bags: 2 }),
-    operation({
-      id: "done",
-      machine: 2,
-      shipmentNumber: "SH-2",
-      bags: 3,
-      endedAt: "2026-10-08T09:00:00.000Z",
-    }),
-  ];
-  const records = { machines, operations, shipments };
+  const rows = millingSummaryFromApi([
+    {
+      project: 3,
+      project_name: "Zouérat 1",
+      bags_waiting: "4.0",
+      waiting_shipments: 1,
+      bags_grinding: "2.0",
+      bags_ground_today: "3.5",
+      machines_running: 1,
+      machines_in_service: 2,
+    },
+    {
+      project: 4,
+      project_name: "Sfariyat 1",
+      bags_waiting: "4.0",
+      waiting_shipments: 1,
+      bags_grinding: "0.0",
+      bags_ground_today: "0.0",
+      machines_running: 0,
+      machines_in_service: 1,
+    },
+  ]);
+  const zero = {
+    bagsWaiting: 0,
+    waitingShipments: 0,
+    bagsMilling: 0,
+    bagsMilledToday: 0,
+    machinesRunning: 0,
+    machinesInService: 0,
+  };
 
-  it("counts the machines, the bags on machines and waiting, and today's ground bags", () => {
-    expect(projectSummary(records, "3", NOW)).toEqual({
-      machines: { running: 1, idle: 1, maintenance: 1, total: 3 },
-      bagsMilling: 2,
+  it("reads a project's bags and machines from the backend's summary", () => {
+    expect(millingOf(rows, "3")).toEqual({
+      project: "3",
       bagsWaiting: 4,
-      bagsMilledToday: 3,
       waitingShipments: 1,
+      bagsMilling: 2,
+      bagsMilledToday: 3.5,
+      machinesRunning: 1,
+      machinesInService: 2,
     });
   });
 
-  it("sums several projects", () => {
-    const total = combineSummaries([
-      projectSummary(records, "3", NOW),
-      projectSummary(records, "4", NOW),
-    ]);
+  it("gives zeros to a project missing from the summary", () => {
+    expect(millingOf(rows, "9")).toEqual(zero);
+  });
 
-    expect(total.machines).toEqual({ running: 1, idle: 2, maintenance: 1, total: 4 });
-    expect(total.bagsWaiting).toBe(8);
-    expect(total.waitingShipments).toBe(2);
+  it("sums several projects", () => {
+    expect(combineSummaries([millingOf(rows, "3"), millingOf(rows, "4")])).toEqual({
+      bagsWaiting: 8,
+      waitingShipments: 2,
+      bagsMilling: 2,
+      bagsMilledToday: 3.5,
+      machinesRunning: 1,
+      machinesInService: 3,
+    });
+    expect(combineSummaries([])).toEqual(zero);
   });
 
   it("filters projects by site", () => {

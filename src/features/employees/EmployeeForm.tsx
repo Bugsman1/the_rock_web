@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
 import { DateField } from "@/components/ui/DateField";
 import { DrawerActions } from "@/components/ui/Drawer";
@@ -13,8 +13,8 @@ import { combineDateAndTime, nowAsTimeValue, todayAsInputValue } from "@/lib/dat
 import { formatMoney } from "@/lib/format";
 import { PHONE_PLACEHOLDER, sanitizePhone } from "@/lib/phone";
 import type { ProjectId } from "@/lib/projects";
-import { jobTitles } from "./employeeJobs";
-import { createEmployeeSchema, isEmployeeField } from "./employees";
+import { isPaidPerGram, jobChoices } from "./employeeJobs";
+import { createEmployeeSchema, currentPay, isEmployeeField } from "./employees";
 import type { Employee, EmployeeInput, EmployeeValues } from "./employees";
 import { createEmployee, updateEmployee } from "./employeesApi";
 
@@ -32,6 +32,7 @@ function defaultValues(employee: Employee | undefined): EmployeeInput {
         job: "",
         phone: "",
         monthlySalary: Number.NaN,
+        costPerGram: Number.NaN,
         startedOn: "",
         startTime: "",
         endedOn: "",
@@ -40,7 +41,8 @@ function defaultValues(employee: Employee | undefined): EmployeeInput {
         name: employee.name,
         job: employee.job,
         phone: employee.phone,
-        monthlySalary: employee.monthlySalary,
+        monthlySalary: employee.monthlySalary ?? Number.NaN,
+        costPerGram: employee.costPerGram ?? Number.NaN,
         startedOn: todayAsInputValue(new Date(employee.startedAt)),
         startTime: nowAsTimeValue(new Date(employee.startedAt)),
         endedOn: employee.endedOn ?? "",
@@ -56,18 +58,22 @@ export function EmployeeForm({ project, employee, onSaved, onCancel }: EmployeeF
   const saveFailure = useSaveFailure();
   const [idempotencyKey] = useState(() => crypto.randomUUID());
 
-  const schema = useMemo(
-    () =>
-      createEmployeeSchema({
-        required: common("validation.required"),
-        phoneInvalid: common("validation.phoneInvalid"),
-        dateInvalid: common("validation.dateInvalid"),
-        timeInvalid: common("validation.timeInvalid"),
-        salaryInvalid: t("errors.salaryInvalid"),
-        endBeforeStart: t("errors.endBeforeStart"),
-      }),
-    [t, common],
-  );
+  const resolvers = useMemo(() => {
+    const messages = {
+      required: common("validation.required"),
+      phoneInvalid: common("validation.phoneInvalid"),
+      dateInvalid: common("validation.dateInvalid"),
+      timeInvalid: common("validation.timeInvalid"),
+      salaryInvalid: t("errors.salaryInvalid"),
+      costInvalid: t("errors.costInvalid"),
+      endBeforeStart: t("errors.endBeforeStart"),
+    };
+
+    return {
+      monthly: zodResolver(createEmployeeSchema(messages, false)),
+      perGram: zodResolver(createEmployeeSchema(messages, true)),
+    };
+  }, [t, common]);
 
   const { control, register, handleSubmit, formState, setError } = useForm<
     EmployeeInput,
@@ -75,11 +81,13 @@ export function EmployeeForm({ project, employee, onSaved, onCancel }: EmployeeF
     EmployeeValues
   >({
     mode: "onTouched",
-    resolver: zodResolver(schema),
+    resolver: (values, context, options) =>
+      (isPaidPerGram(values.job) ? resolvers.perGram : resolvers.monthly)(values, context, options),
     defaultValues: defaultValues(employee),
   });
 
   const { errors } = formState;
+  const paidPerGram = isPaidPerGram(useWatch({ control, name: "job" }));
 
   async function onSubmit(values: EmployeeValues) {
     if (saveFailure.unknown) {
@@ -138,7 +146,10 @@ export function EmployeeForm({ project, employee, onSaved, onCancel }: EmployeeF
           label={t("fields.job")}
           required
           placeholder={t("form.jobPlaceholder")}
-          options={jobTitles.map((title) => ({ value: title, label: t(`jobTitles.${title}`) }))}
+          options={jobChoices(employee?.paidPerGram).map((title) => ({
+            value: title,
+            label: t(`jobTitles.${title}`),
+          }))}
           error={errors.job?.message}
           {...register("job")}
         />
@@ -164,21 +175,37 @@ export function EmployeeForm({ project, employee, onSaved, onCancel }: EmployeeF
         />
 
         {employee === undefined ? (
-          <TextField
-            id="employee-salary"
-            type="number"
-            min={0}
-            step="any"
-            inputMode="decimal"
-            label={t("fields.monthlySalary")}
-            required
-            error={errors.monthlySalary?.message}
-            {...register("monthlySalary", { valueAsNumber: true })}
-          />
+          paidPerGram ? (
+            <TextField
+              key="cost"
+              id="employee-cost"
+              type="number"
+              min={0}
+              step="any"
+              inputMode="decimal"
+              label={t("fields.costPerGram")}
+              required
+              error={errors.costPerGram?.message}
+              {...register("costPerGram", { valueAsNumber: true })}
+            />
+          ) : (
+            <TextField
+              key="salary"
+              id="employee-salary"
+              type="number"
+              min={0}
+              step="any"
+              inputMode="decimal"
+              label={t("fields.monthlySalary")}
+              required
+              error={errors.monthlySalary?.message}
+              {...register("monthlySalary", { valueAsNumber: true })}
+            />
+          )
         ) : (
           <ReadOnlyField
-            label={t("fields.monthlySalary")}
-            value={formatMoney(employee.monthlySalary, locale)}
+            label={employee.paidPerGram ? t("fields.costPerGram") : t("fields.monthlySalary")}
+            value={formatMoney(currentPay(employee), locale)}
           />
         )}
 

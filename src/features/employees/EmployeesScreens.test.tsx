@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   API,
   apiEmployee,
+  apiRefiner,
   cellsOf,
   common,
   money,
@@ -39,9 +40,16 @@ const owing = apiEmployee(8, {
 });
 
 describe("employees overview", () => {
-  it("shows each project with only its number of employees", async () => {
+  it("shows each project with only the backend's number of employees", async () => {
     serveProjects([11, 12]);
-    serveEmployeeData([apiEmployee(7), owing, apiEmployee(9, { project: 12 })]);
+    server.use(
+      http.get(`${API}/employees/summary/`, () =>
+        HttpResponse.json([
+          { project: 11, project_name: "Projet 11", employees: 2 },
+          { project: 12, project_name: "Projet 12", employees: 1 },
+        ]),
+      ),
+    );
     openAt("/fr/employees");
 
     const card = (await screen.findByRole("heading", { name: "Projet Projet 11" })).closest(
@@ -53,7 +61,13 @@ describe("employees overview", () => {
     }
 
     expect(within(card).getByText(text.employeeCount).nextSibling).toHaveTextContent("2");
-    expect(within(card).queryByText(money(-6000))).toBeNull();
+  });
+
+  it("answers not found for a project the user cannot see", async () => {
+    serveProjects([11]);
+    openAt("/fr/employees/projects/12");
+
+    expect(await screen.findByText(/404/)).toBeVisible();
   });
 
   it("goes straight to the only project in service", async () => {
@@ -158,6 +172,61 @@ describe("a project's employees", () => {
         end_date: null,
       }),
     ]);
+  });
+
+  it("asks a gold refiner's cost per gram instead of a monthly salary", async () => {
+    serveProjects([11, 12]);
+    serveEmployeeData([]);
+    const sent: unknown[] = [];
+    server.use(
+      http.post(`${API}/employees/`, async ({ request }) => {
+        sent.push(await request.json());
+        return HttpResponse.json(apiEmployee(10), { status: 201 });
+      }),
+    );
+    const user = userEvent.setup();
+    openAt("/fr/employees/projects/11?new=1");
+
+    const drawer = within(await screen.findByRole("dialog", { name: text.form.newTitle }));
+    await user.type(drawer.getByLabelText(text.fields.name), "Brahim");
+    await user.selectOptions(drawer.getByLabelText(text.fields.job), text.jobTitles.SAF);
+    expect(drawer.queryByLabelText(text.fields.monthlySalary)).toBeNull();
+    await user.type(drawer.getByLabelText(text.fields.phone), "36520714");
+    await user.type(drawer.getByLabelText(text.fields.startedOn), "01/10/2026");
+    await user.type(drawer.getByLabelText(text.fields.startTime), "08:30");
+    await user.click(drawer.getByRole("button", { name: text.form.create }));
+    expect(await drawer.findByText(text.errors.costInvalid)).toBeVisible();
+
+    await user.type(drawer.getByLabelText(text.fields.costPerGram), "40");
+    await user.click(drawer.getByRole("button", { name: text.form.create }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(sent).toEqual([
+      expect.objectContaining({ job_title: "SAF", refining_cost_per_gram: "40" }),
+    ]);
+    expect(sent[0]).not.toHaveProperty("monthly_salary");
+  });
+
+  it("keeps a gold refiner a gold refiner when changing them", async () => {
+    serveProjects([11]);
+    serveEmployeeData([apiRefiner(9, { project: 11 })]);
+    openAt("/fr/employees/projects/11?edit=9");
+
+    const drawer = within(await screen.findByRole("dialog", { name: text.form.editTitle }));
+    const jobs = within(drawer.getByLabelText(text.fields.job))
+      .getAllByRole("option")
+      .map((option) => option.textContent);
+
+    expect(jobs).toEqual([text.jobTitles.SAF]);
+    expect(drawer.getByText(text.fields.costPerGram).nextSibling).toHaveTextContent(money(40));
+  });
+
+  it("shows a gold refiner's pay per gram in the list", async () => {
+    serveProjects([11]);
+    serveEmployeeData([apiRefiner(9, { project: 11 })]);
+    openAt("/fr/employees/projects/11");
+
+    expect(await screen.findByText(text.perGram.replace("{amount}", money(40)))).toBeVisible();
   });
 
   it("shows the salary and matricule read-only when changing an employee", async () => {

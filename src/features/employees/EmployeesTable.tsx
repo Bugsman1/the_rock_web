@@ -11,6 +11,7 @@ import { employeeHref, employeesProjectHref } from "@/lib/routes";
 import { matchesSearch } from "@/lib/search";
 import { isJobFilter, jobTitles, matchesJob } from "./employeeJobs";
 import type { JobFilter } from "./employeeJobs";
+import { currentPay } from "./employees";
 import type { Employee } from "./employees";
 
 function Balance({ amount }: { amount: number }) {
@@ -80,7 +81,10 @@ export function EmployeesTable({
       header: t("fields.monthlySalary"),
       align: "end",
       className: "text-ink font-semibold",
-      cell: (employee) => formatMoney(employee.monthlySalary, locale),
+      cell: (employee) =>
+        employee.paidPerGram
+          ? t("perGram", { amount: formatMoney(currentPay(employee), locale) })
+          : formatMoney(currentPay(employee), locale),
     },
     {
       key: "startedOn",

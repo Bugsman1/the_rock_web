@@ -1,38 +1,41 @@
 import { describe, expect, it } from "vitest";
 import {
   createEmployeeSchema,
-  createRaiseSchema,
   createWithdrawalSchema,
+  currentPay,
   employeeErrorsFromApi,
   employeeFromApi,
   employeeToApi,
   isEmployeeField,
-  isRaiseField,
   isWithdrawalField,
   monthlySalaryFromApi,
   newEmployeeToApi,
-  raiseErrorsFromApi,
-  raiseToApi,
   withdrawalErrorsFromApi,
   withdrawalFromApi,
   withdrawalToApi,
 } from "./employees";
-import { apiEmployee, apiMonthlySalary, apiWithdrawal } from "./employeesTesting";
+import { apiEmployee, apiMonthlySalary, apiRefiner, apiWithdrawal } from "./employeesTesting";
 
-const employeeSchema = createEmployeeSchema({
+const schemaMessages = {
   required: "required",
   phoneInvalid: "phone",
   dateInvalid: "date",
   timeInvalid: "time",
   salaryInvalid: "salary",
+  costInvalid: "cost",
   endBeforeStart: "endBeforeStart",
-});
+};
+
+const employeeSchema = createEmployeeSchema(schemaMessages, false);
+
+const refinerSchema = createEmployeeSchema(schemaMessages, true);
 
 const validEmployee = {
   name: " Sidi ",
   job: "CHF",
   phone: "46109325",
   monthlySalary: 15000,
+  costPerGram: Number.NaN,
   startedOn: "2026-09-01",
   startTime: "08:30",
   endedOn: "",
@@ -84,24 +87,32 @@ describe("employee form", () => {
     );
   });
 
+  it("asks a gold refiner a cost per gram above zero instead of a monthly salary", () => {
+    const refiner = { ...validEmployee, job: "SAF", monthlySalary: Number.NaN };
+
+    expect(refinerSchema.safeParse({ ...refiner, costPerGram: 40 }).success).toBe(true);
+    expect(issues(refinerSchema.safeParse({ ...refiner, costPerGram: 0 }))).toEqual([
+      ["costPerGram", "cost"],
+    ]);
+    expect(
+      issues(employeeSchema.safeParse({ ...validEmployee, monthlySalary: Number.NaN })),
+    ).toEqual([["monthlySalary", "salary"]]);
+  });
+
   it("knows its fields", () => {
+    expect(isEmployeeField("costPerGram")).toBe(true);
     expect(isEmployeeField("endedOn")).toBe(true);
     expect(isEmployeeField("matricule")).toBe(false);
     expect(isEmployeeField("balance")).toBe(false);
   });
 });
 
-describe("withdrawal and raise forms", () => {
+describe("withdrawal form", () => {
   const withdrawalSchema = createWithdrawalSchema({
     required: "required",
     dateInvalid: "date",
     timeInvalid: "time",
     amountInvalid: "amount",
-  });
-  const raiseSchema = createRaiseSchema({
-    required: "required",
-    dateInvalid: "date",
-    salaryInvalid: "salary",
   });
 
   it("takes a withdrawal above zero, whatever the employee is owed, on a real date", () => {
@@ -118,19 +129,9 @@ describe("withdrawal and raise forms", () => {
     ]);
   });
 
-  it("takes a raise with a new salary above zero and the date it starts", () => {
-    expect(raiseSchema.safeParse({ monthlySalary: 40000, from: "2026-11-01" }).success).toBe(true);
-    expect(issues(raiseSchema.safeParse({ monthlySalary: Number.NaN, from: "01/11" }))).toEqual([
-      ["monthlySalary", "salary"],
-      ["from", "date"],
-    ]);
-  });
-
-  it("knows their fields", () => {
+  it("knows its fields", () => {
     expect(isWithdrawalField("date")).toBe(true);
     expect(isWithdrawalField("time")).toBe(true);
-    expect(isRaiseField("from")).toBe(true);
-    expect(isRaiseField("notes")).toBe(false);
   });
 });
 
@@ -154,11 +155,15 @@ describe("employees from and to the backend", () => {
       name: "Sidi Ahmed",
       job: "CHF",
       phone: "+222 36 52 07 14",
+      paidPerGram: false,
       monthlySalary: 40000,
       salaries: [
-        { id: "1", monthlySalary: 39999, from: "2026-01-01" },
-        { id: "2", monthlySalary: 40000, from: "2026-10-01" },
+        { id: "1", amount: 39999, from: "2026-01-01" },
+        { id: "2", amount: 40000, from: "2026-10-01" },
       ],
+      costPerGram: undefined,
+      refiningCosts: [],
+      refinedGold: 0,
       startedAt: "2026-01-01T08:00:00Z",
       endedOn: "2026-12-31",
       accruedUntil: "2026-10-28",
@@ -173,6 +178,23 @@ describe("employees from and to the backend", () => {
       otherDebtLeft: 2500,
     });
     expect(employeeFromApi(apiEmployee(7)).endedOn).toBeUndefined();
+  });
+
+  it("reads a gold refiner's cost per gram, its history and the gold refined", () => {
+    const refiner = employeeFromApi(apiRefiner(9));
+
+    expect(refiner).toMatchObject({
+      paidPerGram: true,
+      monthlySalary: undefined,
+      costPerGram: 40,
+      refiningCosts: [
+        { id: "3", amount: 35, from: "2026-01-01" },
+        { id: "4", amount: 40, from: "2026-10-01" },
+      ],
+      refinedGold: 12.5,
+    });
+    expect(currentPay(refiner)).toBe(40);
+    expect(currentPay(employeeFromApi(apiEmployee(7)))).toBe(40000);
   });
 
   it("reads a month's salary with the month named by the backend", () => {
@@ -200,21 +222,36 @@ describe("employees from and to the backend", () => {
     });
   });
 
+  it("sends a new gold refiner's cost per gram and no monthly salary", () => {
+    const values = refinerSchema.parse({
+      ...validEmployee,
+      job: "SAF",
+      monthlySalary: Number.NaN,
+      costPerGram: 40,
+    });
+    const sent = newEmployeeToApi("11", values, "2026-09-01T08:30:00.000Z");
+
+    expect(sent).toMatchObject({ job_title: "SAF", refining_cost_per_gram: "40" });
+    expect(sent).not.toHaveProperty("monthly_salary");
+  });
+
   it("puts the backend's messages on the form's fields", () => {
     expect(
-      employeeErrorsFromApi({ full_name: "n", job_title: "j", end_date: "e", start_date: "s" }),
-    ).toEqual({ name: "n", job: "j", endedOn: "e", startedOn: "s" });
+      employeeErrorsFromApi({
+        full_name: "n",
+        job_title: "j",
+        end_date: "e",
+        start_date: "s",
+        refining_cost_per_gram: "c",
+      }),
+    ).toEqual({ name: "n", job: "j", endedOn: "e", startedOn: "s", costPerGram: "c" });
     expect(withdrawalErrorsFromApi({ withdrawal_date: "d", notes: "n" })).toEqual({
       date: "d",
       note: "n",
     });
-    expect(raiseErrorsFromApi({ effective_from: "f", monthly_salary: "m" })).toEqual({
-      from: "f",
-      monthlySalary: "m",
-    });
   });
 
-  it("reads and sends withdrawals and raises", () => {
+  it("reads and sends withdrawals", () => {
     expect(withdrawalFromApi(apiWithdrawal(3, { created_by_name: null }))).toEqual({
       id: "3",
       employee: "7",
@@ -232,11 +269,6 @@ describe("employees from and to the backend", () => {
       amount: "1500.26",
       withdrawal_date: "2026-10-01T09:30:00.000Z",
       notes: "Avance",
-    });
-    expect(raiseToApi("7", { monthlySalary: 40000, from: "2026-11-01" })).toEqual({
-      employee: 7,
-      monthly_salary: "40000",
-      effective_from: "2026-11-01",
     });
   });
 });

@@ -604,6 +604,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/employee-refining-costs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Gold refiners' costs per gram, oldest first: the starting one (from the start date)
+         *     and each change, counted from its date until the next one. Each refiner has their own.
+         */
+        get: operations["employee_refining_costs_list"];
+        put?: never;
+        /**
+         * @description Gold refiners' costs per gram, oldest first: the starting one (from the start date)
+         *     and each change, counted from its date until the next one. Each refiner has their own.
+         */
+        post: operations["employee_refining_costs_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employee-refining-costs/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Gold refiners' costs per gram, oldest first: the starting one (from the start date)
+         *     and each change, counted from its date until the next one. Each refiner has their own.
+         */
+        get: operations["employee_refining_costs_retrieve"];
+        /**
+         * @description Gold refiners' costs per gram, oldest first: the starting one (from the start date)
+         *     and each change, counted from its date until the next one. Each refiner has their own.
+         */
+        put: operations["employee_refining_costs_update"];
+        post?: never;
+        /**
+         * @description Gold refiners' costs per gram, oldest first: the starting one (from the start date)
+         *     and each change, counted from its date until the next one. Each refiner has their own.
+         */
+        delete: operations["employee_refining_costs_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Gold refiners' costs per gram, oldest first: the starting one (from the start date)
+         *     and each change, counted from its date until the next one. Each refiner has their own.
+         */
+        patch: operations["employee_refining_costs_partial_update"];
+        trace?: never;
+    };
     "/api/v1/employee-salaries/": {
         parameters: {
             query?: never;
@@ -790,6 +846,27 @@ export interface paths {
         patch: operations["employees_partial_update"];
         trace?: never;
     };
+    "/api/v1/employees/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The employees of each active project (a project-scoped user's own only), by name:
+         *     those still employed (no end date, or one today or later; the end date is a worked
+         *     day). A project with none comes with 0; ?project= keeps that one project.
+         */
+        get: operations["employees_summary_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/grinders/": {
         parameters: {
             query?: never;
@@ -864,6 +941,29 @@ export interface paths {
         head?: never;
         /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         patch: operations["grinding_operations_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/grinding-operations/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The grinding of each active project (a project-scoped user's own only), by name:
+         *     the bags waiting in storage and the shipments holding them (cancelled ones left out,
+         *     as on /shipments/summary/), the bags of the running grindings and of those that ended
+         *     today (TIME_ZONE), the grinders running one and the grinders in service (active
+         *     status). A project with none comes with zeros; ?project= keeps that one project.
+         */
+        get: operations["grinding_operations_summary_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/mercury-additions/": {
@@ -977,6 +1077,48 @@ export interface paths {
         patch: operations["projects_partial_update"];
         trace?: never;
     };
+    "/api/v1/refiners/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The gold refiners (SAF employees) a refining may name, still employed (no end date, or
+         *     one today or later), by matricule: names only, so the refining form offers them without
+         *     access to the employees module. ?project= keeps one project's.
+         */
+        get: operations["refiners_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/refiners/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The gold refiners (SAF employees) a refining may name, still employed (no end date, or
+         *     one today or later), by matricule: names only, so the refining form offers them without
+         *     access to the employees module. ?project= keeps one project's.
+         */
+        get: operations["refiners_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/refining-operations/": {
         parameters: {
             query?: never;
@@ -1013,6 +1155,29 @@ export interface paths {
         head?: never;
         /** @description Makes a viewset's create honour the Idempotency-Key header. Listed first. */
         patch: operations["refining_operations_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/refining-operations/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The refining of each active project (a project-scoped user's own only), by name:
+         *     the grindings waiting for their refining and their bags (finished, mercury added, no
+         *     active refining, shipment not cancelled: those a refining can be recorded for), the
+         *     refinings dated today (TIME_ZONE) and all the refinings. A project with none comes
+         *     with zeros; ?project= keeps that one project.
+         */
+        get: operations["refining_operations_summary_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/resource-history/": {
@@ -1286,6 +1451,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/settlements/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The settlements of each active project (a project-scoped user's own only), by
+         *     name: the shipments waiting for one (completed or cancelled, in no active settlement:
+         *     those a settlement picks by default) and the active settlements made. A project with
+         *     none comes with zeros; ?project= keeps that one project.
+         */
+        get: operations["settlements_summary_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/shipment-debts/": {
         parameters: {
             query?: never;
@@ -1490,6 +1677,29 @@ export interface paths {
          *     gives the shipment its invoice number.
          */
         get: operations["shipments_invoice_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shipments/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The storage of each active project (a project-scoped user's own only), by name:
+         *     how many customers have bags in it and how many bags (`remaining_bags` summed: the
+         *     bags count less the bags of the active grindings, running ones included). Cancelled
+         *     shipments are left out: their bags will not be ground. A project with none comes
+         *     with 0 and 0; ?project= keeps that one project only.
+         */
+        get: operations["shipments_summary_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1740,9 +1950,15 @@ export interface components {
             project: number;
             project_name: $Read<string>;
             phone: string;
+            paid_per_gram: $Read<boolean>;
             /** Format: decimal */
-            monthly_salary: string;
+            monthly_salary?: string | null;
             salaries: $Read<components["schemas"]["EmployeeSalarySummary"][]>;
+            /** Format: decimal */
+            refining_cost_per_gram?: string | null;
+            refining_costs: $Read<components["schemas"]["EmployeeRefiningCostSummary"][]>;
+            /** Format: decimal */
+            refined_gold: $Read<string>;
             /** Format: date-time */
             start_date: string;
             /** Format: date */
@@ -1899,6 +2115,44 @@ export interface components {
             created_at: $Read<string>;
             /** Format: date-time */
             updated_at: $Read<string>;
+        };
+        /**
+         * @description A gold refiner's cost per gram (the starting one, or a change): each refining is paid
+         *     at the cost in force on its day.
+         */
+        EmployeeRefiningCost: {
+            id: $Read<number>;
+            employee: number;
+            matricule: $Read<string>;
+            employee_name: $Read<string>;
+            /**
+             * Refining cost per gram
+             * Format: decimal
+             */
+            cost_per_gram: string;
+            /** Format: date */
+            effective_from: string;
+            notes?: string;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /** @description A gold refiner's cost per gram as listed on its employee. */
+        EmployeeRefiningCostSummary: {
+            id: $Read<number>;
+            /**
+             * Refining cost per gram
+             * Format: decimal
+             */
+            cost_per_gram: $Read<string>;
+            /** Format: date */
+            effective_from: $Read<string>;
+            notes: $Read<string>;
         };
         /** @description A raise (or the starting salary) of an employee: paid from its date to the next one. */
         EmployeeSalary: {
@@ -2224,6 +2478,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["EmployeeMonthlySalary"][];
+        };
+        PaginatedEmployeeRefiningCostList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["EmployeeRefiningCost"][];
         };
         PaginatedEmployeeSalaryList: {
             /** @example 123 */
@@ -2592,9 +2861,15 @@ export interface components {
             project?: number;
             project_name?: $Read<string>;
             phone?: string;
+            paid_per_gram?: $Read<boolean>;
             /** Format: decimal */
-            monthly_salary?: string;
+            monthly_salary?: string | null;
             salaries?: $Read<components["schemas"]["EmployeeSalarySummary"][]>;
+            /** Format: decimal */
+            refining_cost_per_gram?: string | null;
+            refining_costs?: $Read<components["schemas"]["EmployeeRefiningCostSummary"][]>;
+            /** Format: decimal */
+            refined_gold?: $Read<string>;
             /** Format: date-time */
             start_date?: string;
             /** Format: date */
@@ -2714,6 +2989,32 @@ export interface components {
             method?: $Read<components["schemas"]["MethodEnum"]>;
             /** Format: date-time */
             paid_at?: string;
+            notes?: string;
+            created_by_name?: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        /**
+         * @description A gold refiner's cost per gram (the starting one, or a change): each refining is paid
+         *     at the cost in force on its day.
+         */
+        PatchedEmployeeRefiningCost: {
+            id?: $Read<number>;
+            employee?: number;
+            matricule?: $Read<string>;
+            employee_name?: $Read<string>;
+            /**
+             * Refining cost per gram
+             * Format: decimal
+             */
+            cost_per_gram?: string;
+            /** Format: date */
+            effective_from?: string;
             notes?: string;
             created_by_name?: $Read<string | null>;
             /**
@@ -2853,6 +3154,15 @@ export interface components {
             project_name?: $Read<string>;
             worker?: $Write<number>;
             worker_name?: $Read<string>;
+            refiner?: number | null;
+            refiner_name?: $Read<string>;
+            refiner_matricule?: $Read<string>;
+            /**
+             * Format: double
+             * @description What the refining earns its refiner: its gold without mercury times the refiner's
+             *     cost per gram on its day; null with no refiner or until the gold is weighed.
+             */
+            refiner_earned?: $Read<number | null>;
             /** Format: double */
             bags_count?: $Read<number>;
             /** Format: date-time */
@@ -3107,6 +3417,51 @@ export interface components {
             /** Format: date-time */
             updated_at: $Read<string>;
         };
+        /** @description One project's employees at a glance. */
+        ProjectEmployeesSummary: {
+            project: number;
+            project_name: string;
+            employees: number;
+        };
+        /** @description One project's grinding at a glance. */
+        ProjectGrindingSummary: {
+            project: number;
+            project_name: string;
+            /** Format: decimal */
+            bags_waiting: string;
+            waiting_shipments: number;
+            /** Format: decimal */
+            bags_grinding: string;
+            /** Format: decimal */
+            bags_ground_today: string;
+            machines_running: number;
+            machines_in_service: number;
+        };
+        /** @description One project's refining at a glance. */
+        ProjectRefiningSummary: {
+            project: number;
+            project_name: string;
+            grindings_waiting: number;
+            /** Format: decimal */
+            bags_waiting: string;
+            refined_today: number;
+            refinings_total: number;
+        };
+        /** @description One project's settlements at a glance. */
+        ProjectSettlementSummary: {
+            project: number;
+            project_name: string;
+            shipments_waiting: number;
+            settlements_made: number;
+        };
+        /** @description One project's storage: the customers with bags in it and how many bags. */
+        ProjectStorageSummary: {
+            project: number;
+            project_name: string;
+            customers_with_bags: number;
+            /** Format: decimal */
+            bags_in_storage: string;
+        };
         /** @description One project's bags and the customers with the largest share of them. */
         ProjectTopCustomersByBags: {
             project: number;
@@ -3114,6 +3469,15 @@ export interface components {
             /** Format: decimal */
             total_bags: string;
             results: components["schemas"]["CustomerBagsShare"][];
+        };
+        /** @description A gold refiner as the refining form offers them: names only, no pay. */
+        Refiner: {
+            id: $Read<number>;
+            /** Employee number */
+            matricule: $Read<string>;
+            full_name: $Read<string>;
+            project: $Read<number>;
+            project_name: $Read<string>;
         };
         RefiningOperation: {
             id: $Read<number>;
@@ -3125,6 +3489,15 @@ export interface components {
             project_name: $Read<string>;
             worker?: $Write<number>;
             worker_name: $Read<string>;
+            refiner?: number | null;
+            refiner_name: $Read<string>;
+            refiner_matricule: $Read<string>;
+            /**
+             * Format: double
+             * @description What the refining earns its refiner: its gold without mercury times the refiner's
+             *     cost per gram on its day; null with no refiner or until the gold is weighed.
+             */
+            refiner_earned: $Read<number | null>;
             /** Format: double */
             bags_count: $Read<number>;
             /** Format: date-time */
@@ -3291,6 +3664,8 @@ export interface components {
             bags_transport: string;
             /** Format: decimal */
             passengers_transport: string;
+            /** Format: decimal */
+            unloading: string;
             /** Format: decimal */
             gold: string;
             /** Format: decimal */
@@ -4863,6 +5238,163 @@ export interface operations {
             };
         };
     };
+    employee_refining_costs_list: {
+        parameters: {
+            query?: {
+                employee?: number;
+                employee__project?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedEmployeeRefiningCostList"];
+                };
+            };
+        };
+    };
+    employee_refining_costs_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeRefiningCost"];
+                "application/x-www-form-urlencoded": components["schemas"]["EmployeeRefiningCost"];
+                "multipart/form-data": components["schemas"]["EmployeeRefiningCost"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeRefiningCost"];
+                };
+            };
+        };
+    };
+    employee_refining_costs_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee refining cost. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeRefiningCost"];
+                };
+            };
+        };
+    };
+    employee_refining_costs_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee refining cost. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeRefiningCost"];
+                "application/x-www-form-urlencoded": components["schemas"]["EmployeeRefiningCost"];
+                "multipart/form-data": components["schemas"]["EmployeeRefiningCost"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeRefiningCost"];
+                };
+            };
+        };
+    };
+    employee_refining_costs_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee refining cost. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    employee_refining_costs_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee refining cost. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEmployeeRefiningCost"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedEmployeeRefiningCost"];
+                "multipart/form-data": components["schemas"]["PatchedEmployeeRefiningCost"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeRefiningCost"];
+                };
+            };
+        };
+    };
     employee_salaries_list: {
         parameters: {
             query?: {
@@ -5351,6 +5883,28 @@ export interface operations {
             };
         };
     };
+    employees_summary_list: {
+        parameters: {
+            query?: {
+                /** @description Only this project (a project's own page). */
+                project?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectEmployeesSummary"][];
+                };
+            };
+        };
+    };
     grinders_list: {
         parameters: {
             query?: {
@@ -5677,6 +6231,28 @@ export interface operations {
             };
         };
     };
+    grinding_operations_summary_list: {
+        parameters: {
+            query?: {
+                /** @description Only this project (a project's own page). */
+                project?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectGrindingSummary"][];
+                };
+            };
+        };
+    };
     mercury_additions_list: {
         parameters: {
             query?: {
@@ -5964,6 +6540,53 @@ export interface operations {
             };
         };
     };
+    refiners_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                project?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Refiner"][];
+                };
+            };
+        };
+    };
+    refiners_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this employee. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Refiner"];
+                };
+            };
+        };
+    };
     refining_operations_list: {
         parameters: {
             query?: {
@@ -5977,6 +6600,7 @@ export interface operations {
                 /** @description Number of results to return per page. */
                 page_size?: number;
                 project?: number;
+                refiner?: number;
                 refining_date__date__gte?: string;
                 refining_date__date__lte?: string;
                 /** @description A search term. */
@@ -6124,6 +6748,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefiningOperation"];
+                };
+            };
+        };
+    };
+    refining_operations_summary_list: {
+        parameters: {
+            query?: {
+                /** @description Only this project (a project's own page). */
+                project?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectRefiningSummary"][];
                 };
             };
         };
@@ -6896,6 +7542,28 @@ export interface operations {
             };
         };
     };
+    settlements_summary_list: {
+        parameters: {
+            query?: {
+                /** @description Only this project (a project's own page). */
+                project?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectSettlementSummary"][];
+                };
+            };
+        };
+    };
     shipment_debts_list: {
         parameters: {
             query?: {
@@ -7227,6 +7895,7 @@ export interface operations {
                 project?: number;
                 /** @description A search term. */
                 search?: string;
+                settleable?: boolean;
                 /**
                  * @description * `pending` - Pending
                  *     * `grinding` - In Grinding
@@ -7467,6 +8136,28 @@ export interface operations {
                 };
                 content: {
                     "application/pdf": string;
+                };
+            };
+        };
+    };
+    shipments_summary_list: {
+        parameters: {
+            query?: {
+                /** @description Only this project (a project's own page). */
+                project?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectStorageSummary"][];
                 };
             };
         };

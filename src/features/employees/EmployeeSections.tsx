@@ -5,17 +5,21 @@ import { Icon } from "@/components/ui/Icon";
 import { TablePanel } from "@/components/ui/TablePanel";
 import { Tabs } from "@/components/ui/Tabs";
 import { useCan } from "@/lib/accessContext";
-import { formatCount, formatDate, formatDateTime, formatMoney } from "@/lib/format";
+import type { Loaded } from "@/lib/api/client";
+import type { RefiningSlice } from "@/lib/refiningApi";
+import { formatCount, formatDate, formatDateTime, formatMoney, formatQuantity } from "@/lib/format";
 import { employeeHref } from "@/lib/routes";
 import { AbsencesTab } from "./AbsencesTab";
 import { DebtsLedger } from "./DebtsTab";
 import type { Absence } from "./employeeAbsences";
 import type { Debt, DebtPayment } from "./employeeDebts";
+import { RefiningsTab } from "./RefiningsTab";
+import { currentPay } from "./employees";
 import type { Employee, MonthlySalary, Withdrawal } from "./employees";
 import {
   AddRecordLink,
   MonthlySalariesTable,
-  SalariesTable,
+  PayRatesTable,
   WithdrawalsTable,
 } from "./EmployeeTables";
 
@@ -30,14 +34,29 @@ export function EmployeeDetails({ employee }: { employee: Employee }) {
           { label: t("fields.matricule"), value: employee.matricule },
           { label: t("fields.job"), value: t(`jobTitles.${employee.job}`) },
           { label: t("fields.phone"), value: employee.phone, dir: "ltr" },
-          { label: t("fields.monthlySalary"), value: formatMoney(employee.monthlySalary, locale) },
+          {
+            label: employee.paidPerGram ? t("fields.costPerGram") : t("fields.monthlySalary"),
+            value: formatMoney(currentPay(employee), locale),
+          },
           { label: t("fields.startedOn"), value: formatDateTime(employee.startedAt, locale) },
           {
             label: t("fields.endedOn"),
             value: employee.endedOn === undefined ? "—" : formatDate(employee.endedOn, locale),
           },
-          { label: t("fields.accruedUntil"), value: formatDate(employee.accruedUntil, locale) },
-          { label: t("fields.absentDays"), value: formatCount(employee.absentDays, locale) },
+          ...(employee.paidPerGram
+            ? [
+                {
+                  label: t("fields.refinedGold"),
+                  value: t("grams", { grams: formatQuantity(employee.refinedGold, locale) }),
+                },
+              ]
+            : [
+                {
+                  label: t("fields.accruedUntil"),
+                  value: formatDate(employee.accruedUntil, locale),
+                },
+                { label: t("fields.absentDays"), value: formatCount(employee.absentDays, locale) },
+              ]),
           { label: t("fields.earned"), value: formatMoney(employee.earned, locale) },
           { label: t("fields.withdrawn"), value: formatMoney(employee.withdrawn, locale) },
           { label: t("fields.accumulated"), value: formatMoney(employee.accumulated, locale) },
@@ -65,10 +84,12 @@ export function EmployeeActions({ employee }: { employee: Employee }) {
             <Icon name="plus" />
             {t("withdrawals.new")}
           </ButtonLink>
-          <ButtonLink href={employeeHref(employee.id, "addAbsence")} variant="secondary">
-            <Icon name="plus" />
-            {t("absences.new")}
-          </ButtonLink>
+          {employee.paidPerGram ? null : (
+            <ButtonLink href={employeeHref(employee.id, "addAbsence")} variant="secondary">
+              <Icon name="plus" />
+              {t("absences.new")}
+            </ButtonLink>
+          )}
           <ButtonLink href={employeeHref(employee.id, "addDebt")} variant="secondary">
             <Icon name="plus" />
             {t("debts.new")}
@@ -98,6 +119,7 @@ type EmployeeTabsProps = {
   payments: readonly DebtPayment[];
   absences: readonly Absence[];
   monthlySalaries: readonly MonthlySalary[];
+  refinings: Loaded<RefiningSlice> | undefined;
 };
 
 export function EmployeeTabs({
@@ -107,27 +129,59 @@ export function EmployeeTabs({
   payments,
   absences,
   monthlySalaries,
+  refinings,
 }: EmployeeTabsProps) {
   const t = useTranslations("employees");
 
-  return (
-    <Tabs
-      label={t("tabs.label")}
-      items={[
+  const records = [
+    {
+      id: "withdrawals",
+      label: t("tabs.withdrawals"),
+      content: (
+        <TablePanel title={t("withdrawals.title")}>
+          <WithdrawalsTable employee={employee} withdrawals={withdrawals} />
+        </TablePanel>
+      ),
+    },
+    {
+      id: "debts",
+      label: t("tabs.debts"),
+      content: <DebtsLedger employee={employee} debts={debts} payments={payments} />,
+    },
+  ];
+  const pay = employee.paidPerGram
+    ? [
         {
-          id: "withdrawals",
-          label: t("tabs.withdrawals"),
+          id: "refinings",
+          label: t("tabs.refinings"),
+          content:
+            refinings === undefined ? null : (
+              <RefiningsTab employee={employee} refinings={refinings} />
+            ),
+        },
+        {
+          id: "refiningCosts",
+          label: t("tabs.refiningCosts"),
           content: (
-            <TablePanel title={t("withdrawals.title")}>
-              <WithdrawalsTable employee={employee} withdrawals={withdrawals} />
+            <TablePanel
+              title={t("refiningCosts.title")}
+              action={
+                <AddRecordLink
+                  href={employeeHref(employee.id, "raise")}
+                  label={t("refiningCosts.new")}
+                />
+              }
+            >
+              <PayRatesTable
+                rates={employee.refiningCosts}
+                amountHeader={t("fields.costPerGram")}
+                empty={t("refiningCosts.empty")}
+              />
             </TablePanel>
           ),
         },
-        {
-          id: "debts",
-          label: t("tabs.debts"),
-          content: <DebtsLedger employee={employee} debts={debts} payments={payments} />,
-        },
+      ]
+    : [
         {
           id: "deductions",
           label: t("tabs.deductions"),
@@ -147,7 +201,11 @@ export function EmployeeTabs({
                   />
                 }
               >
-                <SalariesTable salaries={employee.salaries} />
+                <PayRatesTable
+                  rates={employee.salaries}
+                  amountHeader={t("fields.monthlySalary")}
+                  empty={t("raises.empty")}
+                />
               </TablePanel>
               <TablePanel title={t("monthlySalaries.title")}>
                 <MonthlySalariesTable salaries={monthlySalaries} />
@@ -155,7 +213,7 @@ export function EmployeeTabs({
             </div>
           ),
         },
-      ]}
-    />
-  );
+      ];
+
+  return <Tabs label={t("tabs.label")} items={[...records, ...pay]} />;
 }

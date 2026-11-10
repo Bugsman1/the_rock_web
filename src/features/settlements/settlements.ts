@@ -3,9 +3,9 @@ import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/clien
 import { amountOrZero, fromDecimal, toMoneyDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import { formatPhone } from "@/lib/phone";
+import { rowOfProject } from "@/lib/projects";
 import type { ProjectId } from "@/lib/projects";
-import type { RefiningOperation } from "@/lib/refining";
-import type { ShipmentRecord, ShipmentStatusKey } from "@/lib/shipments";
+import type { ShipmentRecord } from "@/lib/shipments";
 
 const DEBT_DESCRIPTION_MAX_LENGTH = 200;
 
@@ -13,6 +13,7 @@ export type SettlementTotals = {
   bags: number;
   bagsTransport: number;
   passengersTransport: number;
+  unloading: number;
   gold: number;
   shipmentsDebt: number;
   grindingCost: number;
@@ -59,6 +60,7 @@ export function settlementFromApi(settlement: ApiSchema<"Settlement">): Settleme
       bags: fromDecimal(totals.bags),
       bagsTransport: fromDecimal(totals.bags_transport),
       passengersTransport: fromDecimal(totals.passengers_transport),
+      unloading: fromDecimal(totals.unloading),
       gold: fromDecimal(totals.gold),
       shipmentsDebt: fromDecimal(totals.debt),
       grindingCost: fromDecimal(totals.grinding_cost),
@@ -71,60 +73,28 @@ export function settlementFromApi(settlement: ApiSchema<"Settlement">): Settleme
   };
 }
 
-export function shipmentsAwaitingGold(
-  refinings: readonly RefiningOperation[],
-): ReadonlySet<string> {
-  return new Set(
-    refinings
-      .filter((refining) => refining.goldWithoutMaterial === undefined)
-      .map((refining) => refining.shipmentNumber),
-  );
-}
-
-export const settleableStatuses: readonly ShipmentStatusKey[] = ["completed"];
-
-export function settleableShipments(
-  shipments: readonly ShipmentRecord[],
-  settlements: readonly Settlement[],
-  refinings: readonly RefiningOperation[],
-): readonly ShipmentRecord[] {
-  const settled = new Set(settlements.flatMap((settlement) => settlement.shipmentIds));
-  const awaitingGold = shipmentsAwaitingGold(refinings);
-
-  return shipments.filter(
-    (shipment) =>
-      shipment.status === "completed" &&
-      !settled.has(shipment.id) &&
-      !awaitingGold.has(shipment.shipmentNumber),
-  );
-}
-
-export function settleableShipmentsOfProject(
-  shipments: readonly ShipmentRecord[],
-  settlements: readonly Settlement[],
-  refinings: readonly RefiningOperation[],
-  project: ProjectId,
-): readonly ShipmentRecord[] {
-  return settleableShipments(shipments, settlements, refinings)
-    .filter((shipment) => shipment.project === project)
-    .sort((a, b) => a.arrivedAt.localeCompare(b.arrivedAt));
-}
-
-export type ProjectSettlementSummary = {
+type SettlementSummary = {
   waiting: number;
   settled: number;
 };
 
-export function projectSettlementSummary(
-  shipments: readonly ShipmentRecord[],
-  settlements: readonly Settlement[],
-  refinings: readonly RefiningOperation[],
+type ProjectSettlementSummary = SettlementSummary & { project: ProjectId };
+
+export function settlementSummaryFromApi(
+  rows: readonly ApiSchema<"ProjectSettlementSummary">[],
+): readonly ProjectSettlementSummary[] {
+  return rows.map((row) => ({
+    project: String(row.project),
+    waiting: row.shipments_waiting,
+    settled: row.settlements_made,
+  }));
+}
+
+export function settlementsOf(
+  rows: readonly ProjectSettlementSummary[],
   project: ProjectId,
-): ProjectSettlementSummary {
-  return {
-    waiting: settleableShipmentsOfProject(shipments, settlements, refinings, project).length,
-    settled: settlements.filter((settlement) => settlement.project === project).length,
-  };
+): SettlementSummary {
+  return rowOfProject(rows, project) ?? { waiting: 0, settled: 0 };
 }
 
 export function projectsOfShipments(shipments: readonly ShipmentRecord[]): readonly ProjectId[] {

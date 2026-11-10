@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { getRefiningOperations, getRefiningPage } from "./refiningApi";
+import { getRefiningPage } from "./refiningApi";
 
 const OPERATIONS_URL = `${window.location.origin}/api/v1/refining-operations/`;
 const server = setupServer();
@@ -28,26 +28,22 @@ const apiOperation = {
   updated_at: "2026-10-12T10:00:00Z",
 };
 
-describe("getRefiningOperations", () => {
-  it("reads every page of the operations, newest first", async () => {
-    const requests: URL[] = [];
+describe("getRefiningPage", () => {
+  it("asks only the refinings of one gold refiner when one is given", async () => {
+    let asked = new URLSearchParams();
     server.use(
       http.get(OPERATIONS_URL, ({ request }) => {
-        const url = new URL(request.url);
-        requests.push(url);
-        const id = url.searchParams.get("page") === "1" ? 5 : 6;
-        return HttpResponse.json({ count: 2, results: [{ ...apiOperation, id }] });
+        asked = new URL(request.url).searchParams;
+        return HttpResponse.json({ count: 0, results: [] });
       }),
     );
 
-    const operations = await getRefiningOperations();
+    await getRefiningPage({ project: "3", search: "", refiner: "9" }, 1);
 
-    expect(operations.map((operation) => operation.id)).toEqual(["5", "6"]);
-    expect(requests[0]?.searchParams.get("ordering")).toBe("-refining_date");
+    expect(asked.get("refiner")).toBe("9");
+    expect(asked.get("project")).toBe("3");
   });
-});
 
-describe("getRefiningPage", () => {
   it("asks one page of 25, newest first, with the search and filters", async () => {
     let asked = new URLSearchParams();
     server.use(

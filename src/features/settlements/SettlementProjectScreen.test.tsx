@@ -6,7 +6,6 @@ import { formatMoney } from "@/lib/format";
 import messages from "@/messages/fr.json";
 import {
   API,
-  apiRefiningOf,
   apiShipment,
   cellsOf,
   openAt,
@@ -29,28 +28,31 @@ function panel(title: string) {
 }
 
 function answerShipments() {
+  const asked: URLSearchParams[] = [];
   server.use(
-    http.get(`${API}/shipments/`, () =>
-      page([apiShipment(1, "completed"), apiShipment(3, "completed"), apiShipment(6, "grinding")]),
-    ),
+    http.get(`${API}/shipments/`, ({ request }) => {
+      asked.push(new URL(request.url).searchParams);
+      return page([apiShipment(3, "completed")]);
+    }),
   );
+
+  return asked;
 }
 
 describe("SettlementProjectScreen", () => {
-  it("holds back a finished shipment until its gold without material is weighed", async () => {
-    answerShipments();
-    server.use(
-      http.get(`${API}/refining-operations/`, () =>
-        page([apiRefiningOf(1, "SHP-00003", null), apiRefiningOf(2, "SHP-00003", "1.500")]),
-      ),
-    );
+  it("asks the backend for the project's shipments a settlement can take, oldest first", async () => {
+    const asked = answerShipments();
     openAt("/fr/settlements/projects/3");
 
-    expect(await screen.findByText(text.project.waitingTitle)).toBeVisible();
-    expect(screen.queryByText("SHP-00003")).not.toBeInTheDocument();
+    expect(await screen.findByText("SHP-00003")).toBeVisible();
+    expect(asked).toHaveLength(1);
+    expect(asked[0]?.get("project")).toBe("3");
+    expect(asked[0]?.get("settleable")).toBe("true");
+    expect(asked[0]?.get("ordering")).toBe("arrival_date");
+    expect(asked[0]?.has("status__in")).toBe(false);
   });
 
-  it("lists the project's finished shipments not settled yet, each ready to settle", async () => {
+  it("lists the shipments to settle, each ready to settle", async () => {
     answerShipments();
     openAt("/fr/settlements/projects/3");
 
@@ -71,8 +73,6 @@ describe("SettlementProjectScreen", () => {
       "href",
       "/fr/settlements/new?customer=7&project=3",
     );
-    expect(waiting.queryByText("SHP-00001")).not.toBeInTheDocument();
-    expect(waiting.queryByText("SHP-00006")).not.toBeInTheDocument();
   });
 
   it("lists the project's settlements and searches them by number on the server", async () => {

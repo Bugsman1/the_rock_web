@@ -17,21 +17,17 @@ import {
   settlementHref,
   settlementsProjectHref,
 } from "@/lib/routes";
-import { getRefiningOperations } from "@/lib/refiningApi";
 import { getShipments } from "@/lib/shipmentsApi";
 import { SettlementForm } from "./SettlementForm";
-import { projectsOfShipments, settleableShipments, settleableStatuses } from "./settlements";
+import { projectsOfShipments } from "./settlements";
 import type { NewSettlementValues } from "./settlements";
-import { createSettlement, getSettlements } from "./settlementsApi";
+import { createSettlement } from "./settlementsApi";
 
 async function loadCustomerShipments(customerId: string, projectParam: string | null) {
-  const [shipments, settlements, projects, refinings] = await Promise.all([
-    getShipments({ customer: customerId, statuses: settleableStatuses }),
-    getSettlements({ customer: customerId }),
+  const [open, projects] = await Promise.all([
+    getShipments({ customer: customerId, settleable: true }),
     getProjects(),
-    getRefiningOperations({ customer: customerId, goldWeighed: false }),
   ]);
-  const open = settleableShipments(shipments, settlements, refinings);
   const projectIds = projectsOfShipments(open);
   const project =
     projectIds.find((id) => id === projectParam) ??

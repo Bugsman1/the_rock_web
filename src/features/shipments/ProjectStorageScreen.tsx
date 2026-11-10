@@ -13,14 +13,15 @@ import { DelayedSearchField } from "@/components/ui/SearchField";
 import { TablePanel } from "@/components/ui/TablePanel";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
+import { notFound } from "@/lib/api/client";
 import { getCustomer } from "@/lib/customersApi";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { isFiltered, listQueryFromParams, listQueryParams } from "@/lib/filters";
 import { formatCount } from "@/lib/format";
 import { idleMachines, machinesFromGrinders } from "@/lib/grinding";
 import { getGrindingOperations } from "@/lib/grindingApi";
-import { isInService } from "@/lib/projects";
-import { getGrinders, getProjects, requireProject } from "@/lib/projectsApi";
+import { findProject, isInService } from "@/lib/projects";
+import { getGrinders, getProjects } from "@/lib/projectsApi";
 import {
   millingProjectHref,
   newShipmentHref,
@@ -28,36 +29,37 @@ import {
   shipmentsHistoryHref,
   shipmentsProjectHref,
 } from "@/lib/routes";
-import type { ShipmentRecord } from "@/lib/shipments";
 import { getShipmentPage, getShipments } from "@/lib/shipmentsApi";
 import { getOperators } from "@/lib/users";
-import { bagCount, clientBags, storedStatuses } from "./shipmentStorage";
+import { getStorageSummary } from "./shipmentsApi";
+import { storageOf, storedStatuses } from "./shipmentStorage";
 import { shipmentGroupChoices, shipmentListFilter } from "./shipmentHistory";
 import { ClientQueueTable } from "./ClientQueueTable";
 import { ShipmentFilterMenu } from "./ShipmentFilters";
 
 async function getGrindingChoices(project: string) {
-  const [grinders, operators, running] = await Promise.all([
+  const [grinders, operators, running, shipments] = await Promise.all([
     getGrinders(project),
     getOperators(project, "grinding"),
     getGrindingOperations({ project, running: true }),
+    getShipments({ project, statuses: storedStatuses, hasRemainingBags: true }),
   ]);
 
-  return { idle: idleMachines(machinesFromGrinders(grinders), running), operators };
+  return { idle: idleMachines(machinesFromGrinders(grinders), running), operators, shipments };
 }
 
 type GrindingChoices = Awaited<ReturnType<typeof getGrindingChoices>> & { shipment: string };
 
 export async function projectStorageLoader({ params, request }: LoaderFunctionArgs) {
-  const project = await requireProject(params.project ?? "");
+  const projects = await getProjects();
+  const project = findProject(projects, params.project ?? "") ?? notFound();
   const search = new URL(request.url).searchParams;
   const grind = search.get("grind");
   const list = listQueryFromParams(search, shipmentGroupChoices(storedStatuses));
   const filter = shipmentListFilter(project.id, list, storedStatuses, "arrival_date");
-  const [slice, inStorage, projects, client, grinding] = await Promise.all([
+  const [slice, storage, client, grinding] = await Promise.all([
     getShipmentPage(filter, 1),
-    getShipments({ project: project.id, statuses: storedStatuses, hasRemainingBags: true }),
-    getProjects(),
+    getStorageSummary(project.id),
     list.filters.client === "" ? undefined : getCustomer(list.filters.client),
     grind === null ? undefined : getGrindingChoices(project.id),
   ]);
@@ -69,7 +71,7 @@ export async function projectStorageLoader({ params, request }: LoaderFunctionAr
     list,
     filter,
     slice,
-    inStorage,
+    stored: storageOf(storage, project.id),
     clientName: client?.name,
     grinding: choices,
     onlyProject: projects.filter(isInService).length === 1,
@@ -78,12 +80,10 @@ export async function projectStorageLoader({ params, request }: LoaderFunctionAr
 
 function StartGrindingDrawer({
   project,
-  shipments,
   grinding,
   closeHref,
 }: {
   project: { id: string; name: string };
-  shipments: readonly ShipmentRecord[];
   grinding: GrindingChoices | undefined;
   closeHref: string;
 }) {
@@ -104,7 +104,7 @@ function StartGrindingDrawer({
         <OperationForm
           key={grinding.shipment}
           projectName={project.name}
-          shipments={shipments.map((shipment) => ({
+          shipments={grinding.shipments.map((shipment) => ({
             id: shipment.id,
             shipmentNumber: shipment.shipmentNumber,
             client: shipment.customerName,
@@ -126,7 +126,7 @@ function StartGrindingDrawer({
 }
 
 export function ProjectStorageScreen() {
-  const { project, list, filter, slice, inStorage, clientName, grinding, onlyProject } =
+  const { project, list, filter, slice, stored, clientName, grinding, onlyProject } =
     useLoaderData<typeof projectStorageLoader>();
   const t = useTranslations("shipments");
   const history = useTranslations("shipments.history");
@@ -173,8 +173,8 @@ export function ProjectStorageScreen() {
           </div>
         }
         stats={[
-          { label: t("clientsLabel"), value: formatCount(clientBags(inStorage).length, locale) },
-          { label: t("bagsLabel"), value: formatCount(bagCount(inStorage), locale) },
+          { label: t("clientsLabel"), value: formatCount(stored.customers, locale) },
+          { label: t("bagsLabel"), value: formatCount(stored.bags, locale) },
         ]}
       >
         <FilterSlotTarget />
@@ -203,7 +203,6 @@ export function ProjectStorageScreen() {
 
         <StartGrindingDrawer
           project={project}
-          shipments={inStorage}
           grinding={canStart ? grinding : undefined}
           closeHref={shipmentsProjectHref(project.id, listParams)}
         />

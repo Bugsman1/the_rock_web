@@ -43,6 +43,13 @@ export function findProject(projects: readonly Project[], id: ProjectId): Projec
   return projects.find((project) => project.id === id);
 }
 
+export function rowOfProject<Row extends { project: ProjectId }>(
+  rows: readonly Row[],
+  project: ProjectId,
+): Row | undefined {
+  return rows.find((row) => row.project === project);
+}
+
 export function grindersOfProject(
   grinders: readonly Grinder[],
   project: ProjectId,

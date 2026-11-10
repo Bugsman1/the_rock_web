@@ -141,6 +141,13 @@ export function RefiningOperationsTable({
       className: "text-ink font-semibold",
       cell: (operation) => <span dir="auto">{operation.workerName}</span>,
     },
+    {
+      key: "refiner",
+      header: t("fields.refiner"),
+      className: "text-ink font-semibold",
+      cell: (operation) =>
+        operation.refinerName === "" ? "—" : <span dir="auto">{operation.refinerName}</span>,
+    },
     weight("bags", t("fields.bags"), (operation) => formatCount(operation.bags, locale)),
     weight("weightBefore", t("fields.weightBefore"), (operation) =>
       quantity(operation.weightBefore),

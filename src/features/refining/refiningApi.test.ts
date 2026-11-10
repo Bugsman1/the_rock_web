@@ -13,6 +13,7 @@ afterAll(() => server.close());
 
 const values: RefiningValues = {
   workerId: "2",
+  refinerId: "",
   date: "2026-10-12",
   time: "09:30",
   weightBefore: 1200,

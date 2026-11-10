@@ -1,17 +1,8 @@
 import { screen, within } from "@testing-library/react";
-import { http } from "msw";
+import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import messages from "@/messages/fr.json";
-import {
-  API,
-  apiShipment,
-  openAt,
-  page,
-  projects,
-  server,
-  serveSettlements,
-  text,
-} from "./settlementsTesting";
+import { API, openAt, page, projects, server, serveSettlements, text } from "./settlementsTesting";
 
 serveSettlements();
 
@@ -28,15 +19,12 @@ function card(name: string) {
 }
 
 describe("SettlementsScreen", () => {
-  it("shows one card per project with its finished shipments to settle and its settlements", async () => {
+  it("shows one card per project with the backend's shipments waiting and settlements made", async () => {
     server.use(
-      http.get(`${API}/shipments/`, () =>
-        page([
-          apiShipment(1, "completed"),
-          apiShipment(2, "completed"),
-          apiShipment(3, "completed"),
-          apiShipment(5, "completed", 5),
-          apiShipment(6, "grinding"),
+      http.get(`${API}/settlements/summary/`, () =>
+        HttpResponse.json([
+          { project: 3, project_name: "Zouérat 1", shipments_waiting: 1, settlements_made: 1 },
+          { project: 5, project_name: "Sfariyat 1", shipments_waiting: 1, settlements_made: 0 },
         ]),
       ),
     );

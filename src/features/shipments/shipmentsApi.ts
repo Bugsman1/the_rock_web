@@ -14,6 +14,7 @@ import { combineDateAndTime } from "@/lib/datetime";
 import { amountOrZero } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import { isRecordId } from "@/lib/projects";
+import type { ProjectId } from "@/lib/projects";
 import { newShipmentToApi, shipmentErrorsFromApi, shipmentToApi } from "./shipments";
 import { shipmentDetailFromApi } from "./shipmentDetail";
 import type { ShipmentDetail } from "./shipmentDetail";
@@ -26,8 +27,8 @@ import {
 import { cancelErrorsFromApi, cancelToApi } from "./shipmentCancel";
 import type { CancelShipmentValues } from "./shipmentCancel";
 import { testBagsErrorsFromApi, testBagsToApi } from "./shipmentTestBags";
-import { topCustomersFromApi } from "./shipmentStorage";
-import type { ProjectTopCustomers } from "./shipmentStorage";
+import { storageFromApi, topCustomersFromApi } from "./shipmentStorage";
+import type { ProjectStorage, ProjectTopCustomers } from "./shipmentStorage";
 import type { TestBagsValues } from "./shipmentTestBags";
 import type { NewShipmentValues } from "./shipments";
 import type { DebtValues, PaymentValues } from "./shipmentPayments";
@@ -202,5 +203,13 @@ export async function getInvoice(shipmentId: string, locale: Locale): Promise<In
 export async function getTopCustomersByBags(): Promise<readonly ProjectTopCustomers[]> {
   return topCustomersFromApi(
     unwrap(await apiClient.GET("/api/v1/customers/top-by-bags/per-project/")),
+  );
+}
+
+export async function getStorageSummary(project?: ProjectId): Promise<readonly ProjectStorage[]> {
+  const query = project === undefined ? {} : { project: Number(project) };
+
+  return storageFromApi(
+    unwrap(await apiClient.GET("/api/v1/shipments/summary/", { params: { query } })),
   );
 }

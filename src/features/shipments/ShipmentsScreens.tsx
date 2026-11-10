@@ -16,16 +16,8 @@ import { formatCount } from "@/lib/format";
 import { isInService } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
 import { newShipmentHref, shipmentsProjectHref } from "@/lib/routes";
-import { getShipments } from "@/lib/shipmentsApi";
-import { getTopCustomersByBags } from "./shipmentsApi";
-import {
-  bagCount,
-  clientBags,
-  shipmentsOfProject,
-  storedShipments,
-  storedStatuses,
-  topCustomersOf,
-} from "./shipmentStorage";
+import { getStorageSummary, getTopCustomersByBags } from "./shipmentsApi";
+import { bagsInStorage, storageOf, topCustomersOf } from "./shipmentStorage";
 import type { ProjectTopCustomers, TopCustomer } from "./shipmentStorage";
 
 export async function shipmentsLoader({ params }: LoaderFunctionArgs) {
@@ -37,12 +29,12 @@ export async function shipmentsLoader({ params }: LoaderFunctionArgs) {
     throw redirect(localizedHref(locale, shipmentsProjectHref(onlyProject.id)));
   }
 
-  const [shipments, topCustomers] = await Promise.all([
-    getShipments({ statuses: storedStatuses, hasRemainingBags: true }),
+  const [storage, topCustomers] = await Promise.all([
+    getStorageSummary(),
     tryLoad(() => getTopCustomersByBags()),
   ]);
 
-  return { projects: inService, stored: storedShipments(shipments), topCustomers };
+  return { projects: inService, storage, topCustomers };
 }
 
 type StoragePanelProps = {
@@ -118,10 +110,11 @@ function customersOf(
 }
 
 export function ShipmentsScreen() {
-  const { projects, stored, topCustomers } = useLoaderData<typeof shipmentsLoader>();
+  const { projects, storage, topCustomers } = useLoaderData<typeof shipmentsLoader>();
   const t = useTranslations("shipments");
   const locale = useLocale();
   const canAdd = useCan()("shipments", "add");
+  const cards = projects.map((project) => ({ project, stored: storageOf(storage, project.id) }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -135,7 +128,7 @@ export function ShipmentsScreen() {
             icon="shopping-bag"
             tone="warning"
             label={t("totalBags")}
-            value={formatCount(bagCount(stored), locale)}
+            value={formatCount(bagsInStorage(cards.map(({ stored }) => stored)), locale)}
           />
         </div>
 
@@ -150,23 +143,18 @@ export function ShipmentsScreen() {
       </div>
 
       <CardGrid>
-        {projects.map((project) => {
-          const shipments = shipmentsOfProject(stored, project.id);
-          const clients = clientBags(shipments);
-
-          return (
-            <StoragePanel
-              key={project.id}
-              name={project.name}
-              href={shipmentsProjectHref(project.id)}
-              stats={[
-                { label: t("clientsLabel"), value: formatCount(clients.length, locale) },
-                { label: t("bagsLabel"), value: formatCount(bagCount(shipments), locale) },
-              ]}
-              customers={customersOf(topCustomers, project.id)}
-            />
-          );
-        })}
+        {cards.map(({ project, stored }) => (
+          <StoragePanel
+            key={project.id}
+            name={project.name}
+            href={shipmentsProjectHref(project.id)}
+            stats={[
+              { label: t("clientsLabel"), value: formatCount(stored.customers, locale) },
+              { label: t("bagsLabel"), value: formatCount(stored.bags, locale) },
+            ]}
+            customers={customersOf(topCustomers, project.id)}
+          />
+        ))}
       </CardGrid>
     </div>
   );

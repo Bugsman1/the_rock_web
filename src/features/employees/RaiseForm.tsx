@@ -9,9 +9,11 @@ import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { TextField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
 import { formatMoney } from "@/lib/format";
-import { createRaiseSchema, isRaiseField } from "./employees";
-import type { Employee, RaiseValues } from "./employees";
-import { addRaise } from "./employeesApi";
+import { currentPay } from "./employees";
+import type { Employee } from "./employees";
+import { createRaiseSchema, isRaiseField } from "./employeePay";
+import type { RaiseValues } from "./employeePay";
+import { addRaise, addRefiningCost } from "./employeesApi";
 
 type RaiseFormProps = {
   employee: Employee;
@@ -27,21 +29,36 @@ export function RaiseForm({ employee, onSaved, onCancel }: RaiseFormProps) {
   const locale = useLocale();
   const saveFailure = useSaveFailure();
   const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const labels = employee.paidPerGram
+    ? {
+        current: t("refiningCosts.current"),
+        amount: t("refiningCosts.newCost"),
+        invalid: t("errors.costInvalid"),
+        submit: t("refiningCosts.create"),
+        saved: toasts("refiningCostAdded"),
+      }
+    : {
+        current: t("raises.current"),
+        amount: t("raises.newSalary"),
+        invalid: t("errors.salaryInvalid"),
+        submit: t("raises.create"),
+        saved: toasts("raiseAdded"),
+      };
 
   const schema = useMemo(
     () =>
       createRaiseSchema({
         required: common("validation.required"),
         dateInvalid: common("validation.dateInvalid"),
-        salaryInvalid: t("errors.salaryInvalid"),
+        amountInvalid: labels.invalid,
       }),
-    [t, common],
+    [common, labels.invalid],
   );
 
   const { control, register, handleSubmit, formState, setError } = useForm<RaiseValues>({
     mode: "onTouched",
     resolver: zodResolver(schema),
-    defaultValues: { monthlySalary: Number.NaN, from: "" },
+    defaultValues: { amount: Number.NaN, from: "" },
   });
 
   const { errors } = formState;
@@ -53,10 +70,11 @@ export function RaiseForm({ employee, onSaved, onCancel }: RaiseFormProps) {
 
     saveFailure.clear();
 
-    const result = await addRaise(employee.id, values, idempotencyKey);
+    const save = employee.paidPerGram ? addRefiningCost : addRaise;
+    const result = await save(employee.id, values, idempotencyKey);
 
     if (result.ok) {
-      toast(toasts("raiseAdded"));
+      toast(labels.saved);
       onSaved();
       return;
     }
@@ -74,10 +92,7 @@ export function RaiseForm({ employee, onSaved, onCancel }: RaiseFormProps) {
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <ReadOnlyField
-            label={t("raises.current")}
-            value={formatMoney(employee.monthlySalary, locale)}
-          />
+          <ReadOnlyField label={labels.current} value={formatMoney(currentPay(employee), locale)} />
         </div>
 
         <TextField
@@ -86,10 +101,10 @@ export function RaiseForm({ employee, onSaved, onCancel }: RaiseFormProps) {
           min={0}
           step="any"
           inputMode="decimal"
-          label={t("raises.newSalary")}
+          label={labels.amount}
           required
-          error={errors.monthlySalary?.message}
-          {...register("monthlySalary", { valueAsNumber: true })}
+          error={errors.amount?.message}
+          {...register("amount", { valueAsNumber: true })}
         />
 
         <Controller
@@ -116,7 +131,7 @@ export function RaiseForm({ employee, onSaved, onCancel }: RaiseFormProps) {
         locked={saveFailure.unknown}
         submitting={formState.isSubmitting}
         submitIcon="plus"
-        submitLabel={t("raises.create")}
+        submitLabel={labels.submit}
         savingLabel={t("form.saving")}
         cancelLabel={common("cancel")}
         onCancel={onCancel}

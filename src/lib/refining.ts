@@ -13,6 +13,9 @@ export type RefiningOperation = {
   project: ProjectId | undefined;
   projectName: string;
   workerName: string;
+  refinerId: string | undefined;
+  refinerName: string;
+  refinerEarned: number | undefined;
   bags: number;
   refinedAt: IsoTimestamp;
   weightBefore: number;
@@ -38,6 +41,12 @@ export function refiningOperationFromApi(
     project: parseGrinderCode(operation.grinder_code)?.project,
     projectName: operation.project_name,
     workerName: operation.worker_name,
+    refinerId:
+      operation.refiner === null || operation.refiner === undefined
+        ? undefined
+        : String(operation.refiner),
+    refinerName: operation.refiner_name,
+    refinerEarned: operation.refiner_earned ?? undefined,
     bags: operation.bags_count,
     refinedAt: operation.refining_date ?? operation.created_at,
     weightBefore: fromDecimal(operation.weight_before ?? "0"),
