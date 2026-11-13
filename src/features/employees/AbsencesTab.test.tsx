@@ -8,6 +8,7 @@ import {
   apiEmployee,
   capture,
   cellsOf,
+  common,
   openAt,
   openTab,
   rowsOf,
@@ -123,7 +124,7 @@ describe("an employee's days deducted", () => {
     const drawer = within(await screen.findByRole("dialog", { name: text.absences.removeTitle }));
     expect(drawer.getByText(/05\/10\/2026 au 07\/10\/2026/)).toBeVisible();
     expect(deleted).toBe(false);
-    await user.click(drawer.getByRole("button", { name: text.remove.confirm }));
+    await user.click(drawer.getByRole("button", { name: common.remove.confirm }));
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(deleted).toBe(true);

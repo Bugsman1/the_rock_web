@@ -23,6 +23,8 @@ import {
   editRefiningHref,
   refiningProjectHref,
   startRefiningHref,
+  supplierHref,
+  suppliersHref,
   usersHref,
 } from "./routes";
 
@@ -167,6 +169,24 @@ describe("inventory routes", () => {
     expect(resourceHref("2", { page: 2, action: "increase" })).toBe(
       "/inventory/resources/2?page=2&action=increase",
     );
+    expect(resourceHref("2", { editSupplier: true })).toBe("/inventory/resources/2?supplier=1");
+  });
+});
+
+describe("suppliers routes", () => {
+  it("keeps the list's search, balance status and page in the address", () => {
+    expect(suppliersHref()).toBe("/suppliers");
+    expect(suppliersHref({ query: " sidi ", status: "owed", page: 2 })).toBe(
+      "/suppliers?q=sidi&page=2&status=owed",
+    );
+    expect(suppliersHref({ create: true })).toBe("/suppliers?new=1");
+  });
+
+  it("opens a supplier's page and each of its drawers", () => {
+    expect(supplierHref("5")).toBe("/suppliers/5");
+    expect(supplierHref("5", "addPayment")).toBe("/suppliers/5?addPayment=1");
+    expect(supplierHref("5", { delivery: "4" })).toBe("/suppliers/5?delivery=4");
+    expect(supplierHref("5", { deletePayment: "7" })).toBe("/suppliers/5?deletePayment=7");
   });
 });
 

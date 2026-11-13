@@ -16,7 +16,7 @@ import { formatCount } from "@/lib/format";
 import { findProject, isInService } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
 import { EMPLOYEES_HREF, employeesProjectHref } from "@/lib/routes";
-import { DeleteDrawer } from "./DeleteDrawer";
+import { DeleteDrawer } from "@/components/ui/DeleteDrawer";
 import { EmployeeForm } from "./EmployeeForm";
 import { employeesOf } from "./employees";
 import { deleteEmployee, getEmployeeCounts, getEmployees } from "./employeesApi";

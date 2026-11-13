@@ -9,6 +9,7 @@ import {
   cellsOf,
   findCardOf,
   initial,
+  kinds,
   mercury,
   openAt,
   page,
@@ -52,10 +53,7 @@ describe("InventoryScreen", () => {
     openAt("/fr/inventory/projects/3");
 
     const headings = await screen.findAllByRole("heading", { level: 2 });
-    expect(headings.map((heading) => heading.textContent)).toEqual([
-      text.kinds.mercury,
-      text.kinds.water,
-    ]);
+    expect(headings.map((heading) => heading.textContent)).toEqual([kinds.mercury, kinds.water]);
     expect(askedProject).toBe("3");
 
     const card = cardOf("Mercure");
@@ -65,7 +63,7 @@ describe("InventoryScreen", () => {
       "href",
       "/fr/inventory/resources/2",
     );
-    expect(cardOf(text.kinds.water).getByRole("link", { name: text.open })).toHaveAttribute(
+    expect(cardOf(kinds.water).getByRole("link", { name: text.open })).toHaveAttribute(
       "href",
       "/fr/inventory/resources/6",
     );
@@ -94,7 +92,7 @@ describe("InventoryScreen", () => {
 
     expect(
       screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent),
-    ).toEqual([text.kinds.fuel]);
+    ).toEqual([kinds.fuel]);
 
     await user.clear(search);
     await user.type(search, "fer");
@@ -105,11 +103,11 @@ describe("InventoryScreen", () => {
     server.use(http.get(`${API}/resources/`, () => page([{ ...mercury, id: 6, name: "Water" }])));
     openAt("/fr/inventory/projects/3");
 
-    await findCardOf(text.kinds.water);
+    await findCardOf(kinds.water);
 
     expect(
       screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent),
-    ).toEqual([text.kinds.water]);
+    ).toEqual([kinds.water]);
     expect(screen.getByRole("link", { name: text.new })).toHaveAttribute(
       "href",
       "/fr/inventory/projects/3?new=resource",
@@ -147,7 +145,7 @@ describe("InventoryScreen", () => {
     );
     openAt("/fr/inventory/projects/3?new=resource");
 
-    await findCardOf(text.kinds.fuel);
+    await findCardOf(kinds.fuel);
 
     expect(screen.queryByRole("link", { name: text.new })).toBeNull();
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -170,7 +168,7 @@ describe("InventoryScreen", () => {
     await user.type(dialog.getByLabelText(text.fields.initialQuantity), "5");
     await user.click(dialog.getByRole("button", { name: text.form.create }));
 
-    expect(await screen.findByRole("heading", { name: text.kinds.water })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: kinds.water })).toBeVisible();
     expect(screen.getAllByRole("row").slice(1).map(cellsOf)).toEqual([
       ["12/10/2026 08:00", text.changeTypes.initial, "5", "0", "5", "—", "—"],
     ]);

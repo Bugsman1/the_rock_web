@@ -1,32 +1,17 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createMemoryRouter, RouterProvider } from "react-router";
-import { IntlProvider } from "use-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import messages from "@/messages/fr.json";
-import { ResourceChangeForm, ResourceForm } from "./InventoryForms";
-import type { Resource, ResourceChangeType } from "./resources";
+import { inFrench, mercuryResource, text } from "./inventoryTesting";
+import { ResourceChangeForm } from "./InventoryForms";
+import type { ResourceChangeType } from "./resources";
 
 const api = vi.hoisted(() => ({
-  createResource: vi.fn(),
   changeResourceQuantity: vi.fn(),
 }));
 
 vi.mock("./resourcesApi", () => api);
 
 const onSaved = vi.fn();
-const text = messages.inventory;
-const fields = text.fields;
-
-const mercury: Resource = {
-  id: "2",
-  project: "3",
-  projectName: "Zouérat 1",
-  kind: "mercury",
-  initialQuantity: 10,
-  currentQuantity: 8.5,
-  isRefiningMaterial: true,
-};
 
 beforeEach(() => {
   onSaved.mockReset();
@@ -36,33 +21,8 @@ beforeEach(() => {
   }
 });
 
-function inFrench(children: React.ReactNode) {
-  return render(
-    <RouterProvider
-      router={createMemoryRouter([
-        {
-          path: "*",
-          element: (
-            <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
-              {children}
-            </IntlProvider>
-          ),
-        },
-      ])}
-    />,
-  );
-}
-
-function renderResourceForm(existing: readonly Resource[] = []) {
-  return inFrench(
-    <ResourceForm
-      project={{ id: "3", name: "Zouérat 1" }}
-      existing={existing}
-      onSaved={onSaved}
-      onCancel={vi.fn()}
-    />,
-  );
-}
+const fields = text.fields;
+const mercury = mercuryResource;
 
 function renderChangeForm(type: ResourceChangeType) {
   return inFrench(
@@ -79,77 +39,6 @@ function readOnly(label: string) {
 
   return within(field);
 }
-
-describe("ResourceForm", () => {
-  it("adds water with its initial quantity", async () => {
-    api.createResource.mockResolvedValue({ ok: true, id: "9" });
-    const user = userEvent.setup();
-    renderResourceForm();
-
-    await user.selectOptions(screen.getByLabelText(fields.kind), "water");
-    await user.type(screen.getByLabelText(fields.initialQuantity), "10.5");
-    await user.click(screen.getByRole("button", { name: text.form.create }));
-
-    expect(api.createResource).toHaveBeenCalledWith({
-      project: "3",
-      kind: "water",
-      initialQuantity: 10.5,
-    });
-    expect(onSaved).toHaveBeenCalledWith("9");
-  });
-
-  it("adds the project's mercury by choosing its type", async () => {
-    const user = userEvent.setup();
-    renderResourceForm();
-
-    await user.selectOptions(screen.getByLabelText(fields.kind), "mercury");
-    expect(screen.getByText(text.material.hint)).toBeVisible();
-
-    await user.type(screen.getByLabelText(fields.initialQuantity), "500");
-    await user.click(screen.getByRole("button", { name: text.form.create }));
-
-    expect(api.createResource).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: "mercury", initialQuantity: 500 }),
-    );
-  });
-
-  it("offers only mercury, water and fuel the project does not have yet", () => {
-    renderResourceForm([mercury]);
-
-    expect(
-      within(screen.getByLabelText(fields.kind))
-        .getAllByRole("option")
-        .map((option) => option.textContent),
-    ).toEqual([text.kinds.water, text.kinds.fuel]);
-  });
-
-  it("flags the empty fields", async () => {
-    const user = userEvent.setup();
-    renderResourceForm();
-
-    await user.click(screen.getByRole("button", { name: text.form.create }));
-
-    expect(await screen.findAllByText(messages.common.validation.required)).toHaveLength(2);
-    expect(api.createResource).not.toHaveBeenCalled();
-  });
-
-  it("shows a type the project already has", async () => {
-    api.createResource.mockResolvedValue({
-      ok: false,
-      fieldErrors: { kind: "Existe déjà." },
-      failed: false,
-    });
-    const user = userEvent.setup();
-    renderResourceForm();
-
-    await user.selectOptions(screen.getByLabelText(fields.kind), "water");
-    await user.type(screen.getByLabelText(fields.initialQuantity), "1");
-    await user.click(screen.getByRole("button", { name: text.form.create }));
-
-    expect(await screen.findByText("Existe déjà.")).toBeVisible();
-    expect(onSaved).not.toHaveBeenCalled();
-  });
-});
 
 describe("ResourceChangeForm", () => {
   it("shows the quantity after an increase and records it", async () => {

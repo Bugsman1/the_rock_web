@@ -43,6 +43,11 @@
       "question": "هل تريد تجاهل التغييرات؟ لن يُحفظ ما أدخلته.",
       "confirm": "تجاهل التغييرات",
       "keep": "متابعة التعديل"
+    },
+    "remove": {
+      "confirm": "حذف",
+      "deleting": "جارٍ الحذف...",
+      "failed": "تعذر الحذف"
     }
   },
   "filters": {
@@ -102,7 +107,7 @@
       "treasury": "الصناديق والبنوك",
       "employees": "الموظفون والرواتب",
       "inventory": "المخزون",
-      "assets": "الأصول",
+      "suppliers": "المزوّدون",
       "reports": "التقارير",
       "users": "المستخدمون والصلاحيات",
       "auditLog": "سجل التغييرات"
@@ -210,6 +215,11 @@
     "active": "نشط",
     "maintenance": "في الصيانة",
     "inactive": "غير نشط"
+  },
+  "resourceKinds": {
+    "mercury": "الزئبق",
+    "water": "الماء",
+    "fuel": "البنزين"
   },
   "settings": {
     "title": "الإعدادات",
@@ -361,6 +371,7 @@
         "debts": "الديون",
         "settlements": "التسوية النهائية",
         "employees": "الموظفون والرواتب",
+        "suppliers": "المزوّدون",
         "accounts": "المستخدمون والصلاحيات",
         "locations": "المشاريع والآلات"
       },
@@ -887,10 +898,7 @@
     },
     "remove": {
       "title": "حذف الموظف",
-      "question": "حذف {name}؟ لا يمكن التراجع عن ذلك.",
-      "confirm": "حذف",
-      "deleting": "جارٍ الحذف...",
-      "failed": "تعذر الحذف"
+      "question": "حذف {name}؟ لا يمكن التراجع عن ذلك."
     },
     "withdrawals": {
       "title": "سجل السحوبات",
@@ -1012,7 +1020,9 @@
       "increase": "زيادة",
       "decrease": "إنقاص",
       "taken": "مأخوذ للطحن",
-      "returned": "مُعاد من التصفية"
+      "returned": "مُعاد من التصفية",
+      "delivered": "توريد من المزوّد",
+      "delivery_corrected": "تصحيح توريد"
     },
     "fields": {
       "name": "اسم المورد",
@@ -1028,7 +1038,9 @@
       "changedAt": "التاريخ",
       "changeType": "النوع",
       "changedBy": "بواسطة",
-      "kind": "نوع المورد"
+      "kind": "نوع المورد",
+      "supplier": "المزوّد",
+      "initialPrice": "سعر الكمية الأولية"
     },
     "form": {
       "newTitle": "مورد جديد",
@@ -1038,12 +1050,16 @@
       "saving": "جارٍ الحفظ",
       "increaseSubmit": "تسجيل الزيادة",
       "decreaseSubmit": "تسجيل الإنقاص",
-      "kindPlaceholder": "اختر النوع"
+      "kindPlaceholder": "اختر النوع",
+      "noSupplier": "بدون مزوّد",
+      "supplierTitle": "مزوّد {name}",
+      "supplierSubmit": "حفظ المزوّد"
     },
     "errors": {
       "quantityInvalid": "أدخل كمية صحيحة لا تقل عن 0",
       "changeInvalid": "أدخل كمية أكبر من 0",
-      "quantityTooMuch": "المتبقي {left} فقط"
+      "quantityTooMuch": "المتبقي {left} فقط",
+      "priceInvalid": "أدخل سعرًا صحيحًا لا يقل عن 0"
     },
     "refiningMaterial": "مادة التصفية",
     "grindingNumber": "الطحنة {number}",
@@ -1057,13 +1073,98 @@
       "hint": "يُخصم منه الزئبق المضاف لكل طحنة، ويُعاد إليه ما يُسترجع في التصفية."
     },
     "open": "فتح",
-    "kinds": {
-      "mercury": "الزئبق",
-      "water": "الماء",
-      "fuel": "البنزين"
-    },
     "historyEmpty": "لا توجد حركات على هذا المورد بعد.",
-    "surplus": "+{quantity} فائض"
+    "surplus": "+{quantity} فائض",
+    "changeSupplier": "تغيير المزوّد"
+  },
+  "suppliers": {
+    "title": "المزوّدون",
+    "listTitle": "قائمة المزوّدين",
+    "count": "عدد المزوّدين: {count}",
+    "new": "مزوّد جديد",
+    "empty": "لا يوجد مزوّدون بعد.",
+    "noResults": "لا يوجد مزوّد مطابق.",
+    "searchPlaceholder": "ابحث بالاسم أو الهاتف",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "fields": {
+      "name": "الاسم",
+      "phone": "الهاتف",
+      "notes": "ملاحظات",
+      "resources": "الموارد",
+      "paid": "المدفوع",
+      "delivered": "قيمة التوريدات",
+      "balance": "الرصيد",
+      "status": "الحالة"
+    },
+    "status": {
+      "advance": "مدفوع مقدمًا",
+      "owed": "مستحق له",
+      "settled": "مسوّى"
+    },
+    "form": {
+      "newTitle": "مزوّد جديد",
+      "editTitle": "تعديل المزوّد",
+      "create": "إضافة المزوّد",
+      "save": "حفظ التعديلات",
+      "saving": "جارٍ الحفظ"
+    },
+    "remove": {
+      "title": "حذف المزوّد",
+      "question": "حذف {name}؟ لا يمكن التراجع عن ذلك."
+    },
+    "account": {
+      "title": "حساب المزوّد",
+      "empty": "لا توجد دفعات أو توريدات بعد.",
+      "editLabel": "تعديل عملية {date}",
+      "deleteLabel": "حذف عملية {date}",
+      "columns": {
+        "date": "التاريخ",
+        "type": "النوع",
+        "resource": "المورد والكمية",
+        "amount": "المبلغ",
+        "balance": "الرصيد بعدها",
+        "note": "ملاحظة",
+        "by": "بواسطة",
+        "actions": "إجراءات"
+      },
+      "types": {
+        "payment": "دفعة",
+        "delivery": "توريد",
+        "initial": "الكمية الأولية"
+      }
+    },
+    "payments": {
+      "add": "تسجيل دفعة",
+      "newTitle": "دفعة جديدة",
+      "editTitle": "تعديل الدفعة",
+      "create": "تسجيل الدفعة",
+      "removeTitle": "حذف الدفعة",
+      "removeQuestion": "حذف دفعة {amount} بتاريخ {date}؟"
+    },
+    "deliveries": {
+      "add": "تسجيل توريد",
+      "newTitle": "توريد جديد",
+      "editTitle": "تعديل التوريد",
+      "create": "تسجيل التوريد",
+      "removeTitle": "حذف التوريد",
+      "removeQuestion": "حذف توريد {quantity} من {resource} بتاريخ {date}؟ تُسحب الكمية من المخزون."
+    },
+    "formFields": {
+      "amount": "المبلغ",
+      "date": "التاريخ",
+      "time": "الوقت",
+      "note": "ملاحظة",
+      "resource": "المورد",
+      "resourcePlaceholder": "اختر المورد",
+      "quantity": "الكمية",
+      "price": "السعر الإجمالي"
+    },
+    "errors": {
+      "amountInvalid": "أدخل مبلغًا أكبر من 0",
+      "quantityInvalid": "أدخل كمية أكبر من 0",
+      "priceInvalid": "أدخل سعرًا صحيحًا لا يقل عن 0"
+    }
   },
   "errors": {
     "notFound": {
@@ -1245,6 +1346,16 @@
     "debtPaymentAdded": "تم تسجيل التسديد",
     "debtPaymentUpdated": "تم حفظ التسديد",
     "debtPaymentDeleted": "تم حذف التسديد",
-    "refiningCostAdded": "تم تسجيل السعر للغرام"
+    "refiningCostAdded": "تم تسجيل السعر للغرام",
+    "supplierAdded": "تمت إضافة المزوّد",
+    "supplierUpdated": "تم حفظ المزوّد",
+    "supplierDeleted": "تم حذف المزوّد",
+    "supplierPaymentAdded": "تم تسجيل الدفعة",
+    "supplierPaymentUpdated": "تم حفظ الدفعة",
+    "supplierPaymentDeleted": "تم حذف الدفعة",
+    "deliveryAdded": "تم تسجيل التوريد",
+    "deliveryUpdated": "تم حفظ التوريد",
+    "deliveryDeleted": "تم حذف التوريد",
+    "resourceSupplierUpdated": "تم تغيير المزوّد"
   }
 }

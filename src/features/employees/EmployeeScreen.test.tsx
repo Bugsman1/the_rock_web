@@ -10,6 +10,7 @@ import {
   apiWithdrawal,
   capture,
   cellsOf,
+  common,
   money,
   openAt,
   openTab,
@@ -180,7 +181,7 @@ describe("one employee", () => {
 
     await user.click(await screen.findByRole("link", { name: text.delete }));
     const drawer = within(await screen.findByRole("dialog", { name: text.remove.title }));
-    await user.click(drawer.getByRole("button", { name: text.remove.confirm }));
+    await user.click(drawer.getByRole("button", { name: common.remove.confirm }));
 
     await screen.findByRole("heading", { name: text.listTitle });
     expect(router.state.location.pathname).toBe("/fr/employees/projects/11");
@@ -202,7 +203,7 @@ describe("one employee", () => {
       await screen.findByRole("dialog", { name: text.withdrawals.removeTitle }),
     );
     expect(deleted).toBe(false);
-    await user.click(drawer.getByRole("button", { name: text.remove.confirm }));
+    await user.click(drawer.getByRole("button", { name: common.remove.confirm }));
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(deleted).toBe(true);

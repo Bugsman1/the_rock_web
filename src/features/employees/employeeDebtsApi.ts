@@ -1,5 +1,5 @@
-import { apiClient, idempotent, saveOutcome, unwrap } from "@/lib/api/client";
-import type { SaveResult } from "@/lib/api/client";
+import { apiClient, deleteResult, idempotent, saveOutcome, unwrap } from "@/lib/api/client";
+import type { DeleteResult, SaveResult } from "@/lib/api/client";
 import { fetchAllPages, MAX_PAGE_SIZE } from "@/lib/api/pagination";
 import type { IsoTimestamp } from "@/lib/format";
 import {
@@ -12,8 +12,6 @@ import {
 } from "./employeeDebts";
 import type { Debt, DebtPayment, DebtValues } from "./employeeDebts";
 import type { WithdrawalValues } from "./employees";
-import { deleteResult } from "./employeesApi";
-import type { DeleteResult } from "./employeesApi";
 
 export async function getDebts(employee: string): Promise<readonly Debt[]> {
   const debts = await fetchAllPages(async (page) =>

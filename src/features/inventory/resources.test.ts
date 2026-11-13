@@ -5,13 +5,14 @@ import {
   resourceChangeToApi,
   resourceFromApi,
   availableKinds,
+  chargesInitialPrice,
   createResourceSchema,
-  kindNamed,
   quantityAfterChange,
   refiningCorrectionType,
   resourceChangeFromApi,
   resourceErrorsFromApi,
   resourceToApi,
+  supplierChoiceFromApi,
 } from "./resources";
 
 const apiChange = {
@@ -29,6 +30,8 @@ const apiChange = {
   grinding_sequence: 2,
   grinder_code: "P3-7",
   loss: null,
+  supplier_delivery: null,
+  supplier_name: "",
   note: "",
   created_by_name: "Aicha",
   created_at: "2026-10-12T11:00:00Z",
@@ -38,6 +41,7 @@ const messages = {
   required: "required",
   quantityInvalid: "invalid",
   quantityTooMuch: "too much",
+  priceInvalid: "price",
 };
 
 function issuesOf(result: {
@@ -49,6 +53,8 @@ function issuesOf(result: {
   );
 }
 
+const noSupplier = { supplier: "", initialPrice: Number.NaN };
+
 describe("createResourceSchema", () => {
   it("accepts mercury, water or fuel with its initial quantity", () => {
     expect(
@@ -56,6 +62,7 @@ describe("createResourceSchema", () => {
         project: "3",
         kind: "mercury",
         initialQuantity: 0,
+        ...noSupplier,
       }).success,
     ).toBe(true);
   });
@@ -64,27 +71,44 @@ describe("createResourceSchema", () => {
     const schema = createResourceSchema(messages);
 
     expect(
-      issuesOf(schema.safeParse({ project: "3", kind: "", initialQuantity: Number.NaN })),
+      issuesOf(
+        schema.safeParse({ project: "3", kind: "", initialQuantity: Number.NaN, ...noSupplier }),
+      ),
     ).toEqual({ kind: "required", initialQuantity: "required" });
-    expect(issuesOf(schema.safeParse({ project: "3", kind: "other", initialQuantity: 1 }))).toEqual(
-      { kind: "required" },
-    );
     expect(
-      issuesOf(schema.safeParse({ project: "3", kind: "water", initialQuantity: -1 })),
+      issuesOf(
+        schema.safeParse({ project: "3", kind: "other", initialQuantity: 1, ...noSupplier }),
+      ),
+    ).toEqual({ kind: "required" });
+    expect(
+      issuesOf(
+        schema.safeParse({ project: "3", kind: "water", initialQuantity: -1, ...noSupplier }),
+      ),
     ).toEqual({ initialQuantity: "invalid" });
+  });
+
+  it("asks the price of an initial quantity that comes from a supplier", () => {
+    const schema = createResourceSchema(messages);
+    const fuel = { project: "3", kind: "fuel", initialQuantity: 100, supplier: "5" };
+
+    expect(issuesOf(schema.safeParse({ ...fuel, initialPrice: Number.NaN }))).toEqual({
+      initialPrice: "price",
+    });
+    expect(issuesOf(schema.safeParse({ ...fuel, initialPrice: -1 }))).toEqual({
+      initialPrice: "price",
+    });
+    expect(schema.safeParse({ ...fuel, initialPrice: 0 }).success).toBe(true);
+    expect(
+      schema.safeParse({ ...fuel, initialQuantity: 0, initialPrice: Number.NaN }).success,
+    ).toBe(true);
   });
 });
 
-describe("kindNamed", () => {
-  it("recognises mercury, water and fuel in English, French and Arabic", () => {
-    expect(kindNamed("MERCURY")).toBe("mercury");
-    expect(kindNamed("زئبق")).toBe("mercury");
-    expect(kindNamed("  الماء ")).toBe("water");
-    expect(kindNamed("الزِّئبق")).toBe("mercury");
-    expect(kindNamed("Mércure")).toBe("mercury");
-    expect(kindNamed("Gasoil")).toBe("fuel");
-    expect(kindNamed("Chaux")).toBeUndefined();
-    expect(kindNamed("Mercure 2")).toBeUndefined();
+describe("chargesInitialPrice", () => {
+  it("charges only an initial quantity above zero given by a supplier", () => {
+    expect(chargesInitialPrice({ supplier: "5", initialQuantity: 10 })).toBe(true);
+    expect(chargesInitialPrice({ supplier: "5", initialQuantity: 0 })).toBe(false);
+    expect(chargesInitialPrice({ supplier: "", initialQuantity: 10 })).toBe(false);
   });
 });
 
@@ -97,6 +121,9 @@ describe("availableKinds", () => {
     initialQuantity: 10,
     currentQuantity: 10,
     isRefiningMaterial: kind === "mercury",
+    isStockable: true,
+    supplier: undefined,
+    supplierName: "",
   });
 
   it("offers only the types the project does not have yet", () => {
@@ -137,18 +164,47 @@ describe("quantityAfterChange", () => {
 
 describe("resourceToApi", () => {
   it("saves the type by its code and marks the mercury as the refining material", () => {
-    expect(resourceToApi({ project: "3", kind: "mercury", initialQuantity: 10 })).toEqual({
+    expect(
+      resourceToApi({ project: "3", kind: "mercury", initialQuantity: 10, ...noSupplier }),
+    ).toEqual({
       project: 3,
       name: "mercury",
       initial_quantity: "10.000",
       is_refining_material: true,
+      is_stockable: true,
+      supplier: null,
     });
-    expect(resourceToApi({ project: "3", kind: "fuel", initialQuantity: 2 })).toEqual({
+    expect(
+      resourceToApi({ project: "3", kind: "fuel", initialQuantity: 2, ...noSupplier }),
+    ).toEqual({
       project: 3,
       name: "fuel",
       initial_quantity: "2.000",
       is_refining_material: false,
+      is_stockable: true,
+      supplier: null,
     });
+  });
+
+  it("charges the initial quantity to its supplier at the price given", () => {
+    expect(
+      resourceToApi({
+        project: "3",
+        kind: "fuel",
+        initialQuantity: 100,
+        supplier: "5",
+        initialPrice: 300,
+      }),
+    ).toMatchObject({ supplier: 5, initial_quantity: "100.000", initial_price: "300" });
+    expect(
+      resourceToApi({
+        project: "3",
+        kind: "fuel",
+        initialQuantity: 0,
+        supplier: "5",
+        initialPrice: Number.NaN,
+      }),
+    ).not.toHaveProperty("initial_price");
   });
 });
 
@@ -157,6 +213,13 @@ describe("resourceErrorsFromApi", () => {
     expect(resourceErrorsFromApi({ name: "Existe déjà.", initial_quantity: "Négative." })).toEqual({
       kind: "Existe déjà.",
       initialQuantity: "Négative.",
+    });
+  });
+
+  it("puts the backend's supplier and price errors on their fields", () => {
+    expect(resourceErrorsFromApi({ supplier: "Inactif.", initial_price: "Requis." })).toEqual({
+      supplier: "Inactif.",
+      initialPrice: "Requis.",
     });
   });
 });
@@ -183,10 +246,23 @@ describe("resourceChangeFromApi", () => {
       shipmentNumber: "SH-0004",
       grindingSequence: 2,
       loss: undefined,
+      supplierName: "",
       note: "",
       byName: "Aicha",
       at: "2026-10-12T11:00:00Z",
     });
+  });
+
+  it("names the supplier of a delivery", () => {
+    expect(
+      resourceChangeFromApi({
+        ...apiChange,
+        change_type: "delivered",
+        refining_operation: null,
+        supplier_delivery: 4,
+        supplier_name: "Sidi Fournitures",
+      }),
+    ).toMatchObject({ type: "delivered", supplierName: "Sidi Fournitures" });
   });
 });
 
@@ -200,6 +276,9 @@ describe("resourceFromApi", () => {
     name: "Water",
     initial_quantity: "10.000",
     current_quantity: "8.500",
+    supplier: null,
+    supplier_name: "",
+    is_stockable: true,
     ...stamps,
   };
 
@@ -212,7 +291,16 @@ describe("resourceFromApi", () => {
       initialQuantity: 10,
       currentQuantity: 8.5,
       isRefiningMaterial: false,
+      isStockable: true,
+      supplier: undefined,
+      supplierName: "",
     });
+  });
+
+  it("reads its supplier", () => {
+    expect(
+      resourceFromApi({ ...apiResource, supplier: 5, supplier_name: "Sidi Fournitures" }),
+    ).toMatchObject({ supplier: "5", supplierName: "Sidi Fournitures" });
   });
 
   it("takes the refining material as the mercury", () => {
@@ -256,5 +344,21 @@ describe("refiningCorrectionType", () => {
       refiningCorrectionType({ ...change, type: "taken", fromRefining: false }),
     ).toBeUndefined();
     expect(refiningCorrectionType({ ...change, fromRefining: false })).toBeUndefined();
+  });
+});
+
+describe("supplierChoiceFromApi", () => {
+  it("keeps the supplier's id and name", () => {
+    expect(
+      supplierChoiceFromApi({
+        id: 5,
+        name: "Sidi Fournitures",
+        paid_amount: "0.00",
+        delivered_amount: "0.00",
+        balance: "0.00",
+        resources: [],
+        ...stamps,
+      }),
+    ).toEqual({ id: "5", name: "Sidi Fournitures" });
   });
 });

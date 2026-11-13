@@ -1,4 +1,5 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { rightsFromApi } from "@/lib/access";
@@ -7,6 +8,7 @@ import {
   cellsOf,
   decrease,
   initial,
+  mercury,
   openAt,
   page,
   returned,
@@ -127,6 +129,67 @@ describe("ResourceScreen", () => {
 
     expect(dialog.getByLabelText(text.fields.quantity)).toBeVisible();
     expect(dialog.queryAllByRole("combobox")).toHaveLength(0);
+  });
+
+  it("shows the resource's supplier and names it on the quantity it delivered", async () => {
+    server.use(
+      http.get(`${API}/resources/2/`, () =>
+        HttpResponse.json({ ...mercury, supplier: 5, supplier_name: "Sidi Fournitures" }),
+      ),
+      http.get(`${API}/resource-history/`, () =>
+        page([
+          {
+            ...decrease,
+            id: 15,
+            change_type: "delivered",
+            refining_operation: null,
+            shipment_number: null,
+            supplier_delivery: 4,
+            supplier_name: "Sidi Fournitures",
+            note: "",
+          },
+        ]),
+      ),
+    );
+    openAt("/fr/inventory/resources/2");
+
+    expect(await screen.findByRole("heading", { name: "Mercure" })).toBeVisible();
+    expect(screen.getAllByText("Sidi Fournitures")).toHaveLength(2);
+    expect(cellsOf(screen.getAllByRole("row")[1])[1]).toBe(
+      `${text.changeTypes.delivered}Sidi Fournitures`,
+    );
+  });
+
+  it("changes the resource's supplier from a drawer", async () => {
+    let body: unknown;
+    server.use(
+      http.get(`${API}/suppliers/`, () =>
+        page([
+          {
+            id: 5,
+            name: "Sidi Fournitures",
+            paid_amount: "0.00",
+            delivered_amount: "0.00",
+            balance: "0.00",
+            resources: [],
+            created_at: "2026-10-12T08:00:00Z",
+            updated_at: "2026-10-12T08:00:00Z",
+          },
+        ]),
+      ),
+      http.patch(`${API}/resources/2/`, async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json(mercury);
+      }),
+    );
+    const user = userEvent.setup();
+    openAt("/fr/inventory/resources/2?supplier=1");
+
+    const dialog = within(await screen.findByRole("dialog", { name: "Fournisseur : Mercure" }));
+    await user.selectOptions(dialog.getByLabelText(text.fields.supplier), "5");
+    await user.click(dialog.getByRole("button", { name: text.form.supplierSubmit }));
+
+    await waitFor(() => expect(body).toEqual({ supplier: 5, is_stockable: true }));
   });
 
   it("answers not found for an unknown resource", async () => {

@@ -3,10 +3,12 @@ import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
   changeResourceQuantity,
+  changeResourceSupplier,
   createResource,
   getResource,
   getResourceHistory,
   getResources,
+  getSupplierChoices,
 } from "./resourcesApi";
 
 const API = `${window.location.origin}/api/v1`;
@@ -23,6 +25,9 @@ const mercury = {
   name: "Mercure",
   initial_quantity: "10.000",
   current_quantity: "8.500",
+  supplier: null,
+  supplier_name: "",
+  is_stockable: true,
   created_at: "2026-10-12T08:00:00Z",
   updated_at: "2026-10-12T08:00:00Z",
 };
@@ -77,6 +82,8 @@ describe("createResource", () => {
         project: "3",
         kind: "mercury",
         initialQuantity: 10,
+        supplier: "",
+        initialPrice: Number.NaN,
       }),
     ).toEqual({ ok: true, id: "2" });
     expect(body).toEqual({
@@ -84,6 +91,8 @@ describe("createResource", () => {
       name: "mercury",
       initial_quantity: "10.000",
       is_refining_material: true,
+      is_stockable: true,
+      supplier: null,
     });
   });
 
@@ -99,6 +108,8 @@ describe("createResource", () => {
         project: "3",
         kind: "mercury",
         initialQuantity: 10,
+        supplier: "",
+        initialPrice: Number.NaN,
       }),
     ).toEqual({
       ok: false,
@@ -175,6 +186,9 @@ describe("getResources", () => {
         initialQuantity: 10,
         currentQuantity: 8.5,
         isRefiningMaterial: false,
+        isStockable: true,
+        supplier: undefined,
+        supplierName: "",
       },
     ]);
   });
@@ -236,5 +250,64 @@ describe("changeResourceQuantity", () => {
       fieldErrors: { quantity: "Il ne reste que 8.5." },
       failed: false,
     });
+  });
+});
+
+describe("getSupplierChoices", () => {
+  it("reads every supplier by name", async () => {
+    let ordering: string | null = null;
+    server.use(
+      http.get(`${API}/suppliers/`, ({ request }) => {
+        ordering = new URL(request.url).searchParams.get("ordering");
+        return HttpResponse.json({
+          count: 1,
+          results: [
+            {
+              id: 5,
+              name: "Sidi Fournitures",
+              paid_amount: "0.00",
+              delivered_amount: "0.00",
+              balance: "0.00",
+              resources: [],
+              created_at: "2026-10-12T08:00:00Z",
+              updated_at: "2026-10-12T08:00:00Z",
+            },
+          ],
+        });
+      }),
+    );
+
+    expect(await getSupplierChoices()).toEqual([{ id: "5", name: "Sidi Fournitures" }]);
+    expect(ordering).toBe("name");
+  });
+});
+
+describe("changeResourceSupplier", () => {
+  it("sends the new supplier and keeps the resource in stock", async () => {
+    let body: unknown;
+    server.use(
+      http.patch(`${API}/resources/2/`, async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json(mercury);
+      }),
+    );
+    const resource = {
+      id: "2",
+      project: "3",
+      projectName: "Zouérat 1",
+      kind: "mercury" as const,
+      initialQuantity: 10,
+      currentQuantity: 8.5,
+      isRefiningMaterial: true,
+      isStockable: true,
+      supplier: undefined,
+      supplierName: "",
+    };
+
+    expect(await changeResourceSupplier(resource, { supplier: "5" })).toEqual({ ok: true });
+    expect(body).toEqual({ supplier: 5, is_stockable: true });
+
+    await changeResourceSupplier(resource, { supplier: "" });
+    expect(body).toEqual({ supplier: null, is_stockable: true });
   });
 });

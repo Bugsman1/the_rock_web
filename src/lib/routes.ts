@@ -79,6 +79,41 @@ export function customerHref(
   return `${path}?${drawer.action === undefined ? debt : `${debt}&action=${drawer.action}`}`;
 }
 
+export const SUPPLIERS_HREF = "/suppliers";
+
+export function suppliersHref({
+  status,
+  ...params
+}: ListPageParams & { status?: string } = {}): string {
+  const [path = SUPPLIERS_HREF, query] = listPageHref(SUPPLIERS_HREF, params).split("?");
+  const search = new URLSearchParams(query);
+
+  if (status !== undefined && status !== "") search.set("status", status);
+
+  const queryString = search.toString();
+
+  return queryString === "" ? path : `${path}?${queryString}`;
+}
+
+export type SupplierDrawer =
+  | "edit"
+  | "delete"
+  | "addPayment"
+  | "addDelivery"
+  | { payment: string }
+  | { deletePayment: string }
+  | { delivery: string }
+  | { deleteDelivery: string };
+
+export function supplierHref(supplier: string, drawer?: SupplierDrawer): string {
+  const href = `${SUPPLIERS_HREF}/${supplier}`;
+
+  if (drawer === undefined) return href;
+  if (typeof drawer === "string") return `${href}?${drawer}=1`;
+
+  return `${href}?${new URLSearchParams(drawer)}`;
+}
+
 export function usersHref(params: ListPageParams = {}): string {
   return listPageHref(USERS_HREF, params);
 }
@@ -229,12 +264,17 @@ export type ResourceAction = (typeof resourceActions)[number];
 
 export function resourceHref(
   resource: string,
-  { page = 1, action }: { page?: number; action?: ResourceAction } = {},
+  {
+    page = 1,
+    action,
+    editSupplier = false,
+  }: { page?: number; action?: ResourceAction; editSupplier?: boolean } = {},
 ): string {
   const query = new URLSearchParams();
 
   if (page > 1) query.set("page", String(page));
   if (action !== undefined) query.set("action", action);
+  if (editSupplier) query.set("supplier", "1");
 
   const queryString = query.toString();
   const base = `${INVENTORY_HREF}/resources/${resource}`;

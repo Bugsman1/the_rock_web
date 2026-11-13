@@ -75,6 +75,12 @@ import {
   ShipmentScreen,
   shipmentsLoader,
 } from "@/features/shipments";
+import {
+  SupplierScreen,
+  supplierLoader,
+  SuppliersScreen,
+  suppliersLoader,
+} from "@/features/suppliers";
 import { RolesScreen, rolesLoader, UsersScreen, usersLoader } from "@/features/users";
 import { defaultLocale, isLocale } from "@/i18n/locales";
 import type { Locale } from "@/i18n/locales";
@@ -211,6 +217,8 @@ const sectionRoutes: RouteObject[] = [
     element: <EmployeesProjectScreen />,
   },
   { path: "employees/:employee", loader: employeeLoader, element: <EmployeeScreen /> },
+  { path: "suppliers", loader: suppliersLoader, element: <SuppliersScreen /> },
+  { path: "suppliers/:supplier", loader: supplierLoader, element: <SupplierScreen /> },
   { path: "settings", element: <SettingsHomeScreen /> },
   { path: "settings/profile", loader: profileLoader, element: <ProfileScreen /> },
   { path: "settings/language", element: <LanguageScreen /> },

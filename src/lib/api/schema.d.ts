@@ -18,6 +18,66 @@ export type Writable<T> = T extends $Read<any> ? never : T extends $Write<infer 
     [K in keyof T as NonNullable<T[K]> extends $Read<any> ? K : never]?: never;
 } : T;
 export interface paths {
+    "/api/v1/audit-logs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Every create, update and delete made through the API, newest first. Read-only: the
+         *     log is written by the viewsets themselves (AuditLogMixin).
+         */
+        get: operations["audit_logs_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit-logs/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Every create, update and delete made through the API, newest first. Read-only: the
+         *     log is written by the viewsets themselves (AuditLogMixin).
+         */
+        get: operations["audit_logs_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit-logs/models/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The models that have entries in the log, with their name in the request's
+         *     language, for the page's model filter (not paginated).
+         */
+        get: operations["audit_logs_models_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login/": {
         parameters: {
             query?: never;
@@ -1708,6 +1768,200 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/supplier-deliveries/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Goods suppliers delivered, newest first. Each takes its cost from its supplier's
+         *     balance; one of a stockable resource adds its quantity to the stock (corrected on edit,
+         *     taken back on delete, each move written in the resource's history).
+         */
+        get: operations["supplier_deliveries_list"];
+        put?: never;
+        /**
+         * @description Goods suppliers delivered, newest first. Each takes its cost from its supplier's
+         *     balance; one of a stockable resource adds its quantity to the stock (corrected on edit,
+         *     taken back on delete, each move written in the resource's history).
+         */
+        post: operations["supplier_deliveries_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/supplier-deliveries/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Goods suppliers delivered, newest first. Each takes its cost from its supplier's
+         *     balance; one of a stockable resource adds its quantity to the stock (corrected on edit,
+         *     taken back on delete, each move written in the resource's history).
+         */
+        get: operations["supplier_deliveries_retrieve"];
+        /**
+         * @description Goods suppliers delivered, newest first. Each takes its cost from its supplier's
+         *     balance; one of a stockable resource adds its quantity to the stock (corrected on edit,
+         *     taken back on delete, each move written in the resource's history).
+         */
+        put: operations["supplier_deliveries_update"];
+        post?: never;
+        /**
+         * @description Goods suppliers delivered, newest first. Each takes its cost from its supplier's
+         *     balance; one of a stockable resource adds its quantity to the stock (corrected on edit,
+         *     taken back on delete, each move written in the resource's history).
+         */
+        delete: operations["supplier_deliveries_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Goods suppliers delivered, newest first. Each takes its cost from its supplier's
+         *     balance; one of a stockable resource adds its quantity to the stock (corrected on edit,
+         *     taken back on delete, each move written in the resource's history).
+         */
+        patch: operations["supplier_deliveries_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/supplier-payments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Money paid to suppliers, newest first; each write recomputes the supplier's balance
+         *     (SupplierPayment.save() locks the supplier).
+         */
+        get: operations["supplier_payments_list"];
+        put?: never;
+        /**
+         * @description Money paid to suppliers, newest first; each write recomputes the supplier's balance
+         *     (SupplierPayment.save() locks the supplier).
+         */
+        post: operations["supplier_payments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/supplier-payments/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Money paid to suppliers, newest first; each write recomputes the supplier's balance
+         *     (SupplierPayment.save() locks the supplier).
+         */
+        get: operations["supplier_payments_retrieve"];
+        /**
+         * @description Money paid to suppliers, newest first; each write recomputes the supplier's balance
+         *     (SupplierPayment.save() locks the supplier).
+         */
+        put: operations["supplier_payments_update"];
+        post?: never;
+        /**
+         * @description Money paid to suppliers, newest first; each write recomputes the supplier's balance
+         *     (SupplierPayment.save() locks the supplier).
+         */
+        delete: operations["supplier_payments_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Money paid to suppliers, newest first; each write recomputes the supplier's balance
+         *     (SupplierPayment.save() locks the supplier).
+         */
+        patch: operations["supplier_payments_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/suppliers/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The mill's suppliers and their balance: what was paid to each less what it
+         *     delivered. Suppliers are global, like customers: not limited to a project.
+         */
+        get: operations["suppliers_list"];
+        put?: never;
+        /**
+         * @description The mill's suppliers and their balance: what was paid to each less what it
+         *     delivered. Suppliers are global, like customers: not limited to a project.
+         */
+        post: operations["suppliers_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/suppliers/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The mill's suppliers and their balance: what was paid to each less what it
+         *     delivered. Suppliers are global, like customers: not limited to a project.
+         */
+        get: operations["suppliers_retrieve"];
+        /**
+         * @description The mill's suppliers and their balance: what was paid to each less what it
+         *     delivered. Suppliers are global, like customers: not limited to a project.
+         */
+        put: operations["suppliers_update"];
+        post?: never;
+        /**
+         * @description The mill's suppliers and their balance: what was paid to each less what it
+         *     delivered. Suppliers are global, like customers: not limited to a project.
+         */
+        delete: operations["suppliers_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description The mill's suppliers and their balance: what was paid to each less what it
+         *     delivered. Suppliers are global, like customers: not limited to a project.
+         */
+        patch: operations["suppliers_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/suppliers/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The supplier's account, oldest first: its payments (adding to the balance) and
+         *     deliveries (taking their price from it), each with the balance after it.
+         */
+        get: operations["suppliers_history_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/": {
         parameters: {
             query?: never;
@@ -1751,14 +2005,54 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * @description * `create` - Create
+         *     * `update` - Update
+         *     * `delete` - احذف
+         * @enum {string}
+         */
+        ActionEnum: "create" | "update" | "delete";
+        /**
+         * @description One audit log entry for the admin's history page: who did what to which record, with
+         *     the record's values before and after, and for an update the fields that changed.
+         */
+        AuditLog: {
+            id: $Read<number>;
+            /** Format: date-time */
+            timestamp: $Read<string>;
+            action: $Read<components["schemas"]["ActionEnum"]>;
+            action_display: $Read<string>;
+            model: $Read<string>;
+            model_name: $Read<string>;
+            /** معرّف الكائن */
+            object_id: $Read<string>;
+            project: $Read<number | null>;
+            project_name: $Read<string>;
+            /** المستخدم */
+            user: $Read<number | null>;
+            user_name: $Read<string>;
+            /** Format: email */
+            user_email: $Read<string>;
+            old_values: $Read<unknown>;
+            new_values: $Read<unknown>;
+            changes: $Read<{
+                [key: string]: unknown;
+            }[]>;
+        };
+        AuditedModel: {
+            model: string;
+            model_name: string;
+        };
+        /**
          * @description * `initial` - Initial quantity
          *     * `increase` - Increase
          *     * `decrease` - Decrease
          *     * `taken` - Taken by grinding
          *     * `returned` - Returned by refining
+         *     * `delivered` - Delivered by supplier
+         *     * `delivery_corrected` - Delivery corrected
          * @enum {string}
          */
-        ChangeTypeEnum: "initial" | "increase" | "decrease" | "taken" | "returned";
+        ChangeTypeEnum: "initial" | "increase" | "decrease" | "taken" | "returned" | "delivered" | "delivery_corrected";
         CustomTokenObtainPair: {
             email: $Write<string>;
             password: $Write<string>;
@@ -1836,7 +2130,7 @@ export interface components {
          *     remaining balance after it.
          */
         DebtHistoryEntry: {
-            type: components["schemas"]["TypeEnum"];
+            type: components["schemas"]["DebtHistoryEntryTypeEnum"];
             /** @description The debt's, the increase's or the payment's id. */
             id: number;
             /** Format: date-time */
@@ -1850,6 +2144,13 @@ export interface components {
             /** Format: decimal */
             balance: string;
         };
+        /**
+         * @description * `created` - created
+         *     * `increase` - increase
+         *     * `payment` - payment
+         * @enum {string}
+         */
+        DebtHistoryEntryTypeEnum: "created" | "increase" | "payment";
         /**
          * @description An increase or a payment of a debt: fixed to its debt, dated after it and not in the
          *     future.
@@ -2337,12 +2638,29 @@ export interface components {
          *     * `settlements` - Settlements
          *     * `debts` - Customer debts
          *     * `employees` - Employees
+         *     * `suppliers` - Suppliers
+         *     * `audit` - Audit log
          * @enum {string}
          */
-        ModuleEnum: "accounts" | "locations" | "customers" | "shipments" | "grinding" | "refining" | "inventory" | "settlements" | "debts" | "employees";
+        ModuleEnum: "accounts" | "locations" | "customers" | "shipments" | "grinding" | "refining" | "inventory" | "settlements" | "debts" | "employees" | "suppliers" | "audit";
         Operator: {
             id: $Read<number>;
             name: $Read<string>;
+        };
+        PaginatedAuditLogList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["AuditLog"][];
         };
         PaginatedCustomerDebtList: {
             /** @example 123 */
@@ -2718,6 +3036,51 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["ShipmentPayment"][];
+        };
+        PaginatedSupplierDeliveryList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["SupplierDelivery"][];
+        };
+        PaginatedSupplierList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Supplier"][];
+        };
+        PaginatedSupplierPaymentList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["SupplierPayment"][];
         };
         PaginatedUserList: {
             /** @example 123 */
@@ -3208,8 +3571,14 @@ export interface components {
             project_name?: $Read<string>;
             /** الاسم */
             name?: string;
+            supplier?: number | null;
+            supplier_name?: $Read<string>;
+            /** @default true */
+            is_stockable: boolean;
             /** Format: decimal */
             initial_quantity?: string;
+            /** Format: decimal */
+            initial_price?: $Write<string | null>;
             /** Format: decimal */
             current_quantity?: $Read<string>;
             /** Used by refining */
@@ -3367,6 +3736,79 @@ export interface components {
             id?: $Read<number>;
             shipment?: number;
             shipment_number?: $Read<string>;
+            /** Format: decimal */
+            amount?: string;
+            /**
+             * Payment date
+             * Format: date-time
+             */
+            paid_at?: string;
+            notes?: string;
+            created_by_name?: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        PatchedSupplier: {
+            id?: $Read<number>;
+            /** الاسم */
+            name?: string;
+            phone?: string;
+            notes?: string;
+            /** Format: decimal */
+            paid_amount?: $Read<string>;
+            /** Format: decimal */
+            delivered_amount?: $Read<string>;
+            /** Format: decimal */
+            balance?: $Read<string>;
+            resources?: $Read<components["schemas"]["SuppliedResource"][]>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        /** @description A delivery: its supplier is the resource's, its price the whole delivery's, as given. */
+        PatchedSupplierDelivery: {
+            id?: $Read<number>;
+            supplier?: $Read<number>;
+            supplier_name?: $Read<string>;
+            resource?: number;
+            resource_name?: $Read<string>;
+            is_stockable?: $Read<boolean>;
+            project?: $Read<number>;
+            project_name?: $Read<string>;
+            /** Format: decimal */
+            quantity?: string;
+            /** Format: decimal */
+            price?: string;
+            /**
+             * Delivery date
+             * Format: date-time
+             */
+            delivered_at?: string;
+            notes?: string;
+            /** Initial quantity */
+            is_initial?: $Read<boolean>;
+            created_by_name?: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at?: $Read<string>;
+            /** Format: date-time */
+            updated_at?: $Read<string>;
+        };
+        PatchedSupplierPayment: {
+            id?: $Read<number>;
+            supplier?: number;
+            supplier_name?: $Read<string>;
             /** Format: decimal */
             amount?: string;
             /**
@@ -3543,8 +3985,14 @@ export interface components {
             project_name: $Read<string>;
             /** الاسم */
             name: string;
+            supplier?: number | null;
+            supplier_name: $Read<string>;
+            /** @default true */
+            is_stockable: boolean;
             /** Format: decimal */
-            initial_quantity: string;
+            initial_quantity?: string;
+            /** Format: decimal */
+            initial_price?: $Write<string | null>;
             /** Format: decimal */
             current_quantity: $Read<string>;
             /** Used by refining */
@@ -3586,6 +4034,8 @@ export interface components {
             grinder_code: $Read<string | null>;
             refining_operation: $Read<number | null>;
             loss: $Read<string | null>;
+            supplier_delivery: $Read<number | null>;
+            supplier_name: $Read<string>;
             note: $Read<string>;
             created_by_name: $Read<string>;
             /**
@@ -3838,6 +4288,115 @@ export interface components {
          * @enum {string}
          */
         StatusEnum: "active" | "inactive" | "maintenance";
+        /** @description A resource as listed on its supplier. */
+        SuppliedResource: {
+            id: $Read<number>;
+            /** الاسم */
+            name: $Read<string>;
+            project: $Read<number>;
+            project_name: $Read<string>;
+            /** Stockable */
+            is_stockable: $Read<boolean>;
+        };
+        Supplier: {
+            id: $Read<number>;
+            /** الاسم */
+            name: string;
+            phone?: string;
+            notes?: string;
+            /** Format: decimal */
+            paid_amount: $Read<string>;
+            /** Format: decimal */
+            delivered_amount: $Read<string>;
+            /** Format: decimal */
+            balance: $Read<string>;
+            resources: $Read<components["schemas"]["SuppliedResource"][]>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /** @description A delivery: its supplier is the resource's, its price the whole delivery's, as given. */
+        SupplierDelivery: {
+            id: $Read<number>;
+            supplier: $Read<number>;
+            supplier_name: $Read<string>;
+            resource: number;
+            resource_name: $Read<string>;
+            is_stockable: $Read<boolean>;
+            project: $Read<number>;
+            project_name: $Read<string>;
+            /** Format: decimal */
+            quantity: string;
+            /** Format: decimal */
+            price: string;
+            /**
+             * Delivery date
+             * Format: date-time
+             */
+            delivered_at?: string;
+            notes?: string;
+            /** Initial quantity */
+            is_initial: $Read<boolean>;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
+        /** @description A payment or a delivery of a supplier, with its balance after it. */
+        SupplierHistoryEntry: {
+            type: components["schemas"]["SupplierHistoryEntryTypeEnum"];
+            id: number;
+            /** Format: date-time */
+            date: string;
+            /** Format: decimal */
+            amount: string;
+            resource: number | null;
+            resource_name: string | null;
+            /** Format: decimal */
+            quantity: string | null;
+            is_initial: boolean;
+            notes: string;
+            created_by_name: string | null;
+            /** Format: date-time */
+            recorded_at: string;
+            /** Format: decimal */
+            balance: string;
+        };
+        /**
+         * @description * `payment` - Payment
+         *     * `delivery` - Delivery
+         * @enum {string}
+         */
+        SupplierHistoryEntryTypeEnum: "payment" | "delivery";
+        SupplierPayment: {
+            id: $Read<number>;
+            supplier: number;
+            supplier_name: $Read<string>;
+            /** Format: decimal */
+            amount: string;
+            /**
+             * Payment date
+             * Format: date-time
+             */
+            paid_at?: string;
+            notes?: string;
+            created_by_name: $Read<string | null>;
+            /**
+             * أنشئت في
+             * Format: date-time
+             */
+            created_at: $Read<string>;
+            /** Format: date-time */
+            updated_at: $Read<string>;
+        };
         TokenBlacklist: {
             refresh: $Write<string>;
         };
@@ -3852,13 +4411,6 @@ export interface components {
          * @enum {string}
          */
         TransportMethodEnum: "truck" | "hilux" | "other";
-        /**
-         * @description * `created` - created
-         *     * `increase` - increase
-         *     * `payment` - payment
-         * @enum {string}
-         */
-        TypeEnum: "created" | "increase" | "payment";
         User: {
             id: $Read<number>;
             /**
@@ -3886,6 +4438,87 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    audit_logs_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description * `create` - Create
+                 *     * `update` - Update
+                 *     * `delete` - احذف
+                 */
+                action?: "create" | "delete" | "update";
+                model?: string;
+                object_id?: string;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                project?: number;
+                /** @description A search term. */
+                search?: string;
+                timestamp__date__gte?: string;
+                timestamp__date__lte?: string;
+                user?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedAuditLogList"];
+                };
+            };
+        };
+    };
+    audit_logs_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this audit log. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLog"];
+                };
+            };
+        };
+    };
+    audit_logs_models_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditedModel"][];
+                };
+            };
+        };
+    };
     auth_login_create: {
         parameters: {
             query?: never;
@@ -6783,8 +7416,10 @@ export interface operations {
                  *     * `decrease` - Decrease
                  *     * `taken` - Taken by grinding
                  *     * `returned` - Returned by refining
+                 *     * `delivered` - Delivered by supplier
+                 *     * `delivery_corrected` - Delivery corrected
                  */
-                change_type?: "decrease" | "increase" | "initial" | "returned" | "taken";
+                change_type?: "decrease" | "delivered" | "delivery_corrected" | "increase" | "initial" | "returned" | "taken";
                 grinding_operation?: number;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
@@ -6797,6 +7432,7 @@ export interface operations {
                 resource__project?: number;
                 /** @description A search term. */
                 search?: string;
+                supplier_delivery?: number;
             };
             header?: never;
             path?: never;
@@ -6839,6 +7475,7 @@ export interface operations {
     resources_list: {
         parameters: {
             query?: {
+                is_stockable?: boolean;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -6848,6 +7485,7 @@ export interface operations {
                 project?: number;
                 /** @description A search term. */
                 search?: string;
+                supplier?: number;
             };
             header?: never;
             path?: never;
@@ -7068,8 +7706,10 @@ export interface operations {
                  *     * `settlements` - Settlements
                  *     * `debts` - Customer debts
                  *     * `employees` - Employees
+                 *     * `suppliers` - Suppliers
+                 *     * `audit` - Audit log
                  */
-                module?: "accounts" | "customers" | "debts" | "employees" | "grinding" | "inventory" | "locations" | "refining" | "settlements" | "shipments";
+                module?: "accounts" | "audit" | "customers" | "debts" | "employees" | "grinding" | "inventory" | "locations" | "refining" | "settlements" | "shipments" | "suppliers";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -8158,6 +8798,518 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectStorageSummary"][];
+                };
+            };
+        };
+    };
+    supplier_deliveries_list: {
+        parameters: {
+            query?: {
+                delivered_at__date__gte?: string;
+                delivered_at__date__lte?: string;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                project?: number;
+                resource?: number;
+                /** @description A search term. */
+                search?: string;
+                supplier?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedSupplierDeliveryList"];
+                };
+            };
+        };
+    };
+    supplier_deliveries_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierDelivery"];
+                "application/x-www-form-urlencoded": components["schemas"]["SupplierDelivery"];
+                "multipart/form-data": components["schemas"]["SupplierDelivery"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierDelivery"];
+                };
+            };
+        };
+    };
+    supplier_deliveries_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this supplier delivery. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierDelivery"];
+                };
+            };
+        };
+    };
+    supplier_deliveries_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this supplier delivery. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierDelivery"];
+                "application/x-www-form-urlencoded": components["schemas"]["SupplierDelivery"];
+                "multipart/form-data": components["schemas"]["SupplierDelivery"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierDelivery"];
+                };
+            };
+        };
+    };
+    supplier_deliveries_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this supplier delivery. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supplier_deliveries_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this supplier delivery. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedSupplierDelivery"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedSupplierDelivery"];
+                "multipart/form-data": components["schemas"]["PatchedSupplierDelivery"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierDelivery"];
+                };
+            };
+        };
+    };
+    supplier_payments_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                paid_at__date__gte?: string;
+                paid_at__date__lte?: string;
+                /** @description A search term. */
+                search?: string;
+                supplier?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedSupplierPaymentList"];
+                };
+            };
+        };
+    };
+    supplier_payments_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierPayment"];
+                "application/x-www-form-urlencoded": components["schemas"]["SupplierPayment"];
+                "multipart/form-data": components["schemas"]["SupplierPayment"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierPayment"];
+                };
+            };
+        };
+    };
+    supplier_payments_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this supplier payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierPayment"];
+                };
+            };
+        };
+    };
+    supplier_payments_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this supplier payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupplierPayment"];
+                "application/x-www-form-urlencoded": components["schemas"]["SupplierPayment"];
+                "multipart/form-data": components["schemas"]["SupplierPayment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierPayment"];
+                };
+            };
+        };
+    };
+    supplier_payments_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this supplier payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supplier_payments_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this supplier payment. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedSupplierPayment"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedSupplierPayment"];
+                "multipart/form-data": components["schemas"]["PatchedSupplierPayment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierPayment"];
+                };
+            };
+        };
+    };
+    suppliers_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description * `advance` - Paid in advance
+                 *     * `owed` - Owed to the supplier
+                 *     * `settled` - Settled
+                 */
+                balance_status?: "advance" | "owed" | "settled";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedSupplierList"];
+                };
+            };
+        };
+    };
+    suppliers_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Supplier"];
+                "application/x-www-form-urlencoded": components["schemas"]["Supplier"];
+                "multipart/form-data": components["schemas"]["Supplier"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Supplier"];
+                };
+            };
+        };
+    };
+    suppliers_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this supplier. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Supplier"];
+                };
+            };
+        };
+    };
+    suppliers_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this supplier. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Supplier"];
+                "application/x-www-form-urlencoded": components["schemas"]["Supplier"];
+                "multipart/form-data": components["schemas"]["Supplier"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Supplier"];
+                };
+            };
+        };
+    };
+    suppliers_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this supplier. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    suppliers_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this supplier. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedSupplier"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedSupplier"];
+                "multipart/form-data": components["schemas"]["PatchedSupplier"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Supplier"];
+                };
+            };
+        };
+    };
+    suppliers_history_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description * `advance` - Paid in advance
+                 *     * `owed` - Owed to the supplier
+                 *     * `settled` - Settled
+                 */
+                balance_status?: "advance" | "owed" | "settled";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this supplier. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierHistoryEntry"][];
                 };
             };
         };

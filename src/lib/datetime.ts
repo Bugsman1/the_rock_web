@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { TIME_ZONE } from "@/i18n/locales";
 import type { IsoTimestamp } from "./format";
 
@@ -117,4 +118,18 @@ export function durationParts(
     hours: Math.floor(totalMinutes / MINUTES_PER_HOUR),
     minutes: totalMinutes % MINUTES_PER_HOUR,
   };
+}
+
+export function requiredIsoDate(messages: { required: string; dateInvalid: string }) {
+  return z
+    .string()
+    .min(1, { message: messages.required, abort: true })
+    .refine(isIsoDate, messages.dateInvalid);
+}
+
+export function requiredTime(messages: { required: string; timeInvalid: string }) {
+  return z
+    .string()
+    .min(1, { message: messages.required, abort: true })
+    .refine(isTimeValue, messages.timeInvalid);
 }

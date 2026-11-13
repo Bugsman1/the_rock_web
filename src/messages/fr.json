@@ -43,6 +43,11 @@
       "question": "Abandonner les modifications ? Ce que vous avez saisi ne sera pas enregistré.",
       "confirm": "Abandonner les modifications",
       "keep": "Continuer la saisie"
+    },
+    "remove": {
+      "confirm": "Supprimer",
+      "deleting": "Suppression...",
+      "failed": "La suppression a échoué"
     }
   },
   "filters": {
@@ -102,7 +107,7 @@
       "treasury": "Trésorerie et banques",
       "employees": "Employés et paie",
       "inventory": "Inventaire",
-      "assets": "Actifs",
+      "suppliers": "Fournisseurs",
       "reports": "Rapports",
       "users": "Utilisateurs et permissions",
       "auditLog": "Journal d'audit"
@@ -210,6 +215,11 @@
     "active": "Actif",
     "maintenance": "En maintenance",
     "inactive": "Inactif"
+  },
+  "resourceKinds": {
+    "mercury": "Mercure",
+    "water": "Eau",
+    "fuel": "Essence"
   },
   "settings": {
     "title": "Paramètres",
@@ -361,6 +371,7 @@
         "debts": "Dettes",
         "settlements": "Règlement final",
         "employees": "Employés et paie",
+        "suppliers": "Fournisseurs",
         "accounts": "Utilisateurs et permissions",
         "locations": "Projets et machines"
       },
@@ -887,10 +898,7 @@
     },
     "remove": {
       "title": "Supprimer l'employé",
-      "question": "Supprimer {name} ? Cette action est définitive.",
-      "confirm": "Supprimer",
-      "deleting": "Suppression...",
-      "failed": "La suppression a échoué"
+      "question": "Supprimer {name} ? Cette action est définitive."
     },
     "withdrawals": {
       "title": "Historique des retraits",
@@ -1012,7 +1020,9 @@
       "increase": "Augmentation",
       "decrease": "Diminution",
       "taken": "Pris pour le broyage",
-      "returned": "Rendu par l'affinage"
+      "returned": "Rendu par l'affinage",
+      "delivered": "Livré par le fournisseur",
+      "delivery_corrected": "Livraison corrigée"
     },
     "fields": {
       "name": "Nom de la ressource",
@@ -1028,7 +1038,9 @@
       "changedAt": "Date",
       "changeType": "Type",
       "changedBy": "Par",
-      "kind": "Type de ressource"
+      "kind": "Type de ressource",
+      "supplier": "Fournisseur",
+      "initialPrice": "Prix de la quantité initiale"
     },
     "form": {
       "newTitle": "Nouvelle ressource",
@@ -1038,12 +1050,16 @@
       "saving": "Enregistrement",
       "increaseSubmit": "Enregistrer l'augmentation",
       "decreaseSubmit": "Enregistrer la diminution",
-      "kindPlaceholder": "Choisir le type"
+      "kindPlaceholder": "Choisir le type",
+      "noSupplier": "Sans fournisseur",
+      "supplierTitle": "Fournisseur : {name}",
+      "supplierSubmit": "Enregistrer le fournisseur"
     },
     "errors": {
       "quantityInvalid": "Saisissez une quantité valide d'au moins 0",
       "changeInvalid": "Saisissez une quantité supérieure à 0",
-      "quantityTooMuch": "Il ne reste que {left}"
+      "quantityTooMuch": "Il ne reste que {left}",
+      "priceInvalid": "Saisissez un prix valide d'au moins 0"
     },
     "refiningMaterial": "Matière d'affinage",
     "grindingNumber": "broyage {number}",
@@ -1057,13 +1073,98 @@
       "hint": "Chaque broyage en prend le mercure ajouté ; chaque affinage y rend le mercure récupéré."
     },
     "open": "Ouvrir",
-    "kinds": {
-      "mercury": "Mercure",
-      "water": "Eau",
-      "fuel": "Essence"
-    },
     "historyEmpty": "Aucun mouvement sur cette ressource pour le moment.",
-    "surplus": "+{quantity} surplus"
+    "surplus": "+{quantity} surplus",
+    "changeSupplier": "Changer le fournisseur"
+  },
+  "suppliers": {
+    "title": "Fournisseurs",
+    "listTitle": "Liste des fournisseurs",
+    "count": "Fournisseurs : {count}",
+    "new": "Nouveau fournisseur",
+    "empty": "Aucun fournisseur pour le moment.",
+    "noResults": "Aucun fournisseur ne correspond.",
+    "searchPlaceholder": "Rechercher par nom ou téléphone",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "fields": {
+      "name": "Nom",
+      "phone": "Téléphone",
+      "notes": "Notes",
+      "resources": "Ressources",
+      "paid": "Payé",
+      "delivered": "Livré",
+      "balance": "Solde",
+      "status": "État"
+    },
+    "status": {
+      "advance": "Avance versée",
+      "owed": "À lui payer",
+      "settled": "Soldé"
+    },
+    "form": {
+      "newTitle": "Nouveau fournisseur",
+      "editTitle": "Modifier le fournisseur",
+      "create": "Ajouter le fournisseur",
+      "save": "Enregistrer",
+      "saving": "Enregistrement"
+    },
+    "remove": {
+      "title": "Supprimer le fournisseur",
+      "question": "Supprimer {name} ? Cette action est définitive."
+    },
+    "account": {
+      "title": "Compte du fournisseur",
+      "empty": "Aucun paiement ni livraison pour le moment.",
+      "editLabel": "Modifier l'opération du {date}",
+      "deleteLabel": "Supprimer l'opération du {date}",
+      "columns": {
+        "date": "Date",
+        "type": "Type",
+        "resource": "Ressource et quantité",
+        "amount": "Montant",
+        "balance": "Solde après",
+        "note": "Note",
+        "by": "Par",
+        "actions": "Actions"
+      },
+      "types": {
+        "payment": "Paiement",
+        "delivery": "Livraison",
+        "initial": "Quantité initiale"
+      }
+    },
+    "payments": {
+      "add": "Enregistrer un paiement",
+      "newTitle": "Nouveau paiement",
+      "editTitle": "Modifier le paiement",
+      "create": "Enregistrer le paiement",
+      "removeTitle": "Supprimer le paiement",
+      "removeQuestion": "Supprimer le paiement de {amount} du {date} ?"
+    },
+    "deliveries": {
+      "add": "Enregistrer une livraison",
+      "newTitle": "Nouvelle livraison",
+      "editTitle": "Modifier la livraison",
+      "create": "Enregistrer la livraison",
+      "removeTitle": "Supprimer la livraison",
+      "removeQuestion": "Supprimer la livraison de {quantity} de {resource} du {date} ? La quantité sera retirée du stock."
+    },
+    "formFields": {
+      "amount": "Montant",
+      "date": "Date",
+      "time": "Heure",
+      "note": "Note",
+      "resource": "Ressource",
+      "resourcePlaceholder": "Choisir la ressource",
+      "quantity": "Quantité",
+      "price": "Prix total"
+    },
+    "errors": {
+      "amountInvalid": "Saisissez un montant supérieur à 0",
+      "quantityInvalid": "Saisissez une quantité supérieure à 0",
+      "priceInvalid": "Saisissez un prix valide d'au moins 0"
+    }
   },
   "errors": {
     "notFound": {
@@ -1245,6 +1346,16 @@
     "debtPaymentAdded": "Paiement enregistré",
     "debtPaymentUpdated": "Paiement modifié",
     "debtPaymentDeleted": "Paiement supprimé",
-    "refiningCostAdded": "Coût par gramme enregistré"
+    "refiningCostAdded": "Coût par gramme enregistré",
+    "supplierAdded": "Fournisseur ajouté",
+    "supplierUpdated": "Fournisseur enregistré",
+    "supplierDeleted": "Fournisseur supprimé",
+    "supplierPaymentAdded": "Paiement enregistré",
+    "supplierPaymentUpdated": "Paiement modifié",
+    "supplierPaymentDeleted": "Paiement supprimé",
+    "deliveryAdded": "Livraison enregistrée",
+    "deliveryUpdated": "Livraison modifiée",
+    "deliveryDeleted": "Livraison supprimée",
+    "resourceSupplierUpdated": "Fournisseur changé"
   }
 }

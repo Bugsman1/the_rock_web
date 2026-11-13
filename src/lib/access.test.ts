@@ -46,6 +46,10 @@ describe("accessFromApi", () => {
     expect(refiner.rights.shipments.view).toBe(false);
   });
 
+  it("ignores a module the app has no section for", () => {
+    expect(rightsFromApi([{ module: "audit", can_view: true }])).toEqual(rightsFromApi([]));
+  });
+
   it("recognises a superuser", () => {
     expect(
       accessFromApi({
@@ -89,6 +93,8 @@ describe("canOpen", () => {
     expect(canOpen(access(["inventory"]), "/inventory/resources/2")).toBe(true);
     expect(canOpen(access(["locations"]), "/settings/projects/2")).toBe(true);
     expect(canOpen(access(["accounts"]), "/users/roles")).toBe(true);
+    expect(canOpen(access(["suppliers"]), "/suppliers/5")).toBe(true);
+    expect(canOpen(access(["inventory"]), "/suppliers")).toBe(false);
   });
 
   it("opens a form page only to a role that may add or edit there", () => {

@@ -9,6 +9,7 @@ import {
   apiEmployee,
   capture,
   cellsOf,
+  common,
   money,
   openAt,
   openTab,
@@ -211,7 +212,7 @@ describe("an employee's debts", () => {
     openAt("/fr/employees/7?deleteDebt=4");
 
     const drawer = within(await screen.findByRole("dialog", { name: text.debts.removeTitle }));
-    await user.click(drawer.getByRole("button", { name: text.remove.confirm }));
+    await user.click(drawer.getByRole("button", { name: common.remove.confirm }));
 
     expect(await drawer.findByText("Cette dette est déjà payée.")).toBeVisible();
   });

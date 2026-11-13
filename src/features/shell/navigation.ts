@@ -10,6 +10,7 @@ import {
   REFINING_HREF,
   SETTLEMENTS_HREF,
   SHIPMENTS_HREF,
+  SUPPLIERS_HREF,
   USERS_HREF,
 } from "@/lib/routes";
 
@@ -24,7 +25,7 @@ type NavItemKey =
   | "treasury"
   | "employees"
   | "inventory"
-  | "assets"
+  | "suppliers"
   | "reports"
   | "users"
   | "auditLog";
@@ -69,7 +70,7 @@ const navGroups: readonly NavGroup[] = [
     items: [
       { key: "employees", href: EMPLOYEES_HREF, icon: "id-badge" },
       { key: "inventory", href: INVENTORY_HREF, icon: "packages" },
-      { key: "assets", href: "/assets", icon: "warehouse" },
+      { key: "suppliers", href: SUPPLIERS_HREF, icon: "warehouse" },
     ],
   },
   {

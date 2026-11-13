@@ -8,7 +8,7 @@ export type DebtStatus = ApiSchema<"DebtStatusEnum">;
 
 export type DebtHistoryEntry = {
   key: string;
-  type: ApiSchema<"TypeEnum">;
+  type: ApiSchema<"DebtHistoryEntryTypeEnum">;
   date: IsoTimestamp;
   amount: number;
   text: string;

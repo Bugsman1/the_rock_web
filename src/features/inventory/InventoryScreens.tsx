@@ -16,10 +16,10 @@ import { formatCount, formatQuantity } from "@/lib/format";
 import { getProjects, requireProject } from "@/lib/projectsApi";
 import { INVENTORY_HREF, inventoryProjectHref, resourceHref } from "@/lib/routes";
 import { matchesSearch } from "@/lib/search";
-import { ResourceForm } from "./InventoryForms";
+import { ResourceForm } from "./ResourceForm";
 import { availableKinds } from "./resources";
 import type { Resource } from "./resources";
-import { getResources } from "./resourcesApi";
+import { getResources, getSupplierChoices } from "./resourcesApi";
 
 function LoadError({ status }: { status: number }) {
   const errors = useTranslations("errors");
@@ -45,6 +45,7 @@ export async function inventoryLoader() {
 export function InventoryScreen() {
   const { projects, resources, loadStatus } = useLoaderData<typeof inventoryLoader>();
   const t = useTranslations("inventory");
+  const kindName = useTranslations("resourceKinds");
   const common = useTranslations("common");
   const locale = useLocale();
 
@@ -80,7 +81,7 @@ export function InventoryScreen() {
                     { label: t("resourceCount"), value: formatCount(own.length, locale) },
                     {
                       label: t("refiningMaterial"),
-                      value: material === undefined ? "—" : t(`kinds.${material.kind}`),
+                      value: material === undefined ? "—" : kindName(material.kind),
                     },
                   ]}
                 />
@@ -95,23 +96,29 @@ export function InventoryScreen() {
 
 export async function inventoryProjectLoader({ params, request }: LoaderFunctionArgs) {
   const project = await requireProject(params.project ?? "");
-  const loaded = await tryLoad(() => getResources(project.id));
+  const creating = new URL(request.url).searchParams.get("new") === "resource";
+  const [loaded, suppliers] = await Promise.all([
+    tryLoad(() => getResources(project.id)),
+    creating ? tryLoad(getSupplierChoices) : undefined,
+  ]);
 
   return {
     project,
     resources: loaded.ok ? loaded.data : [],
     loadStatus: loaded.ok ? undefined : loaded.status,
-    creating: new URL(request.url).searchParams.get("new") === "resource",
+    creating,
+    suppliers: suppliers?.ok === true ? suppliers.data : undefined,
   };
 }
 
 function ResourceCard({ resource }: { resource: Resource }) {
   const t = useTranslations("inventory");
+  const kindName = useTranslations("resourceKinds");
   const locale = useLocale();
 
   return (
     <LinkCard
-      title={t(`kinds.${resource.kind}`)}
+      title={kindName(resource.kind)}
       href={resourceHref(resource.id)}
       linkLabel={t("open")}
     >
@@ -138,9 +145,10 @@ function ResourceCard({ resource }: { resource: Resource }) {
 }
 
 export function InventoryProjectScreen() {
-  const { project, resources, loadStatus, creating } =
+  const { project, resources, loadStatus, creating, suppliers } =
     useLoaderData<typeof inventoryProjectLoader>();
   const t = useTranslations("inventory");
+  const kindName = useTranslations("resourceKinds");
   const common = useTranslations("common");
   const locale = useLocale();
   const { close } = useRouteDrawer(inventoryProjectHref(project.id));
@@ -148,7 +156,7 @@ export function InventoryProjectScreen() {
   const canAdd = useCan()("inventory", "add") && availableKinds(resources).length > 0;
   const [query, setQuery] = useState("");
   const visible = resources.filter((resource) =>
-    matchesSearch({ texts: [t(`kinds.${resource.kind}`)], phone: "" }, query),
+    matchesSearch({ texts: [kindName(resource.kind)], phone: "" }, query),
   );
   const material = visible.find((resource) => resource.isRefiningMaterial);
   const others = visible.filter((resource) => !resource.isRefiningMaterial);
@@ -212,6 +220,7 @@ export function InventoryProjectScreen() {
         <ResourceForm
           project={project}
           existing={resources}
+          suppliers={suppliers}
           onCancel={close}
           onSaved={(id) => replace(resourceHref(id))}
         />

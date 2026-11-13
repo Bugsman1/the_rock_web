@@ -258,7 +258,7 @@ describe("a project's employees", () => {
     await user.click(within(rowOf("EMP-7")).getByRole("link", { name: "Supprimer Sidi Ahmed" }));
 
     const drawer = within(await screen.findByRole("dialog", { name: text.remove.title }));
-    await user.click(drawer.getByRole("button", { name: text.remove.confirm }));
+    await user.click(drawer.getByRole("button", { name: common.remove.confirm }));
 
     expect(await drawer.findByText("Cet employé a des retraits.")).toBeVisible();
   });

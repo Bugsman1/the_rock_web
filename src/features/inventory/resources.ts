@@ -1,15 +1,13 @@
 import { z } from "zod";
 import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/client";
-import { fromDecimal, toDecimal } from "@/lib/format";
+import { fromDecimal, toDecimal, toMoneyDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import type { ProjectId } from "@/lib/projects";
+import { isResourceKind, kindNamed, resourceKinds } from "@/lib/resourceKinds";
+import type { ResourceKind } from "@/lib/resourceKinds";
 
 const NOTE_MAX_LENGTH = 500;
 const QUANTITY_PRECISION = 1000;
-
-export const resourceKinds = ["mercury", "water", "fuel"] as const;
-
-export type ResourceKind = (typeof resourceKinds)[number];
 
 export type Resource = {
   id: string;
@@ -19,50 +17,15 @@ export type Resource = {
   initialQuantity: number;
   currentQuantity: number;
   isRefiningMaterial: boolean;
+  isStockable: boolean;
+  supplier: string | undefined;
+  supplierName: string;
 };
 
-const kindNames: Record<ResourceKind, readonly string[]> = {
-  mercury: ["mercury", "mercure", "الزئبق", "زئبق"],
-  water: ["water", "eau", "الماء", "ماء", "مياه"],
-  fuel: [
-    "fuel",
-    "essence",
-    "carburant",
-    "gasoil",
-    "الوقود",
-    "وقود",
-    "المازوت",
-    "مازوت",
-    "البنزين",
-    "بنزين",
-  ],
+export type SupplierChoice = {
+  id: string;
+  name: string;
 };
-
-const TATWEEL = "ـ";
-
-function normalizeName(name: string): string {
-  return name
-    .trim()
-    .toLocaleLowerCase()
-    .normalize("NFKD")
-    .replace(/\p{M}/gu, "")
-    .replaceAll(TATWEEL, "")
-    .split(/\s+/)
-    .filter(Boolean)
-    .join(" ");
-}
-
-export function kindNamed(name: string): ResourceKind | undefined {
-  const normalized = normalizeName(name);
-
-  return resourceKinds.find((kind) =>
-    kindNames[kind].some((spelling) => normalizeName(spelling) === normalized),
-  );
-}
-
-export function isResourceKind(value: string): value is ResourceKind {
-  return resourceKinds.some((kind) => kind === value);
-}
 
 export function availableKinds(resources: readonly Resource[]): readonly ResourceKind[] {
   return resourceKinds.filter((kind) => !resources.some((resource) => resource.kind === kind));
@@ -74,7 +37,7 @@ export type ResourceChangeType = (typeof resourceChangeTypes)[number];
 
 export type ResourceChange = {
   id: string;
-  type: ResourceChangeType | "initial" | "taken" | "returned";
+  type: ApiSchema<"ChangeTypeEnum">;
   quantity: number;
   quantityBefore: number;
   quantityAfter: number;
@@ -82,18 +45,45 @@ export type ResourceChange = {
   shipmentNumber: string | undefined;
   grindingSequence: number | undefined;
   loss: number | undefined;
+  supplierName: string;
   note: string;
   byName: string;
   at: IsoTimestamp;
 };
 
-export function createResourceSchema(messages: { required: string; quantityInvalid: string }) {
-  return z.object({
-    project: z.string().min(1, messages.required),
-    kind: z.string().refine((value): boolean => isResourceKind(value), messages.required),
-    initialQuantity: z.number({ error: messages.required }).min(0, messages.quantityInvalid),
-  });
+export function chargesInitialPrice(values: { supplier: string; initialQuantity: number }) {
+  return values.supplier !== "" && values.initialQuantity > 0;
 }
+
+export function createResourceSchema(messages: {
+  required: string;
+  quantityInvalid: string;
+  priceInvalid: string;
+}) {
+  return z
+    .object({
+      project: z.string().min(1, messages.required),
+      kind: z.string().refine((value): boolean => isResourceKind(value), messages.required),
+      initialQuantity: z.number({ error: messages.required }).min(0, messages.quantityInvalid),
+      supplier: z.string(),
+      initialPrice: z.union([z.nan(), z.number()]),
+    })
+    .superRefine((values, context) => {
+      if (chargesInitialPrice(values) && !(values.initialPrice >= 0)) {
+        context.addIssue({
+          code: "custom",
+          path: ["initialPrice"],
+          message: messages.priceInvalid,
+        });
+      }
+    });
+}
+
+export function createResourceSupplierSchema() {
+  return z.object({ supplier: z.string() });
+}
+
+export type ResourceSupplierValues = z.infer<ReturnType<typeof createResourceSupplierSchema>>;
 
 export type ResourceValues = z.infer<ReturnType<typeof createResourceSchema>>;
 
@@ -129,6 +119,12 @@ export function quantityAfterChange(
   return Math.round(after * QUANTITY_PRECISION) / QUANTITY_PRECISION;
 }
 
+function supplierOf(resource: ApiSchema<"Resource">) {
+  return resource.supplier === null || resource.supplier === undefined
+    ? { supplier: undefined, supplierName: "" }
+    : { supplier: String(resource.supplier), supplierName: resource.supplier_name };
+}
+
 export function resourceFromApi(resource: ApiSchema<"Resource">): Resource | undefined {
   const isRefiningMaterial = resource.is_refining_material ?? false;
   const kind = isRefiningMaterial ? "mercury" : kindNamed(resource.name);
@@ -140,9 +136,11 @@ export function resourceFromApi(resource: ApiSchema<"Resource">): Resource | und
         project: String(resource.project),
         projectName: resource.project_name,
         kind,
-        initialQuantity: fromDecimal(resource.initial_quantity),
+        initialQuantity: fromDecimal(resource.initial_quantity ?? "0"),
         currentQuantity: fromDecimal(resource.current_quantity),
         isRefiningMaterial,
+        isStockable: resource.is_stockable,
+        ...supplierOf(resource),
       };
 }
 
@@ -152,7 +150,18 @@ export function resourceToApi(values: ResourceValues) {
     name: values.kind,
     initial_quantity: toDecimal(values.initialQuantity),
     is_refining_material: values.kind === "mercury",
+    is_stockable: true,
+    ...supplierToApi(values),
+    ...(chargesInitialPrice(values) ? { initial_price: toMoneyDecimal(values.initialPrice) } : {}),
   };
+}
+
+export function supplierToApi(values: ResourceSupplierValues) {
+  return { supplier: values.supplier === "" ? null : Number(values.supplier) };
+}
+
+export function supplierChoiceFromApi(supplier: ApiSchema<"Supplier">): SupplierChoice {
+  return { id: String(supplier.id), name: supplier.name };
 }
 
 export function resourceErrorsFromApi(
@@ -163,6 +172,8 @@ export function resourceErrorsFromApi(
     ...(errors.initial_quantity === undefined ? {} : { initialQuantity: errors.initial_quantity }),
     ...(errors.name === undefined ? {} : { kind: errors.name }),
     ...(errors.is_refining_material === undefined ? {} : { kind: errors.is_refining_material }),
+    ...(errors.supplier === undefined ? {} : { supplier: errors.supplier }),
+    ...(errors.initial_price === undefined ? {} : { initialPrice: errors.initial_price }),
   };
 }
 
@@ -177,6 +188,7 @@ export function resourceChangeFromApi(entry: ApiSchema<"ResourceHistory">): Reso
     shipmentNumber: entry.shipment_number ?? undefined,
     grindingSequence: entry.grinding_sequence ?? undefined,
     loss: entry.loss === null ? undefined : fromDecimal(entry.loss),
+    supplierName: entry.supplier_delivery === null ? "" : entry.supplier_name,
     note: entry.note,
     byName: entry.created_by_name,
     at: entry.created_at,

@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
+import type { ReactNode } from "react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
@@ -14,6 +15,7 @@ import {
   InventoryScreen,
   inventoryLoader,
 } from "./InventoryScreens";
+import type { Resource, SupplierChoice } from "./resources";
 import { ResourceScreen, resourceLoader } from "./ResourceScreen";
 
 const allRights: Access = { ...noAccess, superuser: true };
@@ -21,6 +23,7 @@ const allRights: Access = { ...noAccess, superuser: true };
 export const API = `${window.location.origin}/api/v1`;
 export const server = setupServer();
 export const text = messages.inventory;
+export const kinds = messages.resourceKinds;
 
 export const page = (results: readonly object[]) =>
   HttpResponse.json({ count: results.length, results });
@@ -42,6 +45,9 @@ export const mercury = {
   name: "Mercure",
   initial_quantity: "10.000",
   current_quantity: "8.500",
+  supplier: null,
+  supplier_name: "",
+  is_stockable: true,
   created_at: "2026-10-12T08:00:00Z",
   updated_at: "2026-10-12T08:00:00Z",
 };
@@ -61,6 +67,8 @@ export const decrease = {
   grinding_sequence: null,
   grinder_code: null,
   loss: null,
+  supplier_delivery: null,
+  supplier_name: "",
   note: "Lot 4",
   created_by_name: "Aicha",
   created_at: "2026-10-12T11:00:00Z",
@@ -180,4 +188,36 @@ export async function findCardOf(title: string) {
   await screen.findByRole("heading", { name: title });
 
   return cardOf(title);
+}
+
+export const mercuryResource: Resource = {
+  id: "2",
+  project: "3",
+  projectName: "Zouérat 1",
+  kind: "mercury",
+  initialQuantity: 10,
+  currentQuantity: 8.5,
+  isRefiningMaterial: true,
+  isStockable: true,
+  supplier: undefined,
+  supplierName: "",
+};
+
+export const formSuppliers: readonly SupplierChoice[] = [{ id: "5", name: "Sidi Fournitures" }];
+
+export function inFrench(children: ReactNode) {
+  return render(
+    <RouterProvider
+      router={createMemoryRouter([
+        {
+          path: "*",
+          element: (
+            <IntlProvider locale="fr" messages={messages} timeZone="Africa/Nouakchott">
+              {children}
+            </IntlProvider>
+          ),
+        },
+      ])}
+    />,
+  );
 }

@@ -1,13 +1,12 @@
-import { z } from "zod";
 import {
   apiClient,
-  backendFieldErrors,
+  deleteResult,
   idempotent,
   saveFailed,
   saveOutcome,
   unwrap,
 } from "@/lib/api/client";
-import type { SaveResult } from "@/lib/api/client";
+import type { DeleteResult, SaveResult } from "@/lib/api/client";
 import { fetchAllPages, MAX_PAGE_SIZE } from "@/lib/api/pagination";
 import type { IsoTimestamp } from "@/lib/format";
 import { isRecordId } from "@/lib/projects";
@@ -34,23 +33,6 @@ import type {
 } from "./employees";
 import { raiseErrorsFromApi, raiseToApi, refiningCostToApi } from "./employeePay";
 import type { RaiseValues } from "./employeePay";
-
-export type DeleteResult = { ok: true } | { ok: false; reason: string | undefined };
-
-const refusalSchema = z.array(z.string());
-
-export function deleteResult(response: Response, error: unknown): DeleteResult {
-  if (response.ok) {
-    return { ok: true };
-  }
-
-  const refusal = refusalSchema.safeParse(error);
-
-  return {
-    ok: false,
-    reason: refusal.success ? refusal.data[0] : backendFieldErrors(error).detail,
-  };
-}
 
 export async function getEmployees(project?: ProjectId): Promise<readonly Employee[]> {
   const employees = await fetchAllPages(async (page) =>

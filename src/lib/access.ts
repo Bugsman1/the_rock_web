@@ -13,6 +13,7 @@ import {
   SETTINGS_PROJECTS_HREF,
   SETTLEMENTS_HREF,
   SHIPMENTS_HREF,
+  SUPPLIERS_HREF,
   USERS_HREF,
 } from "./routes";
 
@@ -25,11 +26,16 @@ export const modules = [
   "debts",
   "settlements",
   "employees",
+  "suppliers",
   "accounts",
   "locations",
 ] as const;
 
 export type Module = (typeof modules)[number];
+
+function isModule(value: string): value is Module {
+  return modules.some((module) => module === value);
+}
 
 export const rights = ["view", "add", "edit", "delete"] as const;
 
@@ -51,6 +57,7 @@ export function emptyRights(): Rights {
     debts: noRights,
     settlements: noRights,
     employees: noRights,
+    suppliers: noRights,
     accounts: noRights,
     locations: noRights,
   };
@@ -60,6 +67,10 @@ export function rightsFromApi(permissions: readonly ApiSchema<"RoleModulePermiss
   const granted = emptyRights();
 
   for (const permission of permissions) {
+    if (!isModule(permission.module)) {
+      continue;
+    }
+
     granted[permission.module] = {
       view: permission.can_view ?? false,
       add: permission.can_add ?? false,
@@ -99,6 +110,7 @@ const sectionModules: readonly (readonly [string, Module])[] = [
   [CUSTOMERS_HREF, "customers"],
   [SETTLEMENTS_HREF, "settlements"],
   [EMPLOYEES_HREF, "employees"],
+  [SUPPLIERS_HREF, "suppliers"],
   [USERS_HREF, "accounts"],
   [SETTINGS_PROJECTS_HREF, "locations"],
 ];

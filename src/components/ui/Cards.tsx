@@ -82,6 +82,14 @@ export function DetailList({ items }: { items: readonly DetailItem[] }) {
   );
 }
 
+export function DetailCard({ items }: { items: readonly DetailItem[] }) {
+  return (
+    <section className="rounded-card border-line bg-surface shadow-subtle border-[1.5px] p-6">
+      <DetailList items={items} />
+    </section>
+  );
+}
+
 export function FormSection({ title, children }: { title: string; children: ReactNode }) {
   const headingId = useId();
 

@@ -7,7 +7,7 @@ import { formatDateTime, formatMoney } from "@/lib/format";
 import { employeeHref } from "@/lib/routes";
 import { DebtPaymentForm } from "./AmountForms";
 import { DebtForm } from "./DebtForm";
-import { DeleteDrawer } from "./DeleteDrawer";
+import { DeleteDrawer } from "@/components/ui/DeleteDrawer";
 import { debtLedger, isEnteredByHand } from "./employeeDebts";
 import type { Debt, DebtLedgerEntry, DebtPayment } from "./employeeDebts";
 import { deleteDebt, deleteDebtPayment } from "./employeeDebtsApi";

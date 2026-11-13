@@ -12,7 +12,7 @@ import { employeeHref, employeesProjectHref } from "@/lib/routes";
 import { AbsenceDrawers } from "./AbsencesTab";
 import { WithdrawalForm } from "./AmountForms";
 import { DebtDrawers } from "./DebtsTab";
-import { DeleteDrawer } from "./DeleteDrawer";
+import { DeleteDrawer } from "@/components/ui/DeleteDrawer";
 import { EmployeeForm } from "./EmployeeForm";
 import { EmployeeActions, EmployeeDetails, EmployeeTabs } from "./EmployeeSections";
 import { isEnteredByHand } from "./employeeDebts";

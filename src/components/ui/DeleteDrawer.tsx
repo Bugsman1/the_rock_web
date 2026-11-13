@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useTranslations } from "use-intl";
-import { Drawer, DrawerDeleteActions } from "@/components/ui/Drawer";
-import { FormError } from "@/components/ui/FieldError";
-import { useToast } from "@/components/ui/Toast";
-import type { DeleteResult } from "./employeesApi";
+import { Drawer, DrawerDeleteActions } from "./Drawer";
+import { FormError } from "./FieldError";
+import { useToast } from "./Toast";
+import type { DeleteResult } from "@/lib/api/client";
 
 type DeleteDrawerProps = {
   open: boolean;
@@ -24,7 +24,7 @@ export function DeleteDrawer({
   onDeleted,
   onClose,
 }: DeleteDrawerProps) {
-  const t = useTranslations("employees.remove");
+  const t = useTranslations("common.remove");
   const common = useTranslations("common");
   const toast = useToast();
   const [deleting, setDeleting] = useState(false);

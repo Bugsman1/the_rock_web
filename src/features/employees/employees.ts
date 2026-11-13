@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/client";
-import { isIsoDate, isTimeValue } from "@/lib/datetime";
+import { isIsoDate, requiredIsoDate, requiredTime } from "@/lib/datetime";
 import { fromDecimal, toMoneyDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import { formatPhone, isValidPhone, phoneToApi } from "@/lib/phone";
@@ -61,20 +61,6 @@ export type MonthlySalary = {
 const NOTE_MAX_LENGTH = 500;
 
 const TEXT_MAX_LENGTH = 100;
-
-export function requiredIsoDate(messages: { required: string; dateInvalid: string }) {
-  return z
-    .string()
-    .min(1, { message: messages.required, abort: true })
-    .refine(isIsoDate, messages.dateInvalid);
-}
-
-export function requiredTime(messages: { required: string; timeInvalid: string }) {
-  return z
-    .string()
-    .min(1, { message: messages.required, abort: true })
-    .refine(isTimeValue, messages.timeInvalid);
-}
 
 function pay(required: boolean, message: string) {
   return required ? z.number({ error: message }).positive(message) : z.union([z.nan(), z.number()]);

@@ -6,7 +6,7 @@ import { TablePanel } from "@/components/ui/TablePanel";
 import { formatCount, formatDate } from "@/lib/format";
 import { employeeHref } from "@/lib/routes";
 import { AbsenceForm } from "./AbsenceForm";
-import { DeleteDrawer } from "./DeleteDrawer";
+import { DeleteDrawer } from "@/components/ui/DeleteDrawer";
 import type { Absence } from "./employeeAbsences";
 import type { Employee } from "./employees";
 import { deleteAbsence } from "./employeesApi";

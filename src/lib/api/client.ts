@@ -178,6 +178,23 @@ export function saveOutcome<Field extends string>(
   };
 }
 
+export type DeleteResult = { ok: true } | { ok: false; reason: string | undefined };
+
+const refusalSchema = z.array(z.string());
+
+export function deleteResult(response: Response, error: unknown): DeleteResult {
+  if (response.ok) {
+    return { ok: true };
+  }
+
+  const refusal = refusalSchema.safeParse(error);
+
+  return {
+    ok: false,
+    reason: refusal.success ? refusal.data[0] : backendFieldErrors(error).detail,
+  };
+}
+
 function currentLocale() {
   const [, segment] = window.location.pathname.split("/");
 

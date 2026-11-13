@@ -1,7 +1,6 @@
 import { z } from "zod";
 import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/client";
-import { isIsoDate } from "@/lib/datetime";
-import { requiredIsoDate } from "./employees";
+import { isIsoDate, requiredIsoDate } from "@/lib/datetime";
 
 export type Absence = {
   id: string;
