@@ -744,7 +744,7 @@ links follow the edit / delete rights.
   read-only: the backend's month name, the day it was credited and the amount).
 
 **Suppliers (`/suppliers`, backend `6dd31b2`, `d2f94f3`, `36d57c6`, module `suppliers`):** the menu
-entry takes the place of the old "Assets" placeholder (Arabic «المزوّدون», since «مورد» already means a
+entry takes the place of the old "Assets" placeholder (Arabic «إدارة الموردين», since «مورد» already means a
 resource in Inventory). A supplier has a name, an optional phone (sent without spaces) and notes. The list
 shows its resources, what was paid, what was delivered and the balance, all the backend's:
 `balance` = paid − delivered, **positive** an advance (the supplier owes goods, blue), **negative**
