@@ -1,6 +1,7 @@
 import { Outlet, redirect, useLoaderData } from "react-router";
 import type { Params, RouteObject } from "react-router";
 import { useLocale } from "use-intl";
+import { AuditLogScreen, auditLogLoader } from "@/features/audit";
 import { LoginScreen } from "@/features/auth";
 import {
   CustomerScreen,
@@ -219,6 +220,7 @@ const sectionRoutes: RouteObject[] = [
   { path: "employees/:employee", loader: employeeLoader, element: <EmployeeScreen /> },
   { path: "suppliers", loader: suppliersLoader, element: <SuppliersScreen /> },
   { path: "suppliers/:supplier", loader: supplierLoader, element: <SupplierScreen /> },
+  { path: "audit-log", loader: auditLogLoader, element: <AuditLogScreen /> },
   { path: "settings", element: <SettingsHomeScreen /> },
   { path: "settings/profile", loader: profileLoader, element: <ProfileScreen /> },
   { path: "settings/language", element: <LanguageScreen /> },

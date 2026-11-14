@@ -142,6 +142,7 @@ export function createRoleSchema(messages: { required: string }) {
       suppliers: moduleRightsSchema,
       accounts: moduleRightsSchema,
       locations: moduleRightsSchema,
+      audit: moduleRightsSchema,
     }),
   });
 }

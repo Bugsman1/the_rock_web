@@ -1,5 +1,6 @@
 import type { ApiSchema } from "./api/client";
 import {
+  AUDIT_LOG_HREF,
   CUSTOMERS_HREF,
   DASHBOARD_HREF,
   EMPLOYEES_HREF,
@@ -29,17 +30,18 @@ export const modules = [
   "suppliers",
   "accounts",
   "locations",
+  "audit",
 ] as const;
 
 export type Module = (typeof modules)[number];
 
-function isModule(value: string): value is Module {
-  return modules.some((module) => module === value);
-}
-
 export const rights = ["view", "add", "edit", "delete"] as const;
 
 export type Right = (typeof rights)[number];
+
+export function rightsOfModule(module: Module): readonly Right[] {
+  return module === "audit" ? ["view"] : rights;
+}
 
 type ModuleRights = Record<Right, boolean>;
 
@@ -60,6 +62,7 @@ export function emptyRights(): Rights {
     suppliers: noRights,
     accounts: noRights,
     locations: noRights,
+    audit: noRights,
   };
 }
 
@@ -67,10 +70,6 @@ export function rightsFromApi(permissions: readonly ApiSchema<"RoleModulePermiss
   const granted = emptyRights();
 
   for (const permission of permissions) {
-    if (!isModule(permission.module)) {
-      continue;
-    }
-
     granted[permission.module] = {
       view: permission.can_view ?? false,
       add: permission.can_add ?? false,
@@ -91,10 +90,14 @@ export type Access = {
 export const noAccess: Access = { userId: "", superuser: false, rights: emptyRights() };
 
 export function accessFromApi(me: ApiSchema<"Me">): Access {
+  const superuser = me.is_superuser ?? false;
+  const granted = rightsFromApi(me.role?.permissions ?? []);
+  const projectScoped = !superuser && (me.role?.is_project_scoped ?? false);
+
   return {
     userId: String(me.id),
-    superuser: me.is_superuser ?? false,
-    rights: rightsFromApi(me.role?.permissions ?? []),
+    superuser,
+    rights: projectScoped ? { ...granted, audit: noRights } : granted,
   };
 }
 
@@ -113,6 +116,7 @@ const sectionModules: readonly (readonly [string, Module])[] = [
   [SUPPLIERS_HREF, "suppliers"],
   [USERS_HREF, "accounts"],
   [SETTINGS_PROJECTS_HREF, "locations"],
+  [AUDIT_LOG_HREF, "audit"],
 ];
 
 const openToEveryone: readonly string[] = [SETTINGS_PROFILE_HREF, SETTINGS_LANGUAGE_HREF];

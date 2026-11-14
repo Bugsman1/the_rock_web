@@ -36,6 +36,15 @@ describe("navGroupsFor", () => {
     expect(groups.map((group) => group.key)).toEqual(["accounts"]);
     expect(groups[0]?.items.map((item) => item.key)).toEqual(["settlement"]);
   });
+
+  it("shows the audit log only to a role that can view it", () => {
+    expect(navGroupsFor(viewing(["accounts"]))[0]?.items.map((item) => item.key)).toEqual([
+      "users",
+    ]);
+    expect(navGroupsFor(viewing(["audit"]))[0]?.items.map((item) => item.key)).toEqual([
+      "auditLog",
+    ]);
+  });
 });
 
 describe("sectionHrefs", () => {

@@ -162,6 +162,12 @@ function withParams(href: string, params: URLSearchParams | undefined): string {
   return query === "" ? href : `${href}?${query}`;
 }
 
+export const AUDIT_LOG_HREF = "/audit-log";
+
+export function auditLogHref(list?: URLSearchParams): string {
+  return withParams(AUDIT_LOG_HREF, list);
+}
+
 export function shipmentsProjectHref(project: string, list?: URLSearchParams): string {
   return withParams(`${SHIPMENTS_HREF}/projects/${project}`, list);
 }

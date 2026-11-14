@@ -9,7 +9,7 @@ import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { DataTable } from "@/components/ui/DataTable";
 import { TextField } from "@/components/ui/TextField";
-import { modules, rights } from "@/lib/access";
+import { modules, rights, rightsOfModule } from "@/lib/access";
 import type { Module } from "@/lib/access";
 import { builtInRoleNames, roleLabel } from "@/lib/users";
 import { createRoleSchema, newRoleValues, roleValuesOf } from "./users";
@@ -124,17 +124,18 @@ export function RoleForm({ role, onSaved, onCancel }: RoleFormProps) {
               ...rights.map((right) => ({
                 key: right,
                 header: t(`rights.${right}`),
-                cell: (module: Module) => (
-                  <Checkbox
-                    id={`role-${module}-${right}`}
-                    label={t("form.rightLabel", {
-                      right: t(`rights.${right}`),
-                      section: t(`modules.${module}`),
-                    })}
-                    hideLabel
-                    {...register(`rights.${module}.${right}`)}
-                  />
-                ),
+                cell: (module: Module) =>
+                  rightsOfModule(module).includes(right) ? (
+                    <Checkbox
+                      id={`role-${module}-${right}`}
+                      label={t("form.rightLabel", {
+                        right: t(`rights.${right}`),
+                        section: t(`modules.${module}`),
+                      })}
+                      hideLabel
+                      {...register(`rights.${module}.${right}`)}
+                    />
+                  ) : null,
               })),
             ]}
             rows={modules}

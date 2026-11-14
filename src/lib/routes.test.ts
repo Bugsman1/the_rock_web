@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  auditLogHref,
   employeeHref,
   employeesProjectHref,
   customerHref,
@@ -170,6 +171,15 @@ describe("inventory routes", () => {
       "/inventory/resources/2?page=2&action=increase",
     );
     expect(resourceHref("2", { editSupplier: true })).toBe("/inventory/resources/2?supplier=1");
+  });
+});
+
+describe("audit log routes", () => {
+  it("keeps the list's query in the address", () => {
+    expect(auditLogHref()).toBe("/audit-log");
+    expect(auditLogHref(new URLSearchParams({ action: "delete", entry: "12" }))).toBe(
+      "/audit-log?action=delete&entry=12",
+    );
   });
 });
 

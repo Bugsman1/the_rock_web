@@ -2,6 +2,7 @@ import type { IconName } from "@/components/ui/Icon";
 import { canOpen } from "@/lib/access";
 import type { Access } from "@/lib/access";
 import {
+  AUDIT_LOG_HREF,
   CUSTOMERS_HREF,
   DASHBOARD_HREF,
   EMPLOYEES_HREF,
@@ -78,7 +79,7 @@ const navGroups: readonly NavGroup[] = [
     items: [
       { key: "reports", href: "/reports", icon: "chart-bar" },
       { key: "users", href: USERS_HREF, icon: "shield-lock" },
-      { key: "auditLog", href: "/audit-log", icon: "history" },
+      { key: "auditLog", href: AUDIT_LOG_HREF, icon: "history" },
     ],
   },
 ];

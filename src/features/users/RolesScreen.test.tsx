@@ -140,6 +140,31 @@ describe("RoleForm", () => {
     });
   });
 
+  it("offers only the view right for the audit log", async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.type(screen.getByLabelText(text.fields.name), "Auditeur");
+    await user.click(rightBox("view", "audit"));
+    for (const right of ["add", "edit", "delete"] as const) {
+      expect(
+        screen.queryByLabelText(`${text.rights[right]} : ${text.modules.audit}`),
+      ).not.toBeInTheDocument();
+    }
+    await user.click(screen.getByRole("button", { name: text.form.create }));
+
+    await waitFor(() => {
+      expect(createRoleMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          rights: {
+            ...newRoleValues().rights,
+            audit: { view: true, add: false, edit: false, delete: false },
+          },
+        }),
+      );
+    });
+  });
+
   it("requires a name", async () => {
     const user = userEvent.setup();
     renderForm();

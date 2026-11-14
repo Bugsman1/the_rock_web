@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { accessFromApi, can, canOpen, homeHref, modules, noAccess, rightsFromApi } from "./access";
+import {
+  accessFromApi,
+  can,
+  canOpen,
+  homeHref,
+  modules,
+  noAccess,
+  rightsFromApi,
+  rightsOfModule,
+} from "./access";
 import type { Access, Module } from "./access";
 
 function access(viewable: readonly Module[], superuser = false): Access {
@@ -46,8 +55,24 @@ describe("accessFromApi", () => {
     expect(refiner.rights.shipments.view).toBe(false);
   });
 
-  it("ignores a module the app has no section for", () => {
-    expect(rightsFromApi([{ module: "audit", can_view: true }])).toEqual(rightsFromApi([]));
+  it("never gives the audit log to a role limited to its projects", () => {
+    const me = (projectScoped: boolean) =>
+      accessFromApi({
+        id: 4,
+        email: "aicha@mills.mr",
+        full_name: "Aicha",
+        phone: "",
+        is_superuser: false,
+        role: {
+          id: 2,
+          name: "Auditor",
+          is_project_scoped: projectScoped,
+          permissions: [{ module: "audit", can_view: true }],
+        },
+      });
+
+    expect(me(false).rights.audit.view).toBe(true);
+    expect(me(true).rights.audit.view).toBe(false);
   });
 
   it("recognises a superuser", () => {
@@ -134,6 +159,16 @@ describe("canOpen", () => {
     expect(canOpen(access(["employees"]), "/employees")).toBe(true);
     expect(canOpen(access(["employees"]), "/employees/7")).toBe(true);
     expect(canOpen(access(["shipments", "customers"]), "/employees/projects/3")).toBe(false);
+  });
+
+  it("opens the audit log with its own view right", () => {
+    expect(canOpen(access(["audit"]), "/audit-log")).toBe(true);
+    expect(canOpen(supervisor, "/audit-log")).toBe(false);
+  });
+
+  it("offers only the view right for the audit log", () => {
+    expect(rightsOfModule("audit")).toEqual(["view"]);
+    expect(rightsOfModule("suppliers")).toEqual(["view", "add", "edit", "delete"]);
   });
 
   it("opens the settings home, profile and language to everyone", () => {

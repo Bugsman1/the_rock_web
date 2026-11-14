@@ -373,7 +373,8 @@
         "employees": "Employés et paie",
         "suppliers": "Fournisseurs",
         "accounts": "Utilisateurs et permissions",
-        "locations": "Projets et machines"
+        "locations": "Projets et machines",
+        "audit": "Journal d'audit"
       },
       "form": {
         "newTitle": "Nouveau rôle",
@@ -1164,6 +1165,41 @@
       "amountInvalid": "Saisissez un montant supérieur à 0",
       "quantityInvalid": "Saisissez une quantité supérieure à 0",
       "priceInvalid": "Saisissez un prix valide d'au moins 0"
+    }
+  },
+  "auditLog": {
+    "title": "Journal d'audit",
+    "listTitle": "Modifications enregistrées",
+    "count": "Modifications : {count}",
+    "empty": "Aucune modification enregistrée pour le moment.",
+    "noResults": "Aucune modification ne correspond.",
+    "searchPlaceholder": "Rechercher par utilisateur, type ou numéro d'enregistrement",
+    "open": "Voir le détail",
+    "fields": {
+      "at": "Date",
+      "user": "Utilisateur",
+      "email": "E-mail",
+      "action": "Opération",
+      "model": "Type d'enregistrement",
+      "object": "N° d'enregistrement",
+      "project": "Projet"
+    },
+    "actions": {
+      "create": "Ajout",
+      "update": "Modification",
+      "delete": "Suppression"
+    },
+    "values": {
+      "yes": "Oui",
+      "no": "Non"
+    },
+    "entry": {
+      "title": "Détail de la modification",
+      "field": "Champ",
+      "value": "Valeur",
+      "before": "Avant",
+      "after": "Après",
+      "noFields": "Aucun champ enregistré."
     }
   },
   "errors": {

@@ -20,7 +20,7 @@ import { DASHBOARD_HREF, LOGIN_HREF } from "@/lib/routes";
 const pageShapes: readonly (readonly [RegExp, SkeletonShape])[] = [
   [/^\/(shipments|settlements)\/new$/, "form"],
   [/^\/settings\/projects\/(new|\d+\/edit|\d+\/machines\/(new|\d+))$/, "form"],
-  [/^\/(customers|suppliers|users|users\/roles)$/, "table"],
+  [/^\/(customers|suppliers|users|users\/roles|audit-log)$/, "table"],
   [/^\/customers\/\d+$/, "table"],
   [/^\/settlements\/projects\/\d+$/, "table"],
   [/^\/refining\/projects\/\d+$/, "table"],
