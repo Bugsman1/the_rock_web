@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { Icon } from "./Icon";
@@ -119,22 +119,30 @@ export type TablePagesControl<Row> = {
   goTo: (page: number) => void;
 };
 
+function pageCountOf(total: number) {
+  return Math.max(1, Math.ceil(total / PAGE_SIZE));
+}
+
 export function useTablePages<Row>(
   first: readonly Row[],
   total: number,
+  filter: unknown,
   loadPage: (page: number) => Promise<readonly Row[]>,
 ): TablePagesControl<Row> {
-  const [source, setSource] = useState(first);
+  const filterKey = JSON.stringify(filter);
+  const [source, setSource] = useState({ first, filterKey });
   const [loaded, setLoaded] = useState<ReadonlyMap<number, readonly Row[]>>(new Map());
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<PageStatus>("idle");
   const latest = useRef(first);
 
-  if (source !== first) {
-    setSource(first);
-    setLoaded(new Map());
-    setPage(1);
-    setStatus("idle");
+  if (source.first !== first) {
+    const kept = source.filterKey === filterKey ? Math.min(page, pageCountOf(total)) : 1;
+    const keptRows = kept === 1 ? undefined : loaded.get(kept);
+    setSource({ first, filterKey });
+    setLoaded(keptRows === undefined ? new Map() : new Map([[kept, keptRows]]));
+    setPage(kept);
+    setStatus(kept === 1 ? "idle" : "loading");
   }
 
   useEffect(() => {
@@ -147,15 +155,8 @@ export function useTablePages<Row>(
     setStatus("idle");
   }
 
-  function goTo(target: number) {
-    const known = target === 1 ? first : loaded.get(target);
-    if (known !== undefined) {
-      show(target, known);
-      return;
-    }
-
+  function requestPage(target: number) {
     const asked = first;
-    setStatus("loading");
     loadPage(target)
       .then((found) => {
         if (latest.current === asked) show(target, found);
@@ -165,11 +166,30 @@ export function useTablePages<Row>(
       });
   }
 
+  function goTo(target: number) {
+    const known = target === 1 ? first : loaded.get(target);
+    if (known !== undefined) {
+      show(target, known);
+      return;
+    }
+
+    setStatus("loading");
+    requestPage(target);
+  }
+
+  const reloadShownPage = useEffectEvent(() => {
+    if (page > 1) requestPage(page);
+  });
+
+  useEffect(() => {
+    reloadShownPage();
+  }, [first]);
+
   return {
     rows: (page === 1 ? undefined : loaded.get(page)) ?? first,
     offset: (page - 1) * PAGE_SIZE,
     page,
-    pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+    pageCount: pageCountOf(total),
     status,
     goTo,
   };

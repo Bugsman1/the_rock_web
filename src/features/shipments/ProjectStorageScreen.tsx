@@ -136,7 +136,7 @@ export function ProjectStorageScreen() {
   const canAdd = useCan()("shipments", "add");
   const canStart = useCan()("grinding", "add");
   const listParams = listQueryParams(list);
-  const pages = useTablePages(slice.shipments, slice.total, (page) =>
+  const pages = useTablePages(slice.shipments, slice.total, filter, (page) =>
     getShipmentPage(filter, page).then((next) => next.shipments),
   );
   const searchHref = useCallback(

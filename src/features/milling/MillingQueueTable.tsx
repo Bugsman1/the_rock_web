@@ -81,7 +81,7 @@ export function MillingQueueTable({
   const canStart = useCan()("grinding", "add");
   const filtered = isFiltered(list);
   const listParams = listQueryParams(list);
-  const pages = useTablePages(first.shipments, first.total, (page) =>
+  const pages = useTablePages(first.shipments, first.total, filter, (page) =>
     getShipmentPage(filter, page).then((next) => next.shipments),
   );
   const rows = pages.rows.map((shipment, index) => ({

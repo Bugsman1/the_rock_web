@@ -33,7 +33,7 @@ export function RefiningQueueTable({
   const canStart = useCan()("refining", "add");
   const machineName = (machine: number) =>
     t("machineNumber", { number: formatCount(machine, locale) });
-  const pages = useTablePages(first.operations, first.total, (page) =>
+  const pages = useTablePages(first.operations, first.total, filter, (page) =>
     getGrindingPage(filter, page).then((next) => next.operations),
   );
   const list: ListQuery = { search, filters: noFilters };

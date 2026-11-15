@@ -64,7 +64,7 @@ export function MachineHistoryTable({
   const common = useTranslations("common");
   const locale = useLocale();
   const count = (value: number) => formatCount(value, locale);
-  const pages = useTablePages(first.operations, first.total, (page) =>
+  const pages = useTablePages(first.operations, first.total, filter, (page) =>
     getGrindingPage(filter, page).then((next) => next.operations),
   );
   const operations = pages.rows;

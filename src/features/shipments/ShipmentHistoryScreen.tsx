@@ -61,7 +61,7 @@ export function ShipmentHistory({
   const common = useTranslations("common");
   const locale = useLocale();
   const replace = useReplace();
-  const pages = useTablePages(slice.shipments, slice.total, (page) =>
+  const pages = useTablePages(slice.shipments, slice.total, filter, (page) =>
     getShipmentPage(filter, page).then((next) => next.shipments),
   );
   const results = pages.rows;

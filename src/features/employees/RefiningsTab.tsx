@@ -20,8 +20,9 @@ function RefiningsTable({ employee, first }: { employee: Employee; first: Refini
   const t = useTranslations("employees");
   const refining = useTranslations("refining");
   const locale = useLocale();
-  const pages = useTablePages(first.refinings, first.total, (page) =>
-    getRefiningPage(refinerFilter(employee), page).then((next) => next.refinings),
+  const filter = refinerFilter(employee);
+  const pages = useTablePages(first.refinings, first.total, filter, (page) =>
+    getRefiningPage(filter, page).then((next) => next.refinings),
   );
   const grams = (value: number | undefined) =>
     value === undefined ? "—" : t("grams", { grams: formatQuantity(value, locale) });

@@ -94,7 +94,7 @@ export function RefiningOperationsTable({
       ? code
       : t("machineNumber", { number: formatCount(machine.number, locale) });
   };
-  const pages = useTablePages(first.refinings, first.total, (page) =>
+  const pages = useTablePages(first.refinings, first.total, filter, (page) =>
     getRefiningPage(filter, page).then((next) => next.refinings),
   );
 
