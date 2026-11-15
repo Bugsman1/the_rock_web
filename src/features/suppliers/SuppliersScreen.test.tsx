@@ -81,13 +81,15 @@ describe("SuppliersScreen", () => {
     expect(query?.has("balance_status")).toBe(false);
   });
 
-  it("adds a supplier and opens its page", async () => {
+  it("adds a supplier with the resources it supplies and opens its page", async () => {
     const user = userEvent.setup();
     const router = openAt("/fr/suppliers?new=1");
 
     const dialog = within(await screen.findByRole("dialog", { name: text.form.newTitle }));
     await user.type(dialog.getByLabelText(text.fields.name), "Ahmed Gaz");
     await user.type(dialog.getByLabelText(text.fields.phone), "22411830");
+    await user.click(dialog.getByRole("button", { name: text.fields.resources }));
+    await user.click(dialog.getByLabelText("Chaux · Zouérat 1"));
     await user.click(dialog.getByRole("button", { name: text.form.create }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/fr/suppliers/6"));
@@ -95,7 +97,7 @@ describe("SuppliersScreen", () => {
       {
         method: "POST",
         path: "/suppliers/",
-        body: { name: "Ahmed Gaz", phone: "+22222411830", notes: "" },
+        body: { name: "Ahmed Gaz", phone: "+22222411830", notes: "", resources: [8] },
         key: expect.any(String),
       },
     ]);

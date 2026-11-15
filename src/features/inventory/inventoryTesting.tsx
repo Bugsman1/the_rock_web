@@ -45,8 +45,7 @@ export const mercury = {
   name: "Mercure",
   initial_quantity: "10.000",
   current_quantity: "8.500",
-  supplier: null,
-  supplier_name: "",
+  suppliers: [],
   is_stockable: true,
   created_at: "2026-10-12T08:00:00Z",
   updated_at: "2026-10-12T08:00:00Z",
@@ -195,12 +194,12 @@ export const mercuryResource: Resource = {
   project: "3",
   projectName: "Zouérat 1",
   kind: "mercury",
+  name: "Mercure",
   initialQuantity: 10,
   currentQuantity: 8.5,
   isRefiningMaterial: true,
   isStockable: true,
-  supplier: undefined,
-  supplierName: "",
+  suppliers: [],
 };
 
 export const formSuppliers: readonly SupplierChoice[] = [{ id: "5", name: "Sidi Fournitures" }];
@@ -219,5 +218,21 @@ export function inFrench(children: ReactNode) {
         },
       ])}
     />,
+  );
+}
+
+export const schemaMessages = {
+  required: "required",
+  quantityInvalid: "invalid",
+  quantityTooMuch: "too much",
+  priceInvalid: "price",
+};
+
+export function issuesOf(result: {
+  success: boolean;
+  error?: { issues: { path: PropertyKey[]; message: string }[] };
+}) {
+  return Object.fromEntries(
+    (result.error?.issues ?? []).map((issue) => [issue.path.join("."), issue.message]),
   );
 }

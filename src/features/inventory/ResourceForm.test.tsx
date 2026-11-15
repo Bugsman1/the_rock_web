@@ -1,9 +1,8 @@
-import { screen, within } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import messages from "@/messages/fr.json";
-import { formSuppliers, inFrench, kinds, mercuryResource, text } from "./inventoryTesting";
-import type { Resource } from "./resources";
+import { formSuppliers, inFrench, text } from "./inventoryTesting";
 import { ResourceForm } from "./ResourceForm";
 
 const api = vi.hoisted(() => ({
@@ -23,16 +22,11 @@ beforeEach(() => {
 });
 
 const fields = text.fields;
-const mercury = mercuryResource;
 
-function renderResourceForm(
-  existing: readonly Resource[] = [],
-  { readable = true }: { readable?: boolean } = {},
-) {
+function renderResourceForm({ readable = true }: { readable?: boolean } = {}) {
   return inFrench(
     <ResourceForm
       project={{ id: "3", name: "Zouérat 1" }}
-      existing={existing}
       suppliers={readable ? formSuppliers : undefined}
       onSaved={onSaved}
       onCancel={vi.fn()}
@@ -41,18 +35,18 @@ function renderResourceForm(
 }
 
 describe("ResourceForm", () => {
-  it("adds water with its initial quantity", async () => {
+  it("adds a resource under the name typed, with its initial quantity", async () => {
     api.createResource.mockResolvedValue({ ok: true, id: "9" });
     const user = userEvent.setup();
     renderResourceForm();
 
-    await user.selectOptions(screen.getByLabelText(fields.kind), "water");
+    await user.type(screen.getByLabelText(fields.name), "Chaux");
     await user.type(screen.getByLabelText(fields.initialQuantity), "10.5");
     await user.click(screen.getByRole("button", { name: text.form.create }));
 
     expect(api.createResource).toHaveBeenCalledWith({
       project: "3",
-      kind: "water",
+      name: "Chaux",
       initialQuantity: 10.5,
       supplier: "",
       initialPrice: Number.NaN,
@@ -67,7 +61,7 @@ describe("ResourceForm", () => {
 
     expect(screen.queryByLabelText(fields.initialPrice)).toBeNull();
 
-    await user.selectOptions(screen.getByLabelText(fields.kind), "fuel");
+    await user.type(screen.getByLabelText(fields.name), "Gasoil");
     await user.type(screen.getByLabelText(fields.initialQuantity), "100");
     await user.selectOptions(screen.getByLabelText(fields.supplier), "5");
     await user.type(screen.getByLabelText(fields.initialPrice), "300");
@@ -82,7 +76,7 @@ describe("ResourceForm", () => {
     const user = userEvent.setup();
     renderResourceForm();
 
-    await user.selectOptions(screen.getByLabelText(fields.kind), "fuel");
+    await user.type(screen.getByLabelText(fields.name), "Gasoil");
     await user.type(screen.getByLabelText(fields.initialQuantity), "100");
     await user.selectOptions(screen.getByLabelText(fields.supplier), "5");
     await user.click(screen.getByRole("button", { name: text.form.create }));
@@ -91,35 +85,39 @@ describe("ResourceForm", () => {
     expect(api.createResource).not.toHaveBeenCalled();
   });
 
-  it("leaves the supplier out when the suppliers cannot be read", () => {
-    renderResourceForm([], { readable: false });
+  it("asks the supplier only once there is an initial quantity to charge", async () => {
+    const user = userEvent.setup();
+    renderResourceForm();
+
+    expect(screen.queryByLabelText(fields.supplier)).toBeNull();
+
+    await user.type(screen.getByLabelText(fields.initialQuantity), "4");
+
+    expect(screen.getByLabelText(fields.supplier)).toBeVisible();
+  });
+
+  it("leaves the supplier out when the suppliers cannot be read", async () => {
+    const user = userEvent.setup();
+    renderResourceForm({ readable: false });
+
+    await user.type(screen.getByLabelText(fields.initialQuantity), "4");
 
     expect(screen.queryByLabelText(fields.supplier)).toBeNull();
   });
 
-  it("adds the project's mercury by choosing its type", async () => {
+  it("adds the project's mercury when its name is typed", async () => {
     const user = userEvent.setup();
     renderResourceForm();
 
-    await user.selectOptions(screen.getByLabelText(fields.kind), "mercury");
+    await user.type(screen.getByLabelText(fields.name), "Mercure");
     expect(screen.getByText(text.material.hint)).toBeVisible();
 
     await user.type(screen.getByLabelText(fields.initialQuantity), "500");
     await user.click(screen.getByRole("button", { name: text.form.create }));
 
     expect(api.createResource).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: "mercury", initialQuantity: 500 }),
+      expect.objectContaining({ name: "Mercure", initialQuantity: 500 }),
     );
-  });
-
-  it("offers only mercury, water and fuel the project does not have yet", () => {
-    renderResourceForm([mercury]);
-
-    expect(
-      within(screen.getByLabelText(fields.kind))
-        .getAllByRole("option")
-        .map((option) => option.textContent),
-    ).toEqual([kinds.water, kinds.fuel]);
   });
 
   it("flags the empty fields", async () => {
@@ -132,16 +130,16 @@ describe("ResourceForm", () => {
     expect(api.createResource).not.toHaveBeenCalled();
   });
 
-  it("shows a type the project already has", async () => {
+  it("shows the backend's refusal of a name the project already has", async () => {
     api.createResource.mockResolvedValue({
       ok: false,
-      fieldErrors: { kind: "Existe déjà." },
+      fieldErrors: { name: "Existe déjà." },
       failed: false,
     });
     const user = userEvent.setup();
     renderResourceForm();
 
-    await user.selectOptions(screen.getByLabelText(fields.kind), "water");
+    await user.type(screen.getByLabelText(fields.name), "Chaux");
     await user.type(screen.getByLabelText(fields.initialQuantity), "1");
     await user.click(screen.getByRole("button", { name: text.form.create }));
 

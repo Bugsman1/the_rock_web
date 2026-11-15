@@ -38,7 +38,7 @@ describe("InventoryScreen", () => {
     expect(await cardLink("Projet Sfariyat 1")).toHaveAttribute("href", "/fr/inventory/projects/4");
   });
 
-  it("shows the project's mercury first, then water and fuel, and hides any other resource", async () => {
+  it("shows the project's mercury first, then its other resources under their own names", async () => {
     let askedProject: string | null = null;
     server.use(
       http.get(`${API}/resources/`, ({ request }) => {
@@ -53,7 +53,11 @@ describe("InventoryScreen", () => {
     openAt("/fr/inventory/projects/3");
 
     const headings = await screen.findAllByRole("heading", { level: 2 });
-    expect(headings.map((heading) => heading.textContent)).toEqual([kinds.mercury, kinds.water]);
+    expect(headings.map((heading) => heading.textContent)).toEqual([
+      kinds.mercury,
+      "Chaux",
+      kinds.water,
+    ]);
     expect(askedProject).toBe("3");
 
     const card = cardOf("Mercure");
@@ -115,7 +119,7 @@ describe("InventoryScreen", () => {
   });
 
   it("says the project has no resources yet, not that a search found nothing", async () => {
-    server.use(http.get(`${API}/resources/`, () => page([{ ...mercury, id: 6, name: "Chaux" }])));
+    server.use(http.get(`${API}/resources/`, () => page([])));
     openAt("/fr/inventory/projects/3");
 
     expect(await screen.findByText(text.empty)).toBeVisible();
@@ -133,7 +137,7 @@ describe("InventoryScreen", () => {
     expect(screen.getByRole("link", { name: text.new })).toBeVisible();
   });
 
-  it("offers no new resource once the project has mercury, water and fuel", async () => {
+  it("still offers a new resource once the project has mercury, water and fuel", async () => {
     server.use(
       http.get(`${API}/resources/`, () =>
         page([
@@ -147,8 +151,8 @@ describe("InventoryScreen", () => {
 
     await findCardOf(kinds.fuel);
 
-    expect(screen.queryByRole("link", { name: text.new })).toBeNull();
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByRole("link", { name: text.new })).toBeVisible();
+    expect(screen.getByRole("dialog", { name: text.form.newTitle })).toBeVisible();
   });
 
   it("opens the new resource's page, its history starting with the initial quantity", async () => {
@@ -164,7 +168,7 @@ describe("InventoryScreen", () => {
     openAt("/fr/inventory/projects/3?new=resource");
 
     const dialog = within(await screen.findByRole("dialog", { name: text.form.newTitle }));
-    await user.selectOptions(dialog.getByLabelText(text.fields.kind), "water");
+    await user.type(dialog.getByLabelText(text.fields.name), "Eau");
     await user.type(dialog.getByLabelText(text.fields.initialQuantity), "5");
     await user.click(dialog.getByRole("button", { name: text.form.create }));
 

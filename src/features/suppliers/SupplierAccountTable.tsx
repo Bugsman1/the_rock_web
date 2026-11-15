@@ -1,4 +1,5 @@
 import { useLocale, useTranslations } from "use-intl";
+import { useResourceName } from "@/components/resources/useResourceName";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
@@ -8,7 +9,7 @@ import { formatDateTime, formatMoney, formatQuantity } from "@/lib/format";
 import { supplierHref } from "@/lib/routes";
 import type { SupplierDrawer } from "@/lib/routes";
 import type { AccountEntry } from "./supplierAccount";
-import { BalanceAmount, useResourceName } from "./SupplierParts";
+import { BalanceAmount } from "./SupplierParts";
 
 function editDrawerOf(entry: AccountEntry): SupplierDrawer {
   return entry.type === "payment" ? { payment: entry.id } : { delivery: entry.id };

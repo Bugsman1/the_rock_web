@@ -131,10 +131,16 @@ describe("ResourceScreen", () => {
     expect(dialog.queryAllByRole("combobox")).toHaveLength(0);
   });
 
-  it("shows the resource's supplier and names it on the quantity it delivered", async () => {
+  it("lists the resource's suppliers and names the one on the quantity it delivered", async () => {
     server.use(
       http.get(`${API}/resources/2/`, () =>
-        HttpResponse.json({ ...mercury, supplier: 5, supplier_name: "Sidi Fournitures" }),
+        HttpResponse.json({
+          ...mercury,
+          suppliers: [
+            { id: 5, name: "Sidi Fournitures" },
+            { id: 6, name: "Ahmed Négoce" },
+          ],
+        }),
       ),
       http.get(`${API}/resource-history/`, () =>
         page([
@@ -154,42 +160,42 @@ describe("ResourceScreen", () => {
     openAt("/fr/inventory/resources/2");
 
     expect(await screen.findByRole("heading", { name: "Mercure" })).toBeVisible();
-    expect(screen.getAllByText("Sidi Fournitures")).toHaveLength(2);
+    expect(screen.getByText("Sidi Fournitures · Ahmed Négoce")).toBeVisible();
     expect(cellsOf(screen.getAllByRole("row")[1])[1]).toBe(
       `${text.changeTypes.delivered}Sidi Fournitures`,
     );
   });
 
-  it("changes the resource's supplier from a drawer", async () => {
+  it("records an increase received from a supplier as that supplier's delivery", async () => {
     let body: unknown;
     server.use(
-      http.get(`${API}/suppliers/`, () =>
-        page([
-          {
-            id: 5,
-            name: "Sidi Fournitures",
-            paid_amount: "0.00",
-            delivered_amount: "0.00",
-            balance: "0.00",
-            resources: [],
-            created_at: "2026-10-12T08:00:00Z",
-            updated_at: "2026-10-12T08:00:00Z",
-          },
-        ]),
+      http.get(`${API}/resources/2/`, () =>
+        HttpResponse.json({ ...mercury, suppliers: [{ id: 5, name: "Sidi Fournitures" }] }),
       ),
-      http.patch(`${API}/resources/2/`, async ({ request }) => {
+      http.post(`${API}/supplier-deliveries/`, async ({ request }) => {
         body = await request.json();
-        return HttpResponse.json(mercury);
+        return HttpResponse.json({}, { status: 201 });
       }),
     );
     const user = userEvent.setup();
-    openAt("/fr/inventory/resources/2?supplier=1");
+    openAt("/fr/inventory/resources/2?action=increase");
 
-    const dialog = within(await screen.findByRole("dialog", { name: "Fournisseur : Mercure" }));
+    const dialog = within(await screen.findByRole("dialog", { name: "Augmenter Mercure" }));
+    await user.type(dialog.getByLabelText(text.fields.quantity), "2");
+    await user.click(dialog.getByLabelText(text.form.fromSupplier));
     await user.selectOptions(dialog.getByLabelText(text.fields.supplier), "5");
-    await user.click(dialog.getByRole("button", { name: text.form.supplierSubmit }));
+    await user.type(dialog.getByLabelText(text.fields.deliveryPrice), "300");
+    await user.click(dialog.getByRole("button", { name: text.form.increaseSubmit }));
 
-    await waitFor(() => expect(body).toEqual({ supplier: 5, is_stockable: true }));
+    await waitFor(() =>
+      expect(body).toEqual({
+        supplier: 5,
+        resource: 2,
+        quantity: "2.000",
+        price: "300",
+        notes: "",
+      }),
+    );
   });
 
   it("answers not found for an unknown resource", async () => {

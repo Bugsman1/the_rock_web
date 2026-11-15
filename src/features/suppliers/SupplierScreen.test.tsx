@@ -102,6 +102,7 @@ describe("SupplierScreen", () => {
           method: "POST",
           path: "/supplier-deliveries/",
           body: {
+            supplier: 5,
             resource: 2,
             quantity: "50.000",
             price: "200",
@@ -229,7 +230,7 @@ describe("SupplierScreen", () => {
     expect(await dialog.findByText("Ce fournisseur a des livraisons.")).toBeVisible();
   });
 
-  it("edits the supplier", async () => {
+  it("edits the supplier, keeping the resources it already supplies", async () => {
     const user = userEvent.setup();
     openAt("/fr/suppliers/5?edit=1");
 
@@ -242,7 +243,30 @@ describe("SupplierScreen", () => {
         expect.objectContaining({
           method: "PATCH",
           path: "/suppliers/5/",
-          body: { name: apiSupplier.name, phone: "+22222411830", notes: "Livre le lundi" },
+          body: {
+            name: apiSupplier.name,
+            phone: "+22222411830",
+            notes: "Livre le lundi",
+            resources: [2],
+          },
+        }),
+      ]),
+    );
+  });
+
+  it("leaves the resources as they are when the resources cannot be read", async () => {
+    server.use(http.get(`${API}/resources/`, () => new HttpResponse(null, { status: 403 })));
+    const user = userEvent.setup();
+    openAt("/fr/suppliers/5?edit=1");
+
+    const dialog = within(await screen.findByRole("dialog", { name: text.form.editTitle }));
+    expect(dialog.queryByRole("button", { name: text.fields.resources })).toBeNull();
+    await user.click(dialog.getByRole("button", { name: text.form.save }));
+
+    await waitFor(() =>
+      expect(sent).toEqual([
+        expect.objectContaining({
+          body: { name: apiSupplier.name, phone: "+22222411830", notes: "" },
         }),
       ]),
     );

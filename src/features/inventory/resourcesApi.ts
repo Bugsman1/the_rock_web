@@ -1,4 +1,4 @@
-import { apiClient, notFound, saveFailed, saveOutcome, unwrap } from "@/lib/api/client";
+import { apiClient, idempotent, notFound, saveFailed, saveOutcome, unwrap } from "@/lib/api/client";
 import type { SaveResult } from "@/lib/api/client";
 import { fetchAllPages, MAX_PAGE_SIZE, toPage } from "@/lib/api/pagination";
 import type { Page } from "@/lib/api/pagination";
@@ -12,14 +12,14 @@ import {
   resourceFromApi,
   resourceToApi,
   supplierChoiceFromApi,
-  supplierToApi,
+  supplierIncreaseErrorsFromApi,
+  supplierIncreaseToApi,
 } from "./resources";
 import type {
   Resource,
   ResourceChange,
   ResourceChangeType,
   ResourceChangeValues,
-  ResourceSupplierValues,
   ResourceValues,
   SupplierChoice,
 } from "./resources";
@@ -40,7 +40,7 @@ export async function getResources(project?: ProjectId): Promise<readonly Resour
     ),
   );
 
-  return resources.flatMap((resource) => resourceFromApi(resource) ?? []);
+  return resources.map(resourceFromApi);
 }
 
 export async function getResource(id: string): Promise<Resource | undefined> {
@@ -84,31 +84,23 @@ export async function getSupplierChoices(): Promise<readonly SupplierChoice[]> {
   return suppliers.map(supplierChoiceFromApi);
 }
 
-export async function changeResourceSupplier(
-  resource: Resource,
-  values: ResourceSupplierValues,
-): Promise<SaveResult<keyof ResourceSupplierValues>> {
-  if (!isRecordId(resource.id)) {
-    return saveFailed;
-  }
-
-  const { response, error } = await apiClient.PATCH("/api/v1/resources/{id}/", {
-    params: { path: { id: Number(resource.id) } },
-    body: { ...supplierToApi(values), is_stockable: resource.isStockable },
-  });
-
-  return saveOutcome(response, error, (errors) =>
-    errors.supplier === undefined ? {} : { supplier: errors.supplier },
-  );
-}
-
 export async function changeResourceQuantity(
   id: string,
   type: ResourceChangeType,
   values: ResourceChangeValues,
+  key: string,
 ): Promise<SaveResult<keyof ResourceChangeValues>> {
   if (!isRecordId(id)) {
     return saveFailed;
+  }
+
+  if (type === "increase" && values.fromSupplier) {
+    const { response, error } = await apiClient.POST("/api/v1/supplier-deliveries/", {
+      params: idempotent(key),
+      body: supplierIncreaseToApi(id, values),
+    });
+
+    return saveOutcome(response, error, supplierIncreaseErrorsFromApi);
   }
 
   const request = {

@@ -170,7 +170,6 @@ describe("inventory routes", () => {
     expect(resourceHref("2", { page: 2, action: "increase" })).toBe(
       "/inventory/resources/2?page=2&action=increase",
     );
-    expect(resourceHref("2", { editSupplier: true })).toBe("/inventory/resources/2?supplier=1");
   });
 });
 

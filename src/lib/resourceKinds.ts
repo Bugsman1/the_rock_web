@@ -40,7 +40,3 @@ export function kindNamed(name: string): ResourceKind | undefined {
     kindNames[kind].some((spelling) => normalizeName(spelling) === normalized),
   );
 }
-
-export function isResourceKind(value: string): value is ResourceKind {
-  return resourceKinds.some((kind) => kind === value);
-}

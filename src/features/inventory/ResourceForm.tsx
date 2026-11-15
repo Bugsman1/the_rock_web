@@ -9,14 +9,14 @@ import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { TextField } from "@/components/ui/TextField";
 import type { Project } from "@/lib/projects";
-import { availableKinds, chargesInitialPrice, createResourceSchema } from "./resources";
-import type { Resource, ResourceValues, SupplierChoice } from "./resources";
+import { kindNamed } from "@/lib/resourceKinds";
+import { chargesInitialPrice, createResourceSchema } from "./resources";
+import type { ResourceValues, SupplierChoice } from "./resources";
 import { createResource } from "./resourcesApi";
-import { SupplierSelect } from "./ResourceSupplierForm";
 
 const resourceFields: readonly (keyof ResourceValues)[] = [
   "project",
-  "kind",
+  "name",
   "initialQuantity",
   "supplier",
   "initialPrice",
@@ -28,26 +28,17 @@ function isResourceField(value: string): value is keyof ResourceValues {
 
 type ResourceFormProps = {
   project: Pick<Project, "id" | "name">;
-  existing: readonly Resource[];
   suppliers: readonly SupplierChoice[] | undefined;
   onSaved: (id: string) => void;
   onCancel: () => void;
 };
 
-export function ResourceForm({
-  project,
-  existing,
-  suppliers,
-  onSaved,
-  onCancel,
-}: ResourceFormProps) {
+export function ResourceForm({ project, suppliers, onSaved, onCancel }: ResourceFormProps) {
   const t = useTranslations("inventory");
-  const kindName = useTranslations("resourceKinds");
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
   const toast = useToast();
   const saveFailure = useSaveFailure();
-  const kinds = availableKinds(existing);
 
   const schema = useMemo(
     () =>
@@ -64,7 +55,7 @@ export function ResourceForm({
     resolver: zodResolver(schema),
     defaultValues: {
       project: project.id,
-      kind: "",
+      name: "",
       initialQuantity: Number.NaN,
       supplier: "",
       initialPrice: Number.NaN,
@@ -72,9 +63,9 @@ export function ResourceForm({
   });
 
   const { errors } = formState;
-  const [kind, supplier, initialQuantity] = useWatch({
+  const [name, supplier, initialQuantity] = useWatch({
     control,
-    name: ["kind", "supplier", "initialQuantity"],
+    name: ["name", "supplier", "initialQuantity"],
   });
 
   async function onSubmit(values: ResourceValues) {
@@ -105,17 +96,16 @@ export function ResourceForm({
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <ReadOnlyField label={t("fields.project")} value={project.name} />
 
-      <Select
-        id="resource-kind"
-        label={t("fields.kind")}
+      <TextField
+        id="resource-name"
+        label={t("fields.name")}
         required
-        placeholder={t("form.kindPlaceholder")}
-        options={kinds.map((option) => ({ value: option, label: kindName(option) }))}
-        error={errors.kind?.message}
-        {...register("kind")}
+        autoComplete="off"
+        error={errors.name?.message}
+        {...register("name")}
       />
 
-      {kind === "mercury" ? (
+      {kindNamed(name) === "mercury" ? (
         <p className="text-ink-muted -mt-2 text-[13px] font-semibold">{t("material.hint")}</p>
       ) : null}
 
@@ -131,10 +121,14 @@ export function ResourceForm({
         {...register("initialQuantity", { valueAsNumber: true })}
       />
 
-      {suppliers === undefined ? null : (
-        <SupplierSelect
+      {suppliers === undefined || !(initialQuantity > 0) ? null : (
+        <Select
           id="resource-supplier"
-          suppliers={suppliers}
+          label={t("fields.supplier")}
+          options={[
+            { value: "", label: t("form.noSupplier") },
+            ...suppliers.map((choice) => ({ value: choice.id, label: choice.name })),
+          ]}
           error={errors.supplier?.message}
           {...register("supplier")}
         />

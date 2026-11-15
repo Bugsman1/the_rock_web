@@ -76,6 +76,12 @@ describe("supplierFromApi", () => {
     });
   });
 
+  it("skips a resource entry the backend sent without its id, name or project", () => {
+    expect(
+      supplierFromApi({ ...apiSupplier, resources: [7, { id: 2, name: "Eau" }] }).resources,
+    ).toEqual([]);
+  });
+
   it("keeps a supplier with no phone or notes", () => {
     const { phone: _phone, notes: _notes, ...bare } = apiSupplier;
 
@@ -91,6 +97,13 @@ describe("supplierToApi", () => {
       notes: "",
     });
     expect(supplierToApi({ name: "Sidi", phone: "", notes: "" }).phone).toBe("");
+  });
+
+  it("sends the resources it supplies only when the form offered them", () => {
+    expect(
+      supplierToApi({ name: "Sidi", phone: "", notes: "", resources: ["2", "8"] }).resources,
+    ).toEqual([2, 8]);
+    expect(supplierToApi({ name: "Sidi", phone: "", notes: "" })).not.toHaveProperty("resources");
   });
 });
 

@@ -49,18 +49,37 @@ export function createSupplierSchema(messages: { required: string; phoneInvalid:
       .trim()
       .refine((value) => value === "" || isValidPhone(value), messages.phoneInvalid),
     notes: z.string().trim().max(NOTE_MAX_LENGTH),
+    resources: z.array(z.string()).optional(),
   });
 }
 
 export type SupplierValues = z.infer<ReturnType<typeof createSupplierSchema>>;
 
-const supplierFields: readonly (keyof SupplierValues)[] = ["name", "phone", "notes"];
+const supplierFields: readonly (keyof SupplierValues)[] = ["name", "phone", "notes", "resources"];
 
 export function isSupplierField(value: string): value is keyof SupplierValues {
   return supplierFields.some((field) => field === value);
 }
 
-export function suppliedResourceFromApi(resource: ApiSchema<"SuppliedResource">): SuppliedResource {
+function suppliedResourceFromApi(resource: unknown): SuppliedResource[] {
+  if (
+    typeof resource !== "object" ||
+    resource === null ||
+    !("id" in resource) ||
+    !("name" in resource) ||
+    !("project_name" in resource)
+  ) {
+    return [];
+  }
+
+  const { id, name, project_name: projectName } = resource;
+
+  return typeof id === "number" && typeof name === "string" && typeof projectName === "string"
+    ? [{ id: String(id), kind: kindNamed(name), name, projectName }]
+    : [];
+}
+
+export function resourceChoiceFromApi(resource: ApiSchema<"Resource">): SuppliedResource {
   return {
     id: String(resource.id),
     kind: kindNamed(resource.name),
@@ -69,7 +88,11 @@ export function suppliedResourceFromApi(resource: ApiSchema<"SuppliedResource">)
   };
 }
 
-export function supplierFromApi(supplier: ApiSchema<"Supplier">): Supplier {
+type ApiSupplier = Omit<ApiSchema<"Supplier">, "resources"> & {
+  resources?: readonly unknown[];
+};
+
+export function supplierFromApi(supplier: ApiSupplier): Supplier {
   const phone = supplier.phone ?? "";
 
   return {
@@ -80,7 +103,7 @@ export function supplierFromApi(supplier: ApiSchema<"Supplier">): Supplier {
     paid: fromDecimal(supplier.paid_amount),
     delivered: fromDecimal(supplier.delivered_amount),
     balance: fromDecimal(supplier.balance),
-    resources: supplier.resources.map(suppliedResourceFromApi),
+    resources: (supplier.resources ?? []).flatMap(suppliedResourceFromApi),
   };
 }
 
@@ -89,6 +112,7 @@ export function supplierToApi(values: SupplierValues) {
     name: values.name,
     phone: values.phone === "" ? "" : phoneToApi(values.phone),
     notes: values.notes,
+    ...(values.resources === undefined ? {} : { resources: values.resources.map(Number) }),
   };
 }
 
@@ -99,5 +123,6 @@ export function supplierErrorsFromApi(
     ...(errors.name === undefined ? {} : { name: errors.name }),
     ...(errors.phone === undefined ? {} : { phone: errors.phone }),
     ...(errors.notes === undefined ? {} : { notes: errors.notes }),
+    ...(errors.resources === undefined ? {} : { resources: errors.resources }),
   };
 }

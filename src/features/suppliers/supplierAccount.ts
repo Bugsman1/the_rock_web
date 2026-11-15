@@ -124,7 +124,7 @@ export function deliveryFromApi(delivery: ApiSchema<"SupplierDelivery">): Suppli
       projectName: delivery.project_name,
     },
     quantity: fromDecimal(delivery.quantity),
-    price: fromDecimal(delivery.price),
+    price: fromDecimal(delivery.price ?? "0"),
     at: delivery.delivered_at ?? delivery.created_at,
     note: delivery.notes ?? "",
     isInitial: delivery.is_initial,
@@ -148,9 +148,10 @@ export function deliveryChangesToApi(values: DeliveryValues, at: IsoTimestamp, i
   };
 }
 
-export function newDeliveryToApi(values: DeliveryValues, at: IsoTimestamp) {
+export function newDeliveryToApi(supplierId: string, values: DeliveryValues, at: IsoTimestamp) {
   return {
     ...deliveryChangesToApi(values, at, false),
+    supplier: Number(supplierId),
     resource: Number(values.resource),
     quantity: toDecimal(values.quantity),
   };

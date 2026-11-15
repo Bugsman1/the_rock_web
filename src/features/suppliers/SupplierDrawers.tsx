@@ -1,4 +1,5 @@
 import { useLocale, useTranslations } from "use-intl";
+import { useResourceName } from "@/components/resources/useResourceName";
 import { DeleteDrawer } from "@/components/ui/DeleteDrawer";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { useReplace } from "@/i18n/navigation";
@@ -9,8 +10,7 @@ import { DeliveryForm } from "./DeliveryForm";
 import { PaymentForm } from "./PaymentForm";
 import type { AccountEntry, SupplierDelivery, SupplierPayment } from "./supplierAccount";
 import { SupplierForm } from "./SupplierForm";
-import { useResourceName } from "./SupplierParts";
-import type { Supplier } from "./suppliers";
+import type { SuppliedResource, Supplier } from "./suppliers";
 import { deleteDelivery, deletePayment, deleteSupplier } from "./suppliersApi";
 
 export type OpenDrawer =
@@ -36,9 +36,10 @@ function removedEntryOf(drawer: OpenDrawer | undefined) {
 type SupplierDrawersProps = {
   supplier: Supplier;
   drawer: OpenDrawer | undefined;
+  resources: readonly SuppliedResource[] | undefined;
 };
 
-export function SupplierDrawers({ supplier, drawer }: SupplierDrawersProps) {
+export function SupplierDrawers({ supplier, drawer, resources }: SupplierDrawersProps) {
   const t = useTranslations("suppliers");
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
@@ -67,7 +68,7 @@ export function SupplierDrawers({ supplier, drawer }: SupplierDrawersProps) {
         closeLabel={common("close")}
         onClose={close}
       >
-        <SupplierForm supplier={supplier} onSaved={close} onCancel={close} />
+        <SupplierForm supplier={supplier} resources={resources} onSaved={close} onCancel={close} />
       </Drawer>
 
       <Drawer

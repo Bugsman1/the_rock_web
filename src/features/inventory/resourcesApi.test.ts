@@ -3,7 +3,6 @@ import { setupServer } from "msw/node";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
   changeResourceQuantity,
-  changeResourceSupplier,
   createResource,
   getResource,
   getResourceHistory,
@@ -25,8 +24,7 @@ const mercury = {
   name: "Mercure",
   initial_quantity: "10.000",
   current_quantity: "8.500",
-  supplier: null,
-  supplier_name: "",
+  suppliers: [],
   is_stockable: true,
   created_at: "2026-10-12T08:00:00Z",
   updated_at: "2026-10-12T08:00:00Z",
@@ -80,7 +78,7 @@ describe("createResource", () => {
     expect(
       await createResource({
         project: "3",
-        kind: "mercury",
+        name: "Mercure",
         initialQuantity: 10,
         supplier: "",
         initialPrice: Number.NaN,
@@ -88,15 +86,14 @@ describe("createResource", () => {
     ).toEqual({ ok: true, id: "2" });
     expect(body).toEqual({
       project: 3,
-      name: "mercury",
+      name: "Mercure",
       initial_quantity: "10.000",
       is_refining_material: true,
       is_stockable: true,
-      supplier: null,
     });
   });
 
-  it("shows a type the project already has on the type field", async () => {
+  it("shows a name the project already has on the name field", async () => {
     server.use(
       http.post(`${API}/resources/`, () =>
         HttpResponse.json({ name: ["Existe déjà."] }, { status: 400 }),
@@ -106,14 +103,14 @@ describe("createResource", () => {
     expect(
       await createResource({
         project: "3",
-        kind: "mercury",
+        name: "Mercure",
         initialQuantity: 10,
         supplier: "",
         initialPrice: Number.NaN,
       }),
     ).toEqual({
       ok: false,
-      fieldErrors: { kind: "Existe déjà." },
+      fieldErrors: { name: "Existe déjà." },
       failed: false,
     });
   });
@@ -162,7 +159,7 @@ describe("getResourceHistory", () => {
 });
 
 describe("getResources", () => {
-  it("asks for the resources by name and keeps only mercury, water and fuel", async () => {
+  it("asks for the resources by name and keeps every one of them", async () => {
     let requested: URL | undefined;
     server.use(
       http.get(`${API}/resources/`, ({ request }) => {
@@ -177,24 +174,60 @@ describe("getResources", () => {
     const resources = await getResources();
 
     expect(requested?.searchParams.get("ordering")).toBe("name");
-    expect(resources).toEqual([
-      {
-        id: "2",
-        project: "3",
-        projectName: "Zouérat 1",
-        kind: "mercury",
-        initialQuantity: 10,
-        currentQuantity: 8.5,
-        isRefiningMaterial: false,
-        isStockable: true,
-        supplier: undefined,
-        supplierName: "",
-      },
+    expect(resources.map((resource) => [resource.name, resource.kind])).toEqual([
+      ["Chaux", undefined],
+      ["Mercure", "mercury"],
     ]);
   });
 });
 
+const byHand = { fromSupplier: false, supplier: "", price: Number.NaN };
+
 describe("changeResourceQuantity", () => {
+  it("records an increase received from a supplier as its delivery, once per key", async () => {
+    let body: unknown;
+    let key: string | null = null;
+    server.use(
+      http.post(`${API}/supplier-deliveries/`, async ({ request }) => {
+        body = await request.json();
+        key = request.headers.get("Idempotency-Key");
+        return HttpResponse.json({}, { status: 201 });
+      }),
+    );
+
+    expect(
+      await changeResourceQuantity(
+        "2",
+        "increase",
+        { quantity: 2, note: "", fromSupplier: true, supplier: "5", price: 300 },
+        "key-1",
+      ),
+    ).toEqual({ ok: true });
+    expect(body).toEqual({ supplier: 5, resource: 2, quantity: "2.000", price: "300", notes: "" });
+    expect(key).toBe("key-1");
+  });
+
+  it("puts a supplier that does not supply the resource on the supplier", async () => {
+    server.use(
+      http.post(`${API}/supplier-deliveries/`, () =>
+        HttpResponse.json({ resource: ["Ne fournit pas cette ressource."] }, { status: 400 }),
+      ),
+    );
+
+    expect(
+      await changeResourceQuantity(
+        "2",
+        "increase",
+        { quantity: 2, note: "", fromSupplier: true, supplier: "5", price: 300 },
+        "key-1",
+      ),
+    ).toEqual({
+      ok: false,
+      fieldErrors: { supplier: "Ne fournit pas cette ressource." },
+      failed: false,
+    });
+  });
+
   it("increases a resource", async () => {
     let body: unknown;
     server.use(
@@ -205,10 +238,12 @@ describe("changeResourceQuantity", () => {
     );
 
     expect(
-      await changeResourceQuantity("2", "increase", {
-        quantity: 2,
-        note: "Achat",
-      }),
+      await changeResourceQuantity(
+        "2",
+        "increase",
+        { ...byHand, quantity: 2, note: "Achat" },
+        "key",
+      ),
     ).toEqual({
       ok: true,
     });
@@ -225,10 +260,7 @@ describe("changeResourceQuantity", () => {
     );
 
     expect(
-      await changeResourceQuantity("2", "decrease", {
-        quantity: 1.5,
-        note: "",
-      }),
+      await changeResourceQuantity("2", "decrease", { ...byHand, quantity: 1.5, note: "" }, "key"),
     ).toEqual({ ok: true });
     expect(body).toEqual({ quantity: "1.500", note: "" });
   });
@@ -241,10 +273,7 @@ describe("changeResourceQuantity", () => {
     );
 
     expect(
-      await changeResourceQuantity("2", "decrease", {
-        quantity: 9,
-        note: "",
-      }),
+      await changeResourceQuantity("2", "decrease", { ...byHand, quantity: 9, note: "" }, "key"),
     ).toEqual({
       ok: false,
       fieldErrors: { quantity: "Il ne reste que 8.5." },
@@ -279,35 +308,5 @@ describe("getSupplierChoices", () => {
 
     expect(await getSupplierChoices()).toEqual([{ id: "5", name: "Sidi Fournitures" }]);
     expect(ordering).toBe("name");
-  });
-});
-
-describe("changeResourceSupplier", () => {
-  it("sends the new supplier and keeps the resource in stock", async () => {
-    let body: unknown;
-    server.use(
-      http.patch(`${API}/resources/2/`, async ({ request }) => {
-        body = await request.json();
-        return HttpResponse.json(mercury);
-      }),
-    );
-    const resource = {
-      id: "2",
-      project: "3",
-      projectName: "Zouérat 1",
-      kind: "mercury" as const,
-      initialQuantity: 10,
-      currentQuantity: 8.5,
-      isRefiningMaterial: true,
-      isStockable: true,
-      supplier: undefined,
-      supplierName: "",
-    };
-
-    expect(await changeResourceSupplier(resource, { supplier: "5" })).toEqual({ ok: true });
-    expect(body).toEqual({ supplier: 5, is_stockable: true });
-
-    await changeResourceSupplier(resource, { supplier: "" });
-    expect(body).toEqual({ supplier: null, is_stockable: true });
   });
 });

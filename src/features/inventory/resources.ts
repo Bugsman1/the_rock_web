@@ -3,9 +3,10 @@ import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/clien
 import { fromDecimal, toDecimal, toMoneyDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
 import type { ProjectId } from "@/lib/projects";
-import { isResourceKind, kindNamed, resourceKinds } from "@/lib/resourceKinds";
+import { kindNamed } from "@/lib/resourceKinds";
 import type { ResourceKind } from "@/lib/resourceKinds";
 
+const NAME_MAX_LENGTH = 150;
 const NOTE_MAX_LENGTH = 500;
 const QUANTITY_PRECISION = 1000;
 
@@ -13,23 +14,19 @@ export type Resource = {
   id: string;
   project: ProjectId;
   projectName: string;
-  kind: ResourceKind;
+  kind: ResourceKind | undefined;
+  name: string;
   initialQuantity: number;
   currentQuantity: number;
   isRefiningMaterial: boolean;
   isStockable: boolean;
-  supplier: string | undefined;
-  supplierName: string;
+  suppliers: readonly SupplierChoice[];
 };
 
 export type SupplierChoice = {
   id: string;
   name: string;
 };
-
-export function availableKinds(resources: readonly Resource[]): readonly ResourceKind[] {
-  return resourceKinds.filter((kind) => !resources.some((resource) => resource.kind === kind));
-}
 
 export const resourceChangeTypes = ["increase", "decrease"] as const;
 
@@ -63,7 +60,7 @@ export function createResourceSchema(messages: {
   return z
     .object({
       project: z.string().min(1, messages.required),
-      kind: z.string().refine((value): boolean => isResourceKind(value), messages.required),
+      name: z.string().trim().min(1, messages.required).max(NAME_MAX_LENGTH),
       initialQuantity: z.number({ error: messages.required }).min(0, messages.quantityInvalid),
       supplier: z.string(),
       initialPrice: z.union([z.nan(), z.number()]),
@@ -79,26 +76,36 @@ export function createResourceSchema(messages: {
     });
 }
 
-export function createResourceSupplierSchema() {
-  return z.object({ supplier: z.string() });
-}
-
-export type ResourceSupplierValues = z.infer<ReturnType<typeof createResourceSupplierSchema>>;
-
 export type ResourceValues = z.infer<ReturnType<typeof createResourceSchema>>;
 
 export function createResourceChangeSchema(
-  messages: { required: string; quantityInvalid: string; quantityTooMuch: string },
+  messages: {
+    required: string;
+    quantityInvalid: string;
+    quantityTooMuch: string;
+    priceInvalid: string;
+  },
   available?: number,
 ) {
   return z
     .object({
       quantity: z.number({ error: messages.required }).positive(messages.quantityInvalid),
       note: z.string().trim().max(NOTE_MAX_LENGTH),
+      fromSupplier: z.boolean(),
+      supplier: z.string(),
+      price: z.union([z.nan(), z.number()]),
     })
     .superRefine((values, context) => {
       if (available !== undefined && values.quantity > available) {
         context.addIssue({ code: "custom", path: ["quantity"], message: messages.quantityTooMuch });
+      }
+
+      if (values.fromSupplier && values.supplier === "") {
+        context.addIssue({ code: "custom", path: ["supplier"], message: messages.required });
+      }
+
+      if (values.fromSupplier && !(values.price >= 0)) {
+        context.addIssue({ code: "custom", path: ["price"], message: messages.priceInvalid });
       }
     });
 }
@@ -119,45 +126,43 @@ export function quantityAfterChange(
   return Math.round(after * QUANTITY_PRECISION) / QUANTITY_PRECISION;
 }
 
-function supplierOf(resource: ApiSchema<"Resource">) {
-  return resource.supplier === null || resource.supplier === undefined
-    ? { supplier: undefined, supplierName: "" }
-    : { supplier: String(resource.supplier), supplierName: resource.supplier_name };
+function supplierChoicesOf(entry: Record<string, unknown>): SupplierChoice[] {
+  const { id, name } = entry;
+
+  return typeof id === "number" && typeof name === "string" ? [{ id: String(id), name }] : [];
 }
 
-export function resourceFromApi(resource: ApiSchema<"Resource">): Resource | undefined {
+export function resourceFromApi(resource: ApiSchema<"Resource">): Resource {
   const isRefiningMaterial = resource.is_refining_material ?? false;
-  const kind = isRefiningMaterial ? "mercury" : kindNamed(resource.name);
 
-  return kind === undefined
-    ? undefined
-    : {
-        id: String(resource.id),
-        project: String(resource.project),
-        projectName: resource.project_name,
-        kind,
-        initialQuantity: fromDecimal(resource.initial_quantity ?? "0"),
-        currentQuantity: fromDecimal(resource.current_quantity),
-        isRefiningMaterial,
-        isStockable: resource.is_stockable,
-        ...supplierOf(resource),
-      };
+  return {
+    id: String(resource.id),
+    project: String(resource.project),
+    projectName: resource.project_name,
+    kind: isRefiningMaterial ? "mercury" : kindNamed(resource.name),
+    name: resource.name,
+    initialQuantity: fromDecimal(resource.initial_quantity ?? "0"),
+    currentQuantity: fromDecimal(resource.current_quantity),
+    isRefiningMaterial,
+    isStockable: resource.is_stockable,
+    suppliers: resource.suppliers.flatMap(supplierChoicesOf),
+  };
 }
 
 export function resourceToApi(values: ResourceValues) {
   return {
     project: Number(values.project),
-    name: values.kind,
+    name: values.name,
     initial_quantity: toDecimal(values.initialQuantity),
-    is_refining_material: values.kind === "mercury",
+    is_refining_material: kindNamed(values.name) === "mercury",
     is_stockable: true,
-    ...supplierToApi(values),
-    ...(chargesInitialPrice(values) ? { initial_price: toMoneyDecimal(values.initialPrice) } : {}),
+    ...(chargesInitialPrice(values)
+      ? {
+          initial_supplier: Number(values.supplier),
+          initial_price: toMoneyDecimal(values.initialPrice),
+        }
+      : {}),
   };
-}
-
-export function supplierToApi(values: ResourceSupplierValues) {
-  return { supplier: values.supplier === "" ? null : Number(values.supplier) };
 }
 
 export function supplierChoiceFromApi(supplier: ApiSchema<"Supplier">): SupplierChoice {
@@ -170,9 +175,9 @@ export function resourceErrorsFromApi(
   return {
     ...(errors.project === undefined ? {} : { project: errors.project }),
     ...(errors.initial_quantity === undefined ? {} : { initialQuantity: errors.initial_quantity }),
-    ...(errors.name === undefined ? {} : { kind: errors.name }),
-    ...(errors.is_refining_material === undefined ? {} : { kind: errors.is_refining_material }),
-    ...(errors.supplier === undefined ? {} : { supplier: errors.supplier }),
+    ...(errors.name === undefined ? {} : { name: errors.name }),
+    ...(errors.is_refining_material === undefined ? {} : { name: errors.is_refining_material }),
+    ...(errors.initial_supplier === undefined ? {} : { supplier: errors.initial_supplier }),
     ...(errors.initial_price === undefined ? {} : { initialPrice: errors.initial_price }),
   };
 }
@@ -205,6 +210,29 @@ export function resourceChangeToApi(values: ResourceChangeValues) {
   return {
     quantity: toDecimal(values.quantity),
     note: values.note,
+  };
+}
+
+export function supplierIncreaseToApi(resourceId: string, values: ResourceChangeValues) {
+  return {
+    supplier: Number(values.supplier),
+    resource: Number(resourceId),
+    quantity: toDecimal(values.quantity),
+    price: toMoneyDecimal(values.price),
+    notes: values.note,
+  };
+}
+
+export function supplierIncreaseErrorsFromApi(
+  errors: BackendFieldErrors,
+): FieldErrors<keyof ResourceChangeValues> {
+  const supplier = errors.supplier ?? errors.resource;
+
+  return {
+    ...(errors.quantity === undefined ? {} : { quantity: errors.quantity }),
+    ...(errors.price === undefined ? {} : { price: errors.price }),
+    ...(supplier === undefined ? {} : { supplier }),
+    ...(errors.notes === undefined ? {} : { note: errors.notes }),
   };
 }
 

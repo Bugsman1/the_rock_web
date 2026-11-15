@@ -3571,12 +3571,14 @@ export interface components {
             project_name?: $Read<string>;
             /** الاسم */
             name?: string;
-            supplier?: number | null;
-            supplier_name?: $Read<string>;
+            suppliers?: $Read<{
+                [key: string]: unknown;
+            }[]>;
             /** @default true */
             is_stockable: boolean;
             /** Format: decimal */
             initial_quantity?: string;
+            initial_supplier?: $Write<number | null>;
             /** Format: decimal */
             initial_price?: $Write<string | null>;
             /** Format: decimal */
@@ -3765,7 +3767,7 @@ export interface components {
             delivered_amount?: $Read<string>;
             /** Format: decimal */
             balance?: $Read<string>;
-            resources?: $Read<components["schemas"]["SuppliedResource"][]>;
+            resources?: number[];
             /**
              * أنشئت في
              * Format: date-time
@@ -3774,10 +3776,13 @@ export interface components {
             /** Format: date-time */
             updated_at?: $Read<string>;
         };
-        /** @description A delivery: its supplier is the resource's, its price the whole delivery's, as given. */
+        /**
+         * @description A delivery: its supplier is given, the resource one of those it supplies, and its
+         *     price (optional, 0 by default) the whole delivery's, as given.
+         */
         PatchedSupplierDelivery: {
             id?: $Read<number>;
-            supplier?: $Read<number>;
+            supplier?: number;
             supplier_name?: $Read<string>;
             resource?: number;
             resource_name?: $Read<string>;
@@ -3985,12 +3990,14 @@ export interface components {
             project_name: $Read<string>;
             /** الاسم */
             name: string;
-            supplier?: number | null;
-            supplier_name: $Read<string>;
+            suppliers: $Read<{
+                [key: string]: unknown;
+            }[]>;
             /** @default true */
             is_stockable: boolean;
             /** Format: decimal */
             initial_quantity?: string;
+            initial_supplier?: $Write<number | null>;
             /** Format: decimal */
             initial_price?: $Write<string | null>;
             /** Format: decimal */
@@ -4288,16 +4295,6 @@ export interface components {
          * @enum {string}
          */
         StatusEnum: "active" | "inactive" | "maintenance";
-        /** @description A resource as listed on its supplier. */
-        SuppliedResource: {
-            id: $Read<number>;
-            /** الاسم */
-            name: $Read<string>;
-            project: $Read<number>;
-            project_name: $Read<string>;
-            /** Stockable */
-            is_stockable: $Read<boolean>;
-        };
         Supplier: {
             id: $Read<number>;
             /** الاسم */
@@ -4310,7 +4307,7 @@ export interface components {
             delivered_amount: $Read<string>;
             /** Format: decimal */
             balance: $Read<string>;
-            resources: $Read<components["schemas"]["SuppliedResource"][]>;
+            resources?: number[];
             /**
              * أنشئت في
              * Format: date-time
@@ -4319,10 +4316,13 @@ export interface components {
             /** Format: date-time */
             updated_at: $Read<string>;
         };
-        /** @description A delivery: its supplier is the resource's, its price the whole delivery's, as given. */
+        /**
+         * @description A delivery: its supplier is given, the resource one of those it supplies, and its
+         *     price (optional, 0 by default) the whole delivery's, as given.
+         */
         SupplierDelivery: {
             id: $Read<number>;
-            supplier: $Read<number>;
+            supplier: number;
             supplier_name: $Read<string>;
             resource: number;
             resource_name: $Read<string>;
@@ -4332,7 +4332,7 @@ export interface components {
             /** Format: decimal */
             quantity: string;
             /** Format: decimal */
-            price: string;
+            price?: string;
             /**
              * Delivery date
              * Format: date-time

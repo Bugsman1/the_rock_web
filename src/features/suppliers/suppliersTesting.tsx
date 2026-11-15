@@ -43,6 +43,16 @@ export const apiSupplier = {
   ...stamps,
 };
 
+const apiResource = {
+  project: 3,
+  project_name: "Zouérat 1",
+  initial_quantity: "0.000",
+  current_quantity: "0.000",
+  suppliers: [],
+  is_stockable: true,
+  ...stamps,
+};
+
 export const paymentEntry = {
   type: "payment",
   id: 7,
@@ -124,6 +134,12 @@ export function serveSuppliers(sent: Sent[]) {
     server.use(
       http.get(`${API}/suppliers/`, () => page([apiSupplier])),
       http.get(`${API}/suppliers/5/`, () => HttpResponse.json(apiSupplier)),
+      http.get(`${API}/resources/`, () =>
+        page([
+          { ...apiResource, id: 2, name: "mercury", is_refining_material: true },
+          { ...apiResource, id: 8, name: "Chaux" },
+        ]),
+      ),
       http.get(`${API}/suppliers/5/history/`, () =>
         HttpResponse.json([paymentEntry, deliveryEntry]),
       ),

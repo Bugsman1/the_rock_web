@@ -174,8 +174,9 @@ describe("paymentToApi", () => {
 });
 
 describe("newDeliveryToApi", () => {
-  it("sends the resource, the quantity and the price of the whole delivery", () => {
-    expect(newDeliveryToApi(delivery, at)).toEqual({
+  it("sends the supplier, the resource, the quantity and the price of the whole delivery", () => {
+    expect(newDeliveryToApi("5", delivery, at)).toEqual({
+      supplier: 5,
       resource: 2,
       quantity: "100.000",
       price: "300",

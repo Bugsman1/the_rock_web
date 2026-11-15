@@ -6,7 +6,7 @@ import { DetailCard } from "@/components/ui/Cards";
 import { Icon } from "@/components/ui/Icon";
 import { PageLayout } from "@/components/ui/PageHeader";
 import { useCan } from "@/lib/accessContext";
-import { notFound } from "@/lib/api/client";
+import { notFound, tryLoad } from "@/lib/api/client";
 import { formatMoney } from "@/lib/format";
 import { isRecordId } from "@/lib/projects";
 import { SUPPLIERS_HREF, supplierHref } from "@/lib/routes";
@@ -15,7 +15,13 @@ import { SupplierAccountTable } from "./SupplierAccountTable";
 import { SupplierDrawers } from "./SupplierDrawers";
 import type { OpenDrawer } from "./SupplierDrawers";
 import { balanceStatusOf } from "./suppliers";
-import { getDelivery, getPayment, getSupplier, getSupplierAccount } from "./suppliersApi";
+import {
+  getDelivery,
+  getPayment,
+  getResourceChoices,
+  getSupplier,
+  getSupplierAccount,
+} from "./suppliersApi";
 import { useResourceLabel } from "./SupplierParts";
 
 const flagDrawers = ["edit", "delete", "addPayment", "addDelivery"] as const;
@@ -58,7 +64,12 @@ export async function supplierLoader({ params, request }: LoaderFunctionArgs) {
     notFound();
   }
 
-  const [supplier, account] = await Promise.all([getSupplier(id), getSupplierAccount(id)]);
+  const search = new URL(request.url).searchParams;
+  const [supplier, account, resources] = await Promise.all([
+    getSupplier(id),
+    getSupplierAccount(id),
+    search.get("edit") === "1" ? tryLoad(getResourceChoices) : undefined,
+  ]);
 
   if (supplier === undefined) {
     notFound();
@@ -67,12 +78,13 @@ export async function supplierLoader({ params, request }: LoaderFunctionArgs) {
   return {
     supplier,
     account,
-    drawer: await openDrawer(new URL(request.url).searchParams, account),
+    drawer: await openDrawer(search, account),
+    resources: resources?.ok === true ? resources.data : undefined,
   };
 }
 
 export function SupplierScreen() {
-  const { supplier, account, drawer } = useLoaderData<typeof supplierLoader>();
+  const { supplier, account, drawer, resources } = useLoaderData<typeof supplierLoader>();
   const t = useTranslations("suppliers");
   const common = useTranslations("common");
   const locale = useLocale();
@@ -136,7 +148,7 @@ export function SupplierScreen() {
 
       <SupplierAccountTable supplierId={supplier.id} entries={account} />
 
-      <SupplierDrawers supplier={supplier} drawer={drawer} />
+      <SupplierDrawers supplier={supplier} drawer={drawer} resources={resources} />
     </PageLayout>
   );
 }

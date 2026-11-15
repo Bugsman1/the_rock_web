@@ -7,7 +7,7 @@ import {
   unwrap,
 } from "@/lib/api/client";
 import type { DeleteResult, SaveResult } from "@/lib/api/client";
-import { PAGE_SIZE, toPage } from "@/lib/api/pagination";
+import { fetchAllPages, MAX_PAGE_SIZE, PAGE_SIZE, toPage } from "@/lib/api/pagination";
 import type { Page } from "@/lib/api/pagination";
 import type { IsoTimestamp } from "@/lib/format";
 import { isRecordId } from "@/lib/projects";
@@ -28,8 +28,13 @@ import type {
   SupplierDelivery,
   SupplierPayment,
 } from "./supplierAccount";
-import { supplierErrorsFromApi, supplierFromApi, supplierToApi } from "./suppliers";
-import type { BalanceStatus, Supplier, SupplierValues } from "./suppliers";
+import {
+  resourceChoiceFromApi,
+  supplierErrorsFromApi,
+  supplierFromApi,
+  supplierToApi,
+} from "./suppliers";
+import type { BalanceStatus, SuppliedResource, Supplier, SupplierValues } from "./suppliers";
 
 export type SupplierListFilter = {
   search: string;
@@ -107,6 +112,18 @@ export async function updateSupplier(
   return saveOutcome(response, error, supplierErrorsFromApi);
 }
 
+export async function getResourceChoices(): Promise<readonly SuppliedResource[]> {
+  const resources = await fetchAllPages(async (page) =>
+    unwrap(
+      await apiClient.GET("/api/v1/resources/", {
+        params: { query: { ordering: "name", page, page_size: MAX_PAGE_SIZE } },
+      }),
+    ),
+  );
+
+  return resources.map(resourceChoiceFromApi);
+}
+
 export async function deleteSupplier(id: string): Promise<DeleteResult> {
   const { response, error } = await apiClient.DELETE("/api/v1/suppliers/{id}/", {
     params: { path: { id: Number(id) } },
@@ -175,13 +192,14 @@ export async function getDelivery(id: string): Promise<SupplierDelivery | undefi
 }
 
 export async function addDelivery(
+  supplierId: string,
   values: DeliveryValues,
   at: IsoTimestamp,
   key: string,
 ): Promise<SaveResult<keyof DeliveryValues>> {
   const { response, error } = await apiClient.POST("/api/v1/supplier-deliveries/", {
     params: idempotent(key),
-    body: newDeliveryToApi(values, at),
+    body: newDeliveryToApi(supplierId, values, at),
   });
 
   return saveOutcome(response, error, deliveryErrorsFromApi);

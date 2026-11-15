@@ -1012,7 +1012,7 @@
     "title": "المخزون",
     "count": "عدد الموارد: {count}",
     "new": "مورد جديد",
-    "empty": "لا توجد موارد في هذا المشروع بعد. أضف الزئبق أو الماء أو البنزين من «مورد جديد».",
+    "empty": "لا توجد موارد في هذا المشروع بعد. أضف موردًا من «مورد جديد».",
     "increase": "زيادة",
     "decrease": "إنقاص",
     "historyListTitle": "حركات الكمية",
@@ -1039,9 +1039,10 @@
       "changedAt": "التاريخ",
       "changeType": "النوع",
       "changedBy": "بواسطة",
-      "kind": "نوع المورد",
       "supplier": "المزوّد",
-      "initialPrice": "سعر الكمية الأولية"
+      "initialPrice": "سعر الكمية الأولية",
+      "suppliers": "المزوّدون",
+      "deliveryPrice": "مبلغ التوريد"
     },
     "form": {
       "newTitle": "مورد جديد",
@@ -1051,10 +1052,9 @@
       "saving": "جارٍ الحفظ",
       "increaseSubmit": "تسجيل الزيادة",
       "decreaseSubmit": "تسجيل الإنقاص",
-      "kindPlaceholder": "اختر النوع",
       "noSupplier": "بدون مزوّد",
-      "supplierTitle": "مزوّد {name}",
-      "supplierSubmit": "حفظ المزوّد"
+      "fromSupplier": "مستلمة من مزوّد",
+      "supplierPlaceholder": "اختر المزوّد"
     },
     "errors": {
       "quantityInvalid": "أدخل كمية صحيحة لا تقل عن 0",
@@ -1075,8 +1075,7 @@
     },
     "open": "فتح",
     "historyEmpty": "لا توجد حركات على هذا المورد بعد.",
-    "surplus": "+{quantity} فائض",
-    "changeSupplier": "تغيير المزوّد"
+    "surplus": "+{quantity} فائض"
   },
   "suppliers": {
     "title": "إدارة الموردين",
@@ -1108,7 +1107,8 @@
       "editTitle": "تعديل المزوّد",
       "create": "إضافة المزوّد",
       "save": "حفظ التعديلات",
-      "saving": "جارٍ الحفظ"
+      "saving": "جارٍ الحفظ",
+      "noResources": "لا توجد موارد"
     },
     "remove": {
       "title": "حذف المزوّد",
@@ -1391,7 +1391,6 @@
     "supplierPaymentDeleted": "تم حذف الدفعة",
     "deliveryAdded": "تم تسجيل التوريد",
     "deliveryUpdated": "تم حفظ التوريد",
-    "deliveryDeleted": "تم حذف التوريد",
-    "resourceSupplierUpdated": "تم تغيير المزوّد"
+    "deliveryDeleted": "تم حذف التوريد"
   }
 }

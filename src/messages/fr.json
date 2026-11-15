@@ -1012,7 +1012,7 @@
     "title": "Inventaire",
     "count": "Ressources : {count}",
     "new": "Nouvelle ressource",
-    "empty": "Aucune ressource dans ce projet pour le moment. Ajoutez le mercure, l'eau ou l'essence avec « Nouvelle ressource ».",
+    "empty": "Aucune ressource dans ce projet pour le moment. Ajoutez-en avec « Nouvelle ressource ».",
     "increase": "Augmenter",
     "decrease": "Diminuer",
     "historyListTitle": "Mouvements de quantité",
@@ -1039,9 +1039,10 @@
       "changedAt": "Date",
       "changeType": "Type",
       "changedBy": "Par",
-      "kind": "Type de ressource",
       "supplier": "Fournisseur",
-      "initialPrice": "Prix de la quantité initiale"
+      "initialPrice": "Prix de la quantité initiale",
+      "suppliers": "Fournisseurs",
+      "deliveryPrice": "Montant de la livraison"
     },
     "form": {
       "newTitle": "Nouvelle ressource",
@@ -1051,10 +1052,9 @@
       "saving": "Enregistrement",
       "increaseSubmit": "Enregistrer l'augmentation",
       "decreaseSubmit": "Enregistrer la diminution",
-      "kindPlaceholder": "Choisir le type",
       "noSupplier": "Sans fournisseur",
-      "supplierTitle": "Fournisseur : {name}",
-      "supplierSubmit": "Enregistrer le fournisseur"
+      "fromSupplier": "Reçue d'un fournisseur",
+      "supplierPlaceholder": "Choisir le fournisseur"
     },
     "errors": {
       "quantityInvalid": "Saisissez une quantité valide d'au moins 0",
@@ -1075,8 +1075,7 @@
     },
     "open": "Ouvrir",
     "historyEmpty": "Aucun mouvement sur cette ressource pour le moment.",
-    "surplus": "+{quantity} surplus",
-    "changeSupplier": "Changer le fournisseur"
+    "surplus": "+{quantity} surplus"
   },
   "suppliers": {
     "title": "Fournisseurs",
@@ -1108,7 +1107,8 @@
       "editTitle": "Modifier le fournisseur",
       "create": "Ajouter le fournisseur",
       "save": "Enregistrer",
-      "saving": "Enregistrement"
+      "saving": "Enregistrement",
+      "noResources": "Aucune ressource"
     },
     "remove": {
       "title": "Supprimer le fournisseur",
@@ -1391,7 +1391,6 @@
     "supplierPaymentDeleted": "Paiement supprimé",
     "deliveryAdded": "Livraison enregistrée",
     "deliveryUpdated": "Livraison modifiée",
-    "deliveryDeleted": "Livraison supprimée",
-    "resourceSupplierUpdated": "Fournisseur changé"
+    "deliveryDeleted": "Livraison supprimée"
   }
 }

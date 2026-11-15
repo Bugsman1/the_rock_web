@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
+import { useResourceName } from "@/components/resources/useResourceName";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
@@ -14,15 +15,16 @@ import { DelayedSearchField } from "@/components/ui/SearchField";
 import { TablePanel } from "@/components/ui/TablePanel";
 import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
+import { tryLoad } from "@/lib/api/client";
 import { parsePageNumber } from "@/lib/api/pagination";
 import { noFilters } from "@/lib/filters";
 import { formatCount, formatMoney } from "@/lib/format";
 import { supplierHref, suppliersHref } from "@/lib/routes";
 import { SupplierForm } from "./SupplierForm";
-import { BalanceAmount, BalanceStatusBadge, useResourceName } from "./SupplierParts";
+import { BalanceAmount, BalanceStatusBadge } from "./SupplierParts";
 import { balanceStatuses, isBalanceStatus } from "./suppliers";
 import type { BalanceStatus, Supplier } from "./suppliers";
-import { getSupplierPage } from "./suppliersApi";
+import { getResourceChoices, getSupplierPage } from "./suppliersApi";
 
 function statusFrom(value: string | null): BalanceStatus | undefined {
   return value !== null && isBalanceStatus(value) ? value : undefined;
@@ -33,13 +35,19 @@ export async function suppliersLoader({ request }: LoaderFunctionArgs) {
   const query = (params.get("q") ?? "").trim();
   const status = statusFrom(params.get("status"));
   const page = parsePageNumber(params.get("page"));
+  const creating = params.get("new") === "1";
+  const [suppliers, resources] = await Promise.all([
+    getSupplierPage({ search: query, status }, page),
+    creating ? tryLoad(getResourceChoices) : undefined,
+  ]);
 
   return {
     query,
     status,
     page,
-    suppliers: await getSupplierPage({ search: query, status }, page),
-    creating: params.get("new") === "1",
+    suppliers,
+    creating,
+    resources: resources?.ok === true ? resources.data : undefined,
   };
 }
 
@@ -119,7 +127,8 @@ function SupplierTable({
 }
 
 export function SuppliersScreen() {
-  const { query, status, page, suppliers, creating } = useLoaderData<typeof suppliersLoader>();
+  const { query, status, page, suppliers, creating, resources } =
+    useLoaderData<typeof suppliersLoader>();
   const t = useTranslations("suppliers");
   const common = useTranslations("common");
   const locale = useLocale();
@@ -212,6 +221,7 @@ export function SuppliersScreen() {
       >
         <SupplierForm
           supplier={undefined}
+          resources={resources}
           onSaved={(id) => replace(supplierHref(id))}
           onCancel={close}
         />

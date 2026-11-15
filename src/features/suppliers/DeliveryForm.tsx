@@ -74,7 +74,7 @@ export function DeliveryForm({ supplier, delivery, onSaved, onCancel }: Delivery
 
     const result =
       delivery === undefined
-        ? await addDelivery(values, at, idempotencyKey)
+        ? await addDelivery(supplier.id, values, at, idempotencyKey)
         : await updateDelivery(delivery, values, at);
 
     if (result.ok) {

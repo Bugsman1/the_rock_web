@@ -1,9 +1,10 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import messages from "@/messages/fr.json";
 import { inFrench, mercuryResource, text } from "./inventoryTesting";
 import { ResourceChangeForm } from "./InventoryForms";
-import type { ResourceChangeType } from "./resources";
+import type { Resource, ResourceChangeType } from "./resources";
 
 const api = vi.hoisted(() => ({
   changeResourceQuantity: vi.fn(),
@@ -24,11 +25,13 @@ beforeEach(() => {
 const fields = text.fields;
 const mercury = mercuryResource;
 
-function renderChangeForm(type: ResourceChangeType) {
+function renderChangeForm(type: ResourceChangeType, resource: Resource = mercury) {
   return inFrench(
-    <ResourceChangeForm resource={mercury} type={type} onSaved={onSaved} onCancel={vi.fn()} />,
+    <ResourceChangeForm resource={resource} type={type} onSaved={onSaved} onCancel={vi.fn()} />,
   );
 }
+
+const supplied: Resource = { ...mercury, suppliers: [{ id: "5", name: "Sidi Fournitures" }] };
 
 function readOnly(label: string) {
   const field = screen.getByText(label).parentElement;
@@ -52,10 +55,12 @@ describe("ResourceChangeForm", () => {
     await user.type(screen.getByLabelText(fields.note), "Achat");
     await user.click(screen.getByRole("button", { name: text.form.increaseSubmit }));
 
-    expect(api.changeResourceQuantity).toHaveBeenCalledWith("2", "increase", {
-      quantity: 1.5,
-      note: "Achat",
-    });
+    expect(api.changeResourceQuantity).toHaveBeenCalledWith(
+      "2",
+      "increase",
+      { quantity: 1.5, note: "Achat", fromSupplier: false, supplier: "", price: Number.NaN },
+      expect.any(String),
+    );
     expect(onSaved).toHaveBeenCalled();
   });
 
@@ -68,10 +73,12 @@ describe("ResourceChangeForm", () => {
     await user.type(screen.getByLabelText(fields.quantity), "2");
     await user.click(screen.getByRole("button", { name: text.form.decreaseSubmit }));
 
-    expect(api.changeResourceQuantity).toHaveBeenCalledWith("2", "decrease", {
-      quantity: 2,
-      note: "",
-    });
+    expect(api.changeResourceQuantity).toHaveBeenCalledWith(
+      "2",
+      "decrease",
+      expect.objectContaining({ quantity: 2, note: "", fromSupplier: false }),
+      expect.any(String),
+    );
   });
 
   it("refuses to take more than what is left", async () => {
@@ -93,5 +100,48 @@ describe("ResourceChangeForm", () => {
     await user.click(screen.getByRole("button", { name: text.form.increaseSubmit }));
 
     expect(await screen.findByText(text.errors.changeInvalid)).toBeVisible();
+  });
+
+  it("records the supplier and the delivery amount when received from a supplier", async () => {
+    const user = userEvent.setup();
+    renderChangeForm("increase", supplied);
+
+    expect(screen.queryByLabelText(fields.supplier)).toBeNull();
+
+    await user.type(screen.getByLabelText(fields.quantity), "2");
+    await user.click(screen.getByLabelText(text.form.fromSupplier));
+    await user.selectOptions(screen.getByLabelText(fields.supplier), "5");
+    await user.type(screen.getByLabelText(fields.deliveryPrice), "300");
+    await user.click(screen.getByRole("button", { name: text.form.increaseSubmit }));
+
+    expect(api.changeResourceQuantity).toHaveBeenCalledWith(
+      "2",
+      "increase",
+      expect.objectContaining({ quantity: 2, fromSupplier: true, supplier: "5", price: 300 }),
+      expect.any(String),
+    );
+  });
+
+  it("asks the supplier and the amount of an increase received from a supplier", async () => {
+    const user = userEvent.setup();
+    renderChangeForm("increase", supplied);
+
+    await user.type(screen.getByLabelText(fields.quantity), "2");
+    await user.click(screen.getByLabelText(text.form.fromSupplier));
+    await user.click(screen.getByRole("button", { name: text.form.increaseSubmit }));
+
+    expect(await screen.findByText(messages.common.validation.required)).toBeVisible();
+    expect(screen.getByText(text.errors.priceInvalid)).toBeVisible();
+    expect(api.changeResourceQuantity).not.toHaveBeenCalled();
+  });
+
+  it("offers no supplier on a decrease", () => {
+    renderChangeForm("decrease", supplied);
+    expect(screen.queryByLabelText(text.form.fromSupplier)).toBeNull();
+  });
+
+  it("offers no supplier for a resource without suppliers", () => {
+    renderChangeForm("increase");
+    expect(screen.queryByLabelText(text.form.fromSupplier)).toBeNull();
   });
 });

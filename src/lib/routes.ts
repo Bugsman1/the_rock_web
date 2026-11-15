@@ -270,17 +270,12 @@ export type ResourceAction = (typeof resourceActions)[number];
 
 export function resourceHref(
   resource: string,
-  {
-    page = 1,
-    action,
-    editSupplier = false,
-  }: { page?: number; action?: ResourceAction; editSupplier?: boolean } = {},
+  { page = 1, action }: { page?: number; action?: ResourceAction } = {},
 ): string {
   const query = new URLSearchParams();
 
   if (page > 1) query.set("page", String(page));
   if (action !== undefined) query.set("action", action);
-  if (editSupplier) query.set("supplier", "1");
 
   const queryString = query.toString();
   const base = `${INVENTORY_HREF}/resources/${resource}`;

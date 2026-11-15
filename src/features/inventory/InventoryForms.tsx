@@ -1,18 +1,26 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
+import { useResourceName } from "@/components/resources/useResourceName";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { useToast } from "@/components/ui/Toast";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
+import { Select } from "@/components/ui/Select";
 import { TextArea, TextField } from "@/components/ui/TextField";
 import { formatQuantity } from "@/lib/format";
 import { createResourceChangeSchema, quantityAfterChange } from "./resources";
 import type { Resource, ResourceChangeType, ResourceChangeValues } from "./resources";
 import { changeResourceQuantity } from "./resourcesApi";
 
-const changeFields: readonly (keyof ResourceChangeValues)[] = ["quantity", "note"];
+const changeFields: readonly (keyof ResourceChangeValues)[] = [
+  "quantity",
+  "note",
+  "supplier",
+  "price",
+];
 
 function isChangeField(value: string): value is keyof ResourceChangeValues {
   return changeFields.some((field) => field === value);
@@ -27,13 +35,15 @@ type ResourceChangeFormProps = {
 
 export function ResourceChangeForm({ resource, type, onSaved, onCancel }: ResourceChangeFormProps) {
   const t = useTranslations("inventory");
-  const kindName = useTranslations("resourceKinds");
+  const resourceName = useResourceName();
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
   const toast = useToast();
   const locale = useLocale();
   const saveFailure = useSaveFailure();
   const available = type === "decrease" ? resource.currentQuantity : undefined;
+  const offersSupplier = type === "increase" && resource.suppliers.length > 0;
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
 
   const schema = useMemo(
     () =>
@@ -44,6 +54,7 @@ export function ResourceChangeForm({ resource, type, onSaved, onCancel }: Resour
           quantityTooMuch: t("errors.quantityTooMuch", {
             left: formatQuantity(resource.currentQuantity, locale),
           }),
+          priceInvalid: t("errors.priceInvalid"),
         },
         available,
       ),
@@ -53,11 +64,17 @@ export function ResourceChangeForm({ resource, type, onSaved, onCancel }: Resour
   const { control, register, handleSubmit, formState, setError } = useForm<ResourceChangeValues>({
     mode: "onTouched",
     resolver: zodResolver(schema),
-    defaultValues: { quantity: Number.NaN, note: "" },
+    defaultValues: {
+      quantity: Number.NaN,
+      note: "",
+      fromSupplier: false,
+      supplier: "",
+      price: Number.NaN,
+    },
   });
 
   const { errors } = formState;
-  const quantity = useWatch({ control, name: "quantity" });
+  const [quantity, fromSupplier] = useWatch({ control, name: ["quantity", "fromSupplier"] });
   const after = quantityAfterChange(resource.currentQuantity, type, quantity);
 
   async function onSubmit(values: ResourceChangeValues) {
@@ -67,7 +84,7 @@ export function ResourceChangeForm({ resource, type, onSaved, onCancel }: Resour
 
     saveFailure.clear();
 
-    const result = await changeResourceQuantity(resource.id, type, values);
+    const result = await changeResourceQuantity(resource.id, type, values, idempotencyKey);
 
     if (result.ok) {
       toast(type === "increase" ? toasts("stockIncreased") : toasts("stockDecreased"));
@@ -87,7 +104,7 @@ export function ResourceChangeForm({ resource, type, onSaved, onCancel }: Resour
   return (
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <div className="grid gap-x-4 gap-y-4 sm:grid-cols-2">
-        <ReadOnlyField label={t("fields.name")} value={kindName(resource.kind)} />
+        <ReadOnlyField label={t("fields.name")} value={resourceName(resource)} />
         <ReadOnlyField label={t("fields.project")} value={resource.projectName} />
         <ReadOnlyField
           label={t("fields.currentQuantity")}
@@ -112,6 +129,44 @@ export function ResourceChangeForm({ resource, type, onSaved, onCancel }: Resour
             {...register("quantity", { valueAsNumber: true })}
           />
         </div>
+
+        {offersSupplier ? (
+          <div className="sm:col-span-2">
+            <Checkbox
+              id="resource-change-from-supplier"
+              label={t("form.fromSupplier")}
+              {...register("fromSupplier")}
+            />
+          </div>
+        ) : null}
+
+        {offersSupplier && fromSupplier ? (
+          <>
+            <Select
+              id="resource-change-supplier"
+              label={t("fields.supplier")}
+              required
+              placeholder={t("form.supplierPlaceholder")}
+              options={resource.suppliers.map((choice) => ({
+                value: choice.id,
+                label: choice.name,
+              }))}
+              error={errors.supplier?.message}
+              {...register("supplier")}
+            />
+            <TextField
+              id="resource-change-price"
+              type="number"
+              min={0}
+              step="any"
+              inputMode="decimal"
+              label={t("fields.deliveryPrice")}
+              required
+              error={errors.price?.message}
+              {...register("price", { valueAsNumber: true })}
+            />
+          </>
+        ) : null}
 
         <div className="sm:col-span-2">
           <TextArea

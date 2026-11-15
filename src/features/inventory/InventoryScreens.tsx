@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
+import { useResourceName } from "@/components/resources/useResourceName";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { CardGrid, LinkCard, StatGrid } from "@/components/ui/Cards";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
@@ -17,7 +18,6 @@ import { getProjects, requireProject } from "@/lib/projectsApi";
 import { INVENTORY_HREF, inventoryProjectHref, resourceHref } from "@/lib/routes";
 import { matchesSearch } from "@/lib/search";
 import { ResourceForm } from "./ResourceForm";
-import { availableKinds } from "./resources";
 import type { Resource } from "./resources";
 import { getResources, getSupplierChoices } from "./resourcesApi";
 
@@ -45,7 +45,7 @@ export async function inventoryLoader() {
 export function InventoryScreen() {
   const { projects, resources, loadStatus } = useLoaderData<typeof inventoryLoader>();
   const t = useTranslations("inventory");
-  const kindName = useTranslations("resourceKinds");
+  const resourceName = useResourceName();
   const common = useTranslations("common");
   const locale = useLocale();
 
@@ -81,7 +81,7 @@ export function InventoryScreen() {
                     { label: t("resourceCount"), value: formatCount(own.length, locale) },
                     {
                       label: t("refiningMaterial"),
-                      value: material === undefined ? "—" : kindName(material.kind),
+                      value: material === undefined ? "—" : resourceName(material),
                     },
                   ]}
                 />
@@ -113,15 +113,11 @@ export async function inventoryProjectLoader({ params, request }: LoaderFunction
 
 function ResourceCard({ resource }: { resource: Resource }) {
   const t = useTranslations("inventory");
-  const kindName = useTranslations("resourceKinds");
+  const resourceName = useResourceName();
   const locale = useLocale();
 
   return (
-    <LinkCard
-      title={kindName(resource.kind)}
-      href={resourceHref(resource.id)}
-      linkLabel={t("open")}
-    >
+    <LinkCard title={resourceName(resource)} href={resourceHref(resource.id)} linkLabel={t("open")}>
       <StatGrid
         stats={[
           {
@@ -148,15 +144,15 @@ export function InventoryProjectScreen() {
   const { project, resources, loadStatus, creating, suppliers } =
     useLoaderData<typeof inventoryProjectLoader>();
   const t = useTranslations("inventory");
-  const kindName = useTranslations("resourceKinds");
+  const resourceName = useResourceName();
   const common = useTranslations("common");
   const locale = useLocale();
   const { close } = useRouteDrawer(inventoryProjectHref(project.id));
   const replace = useReplace();
-  const canAdd = useCan()("inventory", "add") && availableKinds(resources).length > 0;
+  const canAdd = useCan()("inventory", "add");
   const [query, setQuery] = useState("");
   const visible = resources.filter((resource) =>
-    matchesSearch({ texts: [kindName(resource.kind)], phone: "" }, query),
+    matchesSearch({ texts: [resourceName(resource)], phone: "" }, query),
   );
   const material = visible.find((resource) => resource.isRefiningMaterial);
   const others = visible.filter((resource) => !resource.isRefiningMaterial);
@@ -219,7 +215,6 @@ export function InventoryProjectScreen() {
       >
         <ResourceForm
           project={project}
-          existing={resources}
           suppliers={suppliers}
           onCancel={close}
           onSaved={(id) => replace(resourceHref(id))}

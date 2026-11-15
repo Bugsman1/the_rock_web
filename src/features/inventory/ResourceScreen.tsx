@@ -1,6 +1,7 @@
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
+import { useResourceName } from "@/components/resources/useResourceName";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { DetailCard } from "@/components/ui/Cards";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
@@ -11,7 +12,7 @@ import { StatusBadge, TablePanel } from "@/components/ui/TablePanel";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
 import { useCan } from "@/lib/accessContext";
-import { notFound, tryLoad } from "@/lib/api/client";
+import { notFound } from "@/lib/api/client";
 import { parsePageNumber } from "@/lib/api/pagination";
 import { formatCount, formatDateTime, formatQuantity } from "@/lib/format";
 import { isRecordId } from "@/lib/projects";
@@ -20,8 +21,7 @@ import type { ResourceAction } from "@/lib/routes";
 import { ResourceChangeForm } from "./InventoryForms";
 import { refiningCorrectionType } from "./resources";
 import type { ResourceChange } from "./resources";
-import { getResource, getResourceHistory, getSupplierChoices } from "./resourcesApi";
-import { ResourceSupplierForm } from "./ResourceSupplierForm";
+import { getResource, getResourceHistory } from "./resourcesApi";
 
 function resourceActionOf(value: string | null): ResourceAction | undefined {
   return resourceActions.find((action) => action === value);
@@ -37,18 +37,15 @@ export async function resourceLoader({ params, request }: LoaderFunctionArgs) {
   const search = new URL(request.url).searchParams;
   const page = parsePageNumber(search.get("page"));
   const action = resourceActionOf(search.get("action"));
-  const editingSupplier = search.get("supplier") === "1";
-  const [resource, history, suppliers] = await Promise.all([
+  const [resource, history] = await Promise.all([
     getResource(resourceId),
     getResourceHistory(resourceId, page),
-    editingSupplier ? tryLoad(getSupplierChoices) : undefined,
   ]);
   return {
     resource: resource ?? notFound(),
     history,
     page,
     action,
-    suppliers: suppliers?.ok === true ? suppliers.data : undefined,
   };
 }
 
@@ -177,17 +174,16 @@ function HistoryTable({ changes, showsLoss }: HistoryTableProps) {
 }
 
 export function ResourceScreen() {
-  const { resource, history, page, action, suppliers } = useLoaderData<typeof resourceLoader>();
+  const { resource, history, page, action } = useLoaderData<typeof resourceLoader>();
   const t = useTranslations("inventory");
-  const kindName = useTranslations("resourceKinds");
+  const resourceName = useResourceName();
   const common = useTranslations("common");
   const locale = useLocale();
   const { close } = useRouteDrawer(resourceHref(resource.id, { page }));
   const can = useCan();
   const canChange = can("inventory", "add");
-  const canEditSupplier = can("inventory", "edit") && suppliers !== undefined;
   const allowedAction = canChange ? action : undefined;
-  const label = kindName(resource.kind);
+  const label = resourceName(resource);
 
   return (
     <PageLayout
@@ -196,35 +192,22 @@ export function ResourceScreen() {
       title={label}
       description={resource.isRefiningMaterial ? t("material.hint") : undefined}
       action={
-        canChange || can("inventory", "edit") ? (
+        canChange ? (
           <>
-            {canChange ? (
-              <>
-                <ButtonLink
-                  href={resourceHref(resource.id, { page, action: "increase" })}
-                  variant="primary"
-                >
-                  <Icon name="plus" />
-                  {t("increase")}
-                </ButtonLink>
-                <ButtonLink
-                  href={resourceHref(resource.id, { page, action: "decrease" })}
-                  variant="secondary"
-                >
-                  <Icon name="minus" />
-                  {t("decrease")}
-                </ButtonLink>
-              </>
-            ) : null}
-            {can("inventory", "edit") ? (
-              <ButtonLink
-                href={resourceHref(resource.id, { page, editSupplier: true })}
-                variant="secondary"
-              >
-                <Icon name="pencil" />
-                {t("changeSupplier")}
-              </ButtonLink>
-            ) : null}
+            <ButtonLink
+              href={resourceHref(resource.id, { page, action: "increase" })}
+              variant="primary"
+            >
+              <Icon name="plus" />
+              {t("increase")}
+            </ButtonLink>
+            <ButtonLink
+              href={resourceHref(resource.id, { page, action: "decrease" })}
+              variant="secondary"
+            >
+              <Icon name="minus" />
+              {t("decrease")}
+            </ButtonLink>
           </>
         ) : null
       }
@@ -241,8 +224,11 @@ export function ResourceScreen() {
           },
           { label: t("fields.project"), value: resource.projectName },
           {
-            label: t("fields.supplier"),
-            value: resource.supplierName === "" ? "—" : resource.supplierName,
+            label: t("fields.suppliers"),
+            value:
+              resource.suppliers.length === 0
+                ? "—"
+                : resource.suppliers.map((supplier) => supplier.name).join(" · "),
           },
         ]}
       />
@@ -277,22 +263,6 @@ export function ResourceScreen() {
             key={allowedAction}
             resource={resource}
             type={allowedAction}
-            onCancel={close}
-            onSaved={close}
-          />
-        )}
-      </Drawer>
-
-      <Drawer
-        open={canEditSupplier}
-        title={t("form.supplierTitle", { name: label })}
-        closeLabel={common("close")}
-        onClose={close}
-      >
-        {suppliers === undefined ? null : (
-          <ResourceSupplierForm
-            resource={resource}
-            suppliers={suppliers}
             onCancel={close}
             onSaved={close}
           />

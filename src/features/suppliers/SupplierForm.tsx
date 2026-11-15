@@ -3,25 +3,29 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslations } from "use-intl";
 import { DrawerActions } from "@/components/ui/Drawer";
-import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
+import { FieldError, SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 import { TextArea, TextField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
 import { PHONE_PLACEHOLDER, sanitizePhone } from "@/lib/phone";
+import { useResourceLabel } from "./SupplierParts";
 import { createSupplierSchema, isSupplierField } from "./suppliers";
-import type { Supplier, SupplierValues } from "./suppliers";
+import type { SuppliedResource, Supplier, SupplierValues } from "./suppliers";
 import { createSupplier, updateSupplier } from "./suppliersApi";
 
 type SupplierFormProps = {
   supplier: Supplier | undefined;
+  resources: readonly SuppliedResource[] | undefined;
   onSaved: (id: string) => void;
   onCancel: () => void;
 };
 
-export function SupplierForm({ supplier, onSaved, onCancel }: SupplierFormProps) {
+export function SupplierForm({ supplier, resources, onSaved, onCancel }: SupplierFormProps) {
   const t = useTranslations("suppliers");
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
   const toast = useToast();
+  const resourceLabel = useResourceLabel();
   const saveFailure = useSaveFailure();
   const [idempotencyKey] = useState(() => crypto.randomUUID());
 
@@ -41,6 +45,10 @@ export function SupplierForm({ supplier, onSaved, onCancel }: SupplierFormProps)
       name: supplier?.name ?? "",
       phone: supplier?.phone ?? "",
       notes: supplier?.notes ?? "",
+      resources:
+        resources === undefined
+          ? undefined
+          : (supplier?.resources ?? []).map((resource) => resource.id),
     },
   });
 
@@ -102,6 +110,39 @@ export function SupplierForm({ supplier, onSaved, onCancel }: SupplierFormProps)
           />
         )}
       />
+
+      {resources === undefined ? null : (
+        <Controller
+          control={control}
+          name="resources"
+          render={({ field }) => {
+            const chosen = field.value ?? [];
+
+            return (
+              <div className="flex flex-col gap-1.5">
+                <MultiSelect
+                  id="supplier-resources"
+                  label={t("fields.resources")}
+                  allLabel={t("form.noResources")}
+                  options={resources.map((resource) => ({
+                    value: resource.id,
+                    label: resourceLabel(resource),
+                  }))}
+                  chosen={chosen}
+                  onToggle={(value) =>
+                    field.onChange(
+                      chosen.includes(value)
+                        ? chosen.filter((id) => id !== value)
+                        : [...chosen, value],
+                    )
+                  }
+                />
+                <FieldError id="supplier-resources-error" message={errors.resources?.message} />
+              </div>
+            );
+          }}
+        />
+      )}
 
       <TextArea
         id="supplier-notes"

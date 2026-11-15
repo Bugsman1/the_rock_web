@@ -1,16 +1,10 @@
 import { useLocale, useTranslations } from "use-intl";
+import { useResourceName } from "@/components/resources/useResourceName";
 import { StatusBadge } from "@/components/ui/TablePanel";
 import type { StatusTone } from "@/components/ui/TablePanel";
 import { formatMoney } from "@/lib/format";
 import { balanceStatusOf } from "./suppliers";
 import type { BalanceStatus, SuppliedResource } from "./suppliers";
-
-export function useResourceName() {
-  const kindName = useTranslations("resourceKinds");
-
-  return (resource: Pick<SuppliedResource, "kind" | "name">) =>
-    resource.kind === undefined ? resource.name : kindName(resource.kind);
-}
 
 export function useResourceLabel() {
   const resourceName = useResourceName();
