@@ -31,8 +31,12 @@ export function ProjectForm({ item: project, onSaved, onCancel }: FormProps<Proj
   const saveFailure = useSaveFailure();
 
   const schema = useMemo(
-    () => createProjectSchema({ required: common("validation.required") }),
-    [common],
+    () =>
+      createProjectSchema({
+        required: common("validation.required"),
+        capitalInvalid: t("capitalInvalid"),
+      }),
+    [common, t],
   );
 
   const { register, handleSubmit, formState, setError } = useForm<ProjectValues>({
@@ -42,6 +46,7 @@ export function ProjectForm({ item: project, onSaved, onCancel }: FormProps<Proj
       name: project?.name ?? "",
       site: project?.site ?? siteKeys[0],
       status: project?.status ?? "active",
+      capital: project?.capital ?? Number.NaN,
     },
   });
 
@@ -99,6 +104,18 @@ export function ProjectForm({ item: project, onSaved, onCancel }: FormProps<Proj
         options={activityStatuses.map((status) => ({ value: status, label: statuses(status) }))}
         error={errors.status?.message}
         {...register("status")}
+      />
+
+      <TextField
+        id="project-capital"
+        type="number"
+        min={0}
+        step="any"
+        inputMode="decimal"
+        label={t("fields.capital")}
+        required
+        error={errors.capital?.message}
+        {...register("capital", { valueAsNumber: true })}
       />
 
       <SaveFailureMessage failure={saveFailure.failure} />

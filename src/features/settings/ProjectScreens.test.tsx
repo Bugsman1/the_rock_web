@@ -20,7 +20,13 @@ vi.mock("@/lib/projectsApi", () => api);
 const onSaved = vi.fn();
 const projectText = messages.settings.projects;
 const grinderText = messages.settings.grinders;
-const zouerat: Project = { id: "3", name: "Zouérat 1", site: "zouerat", status: "active" };
+const zouerat: Project = {
+  id: "3",
+  name: "Zouérat 1",
+  site: "zouerat",
+  status: "active",
+  capital: 0,
+};
 const machine7: Grinder = { id: "9", project: "3", number: 7, status: "active" };
 
 beforeEach(() => {
@@ -59,7 +65,7 @@ function renderGrinderForm(grinder?: Grinder) {
 }
 
 describe("ProjectForm when adding", () => {
-  it("adds the project with its name, place and status", async () => {
+  it("adds the project with its name, place, status and capital", async () => {
     const user = userEvent.setup();
     renderProjectForm();
 
@@ -72,6 +78,7 @@ describe("ProjectForm when adding", () => {
       screen.getByLabelText(projectText.fields.status),
       messages.activityStatuses.maintenance,
     );
+    await user.type(screen.getByLabelText(projectText.fields.capital), "2500000");
     await user.click(screen.getByRole("button", { name: projectText.form.create }));
 
     await waitFor(() => {
@@ -79,18 +86,20 @@ describe("ProjectForm when adding", () => {
         name: "Sfariyat 3",
         site: "sfariyat",
         status: "maintenance",
+        capital: 2500000,
       });
     });
     expect(onSaved).toHaveBeenCalled();
   });
 
-  it("requires a name", async () => {
+  it("requires a name and a capital", async () => {
     const user = userEvent.setup();
     renderProjectForm();
 
     await user.click(screen.getByRole("button", { name: projectText.form.create }));
 
     expect(await screen.findByText(messages.common.validation.required)).toBeVisible();
+    expect(screen.getByText(projectText.capitalInvalid)).toBeVisible();
     expect(api.createProject).not.toHaveBeenCalled();
   });
 
@@ -104,6 +113,7 @@ describe("ProjectForm when adding", () => {
     renderProjectForm();
 
     await user.type(screen.getByLabelText(projectText.fields.name), "Sfariyat 3");
+    await user.type(screen.getByLabelText(projectText.fields.capital), "0");
     await user.click(screen.getByRole("button", { name: projectText.form.create }));
 
     expect(await screen.findByText("Trop long.")).toBeVisible();
@@ -116,6 +126,7 @@ describe("ProjectForm when adding", () => {
     renderProjectForm();
 
     await user.type(screen.getByLabelText(projectText.fields.name), "Sfariyat 3");
+    await user.type(screen.getByLabelText(projectText.fields.capital), "0");
     await user.click(screen.getByRole("button", { name: projectText.form.create }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(messages.common.saveFailed);
@@ -129,7 +140,10 @@ describe("ProjectForm when editing", () => {
 
     expect(screen.getByLabelText(projectText.fields.name)).toHaveValue("Zouérat 1");
     expect(screen.getByLabelText(projectText.fields.site)).toHaveValue("zouerat");
+    expect(screen.getByLabelText(projectText.fields.capital)).toHaveValue(0);
 
+    await user.clear(screen.getByLabelText(projectText.fields.capital));
+    await user.type(screen.getByLabelText(projectText.fields.capital), "800000");
     await user.selectOptions(
       screen.getByLabelText(projectText.fields.status),
       messages.activityStatuses.inactive,
@@ -141,6 +155,7 @@ describe("ProjectForm when editing", () => {
         name: "Zouérat 1",
         site: "zouerat",
         status: "inactive",
+        capital: 800000,
       });
     });
     expect(api.createProject).not.toHaveBeenCalled();

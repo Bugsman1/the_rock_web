@@ -14,7 +14,7 @@ import { Icon } from "@/components/ui/Icon";
 import { PageLayout } from "@/components/ui/PageHeader";
 import { StatusBadge, TablePanel } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
-import { formatCount } from "@/lib/format";
+import { formatCount, formatMoney } from "@/lib/format";
 import { grindersOfProject } from "@/lib/projects";
 import type { Grinder, Project, ProjectId } from "@/lib/projects";
 import { deleteProject, getGrinders, requireProject } from "@/lib/projectsApi";
@@ -161,6 +161,7 @@ export function ProjectSettingsScreen() {
   const common = useTranslations("common");
   const sites = useTranslations("sites");
   const statuses = useTranslations("activityStatuses");
+  const locale = useLocale();
   const can = useCan();
   const [query, setQuery] = useState("");
 
@@ -198,6 +199,10 @@ export function ProjectSettingsScreen() {
             { label: t("projects.fields.name"), value: project.name },
             { label: t("projects.fields.site"), value: sites(project.site) },
             { label: t("projects.fields.status"), value: statuses(project.status) },
+            {
+              label: t("projects.fields.capital"),
+              value: formatMoney(project.capital, locale),
+            },
           ]}
         />
       </section>

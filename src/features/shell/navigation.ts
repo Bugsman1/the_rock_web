@@ -3,6 +3,7 @@ import { canOpen } from "@/lib/access";
 import type { Access } from "@/lib/access";
 import {
   AUDIT_LOG_HREF,
+  CASH_HREF,
   CUSTOMERS_HREF,
   DASHBOARD_HREF,
   EMPLOYEES_HREF,
@@ -63,7 +64,7 @@ const navGroups: readonly NavGroup[] = [
       { key: "customers", href: CUSTOMERS_HREF, icon: "users-four" },
       { key: "settlement", href: SETTLEMENTS_HREF, icon: "receipt" },
       { key: "accounting", href: "/accounting", icon: "calculator" },
-      { key: "treasury", href: "/treasury", icon: "building-bank" },
+      { key: "treasury", href: CASH_HREF, icon: "building-bank" },
     ],
   },
   {

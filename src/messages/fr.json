@@ -48,7 +48,9 @@
       "confirm": "Supprimer",
       "deleting": "Suppression...",
       "failed": "La suppression a échoué"
-    }
+    },
+    "project": "Projet",
+    "projectPlaceholder": "Choisir le projet"
   },
   "filters": {
     "all": "Tous",
@@ -104,7 +106,7 @@
       "customers": "Clients",
       "settlement": "Règlement final",
       "accounting": "Comptabilité",
-      "treasury": "Trésorerie et banques",
+      "treasury": "Trésorerie",
       "employees": "Employés et paie",
       "inventory": "Inventaire",
       "suppliers": "Fournisseurs",
@@ -251,7 +253,8 @@
       "fields": {
         "name": "Nom du projet",
         "site": "Lieu",
-        "status": "Statut"
+        "status": "Statut",
+        "capital": "Capital"
       },
       "form": {
         "newTitle": "Nouveau projet",
@@ -268,7 +271,8 @@
         "confirm": "Oui, supprimer le projet",
         "deleting": "Suppression du projet",
         "failed": "La suppression a échoué, réessayez dans un instant"
-      }
+      },
+      "capitalInvalid": "Saisissez un capital d'au moins 0"
     },
     "grinders": {
       "title": "Machines",
@@ -374,7 +378,9 @@
         "suppliers": "Fournisseurs",
         "accounts": "Utilisateurs et permissions",
         "locations": "Projets et machines",
-        "audit": "Journal d'audit"
+        "audit": "Journal d'audit",
+        "cash": "Trésorerie",
+        "accounting": "Comptabilité"
       },
       "form": {
         "newTitle": "Nouveau rôle",
@@ -1391,6 +1397,73 @@
     "supplierPaymentDeleted": "Paiement supprimé",
     "deliveryAdded": "Livraison enregistrée",
     "deliveryUpdated": "Livraison modifiée",
-    "deliveryDeleted": "Livraison supprimée"
+    "deliveryDeleted": "Livraison supprimée",
+    "cashRecorded": "Mouvement enregistré",
+    "cashUpdated": "Mouvement modifié",
+    "cashDeleted": "Mouvement supprimé"
+  },
+  "cash": {
+    "title": "Trésorerie",
+    "recordIncome": "Enregistrer une entrée",
+    "recordExpense": "Enregistrer une dépense",
+    "balances": {
+      "title": "Solde par projet",
+      "project": "Projet",
+      "capital": "Capital",
+      "income": "Entrées",
+      "expense": "Dépenses",
+      "balance": "Solde",
+      "empty": "Aucun projet."
+    },
+    "list": {
+      "title": "Mouvements",
+      "count": "Mouvements : {count}",
+      "empty": "Aucun mouvement pour le moment.",
+      "noResults": "Aucun mouvement ne correspond à ces filtres.",
+      "searchPlaceholder": "Description, client, fournisseur"
+    },
+    "fields": {
+      "date": "Date",
+      "type": "Type",
+      "category": "Catégorie",
+      "description": "Description",
+      "project": "Projet",
+      "site": "Lieu",
+      "reference": "Référence",
+      "customer": "Client",
+      "supplier": "Fournisseur",
+      "amount": "Montant",
+      "by": "Par",
+      "status": "Statut",
+      "actions": "Actions",
+      "categoryName": "Nom de la dépense"
+    },
+    "types": {
+      "income": "Entrée",
+      "expense": "Dépense"
+    },
+    "approved": "Approuvé",
+    "notApproved": "Non approuvé",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "editLabel": "Modifier le mouvement du {date}",
+    "deleteLabel": "Supprimer le mouvement du {date}",
+    "form": {
+      "incomeTitle": "Nouvelle entrée",
+      "expenseTitle": "Nouvelle dépense",
+      "editTitle": "Modifier le mouvement",
+      "categoryPlaceholder": "Choisir la catégorie",
+      "customerPlaceholder": "Chercher un client",
+      "noSupplier": "Aucun",
+      "time": "Heure",
+      "create": "Enregistrer",
+      "save": "Enregistrer les modifications",
+      "saving": "Enregistrement",
+      "amountInvalid": "Saisissez un montant supérieur à 0"
+    },
+    "remove": {
+      "title": "Supprimer le mouvement",
+      "question": "Supprimer « {description} » ({amount}, {date}) ? Cette action est définitive."
+    }
   }
 }

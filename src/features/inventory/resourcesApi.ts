@@ -11,7 +11,6 @@ import {
   resourceErrorsFromApi,
   resourceFromApi,
   resourceToApi,
-  supplierChoiceFromApi,
   supplierIncreaseErrorsFromApi,
   supplierIncreaseToApi,
 } from "./resources";
@@ -21,7 +20,6 @@ import type {
   ResourceChangeType,
   ResourceChangeValues,
   ResourceValues,
-  SupplierChoice,
 } from "./resources";
 
 export async function getResources(project?: ProjectId): Promise<readonly Resource[]> {
@@ -70,18 +68,6 @@ export async function createResource(values: ResourceValues): Promise<SavedResou
   const outcome = saveOutcome(response, error, resourceErrorsFromApi);
 
   return outcome.ok ? saveFailed : outcome;
-}
-
-export async function getSupplierChoices(): Promise<readonly SupplierChoice[]> {
-  const suppliers = await fetchAllPages(async (page) =>
-    unwrap(
-      await apiClient.GET("/api/v1/suppliers/", {
-        params: { query: { ordering: "name", page, page_size: MAX_PAGE_SIZE } },
-      }),
-    ),
-  );
-
-  return suppliers.map(supplierChoiceFromApi);
 }
 
 export async function changeResourceQuantity(

@@ -49,7 +49,10 @@ export const apiSettlement = {
     refining_cost: "18375.00",
     extra_debt: "2000.00",
     grand_total: "49625.00",
+    paid: "0.00",
+    remaining: "49625.00",
   },
+  payments: [],
   created_by_name: "Sidi",
   ...stamps,
 };

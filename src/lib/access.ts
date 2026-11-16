@@ -1,6 +1,7 @@
 import type { ApiSchema } from "./api/client";
 import {
   AUDIT_LOG_HREF,
+  CASH_HREF,
   CUSTOMERS_HREF,
   DASHBOARD_HREF,
   EMPLOYEES_HREF,
@@ -31,6 +32,8 @@ export const modules = [
   "accounts",
   "locations",
   "audit",
+  "cash",
+  "accounting",
 ] as const;
 
 export type Module = (typeof modules)[number];
@@ -40,7 +43,7 @@ export const rights = ["view", "add", "edit", "delete"] as const;
 export type Right = (typeof rights)[number];
 
 export function rightsOfModule(module: Module): readonly Right[] {
-  return module === "audit" ? ["view"] : rights;
+  return module === "audit" || module === "accounting" ? ["view"] : rights;
 }
 
 type ModuleRights = Record<Right, boolean>;
@@ -63,6 +66,8 @@ export function emptyRights(): Rights {
     accounts: noRights,
     locations: noRights,
     audit: noRights,
+    cash: noRights,
+    accounting: noRights,
   };
 }
 
@@ -97,7 +102,7 @@ export function accessFromApi(me: ApiSchema<"Me">): Access {
   return {
     userId: String(me.id),
     superuser,
-    rights: projectScoped ? { ...granted, audit: noRights } : granted,
+    rights: projectScoped ? { ...granted, audit: noRights, accounting: noRights } : granted,
   };
 }
 
@@ -117,6 +122,7 @@ const sectionModules: readonly (readonly [string, Module])[] = [
   [USERS_HREF, "accounts"],
   [SETTINGS_PROJECTS_HREF, "locations"],
   [AUDIT_LOG_HREF, "audit"],
+  [CASH_HREF, "cash"],
 ];
 
 const openToEveryone: readonly string[] = [SETTINGS_PROFILE_HREF, SETTINGS_LANGUAGE_HREF];

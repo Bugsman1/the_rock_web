@@ -42,13 +42,22 @@ describe("getProjects", () => {
         requested = new URL(request.url);
         return HttpResponse.json({
           count: 1,
-          results: [{ id: 3, name: "Zouérat 1", site: "zouerat", status: "active", ...stamps }],
+          results: [
+            {
+              id: 3,
+              name: "Zouérat 1",
+              site: "zouerat",
+              status: "active",
+              capital: "1000.00",
+              ...stamps,
+            },
+          ],
         });
       }),
     );
 
     expect(await getProjects()).toEqual([
-      { id: "3", name: "Zouérat 1", site: "zouerat", status: "active" },
+      { id: "3", name: "Zouérat 1", site: "zouerat", status: "active", capital: 1000 },
     ]);
     expect(requested?.searchParams.get("ordering")).toBe("name");
   });
@@ -96,15 +105,20 @@ describe("createProject and updateProject", () => {
       }),
     );
 
-    expect(await createProject({ name: "Zouérat 2", site: "zouerat", status: "active" })).toEqual({
-      ok: true,
-    });
-    expect(body).toEqual({ name: "Zouérat 2", site: "zouerat", status: "active" });
+    expect(
+      await createProject({ name: "Zouérat 2", site: "zouerat", status: "active", capital: 0 }),
+    ).toEqual({ ok: true });
+    expect(body).toEqual({ name: "Zouérat 2", site: "zouerat", status: "active", capital: "0" });
   });
 
   it("refuses a malformed id without calling the backend", async () => {
     expect(
-      await updateProject("../1", { name: "Zouérat 2", site: "zouerat", status: "active" }),
+      await updateProject("../1", {
+        name: "Zouérat 2",
+        site: "zouerat",
+        status: "active",
+        capital: 0,
+      }),
     ).toEqual({ ok: false, fieldErrors: {}, failed: true });
   });
 });

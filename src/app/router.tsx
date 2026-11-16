@@ -3,6 +3,7 @@ import type { Params, RouteObject } from "react-router";
 import { useLocale } from "use-intl";
 import { AuditLogScreen, auditLogLoader } from "@/features/audit";
 import { LoginScreen } from "@/features/auth";
+import { CashScreen, cashLoader } from "@/features/cash";
 import {
   CustomerScreen,
   customerLoader,
@@ -221,6 +222,7 @@ const sectionRoutes: RouteObject[] = [
   { path: "suppliers", loader: suppliersLoader, element: <SuppliersScreen /> },
   { path: "suppliers/:supplier", loader: supplierLoader, element: <SupplierScreen /> },
   { path: "audit-log", loader: auditLogLoader, element: <AuditLogScreen /> },
+  { path: "cash", loader: cashLoader, element: <CashScreen /> },
   { path: "settings", element: <SettingsHomeScreen /> },
   { path: "settings/profile", loader: profileLoader, element: <ProfileScreen /> },
   { path: "settings/language", element: <LanguageScreen /> },

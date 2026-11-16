@@ -16,6 +16,7 @@ import { notFound } from "@/lib/api/client";
 import { getCustomer } from "@/lib/customersApi";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { CUSTOMERS_HREF, customerHref } from "@/lib/routes";
+import { getProjects } from "@/lib/projectsApi";
 import { debtActions, debtFilterFields, debtStatuses, isDebtAction } from "./debts";
 import type { CustomerDebt, DebtAction } from "./debts";
 import { getCustomerDebts, getDebtHistory } from "./debtsApi";
@@ -41,6 +42,7 @@ export async function customerLoader({ params, request }: LoaderFunctionArgs) {
   return {
     customer,
     debts,
+    projects: chosen === undefined || chosen === "increase" ? [] : await getProjects(),
     acting:
       opened === undefined || chosen === undefined ? undefined : { debt: opened, action: chosen },
     viewing:
@@ -166,7 +168,8 @@ function DebtTable({ customerId, debts, canChange }: DebtTableProps) {
 }
 
 export function CustomerScreen() {
-  const { customer, debts, acting, viewing, adding } = useLoaderData<typeof customerLoader>();
+  const { customer, debts, projects, acting, viewing, adding } =
+    useLoaderData<typeof customerLoader>();
   const t = useTranslations("customers.debts");
   const common = useTranslations("common");
   const { close } = useRouteDrawer(customerHref(customer.id));
@@ -212,6 +215,7 @@ export function CustomerScreen() {
             key={`${acting.debt.id}-${acting.action}`}
             debt={acting.debt}
             action={acting.action}
+            projects={projects}
             onDone={close}
           />
         )}

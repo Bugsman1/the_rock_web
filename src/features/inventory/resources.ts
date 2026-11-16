@@ -5,6 +5,7 @@ import type { IsoTimestamp } from "@/lib/format";
 import type { ProjectId } from "@/lib/projects";
 import { kindNamed } from "@/lib/resourceKinds";
 import type { ResourceKind } from "@/lib/resourceKinds";
+import type { SupplierChoice } from "@/lib/suppliersApi";
 
 const NAME_MAX_LENGTH = 150;
 const NOTE_MAX_LENGTH = 500;
@@ -21,11 +22,6 @@ export type Resource = {
   isRefiningMaterial: boolean;
   isStockable: boolean;
   suppliers: readonly SupplierChoice[];
-};
-
-export type SupplierChoice = {
-  id: string;
-  name: string;
 };
 
 export const resourceChangeTypes = ["increase", "decrease"] as const;
@@ -163,10 +159,6 @@ export function resourceToApi(values: ResourceValues) {
         }
       : {}),
   };
-}
-
-export function supplierChoiceFromApi(supplier: ApiSchema<"Supplier">): SupplierChoice {
-  return { id: String(supplier.id), name: supplier.name };
 }
 
 export function resourceErrorsFromApi(

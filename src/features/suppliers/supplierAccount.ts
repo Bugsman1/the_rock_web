@@ -24,6 +24,7 @@ export type AccountEntry = {
 
 export type SupplierPayment = {
   id: string;
+  project: string;
   amount: number;
   at: IsoTimestamp;
   note: string;
@@ -43,6 +44,7 @@ type DateTimeMessages = { required: string; dateInvalid: string; timeInvalid: st
 
 export function createPaymentSchema(messages: DateTimeMessages & { amountInvalid: string }) {
   return z.object({
+    project: z.string().min(1, messages.required),
     amount: z.number({ error: messages.amountInvalid }).positive(messages.amountInvalid),
     date: requiredIsoDate(messages),
     time: requiredTime(messages),
@@ -67,7 +69,13 @@ export function createDeliverySchema(
 
 export type DeliveryValues = z.infer<ReturnType<typeof createDeliverySchema>>;
 
-const paymentFields: readonly (keyof PaymentValues)[] = ["amount", "date", "time", "note"];
+const paymentFields: readonly (keyof PaymentValues)[] = [
+  "project",
+  "amount",
+  "date",
+  "time",
+  "note",
+];
 
 export function isPaymentField(value: string): value is keyof PaymentValues {
   return paymentFields.some((field) => field === value);
@@ -108,6 +116,7 @@ export function accountEntryFromApi(entry: ApiSchema<"SupplierHistoryEntry">): A
 export function paymentFromApi(payment: ApiSchema<"SupplierPayment">): SupplierPayment {
   return {
     id: String(payment.id),
+    project: payment.project === null ? "" : String(payment.project),
     amount: fromDecimal(payment.amount),
     at: payment.paid_at ?? payment.created_at,
     note: payment.notes ?? "",
@@ -133,6 +142,7 @@ export function deliveryFromApi(delivery: ApiSchema<"SupplierDelivery">): Suppli
 
 export function paymentToApi(values: PaymentValues, at: IsoTimestamp) {
   return {
+    project: Number(values.project),
     amount: toMoneyDecimal(values.amount),
     paid_at: at,
     notes: values.note,
@@ -159,6 +169,7 @@ export function newDeliveryToApi(supplierId: string, values: DeliveryValues, at:
 
 export function paymentErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof PaymentValues> {
   return {
+    ...(errors.project === undefined ? {} : { project: errors.project }),
     ...(errors.amount === undefined ? {} : { amount: errors.amount }),
     ...(errors.paid_at === undefined ? {} : { date: errors.paid_at }),
     ...(errors.notes === undefined ? {} : { note: errors.notes }),

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ApiSchema, BackendFieldErrors, FieldErrors } from "./api/client";
+import { fromDecimal, toMoneyDecimal } from "./format";
 
 export const siteKeys = ["zouerat", "sfariyat"] as const;
 
@@ -16,6 +17,7 @@ export type Project = {
   name: string;
   site: SiteKey;
   status: ActivityStatus;
+  capital: number;
 };
 
 export type Grinder = {
@@ -63,11 +65,12 @@ const PROJECT_NAME_MAX_LENGTH = 100;
 
 export const GRINDER_NUMBER_MAX = 9999;
 
-export function createProjectSchema(messages: { required: string }) {
+export function createProjectSchema(messages: { required: string; capitalInvalid: string }) {
   return z.object({
     name: z.string().trim().min(1, messages.required).max(PROJECT_NAME_MAX_LENGTH),
     site: z.enum(siteKeys),
     status: z.enum(activityStatuses),
+    capital: z.number({ error: messages.capitalInvalid }).min(0, messages.capitalInvalid),
   });
 }
 
@@ -89,7 +92,7 @@ export type GrinderValues = z.infer<ReturnType<typeof createGrinderSchema>>;
 type ApiProject = ApiSchema<"Project">;
 type ApiGrinder = ApiSchema<"Grinder">;
 
-const projectFields: readonly (keyof ProjectValues)[] = ["name", "site", "status"];
+const projectFields: readonly (keyof ProjectValues)[] = ["name", "site", "status", "capital"];
 
 const grinderFields: readonly (keyof GrinderValues)[] = ["number", "status"];
 
@@ -107,11 +110,12 @@ export function projectFromApi(project: ApiProject): Project {
     name: project.name,
     site: project.site,
     status: project.status ?? "active",
+    capital: fromDecimal(project.capital),
   };
 }
 
-export function projectToApi({ name, site, status }: ProjectValues) {
-  return { name: name.trim(), site, status };
+export function projectToApi({ name, site, status, capital }: ProjectValues) {
+  return { name: name.trim(), site, status, capital: toMoneyDecimal(capital) };
 }
 
 export function projectErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof ProjectValues> {
@@ -119,6 +123,7 @@ export function projectErrorsFromApi(errors: BackendFieldErrors): FieldErrors<ke
     ...(errors.name === undefined ? {} : { name: errors.name }),
     ...(errors.site === undefined ? {} : { site: errors.site }),
     ...(errors.status === undefined ? {} : { status: errors.status }),
+    ...(errors.capital === undefined ? {} : { capital: errors.capital }),
   };
 }
 

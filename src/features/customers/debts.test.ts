@@ -37,8 +37,14 @@ const apiDebt: ApiSchema<"CustomerDebt"> = {
     { id: 3, amount: "10000.00", increased_at: "2026-10-05T09:00:00Z", reason: "Gasoil" },
   ],
   payments: [
-    { id: 4, amount: "15000.00", paid_at: "2026-10-03T10:00:00Z", notes: "Premier versement" },
-    { id: 5, amount: "5000.00", paid_at: "2026-10-08T10:00:00Z", notes: "" },
+    {
+      id: 4,
+      project: 3,
+      amount: "15000.00",
+      paid_at: "2026-10-03T10:00:00Z",
+      notes: "Premier versement",
+    },
+    { id: 5, project: null, amount: "5000.00", paid_at: "2026-10-08T10:00:00Z", notes: "" },
   ],
   created_by_name: "Sidi",
   created_at: "2026-10-01T08:00:00Z",
@@ -143,10 +149,18 @@ describe("debt forms", () => {
   it("refuses a payment above what is left, with optional notes", () => {
     const schema = createPaymentSchema(messages, 40000);
 
-    expect(errorsOf(schema.safeParse({ amount: 40001, notes: "" }))).toEqual({
+    expect(errorsOf(schema.safeParse({ project: "3", amount: 40001, notes: "" }))).toEqual({
       amount: "too high",
     });
-    expect(schema.safeParse({ amount: 40000, notes: "" }).success).toBe(true);
+    expect(schema.safeParse({ project: "3", amount: 40000, notes: "" }).success).toBe(true);
+  });
+
+  it("requires the project whose cash received the payment", () => {
+    expect(
+      errorsOf(
+        createPaymentSchema(messages, 40000).safeParse({ project: "", amount: 1, notes: "" }),
+      ),
+    ).toEqual({ project: "required" });
   });
 });
 
@@ -162,8 +176,9 @@ describe("debt requests", () => {
       amount: "200",
       reason: "Gasoil",
     });
-    expect(paymentToApi("12", { amount: 40000, notes: " Soldé " })).toEqual({
+    expect(paymentToApi("12", { project: "3", amount: 40000, notes: " Soldé " })).toEqual({
       debt: 12,
+      project: 3,
       amount: "40000",
       notes: "Soldé",
     });

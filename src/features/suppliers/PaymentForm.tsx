@@ -4,9 +4,11 @@ import { useController, useForm } from "react-hook-form";
 import { useTranslations } from "use-intl";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
+import { Select } from "@/components/ui/Select";
 import { TextField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
 import { combineDateAndTime } from "@/lib/datetime";
+import type { Project } from "@/lib/projects";
 import { useDateTimeMessages, WhenAndNoteFields, whenOf } from "./AccountFields";
 import type { FormActions } from "./AccountFields";
 import { createPaymentSchema, isPaymentField } from "./supplierAccount";
@@ -17,9 +19,10 @@ import { addPayment, updatePayment } from "./suppliersApi";
 type PaymentFormProps = FormActions & {
   supplier: Supplier;
   payment: SupplierPayment | undefined;
+  projects: readonly Project[];
 };
 
-export function PaymentForm({ supplier, payment, onSaved, onCancel }: PaymentFormProps) {
+export function PaymentForm({ supplier, payment, projects, onSaved, onCancel }: PaymentFormProps) {
   const t = useTranslations("suppliers");
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
@@ -36,6 +39,7 @@ export function PaymentForm({ supplier, payment, onSaved, onCancel }: PaymentFor
     mode: "onTouched",
     resolver: zodResolver(schema),
     defaultValues: {
+      project: payment?.project ?? (projects.length === 1 ? (projects[0]?.id ?? "") : ""),
       amount: payment?.amount ?? Number.NaN,
       ...whenOf(payment?.at),
       note: payment?.note ?? "",
@@ -82,6 +86,18 @@ export function PaymentForm({ supplier, payment, onSaved, onCancel }: PaymentFor
   return (
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <Select
+            id="payment-project"
+            label={common("project")}
+            required
+            placeholder={common("projectPlaceholder")}
+            options={projects.map((project) => ({ value: project.id, label: project.name }))}
+            error={errors.project?.message}
+            {...register("project")}
+          />
+        </div>
+
         <div className="sm:col-span-2">
           <TextField
             id="payment-amount"

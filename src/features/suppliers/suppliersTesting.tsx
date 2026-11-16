@@ -86,6 +86,8 @@ export const apiPayment = {
   id: 7,
   supplier: 5,
   supplier_name: "Sidi Fournitures",
+  project: 3,
+  project_name: "Zouérat 1",
   amount: "1000.00",
   paid_at: "2026-10-12T09:00:00Z",
   notes: "Avance",
@@ -134,6 +136,12 @@ export function serveSuppliers(sent: Sent[]) {
     server.use(
       http.get(`${API}/suppliers/`, () => page([apiSupplier])),
       http.get(`${API}/suppliers/5/`, () => HttpResponse.json(apiSupplier)),
+      http.get(`${API}/projects/`, () =>
+        page([
+          { id: 3, name: "Zouérat 1", site: "zouerat", status: "active", capital: "0.00" },
+          { id: 4, name: "Sfariyat 1", site: "sfariyat", status: "active", capital: "0.00" },
+        ]),
+      ),
       http.get(`${API}/resources/`, () =>
         page([
           { ...apiResource, id: 2, name: "mercury", is_refining_material: true },

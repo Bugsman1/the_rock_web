@@ -168,6 +168,12 @@ export function auditLogHref(list?: URLSearchParams): string {
   return withParams(AUDIT_LOG_HREF, list);
 }
 
+export const CASH_HREF = "/cash";
+
+export function cashHref(params?: URLSearchParams): string {
+  return withParams(CASH_HREF, params);
+}
+
 export function shipmentsProjectHref(project: string, list?: URLSearchParams): string {
   return withParams(`${SHIPMENTS_HREF}/projects/${project}`, list);
 }

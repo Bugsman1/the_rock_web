@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { formatMoney } from "@/lib/format";
+import messages from "@/messages/fr.json";
 import {
   API,
   apiDelivery,
@@ -53,11 +54,12 @@ describe("SupplierScreen", () => {
     ]);
   });
 
-  it("records a payment, which the backend adds to the balance", async () => {
+  it("records a payment from the project that paid it", async () => {
     const user = userEvent.setup();
     openAt("/fr/suppliers/5?addPayment=1");
 
     const dialog = within(await screen.findByRole("dialog", { name: text.payments.newTitle }));
+    await user.selectOptions(dialog.getByLabelText(messages.common.project), "4");
     await user.type(dialog.getByLabelText(text.formFields.amount), "500");
     await user.type(dialog.getByLabelText(text.formFields.note), "Avance");
     await user.click(dialog.getByRole("button", { name: text.payments.create }));
@@ -67,7 +69,13 @@ describe("SupplierScreen", () => {
         {
           method: "POST",
           path: "/supplier-payments/",
-          body: { supplier: 5, amount: "500", paid_at: expect.any(String), notes: "Avance" },
+          body: {
+            supplier: 5,
+            project: 4,
+            amount: "500",
+            paid_at: expect.any(String),
+            notes: "Avance",
+          },
           key: expect.any(String),
         },
       ]),
@@ -83,6 +91,7 @@ describe("SupplierScreen", () => {
     await user.click(dialog.getByRole("button", { name: text.payments.create }));
 
     expect(await dialog.findByText(text.errors.amountInvalid)).toBeVisible();
+    expect(dialog.getByText(messages.common.validation.required)).toBeVisible();
     expect(sent).toEqual([]);
   });
 

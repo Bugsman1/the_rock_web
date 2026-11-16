@@ -11,7 +11,8 @@ import { TextField } from "@/components/ui/TextField";
 import type { Project } from "@/lib/projects";
 import { kindNamed } from "@/lib/resourceKinds";
 import { chargesInitialPrice, createResourceSchema } from "./resources";
-import type { ResourceValues, SupplierChoice } from "./resources";
+import type { SupplierChoice } from "@/lib/suppliersApi";
+import type { ResourceValues } from "./resources";
 import { createResource } from "./resourcesApi";
 
 const resourceFields: readonly (keyof ResourceValues)[] = [

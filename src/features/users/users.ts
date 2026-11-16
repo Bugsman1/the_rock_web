@@ -143,6 +143,8 @@ export function createRoleSchema(messages: { required: string }) {
       accounts: moduleRightsSchema,
       locations: moduleRightsSchema,
       audit: moduleRightsSchema,
+      cash: moduleRightsSchema,
+      accounting: moduleRightsSchema,
     }),
   });
 }

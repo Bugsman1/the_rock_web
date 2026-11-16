@@ -73,6 +73,15 @@ beforeEach(() => {
   posted = [];
   historyLoads = 0;
   server.use(
+    http.get(`${API}/projects/`, () =>
+      HttpResponse.json({
+        count: 2,
+        results: [
+          { id: 3, name: "Zouérat 1", site: "zouerat", status: "active", capital: "0.00" },
+          { id: 4, name: "Sfariyat 1", site: "sfariyat", status: "active", capital: "0.00" },
+        ],
+      }),
+    ),
     http.get(`${API}/customers/7/`, () =>
       HttpResponse.json({
         id: 7,
@@ -251,12 +260,13 @@ describe("CustomerScreen", () => {
     await user.clear(dialog.getByLabelText(text.form.amount, { exact: false }));
     await user.type(dialog.getByLabelText(text.form.amount, { exact: false }), "10000");
     await user.type(dialog.getByLabelText(text.form.notes), "Deuxième versement");
+    await user.selectOptions(dialog.getByLabelText(messages.common.project), "3");
     await user.click(dialog.getByRole("button", { name: text.form.decrease }));
 
     await waitFor(() => expect(posted).toHaveLength(1));
     expect(posted[0]).toMatchObject({
       path: "debt-payments",
-      body: { debt: 12, amount: "10000", notes: "Deuxième versement" },
+      body: { debt: 12, project: 3, amount: "10000", notes: "Deuxième versement" },
     });
   });
 
@@ -269,10 +279,16 @@ describe("CustomerScreen", () => {
     await user.type(dialog.getByLabelText(text.form.notes), "Soldé en espèces");
     await user.click(dialog.getByRole("button", { name: text.form.payOff }));
 
+    expect(await dialog.findByText(messages.common.validation.required)).toBeVisible();
+    expect(posted).toHaveLength(0);
+
+    await user.selectOptions(dialog.getByLabelText(messages.common.project), "4");
+    await user.click(dialog.getByRole("button", { name: text.form.payOff }));
+
     await waitFor(() => expect(posted).toHaveLength(1));
     expect(posted[0]).toMatchObject({
       path: "debt-payments",
-      body: { debt: 12, amount: "30000", notes: "Soldé en espèces" },
+      body: { debt: 12, project: 4, amount: "30000", notes: "Soldé en espèces" },
     });
   });
 

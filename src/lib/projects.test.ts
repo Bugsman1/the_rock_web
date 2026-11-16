@@ -20,8 +20,8 @@ import {
 import type { Grinder, Project } from "./projects";
 
 const projects: readonly Project[] = [
-  { id: "1", name: "Zouérat 1", site: "zouerat", status: "active" },
-  { id: "2", name: "Sfariyat 1", site: "sfariyat", status: "inactive" },
+  { id: "1", name: "Zouérat 1", site: "zouerat", status: "active", capital: 0 },
+  { id: "2", name: "Sfariyat 1", site: "sfariyat", status: "inactive", capital: 0 },
 ];
 
 const grinders: readonly Grinder[] = [
@@ -84,18 +84,27 @@ describe("grindersOfProject", () => {
 });
 
 describe("createProjectSchema", () => {
-  const schema = createProjectSchema({ required: "required" });
+  const schema = createProjectSchema({ required: "required", capitalInvalid: "capital" });
 
-  it("accepts a named project on a known site", () => {
+  it("accepts a named project on a known site with its capital", () => {
     expect(
-      schema.safeParse({ name: " Zouérat 2 ", site: "zouerat", status: "active" }).data,
-    ).toEqual({ name: "Zouérat 2", site: "zouerat", status: "active" });
+      schema.safeParse({ name: " Zouérat 2 ", site: "zouerat", status: "active", capital: 0 }).data,
+    ).toEqual({ name: "Zouérat 2", site: "zouerat", status: "active", capital: 0 });
   });
 
   it("requires a name", () => {
-    const result = schema.safeParse({ name: " ", site: "zouerat", status: "active" });
+    const result = schema.safeParse({ name: " ", site: "zouerat", status: "active", capital: 0 });
 
     expect(result.error?.issues[0]?.message).toBe("required");
+  });
+
+  it("requires a capital of at least 0", () => {
+    for (const capital of [Number.NaN, -1]) {
+      expect(
+        schema.safeParse({ name: "Zouérat 2", site: "zouerat", status: "active", capital }).error
+          ?.issues[0]?.message,
+      ).toBe("capital");
+    }
   });
 });
 
@@ -129,24 +138,35 @@ describe("projectFromApi", () => {
         name: "Zouérat 1",
         site: "zouerat",
         status: "maintenance",
+        capital: "1500000.00",
         ...stamps,
       }),
-    ).toEqual({ id: "3", name: "Zouérat 1", site: "zouerat", status: "maintenance" });
+    ).toEqual({
+      id: "3",
+      name: "Zouérat 1",
+      site: "zouerat",
+      status: "maintenance",
+      capital: 1500000,
+    });
   });
 
   it("counts a project without status as active", () => {
-    expect(projectFromApi({ id: 3, name: "Zouérat 1", site: "zouerat", ...stamps }).status).toBe(
-      "active",
-    );
+    expect(
+      projectFromApi({ id: 3, name: "Zouérat 1", site: "zouerat", capital: "0.00", ...stamps })
+        .status,
+    ).toBe("active");
   });
 });
 
 describe("projectToApi", () => {
-  it("sends the trimmed name, the site and the status", () => {
-    expect(projectToApi({ name: " Sfariyat 3 ", site: "sfariyat", status: "active" })).toEqual({
+  it("sends the trimmed name, the site, the status and the capital as typed", () => {
+    expect(
+      projectToApi({ name: " Sfariyat 3 ", site: "sfariyat", status: "active", capital: 250000 }),
+    ).toEqual({
       name: "Sfariyat 3",
       site: "sfariyat",
       status: "active",
+      capital: "250000",
     });
   });
 });

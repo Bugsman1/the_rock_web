@@ -45,6 +45,13 @@ describe("navGroupsFor", () => {
       "auditLog",
     ]);
   });
+
+  it("opens the treasury entry on the cash for a role that can view it", () => {
+    const items = navGroupsFor(viewing(["cash"]))[0]?.items;
+
+    expect(items?.map((item) => item.key)).toEqual(["treasury"]);
+    expect(items?.[0]?.href).toBe("/cash");
+  });
 });
 
 describe("sectionHrefs", () => {

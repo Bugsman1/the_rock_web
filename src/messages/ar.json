@@ -48,7 +48,9 @@
       "confirm": "حذف",
       "deleting": "جارٍ الحذف...",
       "failed": "تعذر الحذف"
-    }
+    },
+    "project": "المشروع",
+    "projectPlaceholder": "اختر المشروع"
   },
   "filters": {
     "all": "الكل",
@@ -104,7 +106,7 @@
       "customers": "العملاء",
       "settlement": "التسوية النهائية",
       "accounting": "المحاسبة",
-      "treasury": "الصناديق والبنوك",
+      "treasury": "الخزينة",
       "employees": "الموظفون والرواتب",
       "inventory": "المخزون",
       "suppliers": "إدارة الموردين",
@@ -251,7 +253,8 @@
       "fields": {
         "name": "اسم المشروع",
         "site": "المكان",
-        "status": "الحالة"
+        "status": "الحالة",
+        "capital": "رأس المال"
       },
       "form": {
         "newTitle": "مشروع جديد",
@@ -268,7 +271,8 @@
         "confirm": "نعم، احذف المشروع",
         "deleting": "جارٍ حذف المشروع",
         "failed": "تعذر حذف المشروع، حاول مرة أخرى بعد قليل"
-      }
+      },
+      "capitalInvalid": "أدخل رأس مال لا يقل عن 0"
     },
     "grinders": {
       "title": "الآلات",
@@ -374,7 +378,9 @@
         "suppliers": "إدارة الموردين",
         "accounts": "المستخدمون والصلاحيات",
         "locations": "المشاريع والآلات",
-        "audit": "سجل التغييرات"
+        "audit": "سجل التغييرات",
+        "cash": "الخزينة",
+        "accounting": "المحاسبة"
       },
       "form": {
         "newTitle": "دور جديد",
@@ -1391,6 +1397,73 @@
     "supplierPaymentDeleted": "تم حذف الدفعة",
     "deliveryAdded": "تم تسجيل التوريد",
     "deliveryUpdated": "تم حفظ التوريد",
-    "deliveryDeleted": "تم حذف التوريد"
+    "deliveryDeleted": "تم حذف التوريد",
+    "cashRecorded": "تم تسجيل الحركة",
+    "cashUpdated": "تم تعديل الحركة",
+    "cashDeleted": "تم حذف الحركة"
+  },
+  "cash": {
+    "title": "الخزينة",
+    "recordIncome": "تسجيل دخل",
+    "recordExpense": "تسجيل مصروف",
+    "balances": {
+      "title": "الرصيد حسب المشروع",
+      "project": "المشروع",
+      "capital": "رأس المال",
+      "income": "الدخل",
+      "expense": "المصروفات",
+      "balance": "الرصيد",
+      "empty": "لا توجد مشاريع."
+    },
+    "list": {
+      "title": "الحركات المالية",
+      "count": "الحركات: {count}",
+      "empty": "لا توجد حركات بعد.",
+      "noResults": "لا توجد حركات تطابق هذه الفلاتر.",
+      "searchPlaceholder": "الوصف، العميل، المزوّد"
+    },
+    "fields": {
+      "date": "التاريخ",
+      "type": "النوع",
+      "category": "الفئة",
+      "description": "الوصف",
+      "project": "المشروع",
+      "site": "المكان",
+      "reference": "المرجع",
+      "customer": "العميل",
+      "supplier": "المزوّد",
+      "amount": "المبلغ",
+      "by": "بواسطة",
+      "status": "الحالة",
+      "actions": "إجراءات",
+      "categoryName": "اسم المصروف"
+    },
+    "types": {
+      "income": "دخل",
+      "expense": "مصروف"
+    },
+    "approved": "معتمد",
+    "notApproved": "غير معتمد",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "editLabel": "تعديل حركة {date}",
+    "deleteLabel": "حذف حركة {date}",
+    "form": {
+      "incomeTitle": "دخل جديد",
+      "expenseTitle": "مصروف جديد",
+      "editTitle": "تعديل الحركة",
+      "categoryPlaceholder": "اختر الفئة",
+      "customerPlaceholder": "ابحث عن عميل",
+      "noSupplier": "بدون",
+      "time": "الوقت",
+      "create": "تسجيل",
+      "save": "حفظ التعديلات",
+      "saving": "جارٍ الحفظ",
+      "amountInvalid": "أدخل مبلغًا أكبر من 0"
+    },
+    "remove": {
+      "title": "حذف الحركة",
+      "question": "حذف «{description}» ({amount}، {date})؟ لا يمكن التراجع عن هذا الإجراء."
+    }
   }
 }

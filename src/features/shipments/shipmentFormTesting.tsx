@@ -72,8 +72,8 @@ export async function customerPageFor(search: string): Promise<Page<Customer>> {
 }
 
 export const projects: readonly Project[] = [
-  { id: "2", name: "Zouérat 2", site: "zouerat", status: "active" },
-  { id: "3", name: "Sfariyat 1", site: "sfariyat", status: "maintenance" },
+  { id: "2", name: "Zouérat 2", site: "zouerat", status: "active", capital: 0 },
+  { id: "3", name: "Sfariyat 1", site: "sfariyat", status: "maintenance", capital: 0 },
 ];
 
 export function renderForm(defaultProject?: string) {

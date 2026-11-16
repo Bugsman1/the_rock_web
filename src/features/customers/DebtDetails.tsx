@@ -7,6 +7,7 @@ import type { StatusTone } from "@/components/ui/TablePanel";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import type { CustomerDebt, DebtAction, DebtHistoryEntry, DebtStatus } from "./debts";
 import { IncreaseForm } from "./DebtForms";
+import type { Project } from "@/lib/projects";
 import { DebtPaymentForm } from "./DebtPaymentForm";
 
 const statusTones: Record<DebtStatus, StatusTone> = {
@@ -111,13 +112,20 @@ export function DebtDetails({
 type DebtActionFormProps = {
   debt: CustomerDebt;
   action: DebtAction;
+  projects: readonly Project[];
   onDone: () => void;
 };
 
-export function DebtActionForm({ debt, action, onDone }: DebtActionFormProps) {
+export function DebtActionForm({ debt, action, projects, onDone }: DebtActionFormProps) {
   return action === "increase" ? (
     <IncreaseForm debt={debt} onSaved={onDone} onCancel={onDone} />
   ) : (
-    <DebtPaymentForm debt={debt} payOff={action === "payOff"} onSaved={onDone} onCancel={onDone} />
+    <DebtPaymentForm
+      debt={debt}
+      payOff={action === "payOff"}
+      projects={projects}
+      onSaved={onDone}
+      onCancel={onDone}
+    />
   );
 }

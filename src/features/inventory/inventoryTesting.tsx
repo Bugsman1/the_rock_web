@@ -15,7 +15,8 @@ import {
   InventoryScreen,
   inventoryLoader,
 } from "./InventoryScreens";
-import type { Resource, SupplierChoice } from "./resources";
+import type { SupplierChoice } from "@/lib/suppliersApi";
+import type { Resource } from "./resources";
 import { ResourceScreen, resourceLoader } from "./ResourceScreen";
 
 const allRights: Access = { ...noAccess, superuser: true };

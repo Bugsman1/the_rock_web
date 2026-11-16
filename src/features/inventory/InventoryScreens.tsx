@@ -15,11 +15,12 @@ import { useCan } from "@/lib/accessContext";
 import { errorKind, tryLoad } from "@/lib/api/client";
 import { formatCount, formatQuantity } from "@/lib/format";
 import { getProjects, requireProject } from "@/lib/projectsApi";
+import { getSupplierChoices } from "@/lib/suppliersApi";
 import { INVENTORY_HREF, inventoryProjectHref, resourceHref } from "@/lib/routes";
 import { matchesSearch } from "@/lib/search";
 import { ResourceForm } from "./ResourceForm";
 import type { Resource } from "./resources";
-import { getResources, getSupplierChoices } from "./resourcesApi";
+import { getResources } from "./resourcesApi";
 
 function LoadError({ status }: { status: number }) {
   const errors = useTranslations("errors");

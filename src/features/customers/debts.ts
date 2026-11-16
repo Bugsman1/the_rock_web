@@ -105,10 +105,11 @@ export function createIncreaseSchema(messages: { required: string; amountInvalid
 export type IncreaseValues = z.infer<ReturnType<typeof createIncreaseSchema>>;
 
 export function createPaymentSchema(
-  messages: { amountInvalid: string; amountTooHigh: string },
+  messages: { required: string; amountInvalid: string; amountTooHigh: string },
   remaining: number,
 ) {
   return z.object({
+    project: z.string().min(1, messages.required),
     amount: amountSchema(messages.amountInvalid).max(remaining, messages.amountTooHigh),
     notes: z.string().max(NOTES_MAX_LENGTH),
   });
@@ -135,6 +136,7 @@ export function increaseToApi(debtId: string, values: IncreaseValues) {
 export function paymentToApi(debtId: string, values: PaymentValues) {
   return {
     debt: Number(debtId),
+    project: Number(values.project),
     amount: toMoneyDecimal(values.amount),
     notes: values.notes.trim(),
   };
@@ -158,6 +160,7 @@ export function increaseErrorsFromApi(
 
 export function paymentErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof PaymentValues> {
   return {
+    ...(errors.project === undefined ? {} : { project: errors.project }),
     ...(errors.amount === undefined ? {} : { amount: errors.amount }),
     ...(errors.notes === undefined ? {} : { notes: errors.notes }),
   };

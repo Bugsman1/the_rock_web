@@ -38,7 +38,7 @@ function showDrawer(operation: MillingOperation) {
   return inRouter(
     <EditOperationDrawer
       open
-      project={{ id: "3", name: "Zouérat 1", site: "zouerat", status: "active" }}
+      project={{ id: "3", name: "Zouérat 1", site: "zouerat", status: "active", capital: 0 }}
       operation={operation}
       data={{ machines: [], shipments: [], operations: [operation] }}
       operators={[]}

@@ -10,6 +10,7 @@ import { DeliveryForm } from "./DeliveryForm";
 import { PaymentForm } from "./PaymentForm";
 import type { AccountEntry, SupplierDelivery, SupplierPayment } from "./supplierAccount";
 import { SupplierForm } from "./SupplierForm";
+import type { Project } from "@/lib/projects";
 import type { SuppliedResource, Supplier } from "./suppliers";
 import { deleteDelivery, deletePayment, deleteSupplier } from "./suppliersApi";
 
@@ -37,9 +38,10 @@ type SupplierDrawersProps = {
   supplier: Supplier;
   drawer: OpenDrawer | undefined;
   resources: readonly SuppliedResource[] | undefined;
+  projects: readonly Project[];
 };
 
-export function SupplierDrawers({ supplier, drawer, resources }: SupplierDrawersProps) {
+export function SupplierDrawers({ supplier, drawer, resources, projects }: SupplierDrawersProps) {
   const t = useTranslations("suppliers");
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
@@ -81,6 +83,7 @@ export function SupplierDrawers({ supplier, drawer, resources }: SupplierDrawers
           key={payment?.id ?? "new"}
           supplier={supplier}
           payment={payment}
+          projects={projects}
           onSaved={close}
           onCancel={close}
         />

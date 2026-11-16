@@ -54,9 +54,9 @@ const aicha: User = {
 };
 
 const projects: readonly Project[] = [
-  { id: "1", name: "Zouérat 1", site: "zouerat", status: "active" },
-  { id: "2", name: "Zouérat 2", site: "zouerat", status: "active" },
-  { id: "3", name: "Sfariyat 1", site: "sfariyat", status: "maintenance" },
+  { id: "1", name: "Zouérat 1", site: "zouerat", status: "active", capital: 0 },
+  { id: "2", name: "Zouérat 2", site: "zouerat", status: "active", capital: 0 },
+  { id: "3", name: "Sfariyat 1", site: "sfariyat", status: "maintenance", capital: 0 },
 ];
 
 function renderForm(user?: User) {

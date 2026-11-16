@@ -75,6 +75,30 @@ describe("accessFromApi", () => {
     expect(me(true).rights.audit.view).toBe(false);
   });
 
+  it("never gives accounting to a role limited to its projects, but keeps its cash", () => {
+    const me = (projectScoped: boolean) =>
+      accessFromApi({
+        id: 4,
+        email: "aicha@mills.mr",
+        full_name: "Aicha",
+        phone: "",
+        is_superuser: false,
+        role: {
+          id: 2,
+          name: "Caissier",
+          is_project_scoped: projectScoped,
+          permissions: [
+            { module: "cash", can_view: true, can_add: true },
+            { module: "accounting", can_view: true },
+          ],
+        },
+      });
+
+    expect(me(false).rights.accounting.view).toBe(true);
+    expect(me(true).rights.accounting.view).toBe(false);
+    expect(me(true).rights.cash).toMatchObject({ view: true, add: true });
+  });
+
   it("recognises a superuser", () => {
     expect(
       accessFromApi({
@@ -166,8 +190,15 @@ describe("canOpen", () => {
     expect(canOpen(supervisor, "/audit-log")).toBe(false);
   });
 
-  it("offers only the view right for the audit log", () => {
+  it("opens the cash with its own view right", () => {
+    expect(canOpen(access(["cash"]), "/cash")).toBe(true);
+    expect(canOpen(access(["shipments"]), "/cash")).toBe(false);
+  });
+
+  it("offers only the view right for the audit log and accounting", () => {
     expect(rightsOfModule("audit")).toEqual(["view"]);
+    expect(rightsOfModule("accounting")).toEqual(["view"]);
+    expect(rightsOfModule("cash")).toEqual(["view", "add", "edit", "delete"]);
     expect(rightsOfModule("suppliers")).toEqual(["view", "add", "edit", "delete"]);
   });
 

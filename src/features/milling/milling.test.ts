@@ -194,8 +194,8 @@ describe("summary", () => {
 
   it("filters projects by site", () => {
     const projects: Project[] = [
-      { id: "1", name: "Zouérat 1", site: "zouerat", status: "active" },
-      { id: "2", name: "Sfariyat 1", site: "sfariyat", status: "active" },
+      { id: "1", name: "Zouérat 1", site: "zouerat", status: "active", capital: 0 },
+      { id: "2", name: "Sfariyat 1", site: "sfariyat", status: "active", capital: 0 },
     ];
 
     expect(projectsForSite(projects, "sfariyat").map((project) => project.id)).toEqual(["2"]);

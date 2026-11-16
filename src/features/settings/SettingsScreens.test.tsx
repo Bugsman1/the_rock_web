@@ -8,6 +8,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { modules, noAccess, rightsFromApi } from "@/lib/access";
 import type { Access, Module } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
+import { formatMoney } from "@/lib/format";
 import messages from "@/messages/fr.json";
 import { ProjectsScreen, projectsLoader } from "./ProjectScreens";
 import { ProjectSettingsScreen, projectLoader } from "./ProjectSettingsScreen";
@@ -49,7 +50,14 @@ const stamps = {
   updated_at: "2026-10-01T08:00:00Z",
 };
 
-const zouerat = { id: 3, name: "Zouérat 1", site: "zouerat", status: "active", ...stamps };
+const zouerat = {
+  id: 3,
+  name: "Zouérat 1",
+  site: "zouerat",
+  status: "active",
+  capital: "1500000.00",
+  ...stamps,
+};
 
 function viewing(viewable: readonly Module[]): Access {
   return {
@@ -195,11 +203,12 @@ describe("projects", () => {
     expect(screen.getByText("2")).toBeVisible();
   });
 
-  it("shows a project with its machines in order", async () => {
+  it("shows a project with its capital and its machines in order", async () => {
     answerProjects();
     openAt("/fr/settings/projects/3");
 
     const table = await screen.findByRole("table");
+    expect(screen.getByText(formatMoney(1500000, "fr").replace(/\s/g, " "))).toBeVisible();
     const [, ...rows] = within(table).getAllByRole("row");
     expect(rows.map((row) => within(row).getAllByRole("cell")[0]?.textContent)).toEqual([
       "Machine 2",

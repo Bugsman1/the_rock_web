@@ -41,12 +41,18 @@ function messagesOf(result: { error?: { issues: { path: PropertyKey[]; message: 
 }
 
 describe("createPaymentSchema", () => {
-  it("requires an amount above zero, a date and a time", () => {
+  it("requires the paying project, an amount above zero, a date and a time", () => {
     expect(
       messagesOf(
-        createPaymentSchema(messages).safeParse({ amount: 0, date: "", time: "", note: "" }),
+        createPaymentSchema(messages).safeParse({
+          project: "",
+          amount: 0,
+          date: "",
+          time: "",
+          note: "",
+        }),
       ),
-    ).toEqual({ amount: "amount", date: "required", time: "required" });
+    ).toEqual({ project: "required", amount: "amount", date: "required", time: "required" });
   });
 });
 
@@ -117,19 +123,21 @@ describe("accountEntryFromApi", () => {
 });
 
 describe("paymentFromApi", () => {
-  it("reads the payment's amount, date and notes", () => {
+  it("reads the payment's project, amount, date and notes", () => {
     expect(
       paymentFromApi({
         id: 7,
         supplier: 5,
         supplier_name: "Sidi",
+        project: 3,
+        project_name: "Zouérat 1",
         amount: "1000.00",
         paid_at: at,
         notes: "Avance",
         created_by_name: "Aicha",
         ...stamps,
       }),
-    ).toEqual({ id: "7", amount: 1000, at, note: "Avance" });
+    ).toEqual({ id: "7", project: "3", amount: 1000, at, note: "Avance" });
   });
 });
 
@@ -166,10 +174,13 @@ describe("deliveryFromApi", () => {
 });
 
 describe("paymentToApi", () => {
-  it("sends the amount as typed, the moment and the notes", () => {
+  it("sends the paying project, the amount as typed, the moment and the notes", () => {
     expect(
-      paymentToApi({ amount: 1000, date: "2026-10-12", time: "10:00", note: "Avance" }, at),
-    ).toEqual({ amount: "1000", paid_at: at, notes: "Avance" });
+      paymentToApi(
+        { project: "3", amount: 1000, date: "2026-10-12", time: "10:00", note: "Avance" },
+        at,
+      ),
+    ).toEqual({ project: 3, amount: "1000", paid_at: at, notes: "Avance" });
   });
 });
 

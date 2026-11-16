@@ -4,8 +4,10 @@ import { useForm } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
 import { FieldError } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
+import { Select } from "@/components/ui/Select";
 import { TextArea, TextField } from "@/components/ui/TextField";
 import { formatMoney } from "@/lib/format";
+import type { Project } from "@/lib/projects";
 import { createPaymentSchema } from "./debts";
 import type { CustomerDebt, PaymentValues } from "./debts";
 import { payDebt } from "./debtsApi";
@@ -15,10 +17,12 @@ import type { FormDoneProps } from "./DebtForms";
 type PaymentFormProps = FormDoneProps & {
   debt: CustomerDebt;
   payOff: boolean;
+  projects: readonly Project[];
 };
 
-export function DebtPaymentForm({ debt, payOff, onSaved, onCancel }: PaymentFormProps) {
+export function DebtPaymentForm({ debt, payOff, projects, onSaved, onCancel }: PaymentFormProps) {
   const t = useTranslations("customers.debts.form");
+  const common = useTranslations("common");
   const toasts = useTranslations("toasts");
   const locale = useLocale();
   const remaining = formatMoney(debt.remaining, locale);
@@ -26,20 +30,25 @@ export function DebtPaymentForm({ debt, payOff, onSaved, onCancel }: PaymentForm
     () =>
       createPaymentSchema(
         {
+          required: common("validation.required"),
           amountInvalid: t("amountInvalid"),
           amountTooHigh: t("amountTooHigh", { amount: remaining }),
         },
         debt.remaining,
       ),
-    [t, remaining, debt.remaining],
+    [t, common, remaining, debt.remaining],
   );
   const { register, handleSubmit, formState, setError } = useForm<PaymentValues>({
     mode: "onTouched",
     resolver: zodResolver(schema),
-    defaultValues: { amount: payOff ? debt.remaining : Number.NaN, notes: "" },
+    defaultValues: {
+      project: projects.length === 1 ? (projects[0]?.id ?? "") : "",
+      amount: payOff ? debt.remaining : Number.NaN,
+      notes: "",
+    },
   });
   const { saveFailure, save } = useDebtSave<keyof PaymentValues>({
-    fields: ["amount", "notes"],
+    fields: ["project", "amount", "notes"],
     savedMessage: toasts(payOff ? "customerDebtPaidOff" : "customerDebtDecreased"),
     onSaved,
     showFieldError: (field, message) => setError(field, { message }),
@@ -53,6 +62,15 @@ export function DebtPaymentForm({ debt, payOff, onSaved, onCancel }: PaymentForm
       className="flex flex-col gap-5"
     >
       <RecordedNow />
+      <Select
+        id="payment-project"
+        label={common("project")}
+        required
+        placeholder={common("projectPlaceholder")}
+        options={projects.map((project) => ({ value: project.id, label: project.name }))}
+        error={errors.project?.message}
+        {...register("project")}
+      />
       {payOff ? (
         <>
           <ReadOnlyField label={t("amount")} value={remaining} emphasis />

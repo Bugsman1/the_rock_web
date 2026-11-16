@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { PageLayout } from "@/components/ui/PageHeader";
 import { useCan } from "@/lib/accessContext";
 import { notFound, tryLoad } from "@/lib/api/client";
+import { getProjects } from "@/lib/projectsApi";
 import { formatMoney } from "@/lib/format";
 import { isRecordId } from "@/lib/projects";
 import { SUPPLIERS_HREF, supplierHref } from "@/lib/routes";
@@ -65,10 +66,12 @@ export async function supplierLoader({ params, request }: LoaderFunctionArgs) {
   }
 
   const search = new URL(request.url).searchParams;
-  const [supplier, account, resources] = await Promise.all([
+  const paying = search.get("addPayment") === "1" || search.get("payment") !== null;
+  const [supplier, account, resources, projects] = await Promise.all([
     getSupplier(id),
     getSupplierAccount(id),
     search.get("edit") === "1" ? tryLoad(getResourceChoices) : undefined,
+    paying ? getProjects() : [],
   ]);
 
   if (supplier === undefined) {
@@ -80,11 +83,12 @@ export async function supplierLoader({ params, request }: LoaderFunctionArgs) {
     account,
     drawer: await openDrawer(search, account),
     resources: resources?.ok === true ? resources.data : undefined,
+    projects,
   };
 }
 
 export function SupplierScreen() {
-  const { supplier, account, drawer, resources } = useLoaderData<typeof supplierLoader>();
+  const { supplier, account, drawer, resources, projects } = useLoaderData<typeof supplierLoader>();
   const t = useTranslations("suppliers");
   const common = useTranslations("common");
   const locale = useLocale();
@@ -148,7 +152,12 @@ export function SupplierScreen() {
 
       <SupplierAccountTable supplierId={supplier.id} entries={account} />
 
-      <SupplierDrawers supplier={supplier} drawer={drawer} resources={resources} />
+      <SupplierDrawers
+        supplier={supplier}
+        drawer={drawer}
+        resources={resources}
+        projects={projects}
+      />
     </PageLayout>
   );
 }

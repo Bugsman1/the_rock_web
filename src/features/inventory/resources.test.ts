@@ -6,7 +6,6 @@ import {
   resourceErrorsFromApi,
   resourceFromApi,
   resourceToApi,
-  supplierChoiceFromApi,
 } from "./resources";
 
 const noSupplier = { supplier: "", initialPrice: Number.NaN };
@@ -173,21 +172,5 @@ describe("resourceFromApi", () => {
       kind: undefined,
       name: "Chaux",
     });
-  });
-});
-
-describe("supplierChoiceFromApi", () => {
-  it("keeps the supplier's id and name", () => {
-    expect(
-      supplierChoiceFromApi({
-        id: 5,
-        name: "Sidi Fournitures",
-        paid_amount: "0.00",
-        delivered_amount: "0.00",
-        balance: "0.00",
-        resources: [],
-        ...stamps,
-      }),
-    ).toEqual({ id: "5", name: "Sidi Fournitures" });
   });
 });
