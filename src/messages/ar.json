@@ -1431,7 +1431,8 @@
       "by": "بواسطة",
       "status": "الحالة",
       "actions": "إجراءات",
-      "categoryName": "اسم المصروف"
+      "categoryName": "اسم المصروف",
+      "source": "المصدر"
     },
     "types": {
       "income": "دخل",
@@ -1441,8 +1442,6 @@
     "notApproved": "غير معتمد",
     "edit": "تعديل",
     "delete": "حذف",
-    "editLabel": "تعديل حركة {date}",
-    "deleteLabel": "حذف حركة {date}",
     "form": {
       "incomeTitle": "دخل جديد",
       "expenseTitle": "مصروف جديد",
@@ -1460,6 +1459,16 @@
       "title": "حذف الحركة",
       "question": "حذف «{description}» ({amount}، {date})؟ لا يمكن التراجع عن هذا الإجراء."
     },
-    "noProjects": "لا توجد مشاريع بعد. أضفها من الإعدادات."
+    "noProjects": "لا توجد مشاريع بعد. أضفها من الإعدادات.",
+    "detailTitle": "تفاصيل الحركة",
+    "openLabel": "عرض حركة {date}",
+    "approvedBy": "اعتمدها {name} في {date}",
+    "sources": {
+      "manual": "مُدخلة يدويًا",
+      "supplier_payment": "دفعة لمزوّد",
+      "debt_payment": "سداد دين عميل",
+      "shipment_payment": "دفعة نقل شحنة",
+      "settlement_payment": "دفعة تسوية نهائية"
+    }
   }
 }

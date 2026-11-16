@@ -50,8 +50,11 @@ describe("transactionFromApi", () => {
       customerName: "",
       supplier: "5",
       supplierName: "Sidi Fournitures",
+      source: "manual",
       manual: true,
       approved: false,
+      approvedAt: undefined,
+      approvedByName: "",
       byName: "Aicha",
     });
   });

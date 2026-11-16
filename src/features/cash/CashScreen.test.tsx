@@ -42,7 +42,7 @@ describe("CashScreen", () => {
       "href",
       "/fr/cash/projects/3",
     );
-    expect(screen.queryByText("Gasoil groupe")).toBeNull();
+    expect(screen.queryByText("Sidi Fournitures")).toBeNull();
   });
 
   it("opens the only project of a user who sees one, with no way back to the cards", async () => {
@@ -50,7 +50,7 @@ describe("CashScreen", () => {
     openAt("/fr/cash");
 
     expect(await screen.findByRole("heading", { name: title("Zouérat 1") })).toBeVisible();
-    expect(await screen.findByText("Gasoil groupe")).toBeVisible();
+    expect(await screen.findByText("Sidi Fournitures")).toBeVisible();
     expect(screen.queryByRole("link", { name: common.back })).toBeNull();
   });
 });

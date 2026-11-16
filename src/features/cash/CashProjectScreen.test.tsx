@@ -61,10 +61,10 @@ describe("CashProjectScreen", () => {
     expect(screen.getByRole("link", { name: common.back })).toHaveAttribute("href", "/fr/cash");
   });
 
-  it("lists every movement with its sign, and offers changes only on a manual one", async () => {
+  it("lists every movement with its sign, each row opening its details", async () => {
     openAt("/fr/cash/projects/3");
 
-    await screen.findByText("Gasoil groupe");
+    await screen.findByText("Sidi Fournitures");
     const list = panel(text.list.title);
     const [expense, income] = list.getAllByRole("row").slice(1);
 
@@ -72,8 +72,41 @@ describe("CashProjectScreen", () => {
     expect(cellsOf(expense)).toContain("Sidi Fournitures");
     expect(cellsOf(income)).toContain(`+${money(40000)}`);
     expect(cellsOf(income)).toContain("Ahmed");
-    expect(within(expense ?? document.body).getByRole("link", { name: /Modifier/ })).toBeVisible();
-    expect(within(income ?? document.body).queryByRole("link")).toBeNull();
+    expect(screen.queryByText("Gasoil groupe")).toBeNull();
+    expect(within(expense ?? document.body).getByRole("link")).toHaveAttribute(
+      "href",
+      "/fr/cash/projects/3?view=9",
+    );
+    expect(within(income ?? document.body).getByRole("link")).toHaveAttribute(
+      "href",
+      "/fr/cash/projects/3?view=10",
+    );
+  });
+
+  it("shows a manual movement's details with the way to edit or delete it", async () => {
+    openAt("/fr/cash/projects/3?view=9");
+
+    const dialog = within(await screen.findByRole("dialog", { name: text.detailTitle }));
+    expect(dialog.getByText("Gasoil groupe")).toBeVisible();
+    expect(dialog.getByText(text.sources.manual)).toBeVisible();
+    expect(dialog.getByText("Aicha")).toBeVisible();
+    expect(dialog.getByRole("link", { name: text.edit })).toHaveAttribute(
+      "href",
+      "/fr/cash/projects/3?edit=9",
+    );
+    expect(dialog.getByRole("link", { name: text.delete })).toHaveAttribute(
+      "href",
+      "/fr/cash/projects/3?delete=9",
+    );
+  });
+
+  it("shows where an automatic movement comes from, with no way to change it", async () => {
+    openAt("/fr/cash/projects/3?view=10");
+
+    const dialog = within(await screen.findByRole("dialog", { name: text.detailTitle }));
+    expect(dialog.getByText("Ahmed")).toBeVisible();
+    expect(dialog.getByText(text.sources.debt_payment)).toBeVisible();
+    expect(dialog.queryByRole("link")).toBeNull();
   });
 
   it("asks the backend for the filters kept in the address", async () => {
@@ -248,16 +281,16 @@ describe("CashProjectScreen", () => {
   it("never opens an automatic movement for change", async () => {
     openAt("/fr/cash/projects/3?edit=10");
 
-    expect(await screen.findByText("Remboursement")).toBeVisible();
+    expect(await screen.findByText("Ahmed")).toBeVisible();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("gives a view-only role the balances and movements with no way to change them", async () => {
     openAt("/fr/cash/projects/3?new=income", viewOnly);
 
-    expect(await screen.findByText("Gasoil groupe")).toBeVisible();
+    expect(await screen.findByText("Sidi Fournitures")).toBeVisible();
     expect(screen.queryByRole("link", { name: new RegExp(text.recordIncome) })).toBeNull();
-    expect(screen.queryByRole("link", { name: /Modifier/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: text.edit })).toBeNull();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

@@ -1431,7 +1431,8 @@
       "by": "Par",
       "status": "Statut",
       "actions": "Actions",
-      "categoryName": "Nom de la dépense"
+      "categoryName": "Nom de la dépense",
+      "source": "Origine"
     },
     "types": {
       "income": "Entrée",
@@ -1441,8 +1442,6 @@
     "notApproved": "Non approuvé",
     "edit": "Modifier",
     "delete": "Supprimer",
-    "editLabel": "Modifier le mouvement du {date}",
-    "deleteLabel": "Supprimer le mouvement du {date}",
     "form": {
       "incomeTitle": "Nouvelle entrée",
       "expenseTitle": "Nouvelle dépense",
@@ -1460,6 +1459,16 @@
       "title": "Supprimer le mouvement",
       "question": "Supprimer « {description} » ({amount}, {date}) ? Cette action est définitive."
     },
-    "noProjects": "Aucun projet pour le moment. Ajoutez-en depuis les paramètres."
+    "noProjects": "Aucun projet pour le moment. Ajoutez-en depuis les paramètres.",
+    "detailTitle": "Détail du mouvement",
+    "openLabel": "Voir le mouvement du {date}",
+    "approvedBy": "Approuvé par {name} le {date}",
+    "sources": {
+      "manual": "Saisi à la main",
+      "supplier_payment": "Paiement fournisseur",
+      "debt_payment": "Paiement de dette client",
+      "shipment_payment": "Paiement du transport d'une expédition",
+      "settlement_payment": "Paiement d'un règlement final"
+    }
   }
 }

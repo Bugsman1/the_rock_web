@@ -1,21 +1,45 @@
 import type { ReactNode } from "react";
+import { cn } from "@/lib/cn";
 
 const DOT_DELAYS = ["0s", "0.2s", "0.4s"] as const;
 
-export function LoadingDots({ label }: { label: string }) {
+export function LoadingDots({ label, compact = false }: { label: string; compact?: boolean }) {
   return (
-    <div
+    <span
       role="status"
       aria-label={label}
-      className="animate-rise-in flex h-13 items-center justify-center gap-3"
+      className={cn(
+        "animate-rise-in flex items-center justify-center",
+        compact ? "gap-1.5" : "h-13 gap-3",
+      )}
     >
       {DOT_DELAYS.map((delay) => (
         <span
           key={delay}
           style={{ animationDelay: delay }}
-          className="animate-pulse-dot bg-brand-700 size-3.5 rounded-full"
+          className={cn(
+            "animate-pulse-dot rounded-full bg-current",
+            compact ? "size-2" : "bg-brand-700 size-3.5",
+          )}
         />
       ))}
+    </span>
+  );
+}
+
+export function DrawerFormSkeleton({ label }: { label: string }) {
+  return (
+    <div role="status" aria-label={label} className="flex animate-pulse flex-col gap-5">
+      {repeat(4, (field) => (
+        <div key={field} className="flex flex-col gap-1.5">
+          <div className={`${bar} h-4 w-28`} />
+          <div className={`${bar} h-12 w-full`} />
+        </div>
+      ))}
+      <div className="flex gap-3">
+        <div className={`${bar} h-13 w-40`} />
+        <div className={`${bar} h-13 w-28`} />
+      </div>
     </div>
   );
 }

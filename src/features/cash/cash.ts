@@ -39,8 +39,11 @@ export type CashTransaction = {
   customerName: string;
   supplier: string | undefined;
   supplierName: string;
+  source: ApiSchema<"SourceEnum">;
   manual: boolean;
   approved: boolean;
+  approvedAt: IsoTimestamp | undefined;
+  approvedByName: string;
   byName: string;
 };
 
@@ -154,8 +157,11 @@ export function transactionFromApi(transaction: ApiSchema<"CashTransaction">): C
     customerName: transaction.customer_name,
     supplier: optionalId(transaction.supplier),
     supplierName: transaction.supplier_name,
+    source: transaction.source,
     manual: transaction.source === "manual",
     approved: transaction.is_approved,
+    approvedAt: transaction.approved_at ?? undefined,
+    approvedByName: transaction.approved_by_name ?? "",
     byName: transaction.created_by_name ?? "",
   };
 }

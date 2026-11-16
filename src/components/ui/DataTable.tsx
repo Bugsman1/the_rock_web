@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link } from "@/i18n/navigation";
+import { Link, useLinkStatus } from "@/i18n/navigation";
 import { cn } from "@/lib/cn";
 
 const tableHeadBase =
@@ -79,16 +79,23 @@ const cellAlign: Record<ColumnAlign, string> = {
   center: "text-center",
 };
 
-function LinkedCell({ link, children }: { link: RowLink | undefined; children: ReactNode }) {
-  if (link === undefined) {
-    return children;
-  }
+function RowAnchor({ link, children }: { link: RowLink; children: ReactNode }) {
+  const { opensDrawer } = useLinkStatus(link.href);
 
   return (
-    <Link href={link.href} aria-label={link.label} className="after:absolute after:inset-0">
+    <Link
+      href={link.href}
+      opensDrawer={opensDrawer}
+      aria-label={link.label}
+      className="after:absolute after:inset-0"
+    >
       {children}
     </Link>
   );
+}
+
+function LinkedCell({ link, children }: { link: RowLink | undefined; children: ReactNode }) {
+  return link === undefined ? children : <RowAnchor link={link}>{children}</RowAnchor>;
 }
 
 export function DataTable<Row>({

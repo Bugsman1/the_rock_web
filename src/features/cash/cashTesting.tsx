@@ -65,7 +65,7 @@ export const automaticTransaction = {
   id: 10,
   transaction_type: "income",
   category: "customer_debt_payment",
-  category_display: "Paiement de dette client",
+  category_display: "Dette client",
   amount: "40000.00",
   description: "Remboursement",
   customer: 7,

@@ -3,7 +3,9 @@ import type { ReactNode } from "react";
 import { useNavigation, useRevalidator } from "react-router";
 import { useTranslations } from "use-intl";
 import { ConnectionBanner } from "@/components/ui/ConnectionBanner";
+import { LoadingDrawer } from "@/components/ui/Drawer";
 import { ToastProvider } from "@/components/ui/Toast";
+import { useOpeningDrawer } from "@/i18n/navigation";
 import type { Access } from "@/lib/access";
 import { isConnectionLost, subscribeToConnection } from "@/lib/api/connection";
 import { Sidebar } from "./Sidebar";
@@ -39,6 +41,7 @@ export function AppShell({ access, userName, roleName, children }: AppShellProps
   const revalidator = useRevalidator();
   useRevalidateOnReconnect();
   const loading = navigation.state !== "idle" || revalidator.state !== "idle";
+  const openingDrawer = useOpeningDrawer();
 
   return (
     <ToastProvider anchor={mainRef} busy={loading}>
@@ -70,6 +73,7 @@ export function AppShell({ access, userName, roleName, children }: AppShellProps
           />
           <main ref={mainRef} className="relative min-w-0 flex-1 overflow-y-auto p-4 md:p-6">
             {children}
+            <LoadingDrawer open={openingDrawer} />
           </main>
         </div>
       </div>

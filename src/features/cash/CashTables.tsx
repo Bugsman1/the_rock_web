@@ -1,11 +1,9 @@
 import { useLocale, useTranslations } from "use-intl";
-import { ActionLink } from "@/components/ui/ActionLink";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
 import { StatusBadge } from "@/components/ui/TablePanel";
-import { useCan } from "@/lib/accessContext";
 import { formatDateTime, formatMoney } from "@/lib/format";
-import { categoryShown, isEditable } from "./cash";
+import { categoryShown } from "./cash";
 import type { CashTransaction } from "./cash";
 import type { CashDrawer } from "./cashQuery";
 
@@ -20,47 +18,6 @@ function SignedAmount({ transaction }: { transaction: CashTransaction }) {
   );
 }
 
-type RowActionsProps = {
-  transaction: CashTransaction;
-  hrefOf: (drawer: CashDrawer) => string;
-};
-
-function RowActions({ transaction, hrefOf }: RowActionsProps) {
-  const t = useTranslations("cash");
-  const locale = useLocale();
-  const can = useCan();
-  const date = formatDateTime(transaction.at, locale);
-
-  if (!isEditable(transaction)) {
-    return null;
-  }
-
-  return (
-    <div className="flex justify-end gap-1">
-      {can("cash", "edit") ? (
-        <ActionLink
-          href={hrefOf({ kind: "edit", id: transaction.id })}
-          icon="pencil"
-          variant="ghost"
-          ariaLabel={t("editLabel", { date })}
-        >
-          {t("edit")}
-        </ActionLink>
-      ) : null}
-      {can("cash", "delete") ? (
-        <ActionLink
-          href={hrefOf({ kind: "delete", id: transaction.id })}
-          icon="trash"
-          variant="ghost"
-          ariaLabel={t("deleteLabel", { date })}
-        >
-          {t("delete")}
-        </ActionLink>
-      ) : null}
-    </div>
-  );
-}
-
 type TransactionTableProps = {
   transactions: readonly CashTransaction[];
   filtered: boolean;
@@ -70,12 +27,12 @@ type TransactionTableProps = {
 export function TransactionTable({ transactions, filtered, hrefOf }: TransactionTableProps) {
   const t = useTranslations("cash");
   const locale = useLocale();
-  const can = useCan();
   const text = (value: string) => (value === "" ? "—" : <span dir="auto">{value}</span>);
   const columns: DataColumn<CashTransaction>[] = [
     {
       key: "date",
       header: t("fields.date"),
+      rowLink: true,
       className: "text-ink-muted font-semibold",
       cell: (row) => formatDateTime(row.at, locale),
     },
@@ -90,16 +47,6 @@ export function TransactionTable({ transactions, filtered, hrefOf }: Transaction
       header: t("fields.category"),
       className: "text-ink font-semibold",
       cell: (row) => text(categoryShown(row)),
-    },
-    {
-      key: "description",
-      header: t("fields.description"),
-      className: "text-ink-muted max-w-60 font-semibold",
-      cell: (row) => (
-        <span dir="auto" title={row.description} className="block truncate">
-          {row.description === "" ? "—" : row.description}
-        </span>
-      ),
     },
     {
       key: "reference",
@@ -132,23 +79,16 @@ export function TransactionTable({ transactions, filtered, hrefOf }: Transaction
     },
   ];
 
-  if (can("cash", "edit") || can("cash", "delete")) {
-    columns.push({
-      key: "actions",
-      header: t("fields.actions"),
-      hideHeader: true,
-      align: "end",
-      interactive: true,
-      cell: (row) => <RowActions transaction={row} hrefOf={hrefOf} />,
-    });
-  }
-
   return (
     <DataTable
       columns={columns}
       rows={transactions}
       rowKey={(row) => row.id}
       empty={filtered ? t("list.noResults") : t("list.empty")}
+      rowLink={(row) => ({
+        href: hrefOf({ kind: "view", id: row.id }),
+        label: t("openLabel", { date: formatDateTime(row.at, locale) }),
+      })}
     />
   );
 }

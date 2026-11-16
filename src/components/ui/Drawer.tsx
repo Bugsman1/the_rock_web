@@ -5,7 +5,7 @@ import { Button } from "./Button";
 import { Icon } from "./Icon";
 import type { IconName } from "./Icon";
 import { IconButton } from "./IconButton";
-import { LoadingDots } from "./LoadingDots";
+import { DrawerFormSkeleton, LoadingDots } from "./LoadingDots";
 import { useReplace } from "@/i18n/navigation";
 import { cn } from "@/lib/cn";
 
@@ -93,6 +93,16 @@ export function Drawer({ open, title, closeLabel, onClose, wide = false, childre
         <div className="flex-1 p-6">{open ? children : null}</div>
       </div>
     </dialog>
+  );
+}
+
+export function LoadingDrawer({ open }: { open: boolean }) {
+  const common = useTranslations("common");
+
+  return (
+    <Drawer open={open} title={common("loading")} closeLabel={common("close")} onClose={() => {}}>
+      <DrawerFormSkeleton label={common("loading")} />
+    </Drawer>
   );
 }
 

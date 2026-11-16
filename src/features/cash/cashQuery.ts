@@ -19,6 +19,7 @@ export type CashFilter = {
 
 export type CashDrawer =
   | { kind: "new"; type: TransactionType }
+  | { kind: "view"; id: string }
   | { kind: "edit"; id: string }
   | { kind: "delete"; id: string };
 
@@ -30,10 +31,12 @@ function idOrEmpty(value: string | null | undefined): string {
 
 function drawerOf(params: URLSearchParams): CashDrawer | undefined {
   const type = params.get("new") ?? "";
+  const view = idOrEmpty(params.get("view"));
   const edit = idOrEmpty(params.get("edit"));
   const remove = idOrEmpty(params.get("delete"));
 
   if (isTransactionType(type)) return { kind: "new", type };
+  if (view !== "") return { kind: "view", id: view };
   if (edit !== "") return { kind: "edit", id: edit };
   if (remove !== "") return { kind: "delete", id: remove };
 

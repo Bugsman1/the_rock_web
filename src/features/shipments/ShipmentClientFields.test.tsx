@@ -30,6 +30,7 @@ vi.mock("@/i18n/navigation", () => ({
   ),
   useReplace: () => replace,
   usePathname: () => "/shipments/new",
+  useLinkStatus: () => ({ pending: false, opensDrawer: false }),
 }));
 
 beforeEach(() => {

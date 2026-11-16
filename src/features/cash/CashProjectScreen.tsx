@@ -32,6 +32,7 @@ import {
   getTransaction,
   getTransactionPage,
 } from "./cashApi";
+import { CashDetail } from "./CashDetail";
 import { CashForm } from "./CashForm";
 import type { CashChoices } from "./CashForm";
 import {
@@ -75,9 +76,7 @@ export async function cashProjectLoader({ params, request }: LoaderFunctionArgs)
     } satisfies CashChoices,
     customerName: customer?.ok === true ? customer.data?.name : undefined,
     transaction:
-      transaction !== undefined && transaction.project === project.id && isEditable(transaction)
-        ? transaction
-        : undefined,
+      transaction !== undefined && transaction.project === project.id ? transaction : undefined,
   };
 }
 
@@ -111,13 +110,14 @@ function useFilterGroups({ categories, suppliers }: CashChoices): FilterMenuGrou
 
 type CashDrawersProps = {
   project: Project;
+  hrefOf: (drawer: CashDrawer) => string;
   query: CashQuery;
   transaction: CashTransaction | undefined;
   choices: CashChoices;
   close: () => void;
 };
 
-function CashDrawers({ project, query, transaction, choices, close }: CashDrawersProps) {
+function CashDrawers({ project, hrefOf, query, transaction, choices, close }: CashDrawersProps) {
   const t = useTranslations("cash");
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
@@ -125,12 +125,23 @@ function CashDrawers({ project, query, transaction, choices, close }: CashDrawer
   const can = useCan();
   const drawer = query.drawer;
   const creating = drawer?.kind === "new" && can("cash", "add") ? drawer.type : undefined;
-  const editing = drawer?.kind === "edit" && can("cash", "edit") ? transaction : undefined;
-  const removing = drawer?.kind === "delete" && can("cash", "delete") ? transaction : undefined;
+  const editable = transaction !== undefined && isEditable(transaction) ? transaction : undefined;
+  const viewing = drawer?.kind === "view" ? transaction : undefined;
+  const editing = drawer?.kind === "edit" && can("cash", "edit") ? editable : undefined;
+  const removing = drawer?.kind === "delete" && can("cash", "delete") ? editable : undefined;
   const formType = creating ?? editing?.type;
 
   return (
     <>
+      <Drawer
+        open={viewing !== undefined}
+        title={t("detailTitle")}
+        closeLabel={common("close")}
+        onClose={close}
+      >
+        {viewing === undefined ? null : <CashDetail transaction={viewing} hrefOf={hrefOf} />}
+      </Drawer>
+
       <Drawer
         open={formType !== undefined}
         title={
@@ -291,6 +302,7 @@ export function CashProjectScreen() {
 
       <CashDrawers
         project={project}
+        hrefOf={(drawer) => hrefOf({ drawer })}
         query={query}
         transaction={transaction}
         choices={choices}
