@@ -181,7 +181,6 @@ type TransactionMessages = {
 export function createTransactionSchema(messages: TransactionMessages) {
   return z
     .object({
-      project: z.string().min(1, messages.required),
       category: z.string().min(1, messages.required),
       categoryName: z.string().trim().max(CATEGORY_NAME_MAX_LENGTH),
       amount: z.number({ error: messages.amountInvalid }).positive(messages.amountInvalid),
@@ -201,7 +200,6 @@ export function createTransactionSchema(messages: TransactionMessages) {
 export type TransactionValues = z.infer<ReturnType<typeof createTransactionSchema>>;
 
 const transactionFields: readonly (keyof TransactionValues)[] = [
-  "project",
   "category",
   "categoryName",
   "amount",
@@ -217,6 +215,7 @@ export function isTransactionField(value: string): value is keyof TransactionVal
 }
 
 export function transactionToApi(
+  project: string,
   type: TransactionType,
   values: TransactionValues,
   at: IsoTimestamp,
@@ -226,7 +225,7 @@ export function transactionToApi(
   return category === undefined
     ? undefined
     : {
-        project: Number(values.project),
+        project: Number(project),
         transaction_type: type,
         category,
         category_name: category === OTHER_EXPENSE ? values.categoryName.trim() : "",
@@ -242,7 +241,6 @@ export function transactionErrorsFromApi(
   errors: BackendFieldErrors,
 ): FieldErrors<keyof TransactionValues> {
   return {
-    ...(errors.project === undefined ? {} : { project: errors.project }),
     ...(errors.category === undefined ? {} : { category: errors.category }),
     ...(errors.category_name === undefined ? {} : { categoryName: errors.category_name }),
     ...(errors.amount === undefined ? {} : { amount: errors.amount }),

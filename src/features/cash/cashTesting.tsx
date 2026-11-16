@@ -8,6 +8,7 @@ import { noAccess, rightsFromApi } from "@/lib/access";
 import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
+import { CashProjectScreen, cashProjectLoader } from "./CashProjectScreen";
 import { CashScreen, cashLoader } from "./CashScreen";
 
 export const API = `${window.location.origin}/api/v1`;
@@ -93,7 +94,7 @@ export const apiCategories = [
   category("other_expense", "Autres dépenses", "expense"),
 ];
 
-const project = (id: number, name: string, site: string) => ({
+export const project = (id: number, name: string, site: string) => ({
   id,
   name,
   site,
@@ -102,6 +103,17 @@ const project = (id: number, name: string, site: string) => ({
   is_active: true,
   ...stamps,
 });
+
+export const apiBalance = {
+  project: 3,
+  project_name: "Zouérat 1",
+  project_site: "zouerat",
+  capital: "1000000.00",
+  income: "40000.00",
+  expense: "15000.00",
+  net: "25000.00",
+  balance: "1025000.00",
+};
 
 export type Sent = { method: string; path: string; body: unknown; key: string | null };
 
@@ -126,16 +138,7 @@ export function serveCash(sent: Sent[]) {
     server.use(
       http.get(`${API}/cash-transactions/balance/`, () =>
         HttpResponse.json([
-          {
-            project: 3,
-            project_name: "Zouérat 1",
-            project_site: "zouerat",
-            capital: "1000000.00",
-            income: "40000.00",
-            expense: "15000.00",
-            net: "25000.00",
-            balance: "1025000.00",
-          },
+          apiBalance,
           {
             project: 4,
             project_name: "Sfariyat 1",
@@ -185,7 +188,19 @@ export function serveCash(sent: Sent[]) {
 
 export function openAt(path: string, access: Access = allRights) {
   const router = createMemoryRouter(
-    [{ path: "/fr", children: [{ path: "cash", loader: cashLoader, element: <CashScreen /> }] }],
+    [
+      {
+        path: "/:locale",
+        children: [
+          { path: "cash", loader: cashLoader, element: <CashScreen /> },
+          {
+            path: "cash/projects/:project",
+            loader: cashProjectLoader,
+            element: <CashProjectScreen />,
+          },
+        ],
+      },
+    ],
     { initialEntries: [path] },
   );
 

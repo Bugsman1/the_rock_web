@@ -20,12 +20,12 @@ import { DASHBOARD_HREF, LOGIN_HREF } from "@/lib/routes";
 const pageShapes: readonly (readonly [RegExp, SkeletonShape])[] = [
   [/^\/(shipments|settlements)\/new$/, "form"],
   [/^\/settings\/projects\/(new|\d+\/edit|\d+\/machines\/(new|\d+))$/, "form"],
-  [/^\/(customers|suppliers|users|users\/roles|audit-log|cash)$/, "table"],
+  [/^\/(customers|suppliers|users|users\/roles|audit-log)$/, "table"],
   [/^\/customers\/\d+$/, "table"],
   [/^\/settlements\/projects\/\d+$/, "table"],
   [/^\/refining\/projects\/\d+$/, "table"],
   [/^\/inventory\/(projects|resources)\/\d+$/, "table"],
-  [/^\/employees\/projects\/\d+$/, "table"],
+  [/^\/(employees|cash)\/projects\/\d+$/, "table"],
   [/^\/(employees|suppliers)\/\d+$/, "detail"],
   [/^\/(shipments|milling)\/projects\/\d+(\/history)?$/, "table"],
   [/^\/settings\/(profile|projects\/\d+)$/, "detail"],
@@ -33,7 +33,7 @@ const pageShapes: readonly (readonly [RegExp, SkeletonShape])[] = [
   [/^\/(shipments|settlements)\/\d+$/, "detail"],
 ];
 
-const singleProjectSections = /^\/(shipments|settlements|milling|refining|employees)$/;
+const singleProjectSections = /^\/(shipments|settlements|milling|refining|employees|cash)$/;
 
 export function skeletonShapeFor(pathname: string, projectScoped = false): SkeletonShape {
   const [, , ...rest] = pathname.split("/");

@@ -1407,13 +1407,10 @@
     "recordIncome": "تسجيل دخل",
     "recordExpense": "تسجيل مصروف",
     "balances": {
-      "title": "الرصيد حسب المشروع",
-      "project": "المشروع",
       "capital": "رأس المال",
       "income": "الدخل",
       "expense": "المصروفات",
-      "balance": "الرصيد",
-      "empty": "لا توجد مشاريع."
+      "balance": "الرصيد"
     },
     "list": {
       "title": "الحركات المالية",
@@ -1427,8 +1424,6 @@
       "type": "النوع",
       "category": "الفئة",
       "description": "الوصف",
-      "project": "المشروع",
-      "site": "المكان",
       "reference": "المرجع",
       "customer": "العميل",
       "supplier": "المزوّد",
@@ -1464,6 +1459,7 @@
     "remove": {
       "title": "حذف الحركة",
       "question": "حذف «{description}» ({amount}، {date})؟ لا يمكن التراجع عن هذا الإجراء."
-    }
+    },
+    "noProjects": "لا توجد مشاريع بعد. أضفها من الإعدادات."
   }
 }

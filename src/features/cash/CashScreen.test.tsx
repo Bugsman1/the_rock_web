@@ -1,251 +1,56 @@
-import { screen, waitFor, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { screen, within } from "@testing-library/react";
 import { http } from "msw";
 import { describe, expect, it } from "vitest";
 import { formatMoney } from "@/lib/format";
-import {
-  API,
-  cellsOf,
-  common,
-  openAt,
-  page,
-  serveCash,
-  server,
-  text,
-  viewOnly,
-} from "./cashTesting";
+import { API, common, openAt, page, project, serveCash, server, text } from "./cashTesting";
 import type { Sent } from "./cashTesting";
 
 const sent: Sent[] = [];
 serveCash(sent);
 
-const money = (amount: number) => formatMoney(amount, "fr");
+const money = (amount: number) => formatMoney(amount, "fr").replace(/\s/g, " ");
+const title = (name: string) => common.projectTitle.replace("{name}", name);
 
-function panel(title: string) {
-  const section = screen.getByRole("heading", { name: title }).closest("section");
+function cardOf(name: string) {
+  const card = screen.getByRole("heading", { name: title(name) }).closest("section");
 
-  if (section === null) {
-    throw new Error(`no panel ${title}`);
+  if (card === null) {
+    throw new Error(`no card ${name}`);
   }
 
-  return within(section);
+  return within(card);
 }
 
 describe("CashScreen", () => {
-  it("shows each project's own balance, a negative one in red", async () => {
+  it("shows one card per project with its own money, each opening that project", async () => {
     openAt("/fr/cash");
 
-    await screen.findByRole("heading", { name: text.balances.title });
-    const rows = panel(text.balances.title).getAllByRole("row").slice(1);
+    await screen.findByRole("heading", { name: title("Zouérat 1") });
+    const zouerat = cardOf("Zouérat 1");
+    const sfariyat = cardOf("Sfariyat 1");
 
-    expect(rows.map(cellsOf)).toEqual([
-      ["Zouérat 1", money(1000000), money(40000), money(15000), money(1025000)],
-      ["Sfariyat 1", money(0), money(0), money(2000), money(-2000)],
-    ]);
-    expect(rows[1]?.querySelector(".text-danger-700")?.textContent).toBe(money(-2000));
+    expect(zouerat.getByText(text.balances.balance).nextElementSibling).toHaveTextContent(
+      money(1025000),
+    );
+    expect(zouerat.getByText(text.balances.capital).nextElementSibling).toHaveTextContent(
+      money(1000000),
+    );
+    expect(sfariyat.getByText(text.balances.balance).nextElementSibling).toHaveTextContent(
+      money(-2000),
+    );
+    expect(zouerat.getByRole("link", { name: common.openProject })).toHaveAttribute(
+      "href",
+      "/fr/cash/projects/3",
+    );
+    expect(screen.queryByText("Gasoil groupe")).toBeNull();
   });
 
-  it("lists every movement with its sign, and offers changes only on a manual one", async () => {
+  it("opens the only project of a user who sees one, with no way back to the cards", async () => {
+    server.use(http.get(`${API}/projects/`, () => page([project(3, "Zouérat 1", "zouerat")])));
     openAt("/fr/cash");
 
-    await screen.findByText("Gasoil groupe");
-    const list = panel(text.list.title);
-    const [expense, income] = list.getAllByRole("row").slice(1);
-
-    expect(cellsOf(expense)).toContain(`−${money(15000)}`);
-    expect(cellsOf(expense)).toContain("Sidi Fournitures");
-    expect(cellsOf(income)).toContain(`+${money(40000)}`);
-    expect(cellsOf(income)).toContain("Ahmed");
-    expect(within(expense ?? document.body).getByRole("link", { name: /Modifier/ })).toBeVisible();
-    expect(within(income ?? document.body).queryByRole("link")).toBeNull();
-  });
-
-  it("asks the backend for the filters kept in the address", async () => {
-    let asked: URLSearchParams | undefined;
-    server.use(
-      http.get(`${API}/cash-transactions/`, ({ request }) => {
-        asked = new URL(request.url).searchParams;
-        return page([]);
-      }),
-    );
-    openAt("/fr/cash?type=expense&category=fuel&site=zouerat&project=3&from=2026-11-01&q=gasoil");
-
-    expect(await screen.findByText(text.list.noResults)).toBeVisible();
-    expect(asked?.get("transaction_type")).toBe("expense");
-    expect(asked?.getAll("category__in")).toEqual(["fuel"]);
-    expect(asked?.get("site")).toBe("zouerat");
-    expect(asked?.get("project")).toBe("3");
-    expect(asked?.get("transaction_date__date__gte")).toBe("2026-11-01");
-    expect(asked?.get("search")).toBe("gasoil");
-  });
-
-  it("records an expense of a project under one of the manual expense categories", async () => {
-    const user = userEvent.setup();
-    openAt("/fr/cash?new=expense");
-
-    const dialog = within(await screen.findByRole("dialog", { name: text.form.expenseTitle }));
-    expect(
-      within(dialog.getByLabelText(text.fields.category))
-        .getAllByRole("option")
-        .map((option) => option.textContent),
-    ).toEqual(["Carburant", "Dépenses quotidiennes", "Camions", "Autres dépenses"]);
-
-    await user.selectOptions(dialog.getByLabelText(common.project), "4");
-    await user.selectOptions(dialog.getByLabelText(text.fields.category), "fuel");
-    await user.type(dialog.getByLabelText(text.fields.amount), "2500");
-    await user.type(dialog.getByLabelText(text.fields.description), "Gasoil");
-    await user.selectOptions(dialog.getByLabelText(text.fields.supplier), "5");
-    await user.click(dialog.getByRole("button", { name: text.form.create }));
-
-    await waitFor(() =>
-      expect(sent).toEqual([
-        {
-          method: "POST",
-          path: "/cash-transactions/",
-          body: {
-            project: 4,
-            transaction_type: "expense",
-            category: "fuel",
-            category_name: "",
-            amount: "2500",
-            transaction_date: expect.any(String),
-            description: "Gasoil",
-            customer: null,
-            supplier: 5,
-          },
-          key: expect.any(String),
-        },
-      ]),
-    );
-  });
-
-  it("records an income received from a customer picked by name", async () => {
-    const user = userEvent.setup();
-    openAt("/fr/cash?new=income");
-
-    const dialog = within(await screen.findByRole("dialog", { name: text.form.incomeTitle }));
-    await user.selectOptions(dialog.getByLabelText(common.project), "3");
-    await user.selectOptions(dialog.getByLabelText(text.fields.category), "grinding_income");
-    await user.type(dialog.getByLabelText(text.fields.amount), "8000");
-    await user.type(dialog.getByLabelText(text.fields.description), "Broyage SHP-12");
-    await user.type(dialog.getByLabelText(text.fields.customer), "Ahm");
-    await user.click(await screen.findByRole("option", { name: /Ahmed/ }));
-    await user.click(dialog.getByRole("button", { name: text.form.create }));
-
-    await waitFor(() =>
-      expect(sent).toEqual([
-        expect.objectContaining({
-          body: expect.objectContaining({
-            transaction_type: "income",
-            category: "grinding_income",
-            customer: 7,
-            supplier: null,
-          }),
-        }),
-      ]),
-    );
-  });
-
-  it("records another expense under the name the user types", async () => {
-    const user = userEvent.setup();
-    openAt("/fr/cash?new=expense");
-
-    const dialog = within(await screen.findByRole("dialog", { name: text.form.expenseTitle }));
-    expect(dialog.queryByLabelText(text.fields.categoryName)).toBeNull();
-
-    await user.selectOptions(dialog.getByLabelText(common.project), "3");
-    await user.selectOptions(dialog.getByLabelText(text.fields.category), "other_expense");
-    await user.type(dialog.getByLabelText(text.fields.amount), "1200");
-    await user.type(dialog.getByLabelText(text.fields.description), "Pneus");
-    await user.click(dialog.getByRole("button", { name: text.form.create }));
-
-    expect(await dialog.findByText(common.validation.required)).toBeVisible();
-    expect(sent).toEqual([]);
-
-    await user.type(dialog.getByLabelText(text.fields.categoryName), "Pneumatiques");
-    await user.click(dialog.getByRole("button", { name: text.form.create }));
-
-    await waitFor(() =>
-      expect(sent).toEqual([
-        expect.objectContaining({
-          body: expect.objectContaining({
-            category: "other_expense",
-            category_name: "Pneumatiques",
-          }),
-        }),
-      ]),
-    );
-  });
-
-  it("requires the project, the category, an amount and a description", async () => {
-    const user = userEvent.setup();
-    openAt("/fr/cash?new=income");
-
-    const dialog = within(await screen.findByRole("dialog", { name: text.form.incomeTitle }));
-    await user.click(dialog.getByRole("button", { name: text.form.create }));
-
-    expect(await dialog.findAllByText(common.validation.required)).toHaveLength(3);
-    expect(dialog.getByText(text.form.amountInvalid)).toBeVisible();
-    expect(sent).toEqual([]);
-  });
-
-  it("edits a manual movement from its saved values", async () => {
-    const user = userEvent.setup();
-    openAt("/fr/cash?edit=9");
-
-    const dialog = within(await screen.findByRole("dialog", { name: text.form.editTitle }));
-    expect(dialog.getByLabelText(text.fields.description)).toHaveValue("Gasoil groupe");
-
-    await user.clear(dialog.getByLabelText(text.fields.amount));
-    await user.type(dialog.getByLabelText(text.fields.amount), "16000");
-    await user.click(dialog.getByRole("button", { name: text.form.save }));
-
-    await waitFor(() =>
-      expect(sent).toEqual([
-        expect.objectContaining({
-          method: "PATCH",
-          path: "/cash-transactions/9/",
-          body: expect.objectContaining({
-            project: 3,
-            transaction_type: "expense",
-            category: "fuel",
-            amount: "16000",
-            supplier: 5,
-          }),
-        }),
-      ]),
-    );
-  });
-
-  it("deletes a manual movement only once confirmed", async () => {
-    const user = userEvent.setup();
-    openAt("/fr/cash?delete=9");
-
-    const dialog = within(await screen.findByRole("dialog", { name: text.remove.title }));
-    expect(sent).toEqual([]);
-
-    await user.click(dialog.getByRole("button", { name: common.remove.confirm }));
-
-    await waitFor(() =>
-      expect(sent).toEqual([
-        expect.objectContaining({ method: "DELETE", path: "/cash-transactions/9/" }),
-      ]),
-    );
-  });
-
-  it("never opens an automatic movement for change", async () => {
-    openAt("/fr/cash?edit=10");
-
-    expect(await screen.findByText("Remboursement")).toBeVisible();
-    expect(screen.queryByRole("dialog")).toBeNull();
-  });
-
-  it("gives a view-only role the balances and movements with no way to change them", async () => {
-    openAt("/fr/cash?new=income", viewOnly);
-
+    expect(await screen.findByRole("heading", { name: title("Zouérat 1") })).toBeVisible();
     expect(await screen.findByText("Gasoil groupe")).toBeVisible();
-    expect(screen.queryByRole("link", { name: new RegExp(text.recordIncome) })).toBeNull();
-    expect(screen.queryByRole("link", { name: /Modifier/ })).toBeNull();
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("link", { name: common.back })).toBeNull();
   });
 });

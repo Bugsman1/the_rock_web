@@ -1,8 +1,7 @@
 import { parsePageNumber } from "@/lib/api/pagination";
 import { isIsoDate } from "@/lib/datetime";
 import type { FilterState } from "@/lib/filters";
-import { isRecordId, isSiteKey } from "@/lib/projects";
-import type { SiteKey } from "@/lib/projects";
+import { isRecordId } from "@/lib/projects";
 import { categoryValueOf, isTransactionType } from "./cash";
 import type { CashCategory, TransactionType } from "./cash";
 
@@ -14,8 +13,6 @@ export type CashFilter = {
   categories: readonly Category[];
   customer: string;
   supplier: string;
-  project: string;
-  site: SiteKey | undefined;
   from: string;
   to: string;
 };
@@ -49,7 +46,6 @@ function dateOrEmpty(value: string | null): string {
 
 export function cashQueryFromParams(params: URLSearchParams): CashQuery {
   const type = params.get("type") ?? "";
-  const site = params.get("site") ?? "";
 
   return {
     search: (params.get("q") ?? "").trim(),
@@ -60,8 +56,6 @@ export function cashQueryFromParams(params: URLSearchParams): CashQuery {
     }),
     customer: idOrEmpty(params.get("customer")),
     supplier: idOrEmpty(params.get("supplier")),
-    project: idOrEmpty(params.get("project")),
-    site: isSiteKey(site) ? site : undefined,
     from: dateOrEmpty(params.get("from")),
     to: dateOrEmpty(params.get("to")),
     page: parsePageNumber(params.get("page")),
@@ -86,8 +80,6 @@ export function cashQueryParams(
     ["category", query.categories.join(",")],
     ["customer", query.customer],
     ["supplier", query.supplier],
-    ["project", query.project],
-    ["site", query.site],
     ["from", query.from],
     ["to", query.to],
     ["page", query.page !== undefined && query.page > 1 ? String(query.page) : undefined],
@@ -110,8 +102,6 @@ export function cashFilterState(filter: CashFilter): FilterState {
       type: chosen(filter.type),
       category: filter.categories,
       supplier: chosen(filter.supplier),
-      project: chosen(filter.project),
-      site: chosen(filter.site),
     },
     client: filter.customer,
     from: filter.from,
@@ -129,8 +119,6 @@ export function cashFilterFromState(search: string, state: FilterState): CashFil
       category: (state.selection.category ?? []).join(","),
       customer: state.client,
       supplier: first("supplier"),
-      project: first("project"),
-      site: first("site"),
       from: state.from,
       to: state.to,
     }),
@@ -141,10 +129,7 @@ export function isCashFiltered(filter: CashFilter): boolean {
   return (
     filter.search !== "" ||
     filter.type !== undefined ||
-    filter.site !== undefined ||
     filter.categories.length > 0 ||
-    [filter.customer, filter.supplier, filter.project, filter.from, filter.to].some(
-      (value) => value !== "",
-    )
+    [filter.customer, filter.supplier, filter.from, filter.to].some((value) => value !== "")
   );
 }

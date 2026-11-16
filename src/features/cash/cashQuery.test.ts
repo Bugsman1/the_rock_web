@@ -8,7 +8,7 @@ import {
 } from "./cashQuery";
 
 const address =
-  "q=gasoil&type=expense&category=fuel,wages&customer=7&supplier=5&project=3&site=zouerat&from=2026-11-01&to=2026-11-30&page=2";
+  "q=gasoil&type=expense&category=fuel,wages&customer=7&supplier=5&from=2026-11-01&to=2026-11-30&page=2";
 
 describe("cashQueryFromParams", () => {
   it("reads the search, the filters, the page and the drawer from the address", () => {
@@ -18,8 +18,6 @@ describe("cashQueryFromParams", () => {
       categories: ["fuel", "wages"],
       customer: "7",
       supplier: "5",
-      project: "3",
-      site: "zouerat",
       from: "2026-11-01",
       to: "2026-11-30",
       page: 2,
@@ -31,14 +29,13 @@ describe("cashQueryFromParams", () => {
     expect(
       cashQueryFromParams(
         new URLSearchParams(
-          "type=gift&category=bonus&customer=../7&site=nouakchott&from=hier&new=transfer&delete=x",
+          "type=gift&category=bonus&customer=../7&from=hier&new=transfer&delete=x",
         ),
       ),
     ).toMatchObject({
       type: undefined,
       categories: [],
       customer: "",
-      site: undefined,
       from: "",
       drawer: undefined,
     });
@@ -76,8 +73,6 @@ describe("cash filters", () => {
         type: ["expense"],
         category: ["fuel", "wages"],
         supplier: ["5"],
-        project: ["3"],
-        site: ["zouerat"],
       },
       client: "7",
       from: "2026-11-01",
@@ -95,6 +90,6 @@ describe("cash filters", () => {
 
   it("says whether any search or filter is on", () => {
     expect(isCashFiltered(cashQueryFromParams(new URLSearchParams("page=3")))).toBe(false);
-    expect(isCashFiltered(cashQueryFromParams(new URLSearchParams("site=sfariyat")))).toBe(true);
+    expect(isCashFiltered(cashQueryFromParams(new URLSearchParams("type=income")))).toBe(true);
   });
 });

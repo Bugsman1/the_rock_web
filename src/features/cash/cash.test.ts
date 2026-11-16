@@ -16,7 +16,6 @@ import { apiTransaction, automaticTransaction } from "./cashTesting";
 const at = "2026-11-12T09:30:00.000Z";
 
 const values: TransactionValues = {
-  project: "3",
   category: "fuel",
   categoryName: "",
   amount: 1500.5,
@@ -145,18 +144,17 @@ describe("createTransactionSchema", () => {
     amountInvalid: "amount",
   });
 
-  it("accepts a movement with its project, category, amount, moment and description", () => {
+  it("accepts a movement with its category, amount, moment and description", () => {
     expect(schema.safeParse(values).success).toBe(true);
   });
 
   it("requires every field but the references", () => {
     const issues =
       schema
-        .safeParse({ ...values, project: "", category: "", amount: 0, description: " " })
+        .safeParse({ ...values, category: "", amount: 0, description: " " })
         .error?.issues.map((issue) => [issue.path.join("."), issue.message]) ?? [];
 
     expect(Object.fromEntries(issues)).toEqual({
-      project: "required",
       category: "required",
       amount: "amount",
       description: "required",
@@ -166,7 +164,7 @@ describe("createTransactionSchema", () => {
 
 describe("transactionToApi", () => {
   it("sends the amount as typed, the moment, the trimmed description and empty references as null", () => {
-    expect(transactionToApi("expense", values, at)).toEqual({
+    expect(transactionToApi("3", "expense", values, at)).toEqual({
       project: 3,
       transaction_type: "expense",
       category: "fuel",
@@ -182,18 +180,21 @@ describe("transactionToApi", () => {
   it("sends the trimmed name of another expense, and no name for any other category", () => {
     expect(
       transactionToApi(
+        "3",
         "expense",
         { ...values, category: "other_expense", categoryName: " Pneus " },
         at,
       ),
     ).toMatchObject({ category: "other_expense", category_name: "Pneus" });
-    expect(transactionToApi("expense", { ...values, categoryName: "Pneus" }, at)).toMatchObject({
+    expect(
+      transactionToApi("3", "expense", { ...values, categoryName: "Pneus" }, at),
+    ).toMatchObject({
       category_name: "",
     });
   });
 
   it("sends nothing for a category the app does not know", () => {
-    expect(transactionToApi("income", { ...values, category: "bonus" }, at)).toBeUndefined();
+    expect(transactionToApi("3", "income", { ...values, category: "bonus" }, at)).toBeUndefined();
   });
 });
 

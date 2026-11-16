@@ -1407,13 +1407,10 @@
     "recordIncome": "Enregistrer une entrée",
     "recordExpense": "Enregistrer une dépense",
     "balances": {
-      "title": "Solde par projet",
-      "project": "Projet",
       "capital": "Capital",
       "income": "Entrées",
       "expense": "Dépenses",
-      "balance": "Solde",
-      "empty": "Aucun projet."
+      "balance": "Solde"
     },
     "list": {
       "title": "Mouvements",
@@ -1427,8 +1424,6 @@
       "type": "Type",
       "category": "Catégorie",
       "description": "Description",
-      "project": "Projet",
-      "site": "Lieu",
       "reference": "Référence",
       "customer": "Client",
       "supplier": "Fournisseur",
@@ -1464,6 +1459,7 @@
     "remove": {
       "title": "Supprimer le mouvement",
       "question": "Supprimer « {description} » ({amount}, {date}) ? Cette action est définitive."
-    }
+    },
+    "noProjects": "Aucun projet pour le moment. Ajoutez-en depuis les paramètres."
   }
 }

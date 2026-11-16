@@ -11,6 +11,7 @@ import { PAGE_SIZE, toPage } from "@/lib/api/pagination";
 import type { Page } from "@/lib/api/pagination";
 import type { IsoTimestamp } from "@/lib/format";
 import { isRecordId } from "@/lib/projects";
+import type { ProjectId } from "@/lib/projects";
 import {
   balanceFromApi,
   categoryFromApi,
@@ -35,8 +36,12 @@ function textOr(value: string): string | undefined {
   return value === "" ? undefined : value;
 }
 
-export async function getBalances(): Promise<readonly ProjectBalance[]> {
-  return unwrap(await apiClient.GET("/api/v1/cash-transactions/balance/")).map(balanceFromApi);
+export async function getBalances(project?: ProjectId): Promise<readonly ProjectBalance[]> {
+  const result = await apiClient.GET("/api/v1/cash-transactions/balance/", {
+    params: { query: project === undefined ? {} : { project: Number(project) } },
+  });
+
+  return unwrap(result).map(balanceFromApi);
 }
 
 export async function getCategories(): Promise<readonly CashCategory[]> {
@@ -46,6 +51,7 @@ export async function getCategories(): Promise<readonly CashCategory[]> {
 }
 
 export async function getTransactionPage(
+  project: ProjectId,
   filter: CashFilter,
   page: number,
 ): Promise<Page<CashTransaction>> {
@@ -59,8 +65,7 @@ export async function getTransactionPage(
         ...(filter.categories.length === 0 ? {} : { category__in: [...filter.categories] }),
         customer: numberOr(filter.customer),
         supplier: numberOr(filter.supplier),
-        project: numberOr(filter.project),
-        site: filter.site,
+        project: Number(project),
         transaction_date__date__gte: textOr(filter.from),
         transaction_date__date__lte: textOr(filter.to),
       },
@@ -83,12 +88,13 @@ export async function getTransaction(id: string): Promise<CashTransaction | unde
 }
 
 export async function createTransaction(
+  project: ProjectId,
   type: TransactionType,
   values: TransactionValues,
   at: IsoTimestamp,
   key: string,
 ): Promise<SaveResult<keyof TransactionValues>> {
-  const body = transactionToApi(type, values, at);
+  const body = transactionToApi(project, type, values, at);
 
   if (body === undefined) {
     return saveFailed;
@@ -107,7 +113,7 @@ export async function updateTransaction(
   values: TransactionValues,
   at: IsoTimestamp,
 ): Promise<SaveResult<keyof TransactionValues>> {
-  const body = transactionToApi(transaction.type, values, at);
+  const body = transactionToApi(transaction.project, transaction.type, values, at);
 
   if (body === undefined || !isRecordId(transaction.id)) {
     return saveFailed;

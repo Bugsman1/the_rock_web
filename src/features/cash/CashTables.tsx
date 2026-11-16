@@ -2,61 +2,12 @@ import { useLocale, useTranslations } from "use-intl";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
-import { StatusBadge, TablePanel } from "@/components/ui/TablePanel";
+import { StatusBadge } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { categoryShown, isEditable } from "./cash";
-import type { CashTransaction, ProjectBalance } from "./cash";
+import type { CashTransaction } from "./cash";
 import type { CashDrawer } from "./cashQuery";
-
-export function BalanceTable({ balances }: { balances: readonly ProjectBalance[] }) {
-  const t = useTranslations("cash.balances");
-  const locale = useLocale();
-  const money = (amount: number) => formatMoney(amount, locale);
-  const amountColumn = (
-    key: "capital" | "income" | "expense",
-    value: (row: ProjectBalance) => number,
-  ): DataColumn<ProjectBalance> => ({
-    key,
-    header: t(key),
-    align: "end",
-    className: "text-ink font-semibold",
-    cell: (row) => money(value(row)),
-  });
-  const columns: DataColumn<ProjectBalance>[] = [
-    {
-      key: "project",
-      header: t("project"),
-      className: "text-ink font-bold",
-      cell: (row) => <span dir="auto">{row.projectName}</span>,
-    },
-    amountColumn("capital", (row) => row.capital),
-    amountColumn("income", (row) => row.income),
-    amountColumn("expense", (row) => row.expense),
-    {
-      key: "balance",
-      header: t("balance"),
-      align: "end",
-      className: "font-bold",
-      cell: (row) => (
-        <span className={row.balance < 0 ? "text-danger-700" : "text-ink"}>
-          {money(row.balance)}
-        </span>
-      ),
-    },
-  ];
-
-  return (
-    <TablePanel title={t("title")}>
-      <DataTable
-        columns={columns}
-        rows={balances}
-        rowKey={(row) => row.project}
-        empty={t("empty")}
-      />
-    </TablePanel>
-  );
-}
 
 function SignedAmount({ transaction }: { transaction: CashTransaction }) {
   const locale = useLocale();
@@ -149,12 +100,6 @@ export function TransactionTable({ transactions, filtered, hrefOf }: Transaction
           {row.description === "" ? "—" : row.description}
         </span>
       ),
-    },
-    {
-      key: "project",
-      header: t("fields.project"),
-      className: "text-ink font-semibold",
-      cell: (row) => text(row.projectName),
     },
     {
       key: "reference",

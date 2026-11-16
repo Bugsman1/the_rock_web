@@ -7,6 +7,7 @@ import { Combobox } from "@/components/ui/Combobox";
 import { DateField } from "@/components/ui/DateField";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
+import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
 import { Select } from "@/components/ui/Select";
 import { TextArea, TextField, TimeField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
@@ -18,12 +19,12 @@ import type { CashCategory, CashTransaction, TransactionType, TransactionValues 
 import { createTransaction, updateTransaction } from "./cashApi";
 
 export type CashChoices = {
-  projects: readonly Project[];
   categories: readonly CashCategory[];
   suppliers: readonly SupplierChoice[] | undefined;
 };
 
 type CashFormProps = {
+  project: Project;
   type: TransactionType;
   transaction: CashTransaction | undefined;
   choices: CashChoices;
@@ -31,14 +32,10 @@ type CashFormProps = {
   onCancel: () => void;
 };
 
-function initialValues(
-  transaction: CashTransaction | undefined,
-  projects: readonly Project[],
-): TransactionValues {
+function initialValues(transaction: CashTransaction | undefined): TransactionValues {
   const moment = transaction === undefined ? new Date() : new Date(transaction.at);
 
   return {
-    project: transaction?.project ?? (projects.length === 1 ? (projects[0]?.id ?? "") : ""),
     category: transaction?.category ?? "",
     categoryName: transaction?.categoryName ?? "",
     amount: transaction?.amount ?? Number.NaN,
@@ -50,7 +47,14 @@ function initialValues(
   };
 }
 
-export function CashForm({ type, transaction, choices, onSaved, onCancel }: CashFormProps) {
+export function CashForm({
+  project,
+  type,
+  transaction,
+  choices,
+  onSaved,
+  onCancel,
+}: CashFormProps) {
   const t = useTranslations("cash");
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
@@ -74,7 +78,7 @@ export function CashForm({ type, transaction, choices, onSaved, onCancel }: Cash
     useForm<TransactionValues>({
       mode: "onTouched",
       resolver: zodResolver(schema),
-      defaultValues: initialValues(transaction, choices.projects),
+      defaultValues: initialValues(transaction),
     });
   const { field: date } = useController({ control, name: "date" });
   const { field: time } = useController({ control, name: "time" });
@@ -98,7 +102,7 @@ export function CashForm({ type, transaction, choices, onSaved, onCancel }: Cash
 
     const result =
       transaction === undefined
-        ? await createTransaction(type, values, at, idempotencyKey)
+        ? await createTransaction(project.id, type, values, at, idempotencyKey)
         : await updateTransaction(transaction, values, at);
 
     if (result.ok) {
@@ -119,15 +123,7 @@ export function CashForm({ type, transaction, choices, onSaved, onCancel }: Cash
   return (
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Select
-          id="cash-project"
-          label={common("project")}
-          required
-          placeholder={common("projectPlaceholder")}
-          options={choices.projects.map((project) => ({ value: project.id, label: project.name }))}
-          error={errors.project?.message}
-          {...register("project")}
-        />
+        <ReadOnlyField label={common("project")} value={project.name} />
 
         <Select
           id="cash-category"
