@@ -2,12 +2,14 @@ import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useTranslations } from "use-intl";
+import { onlyProjectId, ProjectSelect } from "@/components/projects/ProjectSelect";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
 import type { IconName } from "@/components/ui/Icon";
 import { ReadOnlyDateAndTime } from "@/components/ui/ReadOnlyField";
 import { useToast } from "@/components/ui/Toast";
 import { TextArea, TextField } from "@/components/ui/TextField";
+import type { Project } from "@/lib/projects";
 import type { SaveResult } from "@/lib/api/client";
 import { nowAsTimeValue, todayAsInputValue } from "@/lib/datetime";
 import { createIncreaseSchema, createNewDebtSchema } from "./debts";
@@ -128,9 +130,10 @@ export const amountInputProps = {
 
 export function NewDebtForm({
   customerId,
+  projects,
   onSaved,
   onCancel,
-}: FormDoneProps & { customerId: string }) {
+}: FormDoneProps & { customerId: string; projects: readonly Project[] }) {
   const t = useTranslations("customers.debts.form");
   const common = useTranslations("common");
   const toasts = useTranslations("toasts");
@@ -145,10 +148,10 @@ export function NewDebtForm({
   const { register, handleSubmit, formState, setError } = useForm<NewDebtValues>({
     mode: "onTouched",
     resolver: zodResolver(schema),
-    defaultValues: { description: "", amount: Number.NaN },
+    defaultValues: { project: onlyProjectId(projects), description: "", amount: Number.NaN },
   });
   const { saveFailure, save } = useDebtSave<keyof NewDebtValues>({
-    fields: ["description", "amount"],
+    fields: ["project", "description", "amount"],
     savedMessage: toasts("customerDebtAdded"),
     onSaved,
     showFieldError: (field, message) => setError(field, { message }),
@@ -162,6 +165,12 @@ export function NewDebtForm({
       className="flex flex-col gap-5"
     >
       <RecordedNow />
+      <ProjectSelect
+        id="debt-project"
+        projects={projects}
+        error={errors.project?.message}
+        {...register("project")}
+      />
       <TextField
         id="debt-amount"
         label={t("amount")}

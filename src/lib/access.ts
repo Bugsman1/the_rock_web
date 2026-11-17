@@ -44,7 +44,7 @@ export const rights = ["view", "add", "edit", "delete"] as const;
 export type Right = (typeof rights)[number];
 
 export function rightsOfModule(module: Module): readonly Right[] {
-  return module === "audit" || module === "accounting" ? ["view"] : rights;
+  return module === "audit" ? ["view"] : rights;
 }
 
 type ModuleRights = Record<Right, boolean>;

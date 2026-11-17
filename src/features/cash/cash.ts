@@ -3,11 +3,10 @@ import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/clien
 import { requiredIsoDate, requiredTime } from "@/lib/datetime";
 import { fromDecimal, toMoneyDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
+import type { CashTransaction, TransactionType } from "@/lib/cashTransactions";
 
 const DESCRIPTION_MAX_LENGTH = 255;
 const CATEGORY_NAME_MAX_LENGTH = 100;
-
-export type TransactionType = ApiSchema<"TransactionTypeEnum">;
 
 export const transactionTypes = ["income", "expense"] as const satisfies readonly TransactionType[];
 
@@ -24,29 +23,6 @@ export type CashCategory = {
   automatic: boolean;
 };
 
-export type CashTransaction = {
-  id: string;
-  project: string;
-  projectName: string;
-  type: TransactionType;
-  category: Category;
-  categoryLabel: string;
-  categoryName: string;
-  amount: number;
-  at: IsoTimestamp;
-  description: string;
-  customer: string | undefined;
-  customerName: string;
-  supplier: string | undefined;
-  supplierName: string;
-  source: ApiSchema<"SourceEnum">;
-  manual: boolean;
-  approved: boolean;
-  approvedAt: IsoTimestamp | undefined;
-  approvedByName: string;
-  byName: string;
-};
-
 export type ProjectBalance = {
   project: string;
   projectName: string;
@@ -57,11 +33,7 @@ export type ProjectBalance = {
 };
 
 export function isEditable(transaction: CashTransaction): boolean {
-  return transaction.manual && !transaction.approved;
-}
-
-function optionalId(value: number | null | undefined): string | undefined {
-  return value === null || value === undefined ? undefined : String(value);
+  return transaction.manual && transaction.status === "pending";
 }
 
 export function categoryFromApi(category: ApiSchema<"CashCategory">): CashCategory[] {
@@ -86,7 +58,7 @@ const categoryValues: readonly Category[] = [
   "equipment_rental",
   "other_services",
   "customer_debt_payment",
-  "settlement_payment",
+  "settlement_return",
   "other_income",
   "grinding_expense",
   "refining_expense",
@@ -133,37 +105,8 @@ export function formCategories(
     : offeredExpenses.flatMap((value) => manual.find((category) => category.value === value) ?? []);
 }
 
-export function categoryShown(transaction: CashTransaction): string {
-  return transaction.categoryName === "" ? transaction.categoryLabel : transaction.categoryName;
-}
-
 export function categoryValueOf(value: string): Category | undefined {
   return categoryValues.find((category) => category === value);
-}
-
-export function transactionFromApi(transaction: ApiSchema<"CashTransaction">): CashTransaction {
-  return {
-    id: String(transaction.id),
-    project: String(transaction.project),
-    projectName: transaction.project_name,
-    type: transaction.transaction_type,
-    category: transaction.category,
-    categoryLabel: transaction.category_display,
-    categoryName: transaction.category_name ?? "",
-    amount: fromDecimal(transaction.amount),
-    at: transaction.transaction_date ?? transaction.created_at,
-    description: transaction.description,
-    customer: optionalId(transaction.customer),
-    customerName: transaction.customer_name,
-    supplier: optionalId(transaction.supplier),
-    supplierName: transaction.supplier_name,
-    source: transaction.source,
-    manual: transaction.source === "manual",
-    approved: transaction.is_approved,
-    approvedAt: transaction.approved_at ?? undefined,
-    approvedByName: transaction.approved_by_name ?? "",
-    byName: transaction.created_by_name ?? "",
-  };
 }
 
 export function balanceFromApi(balance: ApiSchema<"ProjectCashBalance">): ProjectBalance {

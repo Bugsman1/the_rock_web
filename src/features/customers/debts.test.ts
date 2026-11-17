@@ -23,6 +23,8 @@ const apiDebt: ApiSchema<"CustomerDebt"> = {
   customer: 7,
   customer_name: "Ahmed",
   customer_phone: "+22222411830",
+  project: 3,
+  project_name: "Zouérat 1",
   description: "Avance en espèces",
   incurred_at: "2026-10-01T08:00:00Z",
   original_amount: "50000.00",
@@ -130,14 +132,17 @@ describe("debtFromApi", () => {
 });
 
 describe("debt forms", () => {
-  it("requires a description and an amount above zero for a new debt", () => {
+  it("requires the project, a description and an amount above zero for a new debt", () => {
     const schema = createNewDebtSchema(messages);
 
-    expect(errorsOf(schema.safeParse({ description: " ", amount: 0 }))).toEqual({
+    expect(errorsOf(schema.safeParse({ project: "", description: " ", amount: 0 }))).toEqual({
+      project: "required",
       description: "required",
       amount: "amount",
     });
-    expect(schema.safeParse({ description: "Pièces", amount: 1500 }).success).toBe(true);
+    expect(schema.safeParse({ project: "3", description: "Pièces", amount: 1500 }).success).toBe(
+      true,
+    );
   });
 
   it("requires a reason for an increase", () => {
@@ -166,8 +171,9 @@ describe("debt forms", () => {
 
 describe("debt requests", () => {
   it("sends the amounts as typed, with no date so the backend records now", () => {
-    expect(newDebtToApi("7", { description: " Pièces ", amount: 1500.5 })).toEqual({
+    expect(newDebtToApi("7", { project: "3", description: " Pièces ", amount: 1500.5 })).toEqual({
       customer: 7,
+      project: 3,
       description: "Pièces",
       original_amount: "1500.5",
     });

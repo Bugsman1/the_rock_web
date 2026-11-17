@@ -51,6 +51,8 @@ describe("report mapping", () => {
         income: "0.00",
         expense: "3000.00",
         net_profit: "-3000.00",
+        total_returns: "0.00",
+        total_losses: "0.00",
       }),
     ).toEqual({ project: "4", income: 0, expense: 3000, netProfit: -3000 });
     expect(
@@ -60,6 +62,8 @@ describe("report mapping", () => {
         total_income: "90000.00",
         total_expense: "0.00",
         net_profit: "90000.00",
+        total_returns: "0.00",
+        total_losses: "0.00",
         by_project: [],
       }),
     ).toEqual({
@@ -77,6 +81,8 @@ describe("report mapping", () => {
         total_income: "90000.00",
         total_expense: "20000.00",
         net_profit: "70000.00",
+        total_returns: "60000.00",
+        total_losses: "5000.00",
         receivables: "0.00",
         payables: "0.00",
         supplier_advances: "0.00",
@@ -84,6 +90,13 @@ describe("report mapping", () => {
         cash_balance: "0.00",
         unapproved_transactions: 2,
       }),
-    ).toEqual({ income: 90000, expense: 20000, netProfit: 70000, unapproved: 2 });
+    ).toEqual({
+      income: 90000,
+      expense: 20000,
+      netProfit: 70000,
+      returns: 60000,
+      losses: 5000,
+      unapproved: 2,
+    });
   });
 });

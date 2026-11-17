@@ -94,6 +94,29 @@ beforeEach(() => {
     http.get(`${API}/customer-debts/`, () =>
       HttpResponse.json({ count: 2, results: [openDebt, paidDebt] }),
     ),
+    http.get(`${API}/customers/7/losses/`, () =>
+      HttpResponse.json({
+        losses: [
+          {
+            settlement: 4,
+            settlement_number: "STL-2026-00004",
+            project: 3,
+            project_name: "Zouérat 1",
+            date: "2026-11-10",
+            shipment: 52,
+            shipment_number: "SHP-00052",
+            arrival_date: "2026-11-01",
+            returned_at: "2026-11-12T09:00:00Z",
+            total_cost: "30000.00",
+            return_amount: "22000.00",
+            loss: "8000.00",
+          },
+        ],
+        total_cost: "30000.00",
+        total_return: "22000.00",
+        total_loss: "8000.00",
+      }),
+    ),
     http.get(`${API}/customer-debts/12/history/`, () => {
       historyLoads += 1;
       return HttpResponse.json([
@@ -303,7 +326,7 @@ describe("CustomerScreen", () => {
     expect(screen.queryByRole("dialog", { name: text.form.decreaseTitle })).not.toBeInTheDocument();
   });
 
-  it("adds a debt with its amount first, then its note", async () => {
+  it("adds a debt to a project, its amount first, then its note", async () => {
     const user = userEvent.setup();
     openAt("/fr/customers/7?new=1");
     const dialog = within(await screen.findByRole("dialog", { name: text.form.newTitle }));
@@ -315,17 +338,30 @@ describe("CustomerScreen", () => {
     ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
 
     await user.click(dialog.getByRole("button", { name: text.form.create }));
-    expect(await dialog.findByText(messages.common.validation.required)).toBeVisible();
+    expect(await dialog.findAllByText(messages.common.validation.required)).toHaveLength(2);
 
     await user.type(dialog.getByLabelText(text.form.description, { exact: false }), "Gasoil");
     await user.type(dialog.getByLabelText(text.form.amount, { exact: false }), "12000");
+    await user.selectOptions(dialog.getByLabelText(messages.common.project), "4");
     await user.click(dialog.getByRole("button", { name: text.form.create }));
 
     await waitFor(() => expect(posted).toHaveLength(1));
     expect(posted[0]).toMatchObject({
       path: "customer-debts",
-      body: { customer: 7, description: "Gasoil", original_amount: "12000" },
+      body: { customer: 7, project: 4, description: "Gasoil", original_amount: "12000" },
     });
+  });
+
+  it("lists what the client's shipments cost us apart from the debts", async () => {
+    openAt("/fr/customers/7");
+
+    const losses = within(
+      (await screen.findByRole("heading", { name: messages.customers.losses.title })).closest(
+        "section",
+      ) ?? document.body,
+    );
+    expect(losses.getByText("SHP-00052")).toBeVisible();
+    expect(losses.getByRole("row", { name: /Total/ })).toHaveTextContent(money(8000));
   });
 
   it("shows a view-only role the debts with no way to change them", async () => {

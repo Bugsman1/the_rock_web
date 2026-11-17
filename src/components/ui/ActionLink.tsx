@@ -11,6 +11,9 @@ const variants = {
   ghost: "gap-1 px-2.5 font-bold",
 } as const;
 
+const baseClasses =
+  "rounded-action text-brand-700 hover:bg-surface-hover inline-flex h-9 items-center text-[14px]";
+
 type ActionLinkProps = {
   href: string;
   icon: IconName;
@@ -38,10 +41,7 @@ export function ActionLink({
       onClick={(event) => {
         if (pending) event.preventDefault();
       }}
-      className={cn(
-        "rounded-action text-brand-700 hover:bg-surface-hover inline-flex h-9 items-center text-[14px]",
-        variants[variant],
-      )}
+      className={cn(baseClasses, variants[variant])}
     >
       {pending ? (
         <LoadingDots label={common("loading")} compact />
@@ -52,5 +52,46 @@ export function ActionLink({
         </>
       )}
     </Link>
+  );
+}
+
+type ActionButtonProps = {
+  icon: IconName;
+  variant?: keyof typeof variants;
+  ariaLabel?: string;
+  busy: boolean;
+  onClick: () => void;
+  children: ReactNode;
+};
+
+export function ActionButton({
+  icon,
+  variant = "outline",
+  ariaLabel,
+  busy,
+  onClick,
+  children,
+}: ActionButtonProps) {
+  const common = useTranslations("common");
+
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      aria-disabled={busy || undefined}
+      onClick={() => {
+        if (!busy) onClick();
+      }}
+      className={cn(baseClasses, "cursor-pointer", variants[variant])}
+    >
+      {busy ? (
+        <LoadingDots label={common("loading")} compact />
+      ) : (
+        <>
+          <Icon name={icon} className="h-4 w-4" />
+          {children}
+        </>
+      )}
+    </button>
   );
 }

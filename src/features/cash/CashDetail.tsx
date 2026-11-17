@@ -4,8 +4,9 @@ import { DetailList } from "@/components/ui/Cards";
 import { Icon } from "@/components/ui/Icon";
 import { useCan } from "@/lib/accessContext";
 import { formatDateTime, formatMoney } from "@/lib/format";
-import { categoryShown, isEditable } from "./cash";
-import type { CashTransaction } from "./cash";
+import { isEditable } from "./cash";
+import { categoryShown } from "@/lib/cashTransactions";
+import type { CashTransaction } from "@/lib/cashTransactions";
 import type { CashDrawer } from "./cashQuery";
 
 type CashDetailProps = {
@@ -39,12 +40,13 @@ export function CashDetail({ transaction, hrefOf }: CashDetailProps) {
           {
             label: t("fields.status"),
             value:
-              transaction.approved && transaction.approvedAt !== undefined
-                ? t("approvedBy", {
-                    name: shown(transaction.approvedByName),
-                    date: formatDateTime(transaction.approvedAt, locale),
-                  })
-                : t("notApproved"),
+              transaction.reviewedAt === undefined || transaction.status === "pending"
+                ? t(`statuses.${transaction.status}`)
+                : t("reviewedBy", {
+                    status: t(`statuses.${transaction.status}`),
+                    name: shown(transaction.reviewedByName),
+                    date: formatDateTime(transaction.reviewedAt, locale),
+                  }),
           },
           { label: t("fields.description"), value: shown(transaction.description) },
         ]}

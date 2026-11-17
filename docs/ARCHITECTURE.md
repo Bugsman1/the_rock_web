@@ -56,6 +56,8 @@ the_rock_web/
 │  ├─ components/customers/    ← client form (Clients and New shipment), `useCustomerSearch` (client picker of the filters)
 │  ├─ components/shipments/    ← `ShipmentBadges.tsx`: `PaymentStatus`, `ShipmentStatusBadge` (Shipments and Clients)
 │  ├─ components/grinding/     ← start-grinding form (Shipments and Milling)
+│  ├─ components/projects/     ← `ProjectSelect` (the required project of a payment or a debt), `onlyProjectId`
+│  ├─ components/cash/         ← `SignedAmount` (+ green income, − red expense: Caisse and Accounting)
 │  ├─ components/resources/    ← `useResourceName`: mercury, water and fuel translated, any other resource by its own name (Inventory and Suppliers)
 │  ├─ lib/                     ← shared domain logic, formatting and API calls
 │  └─ icons/                   ← raw SVG files (24×24, stroke, currentColor; flags in colour), and the
@@ -99,7 +101,7 @@ All declared in `src/app/router.tsx` (`routes`). Under `/:locale/` (`ar` or `fr`
 | `suppliers/:supplier` (`?edit=1`, `?delete=1`, `?addPayment=1`, `?payment=`, `?deletePayment=`, `?addDelivery=1`, `?delivery=`, `?deleteDelivery=`, `supplierHref`) | `SupplierScreen` (`supplierLoader`): balance, resources and account; every form and delete confirmation in a drawer                                                                                                                                      |
 | `audit-log` (`?q=&action=&model=&user=&project=&from=&to=&page=&entry=`, `auditLogHref`)                                                                            | `AuditLogScreen` (`auditLogLoader`): 25 entries a page from the backend, newest first, searched and filtered on the server; `?entry=` opens one entry in a drawer                                                                                        |
 | `accounting` (`?from=&to=`, `accountingHref`)                                                                                                                       | `AccountingScreen` (`accountingLoader`): one card per project in service with its approved income, expenses and net profit over the period; a user who sees one project goes straight to it                                                              |
-| `accounting/projects/:project` (`?from=&to=`, `accountingProjectHref`)                                                                                              | `AccountingProjectScreen` (`accountingProjectLoader`): that project's approved summary, then its income and its expenses by category                                                                                                                     |
+| `accounting/projects/:project` (`?from=&to=`, `?reject=`, `?return=<settlement>:<shipment>`, `accountingProjectHref`)                                               | `AccountingProjectScreen` (`accountingProjectLoader`): that project's summary, income and expenses by category, movements to approve, shipment returns, receivables and payables                                                                         |
 | `cash`                                                                                                                                                              | `CashScreen` (`cashLoader`): one card per project in service with its balance, capital, income and expenses (`/cash-transactions/balance/`); a user who sees one project goes straight to it                                                             |
 | `cash/projects/:project` (`?q=&type=&category=&customer=&supplier=&from=&to=&page=`, `?view=`, `?new=income\|expense`, `?edit=`, `?delete=`, `cashProjectHref`)     | `CashProjectScreen` (`cashProjectLoader`): that project's money and only its movements, 25 a page from the backend, newest first, searched and filtered on the server; every form and delete confirmation in a drawer                                    |
 | `employees`                                                                                                                                                         | `EmployeesScreen` (`employeesLoader`): one card per project in service with its employees still employed (`/employees/summary/`); a user who sees one project goes straight to it                                                                        |
@@ -127,7 +129,7 @@ checks again for later in-app navigation.
 **Access model:** roles are created in the app (Users → Roles and permissions), each with a free name,
 "limited to one project" (`is_project_scoped`, its users need a project) and view / add / edit /
 delete rights per module: shipments, grinding (Milling), refining, inventory, customers, accounts
-(Users), locations (Settings → projects), employees (Employees and payroll), suppliers (Suppliers), audit (Audit log, view only: the roles screen offers no add / edit / delete for it), cash (Caisse) and accounting (Accounting, view only). A role limited to its projects never gets the audit log nor accounting, as in the backend, even when it is given the module. Any right on a module gives its view right; approve
+(Users), locations (Settings → projects), employees (Employees and payroll), suppliers (Suppliers), audit (Audit log, view only: the roles screen offers no add / edit / delete for it), cash (Caisse) and accounting (Accounting: its edit right approves and rejects cash movements and enters the returns). A role limited to its projects never gets the audit log nor accounting, as in the backend, even when it is given the module. Any right on a module gives its view right; approve
 follows edit. A section opens when the role can view its module; settings home, profile and
 language are open to everyone; sections still to build (dashboard, accounting…) need view on every
 module. Final settlements have their own module, `settlements` (view / add / edit / delete in the roles
@@ -258,6 +260,7 @@ Others: `ActionLink`, `Button`, `buttonClasses` (primary, secondary, danger), `B
 | `datetime.ts`                                            | Date and time input rules, `requiredIsoDate` / `requiredTime` (Zod fields), `combineDateAndTime`, `todayAsInputValue`, `nowAsTimeValue`, `addHours`, `isSameDay`, `durationParts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `phone.ts`, `search.ts`, `jwt.ts`, `cn.ts`, `profile.ts` | Phone rules (sent without spaces as `+222XXXXXXXX` by `phoneToApi`, shown as `+222 XX XX XX XX` by `formatPhone` when read from the backend; a customer is looked up by both forms, since older phones were saved with spaces), text/phone search, token reading, class merging, display name and profile (`/auth/me/` has no project)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `customers.ts` / `customersApi.ts`                       | Client type, schema, matching by phone, backend mapping / list, get, choices, create, update                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `cashTransactions.ts`                                    | `CashTransaction`, `CashStatus`, `TransactionType`, `transactionFromApi`, `categoryShown` (Caisse and Accounting)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `suppliersApi.ts`                                        | `SupplierChoice`, `getSupplierChoices` (every supplier by name: Inventory and Caisse)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `projects.ts` / `projectsApi.ts`                         | Projects (with their `capital`, sent as typed) and machines (grinder code `P<project>-<n>`, read with `parseGrinderCode`; never shown — machines are always shown as "machine <n>"), `rowOfProject` (a project's row of a per-project summary), schemas, mapping / load and save                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `shipments.ts` / `shipmentsApi.ts`                       | Shipment record (client name and phone come with the shipment; `status` checked against pending, grinding, refining, completed, cancelled; `stage` from `stageOf`; `bagCount` the current bags, `testBags`, `totalBags`, `transportMethod`; transport charged on both; `transportTotal`, `amountLeft`, `fullyPaid` from the backend) / `isInProgress` / `getShipments({ project?, customer?, statuses?, hasRemainingBags?, settleable?, ordering? })` (every page, newest arrival first unless `ordering`; `statuses` sent as `status__in`, comma-separated; the start-grinding drawers ask `has_remaining_bags=true`, the settlements `settleable=true`) / `getShipmentPage(filter, page)`: one page of 25 rows (`PAGE_SIZE`) of a project's list, with `search`, `status__in`, `customer`, `arrival_date__gte/lte` (the whole days: `T00:00:00` to `T23:59:59.999999`), `is_fully_paid`, `transport_method` and the backend's total; `remainingBags` is the backend's `remaining_bags` |
@@ -681,7 +684,11 @@ name: only the app limits a project to those three.
 ---
 
 **Customer debts (`/api/v1/customer-debts/`, module `debts`):** debts of a client apart from their
-shipments (cash advance, fuel, parts…); shipment debts stay on each shipment. A role that can view
+shipments (cash advance, fuel, parts…); shipment debts stay on each shipment. A new debt takes its
+project (required, `ProjectSelect`). Below the debts, the client's page lists their **losses**
+(`/customers/{id}/losses/`, `LossesTable`, shown when it can be read): each settled shipment whose return
+was below its total cost (date, settlement, shipment, project, total cost, return, loss in red) with the
+total loss; a loss is never a debt. A role that can view
 debts opens a client from the clients list (`/customers/<id>`, guarded by `canOpen`): name, phone and
 a table of their debts (note, date and time, total, paid, remaining, status open / partly paid orange,
 paid green). For a role with the debts add right each row ends with its actions, centred under an "Actions" header (`debtActions`):
@@ -816,7 +823,8 @@ expenses, all the backend's (`/cash-transactions/balance/`); a card opens that p
 project page shows the same four figures under its title (`?project=`) and only that project's
 movements (`/cash-transactions/?project=`): date, income / expense, category (the backend's label), the customer or
 supplier it concerns, the amount (+ green for an income, − red for an expense), who recorded it and
-"approved" or "not approved". The search sends `search`; the filter menu sends the type, the
+its status (`status`: pending orange, approved green, rejected red, `CashStatusBadge`). Only approved
+movements count in the balance (the backend's). The search sends `search`; the filter menu sends the type, the
 categories (`category__in`), the customer (searched on the server), the supplier and the dates.
 "Record an income" / "Record an expense" (add right) open the form, always for the page's project
 (shown, not chosen): category (an income: every manual income category from
@@ -825,26 +833,44 @@ expenses, maintenance, mercury, transport, electricity, water, machinery and equ
 vehicles, trucks, other expenses (`formCategories`), each with the backend's label; "other expenses"
 asks the expense's own name, required, ≤ 100, sent as `category_name`, and the list shows that name
 as its category, `categoryShown`), amount above 0, date and time (now by default), description (required by the backend, ≤ 255) and, optionally, the customer
-and the supplier. Only a manual movement not approved yet can be edited or deleted (edit / delete
+and the supplier. Only a manual movement still pending can be edited or deleted (edit / delete
 rights; delete asks first); the automatic ones (supplier, customer debt, shipment and settlement
 payments) are read-only. A row opens the movement's details in a drawer (`?view=`, `CashDetail`):
 date, type, category, amount, customer, supplier, origin (by hand, or the supplier, customer debt,
-shipment transport or settlement payment that wrote it), who recorded it, approved or not (by whom and
-when) and the description; a manual movement not approved yet has "edit" and "delete" there (their
-rights), the list itself has no buttons. Approving movements and the accounting reports are not in the app yet.
+shipment transport payment or settlement return that wrote it), who recorded it, its status (by whom
+and when it was approved or rejected) and the description; a manual movement still pending has "edit"
+and "delete" there (their
+rights), the list itself has no buttons. Movements are approved or rejected in Accounting.
 
-**Accounting (`/accounting`, backend `d820471`, module `accounting`, view only):** the reports count
-only the real money that moved through the caisse: approved cash movements (`approved=true` on every
-request). Each project stays apart: `/accounting` shows one card per project in service with its
+**Accounting (`/accounting`, backend `7594851`, module `accounting`):** every cash movement starts
+pending; only an approved one counts in the caisse and in the reports (the backend counts approved
+movements only). Each project stays apart: `/accounting` shows one card per project in service with its
 income, expenses and net profit over the period (`/accounting/profit-loss/` `by_project`), a card
 opens that project's page (`/accounting/projects/<id>`), and a user who sees one project goes straight
 to it. The period is the current month unless the filter menu's dates say otherwise (`?from=&to=`,
 kept from the cards to the project and back). The project page has no tabs and no figures under its
 title: first a "Summary" table (income, expenses, net profit in red when below 0, movements waiting for
 approval, `/accounting/summary/?project=`), then the income and the expenses side by side, each a table
-of its categories with their amount and a total row (`/accounting/profit-loss/?project=`). A role limited to one project
-never gets accounting (the backend refuses it). Not in the app yet, waiting on the backend: receivables
-and payables per project, and approving movements with the accounting rights.
+of its categories with their amount and a total row (`/accounting/profit-loss/?project=`). The summary
+also gives the period's total returns and losses. Then:
+
+- **To approve:** the project's pending movements, 25 a page (`/cash-transactions/?project=&status=pending`,
+  `TablePager`): date, type, category, customer or supplier, amount, who recorded it. With the
+  accounting edit right each row has "approve" (`POST …/approve/`, at once, loading dots, then the page
+  reloads) and "reject" (`?reject=<id>`: a drawer asks first, `POST …/reject/`); a rejected movement is
+  kept and never counted.
+- **Returns of the settled shipments:** every shipment of the project's final settlements
+  (`/settlements/?project=`, their `returns`): settlement, shipment, customer, total cost (transport +
+  unloading + grinding + refining, the backend's), return, loss (red when above 0) and the status of its
+  income (not entered, pending, approved, rejected). "Enter the return" (accounting edit right, not on a
+  locked one) opens a drawer (`?return=<settlement>:<shipment>`): customer, total cost, return between 0
+  and the total cost (`createReturnSchema`), `PATCH /settlements/{id}/shipments/{shipment}/return/`. A
+  return above 0 is a pending income of the project's caisse; the loss is never a debt.
+- **What customers owe** (`/accounting/receivables/?project=`: the project's customer debts),
+  **what the project owes its suppliers** and **the advances paid to them**
+  (`/accounting/payables/?project=`), each a table with its total.
+
+A role limited to one project never gets accounting (the backend refuses it).
 
 **Payments and the cash (backend `246308c`):** a supplier payment and a customer debt payment
 ("decrease", "paid in full") take the project whose cash paid or received them (`project`,
@@ -913,7 +939,10 @@ project's balance.
   find the project in it, instead of reading the project and then the list. Optional backend
   filters still missing: `transport_method__in`, `arrival_date__date__gte/lte`, and the shipment
   search on `customer__phone_digits`.
-- `schema.d.ts` was generated (2026-11-16) from GitHub `main` `4922be8` (the five new expense
+- `schema.d.ts` was generated (2026-11-17) from GitHub `main` `7594851` (cash status and approval
+  through accounting, settlement returns per shipment instead of settlement payments, customer losses,
+  customer debts' project, receivables and payables per project, the dashboard's attention list (not
+  used yet); before it `4922be8`: the five new expense
   categories and `category_name`; before it `d820471`: the projects' cash, capital
   and approval, accounting reports, settlement payments, the payments' `project`; before it `9bf3eaa`: several suppliers per
   resource: the resources' `suppliers` / `initial_supplier`, the suppliers' `resources`, the

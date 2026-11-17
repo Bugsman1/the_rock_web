@@ -88,6 +88,7 @@ function requiredText(required: string) {
 
 export function createNewDebtSchema(messages: { required: string; amountInvalid: string }) {
   return z.object({
+    project: z.string().min(1, messages.required),
     description: requiredText(messages.required),
     amount: amountSchema(messages.amountInvalid),
   });
@@ -120,6 +121,7 @@ export type PaymentValues = z.infer<ReturnType<typeof createPaymentSchema>>;
 export function newDebtToApi(customerId: string, values: NewDebtValues) {
   return {
     customer: Number(customerId),
+    project: Number(values.project),
     description: values.description.trim(),
     original_amount: toMoneyDecimal(values.amount),
   };
@@ -144,6 +146,7 @@ export function paymentToApi(debtId: string, values: PaymentValues) {
 
 export function newDebtErrorsFromApi(errors: BackendFieldErrors): FieldErrors<keyof NewDebtValues> {
   return {
+    ...(errors.project === undefined ? {} : { project: errors.project }),
     ...(errors.description === undefined ? {} : { description: errors.description }),
     ...(errors.original_amount === undefined ? {} : { amount: errors.original_amount }),
   };
@@ -163,5 +166,41 @@ export function paymentErrorsFromApi(errors: BackendFieldErrors): FieldErrors<ke
     ...(errors.project === undefined ? {} : { project: errors.project }),
     ...(errors.amount === undefined ? {} : { amount: errors.amount }),
     ...(errors.notes === undefined ? {} : { notes: errors.notes }),
+  };
+}
+
+export type CustomerLoss = {
+  key: string;
+  settlementNumber: string;
+  shipmentNumber: string;
+  projectName: string;
+  date: string;
+  totalCost: number;
+  returnAmount: number;
+  loss: number;
+};
+
+export type CustomerLosses = {
+  losses: readonly CustomerLoss[];
+  totalCost: number;
+  totalReturn: number;
+  totalLoss: number;
+};
+
+export function lossesFromApi(report: ApiSchema<"CustomerLosses">): CustomerLosses {
+  return {
+    losses: report.losses.map((row) => ({
+      key: `${String(row.settlement)}-${String(row.shipment)}`,
+      settlementNumber: row.settlement_number,
+      shipmentNumber: row.shipment_number,
+      projectName: row.project_name,
+      date: row.date,
+      totalCost: fromDecimal(row.total_cost),
+      returnAmount: fromDecimal(row.return_amount),
+      loss: fromDecimal(row.loss),
+    })),
+    totalCost: fromDecimal(report.total_cost),
+    totalReturn: fromDecimal(report.total_return),
+    totalLoss: fromDecimal(report.total_loss),
   };
 }

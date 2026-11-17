@@ -207,6 +207,18 @@
         "payOff": "Confirmer le paiement total",
         "saving": "Enregistrement"
       }
+    },
+    "losses": {
+      "title": "Pertes sur les expéditions réglées",
+      "date": "Date",
+      "settlement": "Règlement",
+      "shipment": "Expédition",
+      "project": "Projet",
+      "cost": "Coût total",
+      "return": "Retour",
+      "loss": "Perte",
+      "total": "Total",
+      "empty": "Aucune perte sur les expéditions de ce client."
     }
   },
   "sites": {
@@ -1400,7 +1412,10 @@
     "deliveryDeleted": "Livraison supprimée",
     "cashRecorded": "Mouvement enregistré",
     "cashUpdated": "Mouvement modifié",
-    "cashDeleted": "Mouvement supprimé"
+    "cashDeleted": "Mouvement supprimé",
+    "cashApproved": "Mouvement approuvé",
+    "cashRejected": "Mouvement rejeté",
+    "returnSaved": "Retour enregistré"
   },
   "cash": {
     "title": "Caisse",
@@ -1438,8 +1453,6 @@
       "income": "Entrée",
       "expense": "Dépense"
     },
-    "approved": "Approuvé",
-    "notApproved": "Non approuvé",
     "edit": "Modifier",
     "delete": "Supprimer",
     "form": {
@@ -1462,14 +1475,19 @@
     "noProjects": "Aucun projet pour le moment. Ajoutez-en depuis les paramètres.",
     "detailTitle": "Détail du mouvement",
     "openLabel": "Voir le mouvement du {date}",
-    "approvedBy": "Approuvé par {name} le {date}",
     "sources": {
       "manual": "Saisi à la main",
       "supplier_payment": "Paiement fournisseur",
       "debt_payment": "Paiement de dette client",
       "shipment_payment": "Paiement du transport d'une expédition",
-      "settlement_payment": "Paiement d'un règlement final"
-    }
+      "settlement_return": "Retour d'une expédition réglée"
+    },
+    "statuses": {
+      "pending": "En attente",
+      "approved": "Approuvé",
+      "rejected": "Rejeté"
+    },
+    "reviewedBy": "{status} par {name} le {date}"
   },
   "accounting": {
     "title": "Comptabilité",
@@ -1488,6 +1506,67 @@
       "amount": "Montant",
       "empty": "Aucun mouvement approuvé sur cette période."
     },
-    "summary": "Résumé"
+    "summary": "Résumé",
+    "returns": "Retours",
+    "losses": "Pertes",
+    "fields": {
+      "date": "Date",
+      "type": "Type",
+      "category": "Catégorie",
+      "amount": "Montant",
+      "reference": "Référence",
+      "by": "Par",
+      "actions": "Actions"
+    },
+    "types": {
+      "income": "Entrée",
+      "expense": "Dépense"
+    },
+    "approval": {
+      "title": "À approuver",
+      "empty": "Aucun mouvement en attente.",
+      "approve": "Approuver",
+      "reject": "Rejeter",
+      "approveLabel": "Approuver le mouvement du {date}",
+      "rejectLabel": "Rejeter le mouvement du {date}",
+      "rejectTitle": "Rejeter le mouvement",
+      "rejectQuestion": "Rejeter « {category} » ({amount}, {date}) ? Il ne sera jamais compté.",
+      "rejecting": "Rejet en cours",
+      "failed": "L'action n'a pas pu être faite."
+    },
+    "shipmentReturns": {
+      "title": "Retours des expéditions réglées",
+      "empty": "Aucune expédition réglée dans ce projet.",
+      "settlement": "Règlement",
+      "customer": "Client",
+      "shipment": "Expédition",
+      "cost": "Coût total",
+      "return": "Retour",
+      "loss": "Perte",
+      "status": "Statut",
+      "notEntered": "Non saisi",
+      "enter": "Saisir le retour",
+      "enterLabel": "Saisir le retour de {shipment}",
+      "formTitle": "Retour de l'expédition {shipment}",
+      "save": "Enregistrer le retour",
+      "saving": "Enregistrement",
+      "returnInvalid": "Saisissez un retour entre 0 et {max}"
+    },
+    "receivables": {
+      "title": "Ce que les clients doivent",
+      "customer": "Client",
+      "amount": "Reste dû",
+      "total": "Total",
+      "empty": "Aucun client ne doit d'argent à ce projet."
+    },
+    "payables": {
+      "title": "Ce que le projet doit aux fournisseurs",
+      "advancesTitle": "Avances versées aux fournisseurs",
+      "supplier": "Fournisseur",
+      "amount": "Montant",
+      "total": "Total",
+      "empty": "Aucun fournisseur à payer.",
+      "advancesEmpty": "Aucune avance en cours."
+    }
   }
 }

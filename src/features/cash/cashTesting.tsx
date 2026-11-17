@@ -5,6 +5,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
 import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
 import { noAccess, rightsFromApi } from "@/lib/access";
+import type { ApiSchema } from "@/lib/api/client";
 import type { Access } from "@/lib/access";
 import { AccessContext } from "@/lib/accessContext";
 import messages from "@/messages/fr.json";
@@ -28,7 +29,7 @@ const stamps = { created_at: "2026-11-10T08:00:00Z", updated_at: "2026-11-10T08:
 export const page = (results: readonly object[], count = results.length) =>
   HttpResponse.json({ count, results });
 
-export const apiTransaction = {
+export const apiTransaction: ApiSchema<"CashTransaction"> = {
   id: 9,
   project: 3,
   project_name: "Zouérat 1",
@@ -52,15 +53,19 @@ export const apiTransaction = {
   supplier_payment: null,
   debt_payment: null,
   shipment_payment: null,
-  settlement_payment: null,
+  settlement_return: null,
+  status: "pending",
+  status_display: "En attente",
   is_approved: false,
   approved_at: null,
   approved_by_name: null,
+  rejected_at: null,
+  rejected_by_name: null,
   created_by_name: "Aicha",
   ...stamps,
 };
 
-export const automaticTransaction = {
+export const automaticTransaction: ApiSchema<"CashTransaction"> = {
   ...apiTransaction,
   id: 10,
   transaction_type: "income",

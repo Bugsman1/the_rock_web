@@ -2,14 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   balanceFromApi,
   categoryFromApi,
-  categoryShown,
   createTransactionSchema,
   formCategories,
   isEditable,
   transactionErrorsFromApi,
-  transactionFromApi,
   transactionToApi,
 } from "./cash";
+import { categoryShown, transactionFromApi } from "@/lib/cashTransactions";
 import type { TransactionValues } from "./cash";
 import { apiTransaction, automaticTransaction } from "./cashTesting";
 
@@ -52,10 +51,27 @@ describe("transactionFromApi", () => {
       supplierName: "Sidi Fournitures",
       source: "manual",
       manual: true,
-      approved: false,
-      approvedAt: undefined,
-      approvedByName: "",
+      status: "pending",
+      reviewedAt: undefined,
+      reviewedByName: "",
       byName: "Aicha",
+    });
+  });
+});
+
+describe("transactionFromApi review", () => {
+  it("names who rejected a rejected movement, and when", () => {
+    expect(
+      transactionFromApi({
+        ...apiTransaction,
+        status: "rejected",
+        rejected_at: "2026-11-13T10:00:00Z",
+        rejected_by_name: "Mariem",
+      }),
+    ).toMatchObject({
+      status: "rejected",
+      reviewedAt: "2026-11-13T10:00:00Z",
+      reviewedByName: "Mariem",
     });
   });
 });
@@ -68,9 +84,10 @@ describe("isEditable", () => {
     source: "manual",
   });
 
-  it("lets only a manual movement not approved yet be changed", () => {
+  it("lets only a manual movement still waiting for approval be changed", () => {
     expect(isEditable(manual)).toBe(true);
-    expect(isEditable({ ...manual, approved: true })).toBe(false);
+    expect(isEditable({ ...manual, status: "approved" })).toBe(false);
+    expect(isEditable({ ...manual, status: "rejected" })).toBe(false);
     expect(
       isEditable(
         transactionFromApi({
@@ -226,7 +243,7 @@ describe("formCategories", () => {
     { value: "fuel", label: "Carburant", type: "expense", automatic: false },
     { value: "supplier_payment", label: "Fournisseur", type: "expense", automatic: true },
     { value: "grinding_income", label: "Broyage", type: "income", automatic: false },
-    { value: "settlement_payment", label: "Règlement", type: "income", automatic: true },
+    { value: "settlement_return", label: "Règlement", type: "income", automatic: true },
   ] as const;
 
   it("offers the business's own expenses in their order, another expense last", () => {

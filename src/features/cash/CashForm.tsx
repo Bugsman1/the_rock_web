@@ -15,7 +15,8 @@ import { combineDateAndTime, nowAsTimeValue, todayAsInputValue } from "@/lib/dat
 import type { Project } from "@/lib/projects";
 import type { SupplierChoice } from "@/lib/suppliersApi";
 import { createTransactionSchema, formCategories, isTransactionField, OTHER_EXPENSE } from "./cash";
-import type { CashCategory, CashTransaction, TransactionType, TransactionValues } from "./cash";
+import type { CashCategory, TransactionValues } from "./cash";
+import type { CashTransaction, TransactionType } from "@/lib/cashTransactions";
 import { createTransaction, updateTransaction } from "./cashApi";
 
 export type CashChoices = {

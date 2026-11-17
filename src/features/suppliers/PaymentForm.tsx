@@ -2,9 +2,9 @@ import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useController, useForm } from "react-hook-form";
 import { useTranslations } from "use-intl";
+import { onlyProjectId, ProjectSelect } from "@/components/projects/ProjectSelect";
 import { DrawerActions } from "@/components/ui/Drawer";
 import { SaveFailureMessage, useSaveFailure } from "@/components/ui/FieldError";
-import { Select } from "@/components/ui/Select";
 import { TextField } from "@/components/ui/TextField";
 import { useToast } from "@/components/ui/Toast";
 import { combineDateAndTime } from "@/lib/datetime";
@@ -39,7 +39,7 @@ export function PaymentForm({ supplier, payment, projects, onSaved, onCancel }: 
     mode: "onTouched",
     resolver: zodResolver(schema),
     defaultValues: {
-      project: payment?.project ?? (projects.length === 1 ? (projects[0]?.id ?? "") : ""),
+      project: payment?.project ?? onlyProjectId(projects),
       amount: payment?.amount ?? Number.NaN,
       ...whenOf(payment?.at),
       note: payment?.note ?? "",
@@ -87,12 +87,9 @@ export function PaymentForm({ supplier, payment, projects, onSaved, onCancel }: 
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <Select
+          <ProjectSelect
             id="payment-project"
-            label={common("project")}
-            required
-            placeholder={common("projectPlaceholder")}
-            options={projects.map((project) => ({ value: project.id, label: project.name }))}
+            projects={projects}
             error={errors.project?.message}
             {...register("project")}
           />

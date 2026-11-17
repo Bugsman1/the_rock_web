@@ -24,7 +24,7 @@ import { getProjects } from "@/lib/projectsApi";
 import { CASH_HREF, cashProjectHref } from "@/lib/routes";
 import { getSupplierChoices } from "@/lib/suppliersApi";
 import { isEditable, transactionTypes } from "./cash";
-import type { CashTransaction } from "./cash";
+import type { CashTransaction } from "@/lib/cashTransactions";
 import {
   deleteTransaction,
   getBalances,

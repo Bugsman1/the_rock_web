@@ -3,6 +3,7 @@ import type { SaveResult } from "@/lib/api/client";
 import { fetchAllPages, MAX_PAGE_SIZE } from "@/lib/api/pagination";
 import {
   debtFromApi,
+  lossesFromApi,
   debtHistoryFromApi,
   increaseErrorsFromApi,
   increaseToApi,
@@ -13,6 +14,7 @@ import {
 } from "./debts";
 import type {
   CustomerDebt,
+  CustomerLosses,
   DebtHistoryEntry,
   IncreaseValues,
   NewDebtValues,
@@ -78,4 +80,12 @@ export async function payDebt(
   });
 
   return saveOutcome(response, error, paymentErrorsFromApi);
+}
+
+export async function getCustomerLosses(customerId: string): Promise<CustomerLosses> {
+  const result = await apiClient.GET("/api/v1/customers/{id}/losses/", {
+    params: { path: { id: Number(customerId) } },
+  });
+
+  return lossesFromApi(unwrap(result));
 }

@@ -12,14 +12,15 @@ import type { IconName } from "@/components/ui/Icon";
 import { PageLayout } from "@/components/ui/PageHeader";
 import { TablePanel } from "@/components/ui/TablePanel";
 import { useCan } from "@/lib/accessContext";
-import { notFound } from "@/lib/api/client";
+import { notFound, tryLoad } from "@/lib/api/client";
 import { getCustomer } from "@/lib/customersApi";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { CUSTOMERS_HREF, customerHref } from "@/lib/routes";
 import { getProjects } from "@/lib/projectsApi";
 import { debtActions, debtFilterFields, debtStatuses, isDebtAction } from "./debts";
 import type { CustomerDebt, DebtAction } from "./debts";
-import { getCustomerDebts, getDebtHistory } from "./debtsApi";
+import { LossesTable } from "./CustomerLosses";
+import { getCustomerDebts, getCustomerLosses, getDebtHistory } from "./debtsApi";
 import { DebtActionForm, DebtDetails, DebtStatusBadge } from "./DebtDetails";
 import { NewDebtForm } from "./DebtForms";
 
@@ -31,7 +32,10 @@ export async function customerLoader({ params, request }: LoaderFunctionArgs) {
   }
 
   const search = new URL(request.url).searchParams;
-  const debts = await getCustomerDebts(customer.id);
+  const [debts, losses] = await Promise.all([
+    getCustomerDebts(customer.id),
+    tryLoad(() => getCustomerLosses(customer.id)),
+  ]);
   const opened = debts.find((debt) => debt.id === search.get("debt"));
   const action = search.get("action");
   const chosen =
@@ -42,7 +46,11 @@ export async function customerLoader({ params, request }: LoaderFunctionArgs) {
   return {
     customer,
     debts,
-    projects: chosen === undefined || chosen === "increase" ? [] : await getProjects(),
+    losses: losses.ok ? losses.data : undefined,
+    projects:
+      (chosen !== undefined && chosen !== "increase") || search.get("new") === "1"
+        ? await getProjects()
+        : [],
     acting:
       opened === undefined || chosen === undefined ? undefined : { debt: opened, action: chosen },
     viewing:
@@ -168,7 +176,7 @@ function DebtTable({ customerId, debts, canChange }: DebtTableProps) {
 }
 
 export function CustomerScreen() {
-  const { customer, debts, projects, acting, viewing, adding } =
+  const { customer, debts, losses, projects, acting, viewing, adding } =
     useLoaderData<typeof customerLoader>();
   const t = useTranslations("customers.debts");
   const common = useTranslations("common");
@@ -191,6 +199,7 @@ export function CustomerScreen() {
       }
     >
       <DebtTable customerId={customer.id} debts={debts} canChange={canAdd} />
+      {losses === undefined ? null : <LossesTable report={losses} />}
 
       <Drawer
         open={viewing !== undefined}
@@ -227,7 +236,12 @@ export function CustomerScreen() {
         closeLabel={common("close")}
         onClose={close}
       >
-        <NewDebtForm customerId={customer.id} onSaved={close} onCancel={close} />
+        <NewDebtForm
+          customerId={customer.id}
+          projects={projects}
+          onSaved={close}
+          onCancel={close}
+        />
       </Drawer>
     </PageLayout>
   );

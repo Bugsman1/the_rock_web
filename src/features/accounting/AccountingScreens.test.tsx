@@ -32,7 +32,7 @@ function cardOf(name: string) {
 }
 
 describe("AccountingScreen", () => {
-  it("shows each project's approved income, expenses and net profit, each opening that project", async () => {
+  it("shows each project's income, expenses and net profit, each opening that project", async () => {
     openAt(`/fr/accounting?${period}`);
 
     await screen.findByRole("heading", { name: title("Zouérat 1") });
@@ -47,7 +47,6 @@ describe("AccountingScreen", () => {
       "href",
       `/fr/accounting/projects/3?${period}`,
     );
-    expect(asked.profitLoss?.get("approved")).toBe("true");
     expect(asked.profitLoss?.get("date__gte")).toBe("2026-11-01");
     expect(asked.profitLoss?.get("date__lte")).toBe("2026-11-30");
   });
@@ -71,7 +70,7 @@ describe("AccountingScreen", () => {
 });
 
 describe("AccountingProjectScreen", () => {
-  it("shows the project's approved summary, then its income and expenses side by side", async () => {
+  it("shows the project's summary, then its income and expenses side by side", async () => {
     openAt(`/fr/accounting/projects/3?${period}`);
 
     const summary = await screen.findByRole("heading", { name: text.summary });
@@ -81,7 +80,14 @@ describe("AccountingProjectScreen", () => {
       within(row ?? document.body)
         .getAllByRole("cell")
         .map((cell) => cell.textContent),
-    ).toEqual([90000, 20000, 70000].map((amount) => formatMoney(amount, "fr")).concat("2"));
+    ).toEqual(
+      [90000, 20000, 70000]
+        .map((amount) => formatMoney(amount, "fr"))
+        .concat(
+          [60000, 5000].map((amount) => formatMoney(amount, "fr")),
+          "2",
+        ),
+    );
 
     const expenses = within(
       screen.getByRole("heading", { name: text.profitLoss.expenseTitle }).closest("section") ??
@@ -91,7 +97,6 @@ describe("AccountingProjectScreen", () => {
     expect(expenses.getByRole("row", { name: /Total/ })).toHaveTextContent(money(20000));
     for (const report of ["summary", "profitLoss"]) {
       expect(asked[report]?.get("project")).toBe("3");
-      expect(asked[report]?.get("approved")).toBe("true");
     }
     expect(screen.queryByRole("tab")).toBeNull();
     expect(screen.getByRole("link", { name: common.back })).toHaveAttribute(

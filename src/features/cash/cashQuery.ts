@@ -3,7 +3,8 @@ import { isIsoDate } from "@/lib/datetime";
 import type { FilterState } from "@/lib/filters";
 import { isRecordId } from "@/lib/projects";
 import { categoryValueOf, isTransactionType } from "./cash";
-import type { CashCategory, TransactionType } from "./cash";
+import type { CashCategory } from "./cash";
+import type { TransactionType } from "@/lib/cashTransactions";
 
 type Category = CashCategory["value"];
 

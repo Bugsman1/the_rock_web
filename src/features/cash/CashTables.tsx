@@ -2,20 +2,23 @@ import { useLocale, useTranslations } from "use-intl";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
 import { StatusBadge } from "@/components/ui/TablePanel";
-import { formatDateTime, formatMoney } from "@/lib/format";
-import { categoryShown } from "./cash";
-import type { CashTransaction } from "./cash";
+import type { StatusTone } from "@/components/ui/TablePanel";
+import { formatDateTime } from "@/lib/format";
+import { SignedAmount } from "@/components/cash/SignedAmount";
+import { categoryShown } from "@/lib/cashTransactions";
+import type { CashStatus, CashTransaction } from "@/lib/cashTransactions";
 import type { CashDrawer } from "./cashQuery";
 
-function SignedAmount({ transaction }: { transaction: CashTransaction }) {
-  const locale = useLocale();
-  const income = transaction.type === "income";
+const statusTones: Record<CashStatus, StatusTone> = {
+  pending: "warning",
+  approved: "success",
+  rejected: "danger",
+};
 
-  return (
-    <span className={income ? "text-success-700" : "text-danger-700"}>
-      {`${income ? "+" : "−"}${formatMoney(transaction.amount, locale)}`}
-    </span>
-  );
+export function CashStatusBadge({ status }: { status: CashStatus }) {
+  const t = useTranslations("cash.statuses");
+
+  return <StatusBadge label={t(status)} tone={statusTones[status]} />;
 }
 
 type TransactionTableProps = {
@@ -70,12 +73,7 @@ export function TransactionTable({ transactions, filtered, hrefOf }: Transaction
     {
       key: "status",
       header: t("fields.status"),
-      cell: (row) =>
-        row.approved ? (
-          <StatusBadge label={t("approved")} tone="success" />
-        ) : (
-          <StatusBadge label={t("notApproved")} />
-        ),
+      cell: (row) => <CashStatusBadge status={row.status} />,
     },
   ];
 

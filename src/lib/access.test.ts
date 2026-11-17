@@ -200,9 +200,9 @@ describe("canOpen", () => {
     expect(canOpen(access(["shipments"]), "/cash")).toBe(false);
   });
 
-  it("offers only the view right for the audit log and accounting", () => {
+  it("offers only the view right for the audit log, every right for accounting", () => {
     expect(rightsOfModule("audit")).toEqual(["view"]);
-    expect(rightsOfModule("accounting")).toEqual(["view"]);
+    expect(rightsOfModule("accounting")).toEqual(["view", "add", "edit", "delete"]);
     expect(rightsOfModule("cash")).toEqual(["view", "add", "edit", "delete"]);
     expect(rightsOfModule("suppliers")).toEqual(["view", "add", "edit", "delete"]);
   });

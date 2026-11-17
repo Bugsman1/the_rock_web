@@ -1,6 +1,2 @@
-export {
-  AccountingProjectScreen,
-  accountingProjectLoader,
-  AccountingScreen,
-  accountingLoader,
-} from "./AccountingScreens";
+export { AccountingProjectScreen, accountingProjectLoader } from "./AccountingProjectScreen";
+export { AccountingScreen, accountingLoader } from "./AccountingScreens";

@@ -2,9 +2,9 @@ import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useLocale, useTranslations } from "use-intl";
+import { onlyProjectId, ProjectSelect } from "@/components/projects/ProjectSelect";
 import { FieldError } from "@/components/ui/FieldError";
 import { ReadOnlyField } from "@/components/ui/ReadOnlyField";
-import { Select } from "@/components/ui/Select";
 import { TextArea, TextField } from "@/components/ui/TextField";
 import { formatMoney } from "@/lib/format";
 import type { Project } from "@/lib/projects";
@@ -42,7 +42,7 @@ export function DebtPaymentForm({ debt, payOff, projects, onSaved, onCancel }: P
     mode: "onTouched",
     resolver: zodResolver(schema),
     defaultValues: {
-      project: projects.length === 1 ? (projects[0]?.id ?? "") : "",
+      project: onlyProjectId(projects),
       amount: payOff ? debt.remaining : Number.NaN,
       notes: "",
     },
@@ -62,12 +62,9 @@ export function DebtPaymentForm({ debt, payOff, projects, onSaved, onCancel }: P
       className="flex flex-col gap-5"
     >
       <RecordedNow />
-      <Select
+      <ProjectSelect
         id="payment-project"
-        label={common("project")}
-        required
-        placeholder={common("projectPlaceholder")}
-        options={projects.map((project) => ({ value: project.id, label: project.name }))}
+        projects={projects}
         error={errors.project?.message}
         {...register("project")}
       />

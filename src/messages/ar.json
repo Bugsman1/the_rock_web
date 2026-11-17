@@ -207,6 +207,18 @@
         "payOff": "تأكيد الدفع الكامل",
         "saving": "جارٍ الحفظ"
       }
+    },
+    "losses": {
+      "title": "الخسائر على الشحنات المسوّاة",
+      "date": "التاريخ",
+      "settlement": "التسوية",
+      "shipment": "الشحنة",
+      "project": "المشروع",
+      "cost": "التكلفة الإجمالية",
+      "return": "العائد",
+      "loss": "الخسارة",
+      "total": "المجموع",
+      "empty": "لا خسائر على شحنات هذا العميل."
     }
   },
   "sites": {
@@ -1400,7 +1412,10 @@
     "deliveryDeleted": "تم حذف التوريد",
     "cashRecorded": "تم تسجيل الحركة",
     "cashUpdated": "تم تعديل الحركة",
-    "cashDeleted": "تم حذف الحركة"
+    "cashDeleted": "تم حذف الحركة",
+    "cashApproved": "تم اعتماد الحركة",
+    "cashRejected": "تم رفض الحركة",
+    "returnSaved": "تم حفظ العائد"
   },
   "cash": {
     "title": "الصندوق",
@@ -1438,8 +1453,6 @@
       "income": "دخل",
       "expense": "مصروف"
     },
-    "approved": "معتمد",
-    "notApproved": "غير معتمد",
     "edit": "تعديل",
     "delete": "حذف",
     "form": {
@@ -1462,14 +1475,19 @@
     "noProjects": "لا توجد مشاريع بعد. أضفها من الإعدادات.",
     "detailTitle": "تفاصيل الحركة",
     "openLabel": "عرض حركة {date}",
-    "approvedBy": "اعتمدها {name} في {date}",
     "sources": {
       "manual": "مُدخلة يدويًا",
       "supplier_payment": "دفعة لمزوّد",
       "debt_payment": "سداد دين عميل",
       "shipment_payment": "دفعة نقل شحنة",
-      "settlement_payment": "دفعة تسوية نهائية"
-    }
+      "settlement_return": "عائد شحنة مسوّاة"
+    },
+    "statuses": {
+      "pending": "بانتظار الاعتماد",
+      "approved": "معتمد",
+      "rejected": "مرفوض"
+    },
+    "reviewedBy": "{status} بواسطة {name} في {date}"
   },
   "accounting": {
     "title": "المحاسبة",
@@ -1488,6 +1506,67 @@
       "amount": "المبلغ",
       "empty": "لا توجد حركات معتمدة في هذه الفترة."
     },
-    "summary": "الملخص"
+    "summary": "الملخص",
+    "returns": "العوائد",
+    "losses": "الخسائر",
+    "fields": {
+      "date": "التاريخ",
+      "type": "النوع",
+      "category": "الفئة",
+      "amount": "المبلغ",
+      "reference": "المرجع",
+      "by": "بواسطة",
+      "actions": "إجراءات"
+    },
+    "types": {
+      "income": "دخل",
+      "expense": "مصروف"
+    },
+    "approval": {
+      "title": "بانتظار الاعتماد",
+      "empty": "لا توجد حركات بانتظار الاعتماد.",
+      "approve": "اعتماد",
+      "reject": "رفض",
+      "approveLabel": "اعتماد حركة {date}",
+      "rejectLabel": "رفض حركة {date}",
+      "rejectTitle": "رفض الحركة",
+      "rejectQuestion": "رفض «{category}» ({amount}، {date})؟ لن تُحتسب أبدًا.",
+      "rejecting": "جارٍ الرفض",
+      "failed": "تعذّر تنفيذ الإجراء."
+    },
+    "shipmentReturns": {
+      "title": "عوائد الشحنات المسوّاة",
+      "empty": "لا توجد شحنات مسوّاة في هذا المشروع.",
+      "settlement": "التسوية",
+      "customer": "العميل",
+      "shipment": "الشحنة",
+      "cost": "التكلفة الإجمالية",
+      "return": "العائد",
+      "loss": "الخسارة",
+      "status": "الحالة",
+      "notEntered": "لم يُدخل",
+      "enter": "إدخال العائد",
+      "enterLabel": "إدخال عائد {shipment}",
+      "formTitle": "عائد الشحنة {shipment}",
+      "save": "حفظ العائد",
+      "saving": "جارٍ الحفظ",
+      "returnInvalid": "أدخل عائدًا بين 0 و{max}"
+    },
+    "receivables": {
+      "title": "ما يدين به العملاء",
+      "customer": "العميل",
+      "amount": "المتبقي",
+      "total": "المجموع",
+      "empty": "لا يدين أي عميل لهذا المشروع."
+    },
+    "payables": {
+      "title": "ما يدين به المشروع للمزوّدين",
+      "advancesTitle": "التسبيقات المدفوعة للمزوّدين",
+      "supplier": "المزوّد",
+      "amount": "المبلغ",
+      "total": "المجموع",
+      "empty": "لا يوجد مزوّد للدفع له.",
+      "advancesEmpty": "لا توجد تسبيقات جارية."
+    }
   }
 }

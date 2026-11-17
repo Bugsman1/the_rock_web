@@ -16,16 +16,11 @@ import {
   balanceFromApi,
   categoryFromApi,
   transactionErrorsFromApi,
-  transactionFromApi,
   transactionToApi,
 } from "./cash";
-import type {
-  CashCategory,
-  CashTransaction,
-  ProjectBalance,
-  TransactionType,
-  TransactionValues,
-} from "./cash";
+import { transactionFromApi } from "@/lib/cashTransactions";
+import type { CashCategory, ProjectBalance, TransactionValues } from "./cash";
+import type { CashTransaction, TransactionType } from "@/lib/cashTransactions";
 import type { CashFilter } from "./cashQuery";
 
 function numberOr(value: string): number | undefined {

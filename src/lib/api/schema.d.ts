@@ -67,7 +67,9 @@ export interface paths {
         };
         /**
          * @description What the mill owes its suppliers (their balance below 0), with the total; and the
-         *     suppliers paid in advance, apart.
+         *     suppliers paid in advance, apart. ?project= gives each supplier's balance with that
+         *     project only: its payments from that project's cash less its deliveries to that
+         *     project's resources.
          */
         get: operations["accounting_payables_retrieve"];
         put?: never;
@@ -86,8 +88,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description The profit and loss statement: every income and expense category with its total,
-         *     the totals and the net profit (income − expenses), then each active project's.
+         * @description The profit and loss statement: every income and expense category with its approved
+         *     total, the totals and the net profit (income − expenses), the settlements' returns
+         *     and losses, then each active project's.
          */
         get: operations["accounting_profit_loss_retrieve"];
         put?: never;
@@ -107,7 +110,8 @@ export interface paths {
         };
         /**
          * @description What customers owe, per customer (?customer= for one): what is left of their
-         *     settlements (each listed) and of their customer debts, with the totals.
+         *     customer debts, with the totals. A settlement's loss is never owed. ?project= keeps
+         *     that project's debts only.
          */
         get: operations["accounting_receivables_retrieve"];
         put?: never;
@@ -126,9 +130,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Income, expenses and net profit over the filtered period, and as of now the
-         *     receivables, payables, supplier advances, the projects' capital and cash balance and
-         *     how many transactions wait for approval.
+         * @description Approved income, expenses and net profit, and the settlements' returns and losses,
+         *     over the filtered period; and as of now the receivables, payables, supplier advances,
+         *     the projects' capital and cash balance and how many transactions wait for review.
          */
         get: operations["accounting_summary_retrieve"];
         put?: never;
@@ -286,22 +290,26 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description The cash of each project: its income and expenses, newest first. A project's balance
-         *     (/cash-transactions/balance/) is its capital plus its active income less its active
+         * @description The cash of each project: its income and expenses, newest first. Every transaction
+         *     starts pending (?status=pending|approved|rejected); a project's balance
+         *     (/cash-transactions/balance/) is its capital plus its approved income less its approved
          *     expenses. Manual transactions are written here; the automatic ones (supplier, shipment
-         *     transport, customer debt and settlement payments) are read-only and follow their
-         *     source. Any of them may be approved (cash module's approve permission), which locks it
-         *     and its source until it is unapproved. The accounting reports read these same rows.
+         *     transport and customer debt payments, settlement returns) are read-only and follow
+         *     their source. Any of them is approved or rejected after review (the accounting module's
+         *     edit permission), which locks it and its source until it is unapproved. The accounting
+         *     reports read these same rows, approved ones only.
          */
         get: operations["cash_transactions_list"];
         put?: never;
         /**
-         * @description The cash of each project: its income and expenses, newest first. A project's balance
-         *     (/cash-transactions/balance/) is its capital plus its active income less its active
+         * @description The cash of each project: its income and expenses, newest first. Every transaction
+         *     starts pending (?status=pending|approved|rejected); a project's balance
+         *     (/cash-transactions/balance/) is its capital plus its approved income less its approved
          *     expenses. Manual transactions are written here; the automatic ones (supplier, shipment
-         *     transport, customer debt and settlement payments) are read-only and follow their
-         *     source. Any of them may be approved (cash module's approve permission), which locks it
-         *     and its source until it is unapproved. The accounting reports read these same rows.
+         *     transport and customer debt payments, settlement returns) are read-only and follow
+         *     their source. Any of them is approved or rejected after review (the accounting module's
+         *     edit permission), which locks it and its source until it is unapproved. The accounting
+         *     reports read these same rows, approved ones only.
          */
         post: operations["cash_transactions_create"];
         delete?: never;
@@ -318,42 +326,50 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description The cash of each project: its income and expenses, newest first. A project's balance
-         *     (/cash-transactions/balance/) is its capital plus its active income less its active
+         * @description The cash of each project: its income and expenses, newest first. Every transaction
+         *     starts pending (?status=pending|approved|rejected); a project's balance
+         *     (/cash-transactions/balance/) is its capital plus its approved income less its approved
          *     expenses. Manual transactions are written here; the automatic ones (supplier, shipment
-         *     transport, customer debt and settlement payments) are read-only and follow their
-         *     source. Any of them may be approved (cash module's approve permission), which locks it
-         *     and its source until it is unapproved. The accounting reports read these same rows.
+         *     transport and customer debt payments, settlement returns) are read-only and follow
+         *     their source. Any of them is approved or rejected after review (the accounting module's
+         *     edit permission), which locks it and its source until it is unapproved. The accounting
+         *     reports read these same rows, approved ones only.
          */
         get: operations["cash_transactions_retrieve"];
         /**
-         * @description The cash of each project: its income and expenses, newest first. A project's balance
-         *     (/cash-transactions/balance/) is its capital plus its active income less its active
+         * @description The cash of each project: its income and expenses, newest first. Every transaction
+         *     starts pending (?status=pending|approved|rejected); a project's balance
+         *     (/cash-transactions/balance/) is its capital plus its approved income less its approved
          *     expenses. Manual transactions are written here; the automatic ones (supplier, shipment
-         *     transport, customer debt and settlement payments) are read-only and follow their
-         *     source. Any of them may be approved (cash module's approve permission), which locks it
-         *     and its source until it is unapproved. The accounting reports read these same rows.
+         *     transport and customer debt payments, settlement returns) are read-only and follow
+         *     their source. Any of them is approved or rejected after review (the accounting module's
+         *     edit permission), which locks it and its source until it is unapproved. The accounting
+         *     reports read these same rows, approved ones only.
          */
         put: operations["cash_transactions_update"];
         post?: never;
         /**
-         * @description The cash of each project: its income and expenses, newest first. A project's balance
-         *     (/cash-transactions/balance/) is its capital plus its active income less its active
+         * @description The cash of each project: its income and expenses, newest first. Every transaction
+         *     starts pending (?status=pending|approved|rejected); a project's balance
+         *     (/cash-transactions/balance/) is its capital plus its approved income less its approved
          *     expenses. Manual transactions are written here; the automatic ones (supplier, shipment
-         *     transport, customer debt and settlement payments) are read-only and follow their
-         *     source. Any of them may be approved (cash module's approve permission), which locks it
-         *     and its source until it is unapproved. The accounting reports read these same rows.
+         *     transport and customer debt payments, settlement returns) are read-only and follow
+         *     their source. Any of them is approved or rejected after review (the accounting module's
+         *     edit permission), which locks it and its source until it is unapproved. The accounting
+         *     reports read these same rows, approved ones only.
          */
         delete: operations["cash_transactions_destroy"];
         options?: never;
         head?: never;
         /**
-         * @description The cash of each project: its income and expenses, newest first. A project's balance
-         *     (/cash-transactions/balance/) is its capital plus its active income less its active
+         * @description The cash of each project: its income and expenses, newest first. Every transaction
+         *     starts pending (?status=pending|approved|rejected); a project's balance
+         *     (/cash-transactions/balance/) is its capital plus its approved income less its approved
          *     expenses. Manual transactions are written here; the automatic ones (supplier, shipment
-         *     transport, customer debt and settlement payments) are read-only and follow their
-         *     source. Any of them may be approved (cash module's approve permission), which locks it
-         *     and its source until it is unapproved. The accounting reports read these same rows.
+         *     transport and customer debt payments, settlement returns) are read-only and follow
+         *     their source. Any of them is approved or rejected after review (the accounting module's
+         *     edit permission), which locks it and its source until it is unapproved. The accounting
+         *     reports read these same rows, approved ones only.
          */
         patch: operations["cash_transactions_partial_update"];
         trace?: never;
@@ -368,11 +384,33 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * @description Approves the transaction after review (the cash module's approve permission):
-         *     records who and when. It is then locked — neither it nor its source can be edited
-         *     or deleted — until it is unapproved.
+         * @description Approves a pending transaction after review (the accounting module's edit
+         *     permission): records who and when. It then counts in its project's balance and the
+         *     accounting reports, and is locked — neither it nor its source can be edited or
+         *     deleted — until it is unapproved.
          */
         post: operations["cash_transactions_approve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cash-transactions/{id}/reject/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Rejects a pending transaction after review (the accounting module's edit
+         *     permission): records who and when. It is kept but never counted, and locked like an
+         *     approved one until it is unapproved.
+         */
+        post: operations["cash_transactions_reject_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -389,8 +427,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * @description Withdraws the approval (the approve permission too), so the transaction or its
-         *     source can be corrected.
+         * @description Withdraws the approval or the rejection (the accounting module's edit permission
+         *     too): the transaction is pending again, so it or its source can be corrected.
          */
         post: operations["cash_transactions_unapprove_create"];
         delete?: never;
@@ -408,9 +446,10 @@ export interface paths {
         };
         /**
          * @description Each active project (a project-scoped user's own only), by name: its capital —
-         *     set on the project, never moved by a transaction —, its total income
+         *     set on the project, never moved by a transaction —, its total approved income
          *     and expenses, net (income − expenses) and current balance: capital + income −
-         *     expenses. Computed from the active transactions on every read, never stored.
+         *     expenses. Computed from the active approved transactions on every read, never
+         *     stored; a pending or rejected one is not counted.
          *     ?project= keeps that one project, ?date__lte= counts the transactions up to the end
          *     of that day.
          */
@@ -452,15 +491,17 @@ export interface paths {
         };
         /**
          * @description Customers' debts (cash advances, fuel, spare parts, …), apart from their shipments.
-         *     Each keeps its increases and payments; its balance and status follow them. Debts are
-         *     global, like customers: not limited to a project.
+         *     Each keeps its increases and payments; its balance and status follow them. Each belongs
+         *     to a project (the accounting's receivables per project, ?project=), but debts stay
+         *     global, like customers: every user with the debts module sees them all.
          */
         get: operations["customer_debts_list"];
         put?: never;
         /**
          * @description Customers' debts (cash advances, fuel, spare parts, …), apart from their shipments.
-         *     Each keeps its increases and payments; its balance and status follow them. Debts are
-         *     global, like customers: not limited to a project.
+         *     Each keeps its increases and payments; its balance and status follow them. Each belongs
+         *     to a project (the accounting's receivables per project, ?project=), but debts stay
+         *     global, like customers: every user with the debts module sees them all.
          */
         post: operations["customer_debts_create"];
         delete?: never;
@@ -478,29 +519,33 @@ export interface paths {
         };
         /**
          * @description Customers' debts (cash advances, fuel, spare parts, …), apart from their shipments.
-         *     Each keeps its increases and payments; its balance and status follow them. Debts are
-         *     global, like customers: not limited to a project.
+         *     Each keeps its increases and payments; its balance and status follow them. Each belongs
+         *     to a project (the accounting's receivables per project, ?project=), but debts stay
+         *     global, like customers: every user with the debts module sees them all.
          */
         get: operations["customer_debts_retrieve"];
         /**
          * @description Customers' debts (cash advances, fuel, spare parts, …), apart from their shipments.
-         *     Each keeps its increases and payments; its balance and status follow them. Debts are
-         *     global, like customers: not limited to a project.
+         *     Each keeps its increases and payments; its balance and status follow them. Each belongs
+         *     to a project (the accounting's receivables per project, ?project=), but debts stay
+         *     global, like customers: every user with the debts module sees them all.
          */
         put: operations["customer_debts_update"];
         post?: never;
         /**
          * @description Customers' debts (cash advances, fuel, spare parts, …), apart from their shipments.
-         *     Each keeps its increases and payments; its balance and status follow them. Debts are
-         *     global, like customers: not limited to a project.
+         *     Each keeps its increases and payments; its balance and status follow them. Each belongs
+         *     to a project (the accounting's receivables per project, ?project=), but debts stay
+         *     global, like customers: every user with the debts module sees them all.
          */
         delete: operations["customer_debts_destroy"];
         options?: never;
         head?: never;
         /**
          * @description Customers' debts (cash advances, fuel, spare parts, …), apart from their shipments.
-         *     Each keeps its increases and payments; its balance and status follow them. Debts are
-         *     global, like customers: not limited to a project.
+         *     Each keeps its increases and payments; its balance and status follow them. Each belongs
+         *     to a project (the accounting's receivables per project, ?project=), but debts stay
+         *     global, like customers: every user with the debts module sees them all.
          */
         patch: operations["customer_debts_partial_update"];
         trace?: never;
@@ -583,6 +628,29 @@ export interface paths {
         patch: operations["customers_partial_update"];
         trace?: never;
     };
+    "/api/v1/customers/{id}/losses/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The customer's losses: each shipment of their active settlements whose return is
+         *     below its total cost (transport + grinding + refining) — settlement number, shipment
+         *     number, dates, total cost, return and loss —, oldest settlement first, with the
+         *     totals (a project-scoped user's project only). A loss is never a debt: it is not in
+         *     debt_total / debt_remaining nor in the receivables.
+         */
+        get: operations["customers_losses_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/customers/top-by-bags/per-project/": {
         parameters: {
             query?: never;
@@ -596,6 +664,39 @@ export interface paths {
          *     shipments comes with a total of 0 and no customers.
          */
         get: operations["customers_top_by_bags_per_project_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboard/attention/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description What is waiting on someone, per active project (a project-scoped user's own only;
+         *     ?project= keeps one) and in total. Each section is there only when the role can
+         *     view its module:
+         *
+         *     - long_grindings (grinding): grindings still running long_grinding_hours after
+         *       their start (DASHBOARD_LONG_GRINDING_HOURS, 8 by default), most likely never
+         *       ended; listed by /grinding-operations/?is_running=true&start_time__lte=.
+         *     - gold_not_weighed (refining): refinings whose gold without mercury is not weighed,
+         *       which keeps their shipment out of a settlement (?gold_weighed=false).
+         *     - shipments_to_settle (settlements): shipments a settlement can take now, the
+         *       customer not billed yet (/shipments/?settleable=true).
+         *     - unapproved_cash (cash): cash transactions pending review, income and
+         *       expenses apart (/cash-transactions/?status=pending).
+         *     - unpaid_transport (shipments): shipments whose driver is not fully paid, and what is
+         *       left to pay (/shipments/?is_fully_paid=false).
+         */
+        get: operations["dashboard_attention_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1727,74 +1828,6 @@ export interface paths {
         patch: operations["roles_partial_update"];
         trace?: never;
     };
-    "/api/v1/settlement-payments/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * @description Customers' payments of their settlements, oldest first, in as many installments as
-         *     needed: never above the settlement's final amount due (checked under its lock). Each is
-         *     an income of the settlement's project's cash (written, corrected and removed with it;
-         *     locked while that transaction is approved).
-         */
-        get: operations["settlement_payments_list"];
-        put?: never;
-        /**
-         * @description Customers' payments of their settlements, oldest first, in as many installments as
-         *     needed: never above the settlement's final amount due (checked under its lock). Each is
-         *     an income of the settlement's project's cash (written, corrected and removed with it;
-         *     locked while that transaction is approved).
-         */
-        post: operations["settlement_payments_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/settlement-payments/{id}/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * @description Customers' payments of their settlements, oldest first, in as many installments as
-         *     needed: never above the settlement's final amount due (checked under its lock). Each is
-         *     an income of the settlement's project's cash (written, corrected and removed with it;
-         *     locked while that transaction is approved).
-         */
-        get: operations["settlement_payments_retrieve"];
-        /**
-         * @description Customers' payments of their settlements, oldest first, in as many installments as
-         *     needed: never above the settlement's final amount due (checked under its lock). Each is
-         *     an income of the settlement's project's cash (written, corrected and removed with it;
-         *     locked while that transaction is approved).
-         */
-        put: operations["settlement_payments_update"];
-        post?: never;
-        /**
-         * @description Customers' payments of their settlements, oldest first, in as many installments as
-         *     needed: never above the settlement's final amount due (checked under its lock). Each is
-         *     an income of the settlement's project's cash (written, corrected and removed with it;
-         *     locked while that transaction is approved).
-         */
-        delete: operations["settlement_payments_destroy"];
-        options?: never;
-        head?: never;
-        /**
-         * @description Customers' payments of their settlements, oldest first, in as many installments as
-         *     needed: never above the settlement's final amount due (checked under its lock). Each is
-         *     an income of the settlement's project's cash (written, corrected and removed with it;
-         *     locked while that transaction is approved).
-         */
-        patch: operations["settlement_payments_partial_update"];
-        trace?: never;
-    };
     "/api/v1/settlements/": {
         parameters: {
             query?: never;
@@ -1805,14 +1838,20 @@ export interface paths {
         /**
          * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
          *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
-         *     Deleting a settlement (soft) frees its shipments for another one.
+         *     Each shipment of a settlement lists its total cost (transport + grinding + refining), the
+         *     return the customer gave on it (entered at /settlements/{id}/shipments/{shipment}/return/,
+         *     accounting module) and the loss. Deleting a settlement (soft) frees its shipments for
+         *     another one and removes its returns.
          */
         get: operations["settlements_list"];
         put?: never;
         /**
          * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
          *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
-         *     Deleting a settlement (soft) frees its shipments for another one.
+         *     Each shipment of a settlement lists its total cost (transport + grinding + refining), the
+         *     return the customer gave on it (entered at /settlements/{id}/shipments/{shipment}/return/,
+         *     accounting module) and the loss. Deleting a settlement (soft) frees its shipments for
+         *     another one and removes its returns.
          */
         post: operations["settlements_create"];
         delete?: never;
@@ -1831,20 +1870,29 @@ export interface paths {
         /**
          * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
          *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
-         *     Deleting a settlement (soft) frees its shipments for another one.
+         *     Each shipment of a settlement lists its total cost (transport + grinding + refining), the
+         *     return the customer gave on it (entered at /settlements/{id}/shipments/{shipment}/return/,
+         *     accounting module) and the loss. Deleting a settlement (soft) frees its shipments for
+         *     another one and removes its returns.
          */
         get: operations["settlements_retrieve"];
         /**
          * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
          *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
-         *     Deleting a settlement (soft) frees its shipments for another one.
+         *     Each shipment of a settlement lists its total cost (transport + grinding + refining), the
+         *     return the customer gave on it (entered at /settlements/{id}/shipments/{shipment}/return/,
+         *     accounting module) and the loss. Deleting a settlement (soft) frees its shipments for
+         *     another one and removes its returns.
          */
         put: operations["settlements_update"];
         post?: never;
         /**
          * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
          *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
-         *     Deleting a settlement (soft) frees its shipments for another one.
+         *     Each shipment of a settlement lists its total cost (transport + grinding + refining), the
+         *     return the customer gave on it (entered at /settlements/{id}/shipments/{shipment}/return/,
+         *     accounting module) and the loss. Deleting a settlement (soft) frees its shipments for
+         *     another one and removes its returns.
          */
         delete: operations["settlements_destroy"];
         options?: never;
@@ -1852,7 +1900,10 @@ export interface paths {
         /**
          * @description Customers' final settlements, kept with what the user entered for them (grinding cost,
          *     refining cost per gram, extra debt and its description); /settlements/{id}/pdf/ prints one.
-         *     Deleting a settlement (soft) frees its shipments for another one.
+         *     Each shipment of a settlement lists its total cost (transport + grinding + refining), the
+         *     return the customer gave on it (entered at /settlements/{id}/shipments/{shipment}/return/,
+         *     accounting module) and the loss. Deleting a settlement (soft) frees its shipments for
+         *     another one and removes its returns.
          */
         patch: operations["settlements_partial_update"];
         trace?: never;
@@ -1875,6 +1926,31 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/{settlement_pk}/shipments/{shipment_pk}/return/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The shipment's total cost in the settlement, the return entered on it and the
+         *     loss.
+         */
+        get: operations["settlements_shipments_return_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description Enters or changes the return: return_amount ≥ 0 and ≤ the shipment's total cost
+         *     (400 otherwise). Its income in the cash follows it, and is refused (400) once
+         *     approved or rejected.
+         */
+        patch: operations["settlements_shipments_return_partial_update"];
         trace?: never;
     };
     "/api/v1/settlements/summary/": {
@@ -2395,6 +2471,23 @@ export interface components {
          * @enum {string}
          */
         ActionEnum: "create" | "update" | "delete";
+        Attention: {
+            long_grinding_hours: number;
+            total: components["schemas"]["AttentionSections"];
+            projects: components["schemas"]["ProjectAttention"][];
+        };
+        /**
+         * @description The sections, each present only when the role can view its module: long_grindings
+         *     (grinding), gold_not_weighed (refining), shipments_to_settle (settlements),
+         *     unapproved_cash (cash), unpaid_transport (shipments).
+         */
+        AttentionSections: {
+            long_grindings?: components["schemas"]["LongGrindings"];
+            gold_not_weighed?: components["schemas"]["GoldNotWeighed"];
+            shipments_to_settle?: components["schemas"]["ShipmentsToSettle"];
+            unapproved_cash?: components["schemas"]["UnapprovedCash"];
+            unpaid_transport?: components["schemas"]["UnpaidTransport"];
+        };
         /**
          * @description One audit log entry for the admin's history page: who did what to which record, with
          *     the record's values before and after, and for an update the fields that changed.
@@ -2435,8 +2528,9 @@ export interface components {
         };
         /**
          * @description A cash transaction of a project. Only manual ones are written here; the automatic
-         *     ones (supplier, shipment transport, customer debt and settlement payments) are
-         *     read-only and follow their source. An approved one is locked (approve / unapprove).
+         *     ones (supplier, shipment transport and customer debt payments, settlement returns) are
+         *     read-only and follow their source. Each starts pending; an approved or rejected one is
+         *     locked (approve / reject / unapprove), and only an approved one is counted.
          */
         CashTransaction: {
             id: $Read<number>;
@@ -2465,11 +2559,16 @@ export interface components {
             supplier_payment: $Read<number | null>;
             debt_payment: $Read<number | null>;
             shipment_payment: $Read<number | null>;
-            settlement_payment: $Read<number | null>;
+            settlement_return: $Read<number | null>;
+            status: $Read<components["schemas"]["CashTransactionStatusEnum"]>;
+            status_display: $Read<string>;
             is_approved: $Read<boolean>;
             /** Format: date-time */
             approved_at: $Read<string | null>;
             approved_by_name: $Read<string | null>;
+            /** Format: date-time */
+            rejected_at: $Read<string | null>;
+            rejected_by_name: $Read<string | null>;
             created_by_name: $Read<string | null>;
             /**
              * أنشئت في
@@ -2479,6 +2578,13 @@ export interface components {
             /** Format: date-time */
             updated_at: $Read<string>;
         };
+        /**
+         * @description * `pending` - Pending
+         *     * `approved` - Approved
+         *     * `rejected` - Rejected
+         * @enum {string}
+         */
+        CashTransactionStatusEnum: "pending" | "approved" | "rejected";
         CategoryAmount: {
             category: string;
             label: string;
@@ -2492,7 +2598,7 @@ export interface components {
          *     * `equipment_rental` - Equipment rental
          *     * `other_services` - Other services
          *     * `customer_debt_payment` - Customer debt payment
-         *     * `settlement_payment` - Settlement payment
+         *     * `settlement_return` - Settlement return
          *     * `other_income` - Other income
          *     * `grinding_expense` - Grinding
          *     * `refining_expense` - Refining
@@ -2512,7 +2618,7 @@ export interface components {
          *     * `other_expense` - Other expenses
          * @enum {string}
          */
-        CategoryEnum: "grinding_income" | "refining_income" | "transport_income" | "equipment_rental" | "other_services" | "customer_debt_payment" | "settlement_payment" | "other_income" | "grinding_expense" | "refining_expense" | "transport_expense" | "materials" | "wages" | "fuel" | "maintenance" | "spare_parts" | "electricity" | "supplier_payment" | "daily_expenses" | "water" | "machinery_equipment" | "small_vehicles" | "trucks" | "other_expense";
+        CategoryEnum: "grinding_income" | "refining_income" | "transport_income" | "equipment_rental" | "other_services" | "customer_debt_payment" | "settlement_return" | "other_income" | "grinding_expense" | "refining_expense" | "transport_expense" | "materials" | "wages" | "fuel" | "maintenance" | "spare_parts" | "electricity" | "supplier_payment" | "daily_expenses" | "water" | "machinery_equipment" | "small_vehicles" | "trucks" | "other_expense";
         /**
          * @description * `initial` - Initial quantity
          *     * `increase` - Increase
@@ -2565,6 +2671,8 @@ export interface components {
             customer: number;
             customer_name: $Read<string>;
             customer_phone: $Read<string>;
+            project: number;
+            project_name: $Read<string | null>;
             description: string;
             /**
              * Debt date
@@ -2596,17 +2704,50 @@ export interface components {
             /** Format: date-time */
             updated_at: $Read<string>;
         };
+        /** @description A shipment of one of the customer's settlements with a return below its total cost. */
+        CustomerLoss: {
+            settlement: number;
+            settlement_number: string;
+            project: number;
+            project_name: string;
+            /**
+             * Format: date-time
+             * @description The settlement's date.
+             */
+            date: string;
+            shipment: number;
+            shipment_number: string;
+            /** Format: date-time */
+            arrival_date: string;
+            /** Format: date-time */
+            returned_at: string;
+            /** Format: decimal */
+            total_cost: string;
+            /** Format: decimal */
+            return_amount: string;
+            /**
+             * Format: decimal
+             * @description Total cost − return; never a debt.
+             */
+            loss: string;
+        };
+        CustomerLosses: {
+            losses: components["schemas"]["CustomerLoss"][];
+            /** Format: decimal */
+            total_cost: string;
+            /** Format: decimal */
+            total_return: string;
+            /** Format: decimal */
+            total_loss: string;
+        };
         CustomerReceivable: {
             customer: number;
             customer_name: string;
             customer_phone: string;
             /** Format: decimal */
-            settlements_due: string;
-            /** Format: decimal */
             debts_due: string;
             /** Format: decimal */
             total: string;
-            settlements: components["schemas"]["ReceivableSettlement"][];
         };
         /**
          * @description One line of a debt's history: its creation, an increase or a payment, with the
@@ -2996,6 +3137,16 @@ export interface components {
             total_expense: string;
             /** Format: decimal */
             net_profit: string;
+            /**
+             * Format: decimal
+             * @description Settlements' returns over the period (approved).
+             */
+            total_returns: string;
+            /**
+             * Format: decimal
+             * @description Those returns' losses over the period.
+             */
+            total_losses: string;
             /** Format: decimal */
             receivables: string;
             /** Format: decimal */
@@ -3006,10 +3157,17 @@ export interface components {
             capital: string;
             /**
              * Format: decimal
-             * @description Capital + income − expenses, all time.
+             * @description Capital + approved income − expenses, all time.
              */
             cash_balance: string;
+            /** @description Transactions pending review (neither approved nor rejected). */
             unapproved_transactions: number;
+        };
+        /** @description Refinings whose gold without mercury is not weighed yet. */
+        GoldNotWeighed: {
+            count: number;
+            /** Format: date-time */
+            oldest_refining_date: string | null;
         };
         /**
          * @description ModelSerializer whose generated unique checks (unique=True fields) also see soft-deleted
@@ -3103,6 +3261,12 @@ export interface components {
          * @enum {string}
          */
         JobTitleEnum: "ADM" | "CHF" | "ENG" | "MOU" | "MIN" | "MEC" | "SOU" | "TEC" | "SAF";
+        /** @description Grindings still running long_grinding_hours after their start. */
+        LongGrindings: {
+            count: number;
+            /** Format: date-time */
+            oldest_start_time: string | null;
+        };
         Me: {
             id: $Read<number>;
             /**
@@ -3167,6 +3331,8 @@ export interface components {
          * @enum {string}
          */
         ModuleEnum: "accounts" | "locations" | "customers" | "shipments" | "grinding" | "refining" | "inventory" | "settlements" | "debts" | "employees" | "suppliers" | "audit" | "cash" | "accounting";
+        /** @enum {unknown} */
+        NullEnum: null;
         Operator: {
             id: $Read<number>;
             name: $Read<string>;
@@ -3531,21 +3697,6 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["Settlement"][];
         };
-        PaginatedSettlementPaymentList: {
-            /** @example 123 */
-            count: number;
-            /**
-             * Format: uri
-             * @example http://api.example.org/accounts/?page=4
-             */
-            next?: string | null;
-            /**
-             * Format: uri
-             * @example http://api.example.org/accounts/?page=2
-             */
-            previous?: string | null;
-            results: components["schemas"]["SettlementPayment"][];
-        };
         PaginatedShipmentDebtList: {
             /** @example 123 */
             count: number;
@@ -3653,8 +3804,9 @@ export interface components {
         };
         /**
          * @description A cash transaction of a project. Only manual ones are written here; the automatic
-         *     ones (supplier, shipment transport, customer debt and settlement payments) are
-         *     read-only and follow their source. An approved one is locked (approve / unapprove).
+         *     ones (supplier, shipment transport and customer debt payments, settlement returns) are
+         *     read-only and follow their source. Each starts pending; an approved or rejected one is
+         *     locked (approve / reject / unapprove), and only an approved one is counted.
          */
         PatchedCashTransaction: {
             id?: $Read<number>;
@@ -3683,11 +3835,16 @@ export interface components {
             supplier_payment?: $Read<number | null>;
             debt_payment?: $Read<number | null>;
             shipment_payment?: $Read<number | null>;
-            settlement_payment?: $Read<number | null>;
+            settlement_return?: $Read<number | null>;
+            status?: $Read<components["schemas"]["CashTransactionStatusEnum"]>;
+            status_display?: $Read<string>;
             is_approved?: $Read<boolean>;
             /** Format: date-time */
             approved_at?: $Read<string | null>;
             approved_by_name?: $Read<string | null>;
+            /** Format: date-time */
+            rejected_at?: $Read<string | null>;
+            rejected_by_name?: $Read<string | null>;
             created_by_name?: $Read<string | null>;
             /**
              * أنشئت في
@@ -3724,6 +3881,8 @@ export interface components {
             customer?: number;
             customer_name?: $Read<string>;
             customer_phone?: $Read<string>;
+            project?: number;
+            project_name?: $Read<string | null>;
             description?: string;
             /**
              * Debt date
@@ -4243,7 +4402,7 @@ export interface components {
             /** Extra debt description */
             debt_description?: string;
             totals?: $Read<components["schemas"]["SettlementTotals"]>;
-            payments?: $Read<components["schemas"]["SettlementPaymentSummary"][]>;
+            returns?: $Read<components["schemas"]["SettlementReturnRow"][]>;
             created_by_name?: $Read<string | null>;
             /**
              * أنشئت في
@@ -4253,32 +4412,9 @@ export interface components {
             /** Format: date-time */
             updated_at?: $Read<string>;
         };
-        /**
-         * @description A customer's payment of their settlement: an income of the settlement's project's
-         *     cash. Fixed to its settlement.
-         */
-        PatchedSettlementPayment: {
-            id?: $Read<number>;
-            settlement?: number;
-            settlement_number?: $Read<string>;
-            customer_name?: $Read<string>;
-            project_name?: $Read<string>;
+        PatchedSettlementReturnInput: {
             /** Format: decimal */
-            amount?: string;
-            /**
-             * Payment date
-             * Format: date-time
-             */
-            paid_at?: string;
-            notes?: string;
-            created_by_name?: $Read<string | null>;
-            /**
-             * أنشئت في
-             * Format: date-time
-             */
-            created_at?: $Read<string>;
-            /** Format: date-time */
-            updated_at?: $Read<string>;
+            return_amount?: string;
         };
         PatchedShipment: {
             id?: $Read<number>;
@@ -4505,6 +4641,16 @@ export interface components {
              * @description Income − expenses.
              */
             net_profit: string;
+            /**
+             * Format: decimal
+             * @description The settlements' returns over the period, their income approved.
+             */
+            total_returns: string;
+            /**
+             * Format: decimal
+             * @description Those returns' losses: each shipment's total cost − its return.
+             */
+            total_losses: string;
             by_project: components["schemas"]["ProjectProfit"][];
         };
         Project: {
@@ -4524,6 +4670,20 @@ export interface components {
             /** Format: date-time */
             updated_at: $Read<string>;
         };
+        /**
+         * @description The sections, each present only when the role can view its module: long_grindings
+         *     (grinding), gold_not_weighed (refining), shipments_to_settle (settlements),
+         *     unapproved_cash (cash), unpaid_transport (shipments).
+         */
+        ProjectAttention: {
+            long_grindings?: components["schemas"]["LongGrindings"];
+            gold_not_weighed?: components["schemas"]["GoldNotWeighed"];
+            shipments_to_settle?: components["schemas"]["ShipmentsToSettle"];
+            unapproved_cash?: components["schemas"]["UnapprovedCash"];
+            unpaid_transport?: components["schemas"]["UnpaidTransport"];
+            project: number;
+            project_name: string;
+        };
         ProjectCashBalance: {
             project: number;
             project_name: string;
@@ -4533,9 +4693,15 @@ export interface components {
              * @description The project's capital, as last set on the project.
              */
             capital: string;
-            /** Format: decimal */
+            /**
+             * Format: decimal
+             * @description Approved income only.
+             */
             income: string;
-            /** Format: decimal */
+            /**
+             * Format: decimal
+             * @description Approved expenses only.
+             */
             expense: string;
             /**
              * Format: decimal
@@ -4578,6 +4744,10 @@ export interface components {
             expense: string;
             /** Format: decimal */
             net_profit: string;
+            /** Format: decimal */
+            total_returns: string;
+            /** Format: decimal */
+            total_losses: string;
         };
         /** @description One project's refining at a glance. */
         ProjectRefiningSummary: {
@@ -4612,22 +4782,8 @@ export interface components {
             total_bags: string;
             results: components["schemas"]["CustomerBagsShare"][];
         };
-        ReceivableSettlement: {
-            settlement: number;
-            number: string;
-            project: number;
-            project_name: string;
-            /** Format: decimal */
-            amount_due: string;
-            /** Format: decimal */
-            paid: string;
-            /** Format: decimal */
-            remaining: string;
-        };
         Receivables: {
             customers: components["schemas"]["CustomerReceivable"][];
-            /** Format: decimal */
-            settlements_total: string;
             /** Format: decimal */
             debts_total: string;
             /** Format: decimal */
@@ -4822,7 +4978,7 @@ export interface components {
             /** Extra debt description */
             debt_description?: string;
             totals: $Read<components["schemas"]["SettlementTotals"]>;
-            payments: $Read<components["schemas"]["SettlementPaymentSummary"][]>;
+            returns: $Read<components["schemas"]["SettlementReturnRow"][]>;
             created_by_name: $Read<string | null>;
             /**
              * أنشئت في
@@ -4833,42 +4989,52 @@ export interface components {
             updated_at: $Read<string>;
         };
         /**
-         * @description A customer's payment of their settlement: an income of the settlement's project's
-         *     cash. Fixed to its settlement.
+         * @description One shipment of a settlement: its cost, the return the customer gave on it and the
+         *     loss.
          */
-        SettlementPayment: {
-            id: $Read<number>;
-            settlement: number;
-            settlement_number: $Read<string>;
-            customer_name: $Read<string>;
-            project_name: $Read<string>;
-            /** Format: decimal */
-            amount: string;
-            /**
-             * Payment date
-             * Format: date-time
-             */
-            paid_at?: string;
-            notes?: string;
-            created_by_name: $Read<string | null>;
-            /**
-             * أنشئت في
-             * Format: date-time
-             */
-            created_at: $Read<string>;
+        SettlementReturnRow: {
+            shipment: number;
+            shipment_number: string;
             /** Format: date-time */
-            updated_at: $Read<string>;
-        };
-        SettlementPaymentSummary: {
-            id: $Read<number>;
-            /** Format: decimal */
-            amount: string;
+            arrival_date: string;
             /**
-             * Payment date
-             * Format: date-time
+             * Format: decimal
+             * @description Bags + passengers transport + unloading.
              */
-            paid_at?: string;
-            notes?: string;
+            transport_cost: string;
+            /** Format: decimal */
+            grinding_cost: string;
+            /** Format: decimal */
+            refining_cost: string;
+            /**
+             * Format: decimal
+             * @description Transport + grinding + refining.
+             */
+            total_cost: string;
+            /**
+             * Format: decimal
+             * @description Entered by the accountant; null until then.
+             */
+            return_amount: string | null;
+            /**
+             * Format: decimal
+             * @description Total cost − return; null with no return. Never a debt.
+             */
+            loss: string | null;
+            /** Format: date-time */
+            returned_at: string | null;
+            /** @description The return's income in the cash; none for a return of 0. */
+            cash_transaction: number | null;
+            /**
+             * @description The income's review.
+             *
+             *     * `pending` - Pending
+             *     * `approved` - Approved
+             *     * `rejected` - Rejected
+             */
+            cash_status: (components["schemas"]["CashTransactionStatusEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description Its income is approved or rejected: the return can no longer change. */
+            is_locked: boolean;
         };
         /** @description What the settlement adds up to, as its invoice prints it. */
         SettlementTotals: {
@@ -4893,9 +5059,11 @@ export interface components {
             /** Format: decimal */
             grand_total: string;
             /** Format: decimal */
-            paid: string;
+            total_cost: string;
             /** Format: decimal */
-            remaining: string;
+            total_return: string;
+            /** Format: decimal */
+            total_loss: string;
         };
         Shipment: {
             id: $Read<number>;
@@ -5041,6 +5209,11 @@ export interface components {
             paid_at: $Read<string>;
             notes: $Read<string>;
         };
+        /** @description Shipments a settlement can take now (?settleable=true on /shipments/). */
+        ShipmentsToSettle: {
+            count: number;
+            customers: number;
+        };
         /**
          * @description * `zouerat` - Zouérat
          *     * `sfariyat` - Sfariyat
@@ -5052,10 +5225,10 @@ export interface components {
          *     * `supplier_payment` - Supplier payment
          *     * `debt_payment` - Customer debt payment
          *     * `shipment_payment` - Shipment transport payment
-         *     * `settlement_payment` - Settlement payment
+         *     * `settlement_return` - Settlement return
          * @enum {string}
          */
-        SourceEnum: "manual" | "supplier_payment" | "debt_payment" | "shipment_payment" | "settlement_payment";
+        SourceEnum: "manual" | "supplier_payment" | "debt_payment" | "shipment_payment" | "settlement_return";
         /**
          * @description * `active` - Active
          *     * `inactive` - Inactive
@@ -5198,6 +5371,24 @@ export interface components {
          * @enum {string}
          */
         TransportMethodEnum: "truck" | "hilux" | "other";
+        /** @description Cash transactions waiting for approval, income and expenses apart. */
+        UnapprovedCash: {
+            income_count: number;
+            /** Format: decimal */
+            income_amount: string;
+            expense_count: number;
+            /** Format: decimal */
+            expense_amount: string;
+        };
+        /**
+         * @description Shipments whose driver is not fully paid (?is_fully_paid=false on /shipments/), and
+         *     what is left to pay.
+         */
+        UnpaidTransport: {
+            count: number;
+            /** Format: decimal */
+            amount: string;
+        };
         User: {
             id: $Read<number>;
             /**
@@ -5228,8 +5419,6 @@ export interface operations {
     accounting_expenses_retrieve: {
         parameters: {
             query?: {
-                /** @description true: approved transactions only; false: those not approved yet. */
-                approved?: boolean | null;
                 /** @description From this day (included). */
                 date__gte?: string;
                 /** @description To this day (included). */
@@ -5273,8 +5462,6 @@ export interface operations {
     accounting_income_retrieve: {
         parameters: {
             query?: {
-                /** @description true: approved transactions only; false: those not approved yet. */
-                approved?: boolean | null;
                 /** @description From this day (included). */
                 date__gte?: string;
                 /** @description To this day (included). */
@@ -5315,7 +5502,9 @@ export interface operations {
     };
     accounting_payables_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                project?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -5335,8 +5524,6 @@ export interface operations {
     accounting_profit_loss_retrieve: {
         parameters: {
             query?: {
-                /** @description true: approved transactions only; false: those not approved yet. */
-                approved?: boolean | null;
                 /** @description From this day (included). */
                 date__gte?: string;
                 /** @description To this day (included). */
@@ -5368,6 +5555,7 @@ export interface operations {
         parameters: {
             query?: {
                 customer?: number;
+                project?: number;
             };
             header?: never;
             path?: never;
@@ -5388,8 +5576,6 @@ export interface operations {
     accounting_summary_retrieve: {
         parameters: {
             query?: {
-                /** @description true: approved transactions only; false: those not approved yet. */
-                approved?: boolean | null;
                 /** @description From this day (included). */
                 date__gte?: string;
                 /** @description To this day (included). */
@@ -5602,7 +5788,7 @@ export interface operations {
                  *     * `equipment_rental` - Equipment rental
                  *     * `other_services` - Other services
                  *     * `customer_debt_payment` - Customer debt payment
-                 *     * `settlement_payment` - Settlement payment
+                 *     * `settlement_return` - Settlement return
                  *     * `other_income` - Other income
                  *     * `grinding_expense` - Grinding
                  *     * `refining_expense` - Refining
@@ -5621,7 +5807,7 @@ export interface operations {
                  *     * `trucks` - Trucks
                  *     * `other_expense` - Other expenses
                  */
-                category?: "customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_payment" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water";
+                category?: "customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water";
                 /**
                  * @description * `grinding_income` - Grinding
                  *     * `refining_income` - Refining
@@ -5629,7 +5815,7 @@ export interface operations {
                  *     * `equipment_rental` - Equipment rental
                  *     * `other_services` - Other services
                  *     * `customer_debt_payment` - Customer debt payment
-                 *     * `settlement_payment` - Settlement payment
+                 *     * `settlement_return` - Settlement return
                  *     * `other_income` - Other income
                  *     * `grinding_expense` - Grinding
                  *     * `refining_expense` - Refining
@@ -5648,7 +5834,7 @@ export interface operations {
                  *     * `trucks` - Trucks
                  *     * `other_expense` - Other expenses
                  */
-                category__in?: ("customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_payment" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water")[];
+                category__in?: ("customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water")[];
                 customer?: number;
                 employee?: number;
                 grinder?: number;
@@ -5671,9 +5857,15 @@ export interface operations {
                  *     * `supplier_payment` - Supplier payment
                  *     * `debt_payment` - Customer debt payment
                  *     * `shipment_payment` - Shipment transport payment
-                 *     * `settlement_payment` - Settlement payment
+                 *     * `settlement_return` - Settlement return
                  */
-                source?: "debt_payment" | "manual" | "settlement_payment" | "shipment_payment" | "supplier_payment";
+                source?: "debt_payment" | "manual" | "settlement_return" | "shipment_payment" | "supplier_payment";
+                /**
+                 * @description * `pending` - Pending
+                 *     * `approved` - Approved
+                 *     * `rejected` - Rejected
+                 */
+                status?: "approved" | "pending" | "rejected";
                 supplier?: number;
                 transaction_date__date__gte?: string;
                 transaction_date__date__lte?: string;
@@ -5848,6 +6040,28 @@ export interface operations {
             };
         };
     };
+    cash_transactions_reject_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this cash transaction. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashTransaction"];
+                };
+            };
+        };
+    };
     cash_transactions_unapprove_create: {
         parameters: {
             query?: never;
@@ -5881,7 +6095,7 @@ export interface operations {
                  *     * `equipment_rental` - Equipment rental
                  *     * `other_services` - Other services
                  *     * `customer_debt_payment` - Customer debt payment
-                 *     * `settlement_payment` - Settlement payment
+                 *     * `settlement_return` - Settlement return
                  *     * `other_income` - Other income
                  *     * `grinding_expense` - Grinding
                  *     * `refining_expense` - Refining
@@ -5900,7 +6114,7 @@ export interface operations {
                  *     * `trucks` - Trucks
                  *     * `other_expense` - Other expenses
                  */
-                category?: "customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_payment" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water";
+                category?: "customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water";
                 /**
                  * @description * `grinding_income` - Grinding
                  *     * `refining_income` - Refining
@@ -5908,7 +6122,7 @@ export interface operations {
                  *     * `equipment_rental` - Equipment rental
                  *     * `other_services` - Other services
                  *     * `customer_debt_payment` - Customer debt payment
-                 *     * `settlement_payment` - Settlement payment
+                 *     * `settlement_return` - Settlement return
                  *     * `other_income` - Other income
                  *     * `grinding_expense` - Grinding
                  *     * `refining_expense` - Refining
@@ -5927,7 +6141,7 @@ export interface operations {
                  *     * `trucks` - Trucks
                  *     * `other_expense` - Other expenses
                  */
-                category__in?: ("customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_payment" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water")[];
+                category__in?: ("customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water")[];
                 customer?: number;
                 /** @description Income and expenses up to the end of this day (YYYY-MM-DD). */
                 date__lte?: string;
@@ -5949,9 +6163,15 @@ export interface operations {
                  *     * `supplier_payment` - Supplier payment
                  *     * `debt_payment` - Customer debt payment
                  *     * `shipment_payment` - Shipment transport payment
-                 *     * `settlement_payment` - Settlement payment
+                 *     * `settlement_return` - Settlement return
                  */
-                source?: "debt_payment" | "manual" | "settlement_payment" | "shipment_payment" | "supplier_payment";
+                source?: "debt_payment" | "manual" | "settlement_return" | "shipment_payment" | "supplier_payment";
+                /**
+                 * @description * `pending` - Pending
+                 *     * `approved` - Approved
+                 *     * `rejected` - Rejected
+                 */
+                status?: "approved" | "pending" | "rejected";
                 supplier?: number;
                 transaction_date__date__gte?: string;
                 transaction_date__date__lte?: string;
@@ -5988,7 +6208,7 @@ export interface operations {
                  *     * `equipment_rental` - Equipment rental
                  *     * `other_services` - Other services
                  *     * `customer_debt_payment` - Customer debt payment
-                 *     * `settlement_payment` - Settlement payment
+                 *     * `settlement_return` - Settlement return
                  *     * `other_income` - Other income
                  *     * `grinding_expense` - Grinding
                  *     * `refining_expense` - Refining
@@ -6007,7 +6227,7 @@ export interface operations {
                  *     * `trucks` - Trucks
                  *     * `other_expense` - Other expenses
                  */
-                category?: "customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_payment" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water";
+                category?: "customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water";
                 /**
                  * @description * `grinding_income` - Grinding
                  *     * `refining_income` - Refining
@@ -6015,7 +6235,7 @@ export interface operations {
                  *     * `equipment_rental` - Equipment rental
                  *     * `other_services` - Other services
                  *     * `customer_debt_payment` - Customer debt payment
-                 *     * `settlement_payment` - Settlement payment
+                 *     * `settlement_return` - Settlement return
                  *     * `other_income` - Other income
                  *     * `grinding_expense` - Grinding
                  *     * `refining_expense` - Refining
@@ -6034,7 +6254,7 @@ export interface operations {
                  *     * `trucks` - Trucks
                  *     * `other_expense` - Other expenses
                  */
-                category__in?: ("customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_payment" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water")[];
+                category__in?: ("customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water")[];
                 customer?: number;
                 employee?: number;
                 grinder?: number;
@@ -6053,9 +6273,15 @@ export interface operations {
                  *     * `supplier_payment` - Supplier payment
                  *     * `debt_payment` - Customer debt payment
                  *     * `shipment_payment` - Shipment transport payment
-                 *     * `settlement_payment` - Settlement payment
+                 *     * `settlement_return` - Settlement return
                  */
-                source?: "debt_payment" | "manual" | "settlement_payment" | "shipment_payment" | "supplier_payment";
+                source?: "debt_payment" | "manual" | "settlement_return" | "shipment_payment" | "supplier_payment";
+                /**
+                 * @description * `pending` - Pending
+                 *     * `approved` - Approved
+                 *     * `rejected` - Rejected
+                 */
+                status?: "approved" | "pending" | "rejected";
                 supplier?: number;
                 transaction_date__date__gte?: string;
                 transaction_date__date__lte?: string;
@@ -6092,6 +6318,7 @@ export interface operations {
                 page?: number;
                 /** @description Number of results to return per page. */
                 page_size?: number;
+                project?: number;
                 /** @description A search term. */
                 search?: string;
                 /**
@@ -6273,6 +6500,7 @@ export interface operations {
                 has_remaining?: boolean;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
+                project?: number;
                 /** @description A search term. */
                 search?: string;
                 /**
@@ -6456,6 +6684,28 @@ export interface operations {
             };
         };
     };
+    customers_losses_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this customer. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerLosses"];
+                };
+            };
+        };
+    };
     customers_top_by_bags_per_project_list: {
         parameters: {
             query?: never;
@@ -6471,6 +6721,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectTopCustomersByBags"][];
+                };
+            };
+        };
+    };
+    dashboard_attention_retrieve: {
+        parameters: {
+            query?: {
+                /** @description Only this project (a project's own page). */
+                project?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Attention"];
                 };
             };
         };
@@ -8190,6 +8462,7 @@ export interface operations {
                 shipment__customer?: number;
                 start_time__date__gte?: string;
                 start_time__date__lte?: string;
+                start_time__lte?: string;
             };
             header?: never;
             path?: never;
@@ -9470,164 +9743,6 @@ export interface operations {
             };
         };
     };
-    settlement_payments_list: {
-        parameters: {
-            query?: {
-                /** @description Which field to use when ordering the results. */
-                ordering?: string;
-                /** @description A page number within the paginated result set. */
-                page?: number;
-                /** @description Number of results to return per page. */
-                page_size?: number;
-                /** @description A search term. */
-                search?: string;
-                settlement?: number;
-                settlement__customer?: number;
-                settlement__project?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedSettlementPaymentList"];
-                };
-            };
-        };
-    };
-    settlement_payments_create: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description Optional, up to 255 characters (a UUID per create). A retry with the same key gets the first successful response again, with `Idempotent-Replayed: true`, and creates nothing; the same key with another request is refused (422). Kept 24 hours, per user. */
-                "Idempotency-Key"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SettlementPayment"];
-                "application/x-www-form-urlencoded": components["schemas"]["SettlementPayment"];
-                "multipart/form-data": components["schemas"]["SettlementPayment"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SettlementPayment"];
-                };
-            };
-        };
-    };
-    settlement_payments_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this settlement payment. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SettlementPayment"];
-                };
-            };
-        };
-    };
-    settlement_payments_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this settlement payment. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SettlementPayment"];
-                "application/x-www-form-urlencoded": components["schemas"]["SettlementPayment"];
-                "multipart/form-data": components["schemas"]["SettlementPayment"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SettlementPayment"];
-                };
-            };
-        };
-    };
-    settlement_payments_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this settlement payment. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    settlement_payments_partial_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A unique integer value identifying this settlement payment. */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PatchedSettlementPayment"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedSettlementPayment"];
-                "multipart/form-data": components["schemas"]["PatchedSettlementPayment"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SettlementPayment"];
-                };
-            };
-        };
-    };
     settlements_list: {
         parameters: {
             query?: {
@@ -9808,6 +9923,56 @@ export interface operations {
                 };
                 content: {
                     "application/pdf": string;
+                };
+            };
+        };
+    };
+    settlements_shipments_return_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                settlement_pk: number;
+                shipment_pk: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettlementReturnRow"];
+                };
+            };
+        };
+    };
+    settlements_shipments_return_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                settlement_pk: number;
+                shipment_pk: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedSettlementReturnInput"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedSettlementReturnInput"];
+                "multipart/form-data": components["schemas"]["PatchedSettlementReturnInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettlementReturnRow"];
                 };
             };
         };

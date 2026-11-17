@@ -6,17 +6,15 @@ import { FilterMenu } from "@/components/ui/FilterMenu";
 import { PageLayout } from "@/components/ui/PageHeader";
 import { defaultLocale, isLocale } from "@/i18n/locales";
 import { localizedHref, useReplace } from "@/i18n/navigation";
-import { notFound } from "@/lib/api/client";
 import { formatMoney } from "@/lib/format";
-import { findProject, isInService, rowOfProject } from "@/lib/projects";
+import { isInService, rowOfProject } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
 import { accountingHref, accountingProjectHref } from "@/lib/routes";
 import { periodFromParams, periodParams } from "./accounting";
 import type { Period } from "./accounting";
-import { getProfitAndLoss, getProjectProfits, getSummary } from "./accountingApi";
-import { ProfitLossTables, SummaryTable } from "./AccountingTables";
+import { getProjectProfits } from "./accountingApi";
 
-function PeriodFilter({
+export function PeriodFilter({
   period,
   hrefFor,
 }: {
@@ -103,49 +101,6 @@ export function AccountingScreen() {
           ))}
         </CardGrid>
       )}
-    </PageLayout>
-  );
-}
-
-export async function accountingProjectLoader({ params, request }: LoaderFunctionArgs) {
-  const projects = await getProjects();
-  const project = findProject(projects, params.project ?? "") ?? notFound();
-  const period = periodFromParams(new URL(request.url).searchParams, new Date());
-  const [summary, profitLoss] = await Promise.all([
-    getSummary(project.id, period),
-    getProfitAndLoss(project.id, period),
-  ]);
-
-  return {
-    project,
-    hasOtherProjects: projects.filter(isInService).length > 1,
-    period,
-    summary,
-    profitLoss,
-  };
-}
-
-export function AccountingProjectScreen() {
-  const { project, hasOtherProjects, period, summary, profitLoss } =
-    useLoaderData<typeof accountingProjectLoader>();
-  const t = useTranslations("accounting");
-  const common = useTranslations("common");
-
-  return (
-    <PageLayout
-      {...(hasOtherProjects ? { backHref: accountingHref(periodParams(period)) } : {})}
-      backLabel={common("back")}
-      title={common("projectTitle", { name: project.name })}
-      description={t("approvedOnly")}
-      action={
-        <PeriodFilter
-          period={period}
-          hrefFor={(next) => accountingProjectHref(project.id, periodParams(next))}
-        />
-      }
-    >
-      <SummaryTable summary={summary} />
-      <ProfitLossTables report={profitLoss} />
     </PageLayout>
   );
 }
