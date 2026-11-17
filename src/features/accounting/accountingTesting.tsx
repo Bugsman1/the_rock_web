@@ -63,9 +63,6 @@ export const profitLoss = {
   ],
 };
 
-const grouped = (rows: readonly object[], total: string) =>
-  HttpResponse.json({ group_by: "category", rows, total, count: rows.length });
-
 export type Asked = Record<string, URLSearchParams>;
 
 export function serveAccounting(asked: Asked) {
@@ -95,17 +92,6 @@ export function serveAccounting(asked: Asked) {
           cash_balance: "1070000.00",
           unapproved_transactions: 2,
         });
-      }),
-      http.get(`${API}/accounting/income/`, ({ request }) => {
-        remember("income", request);
-        return grouped([{ key: "7", label: "Ahmed", amount: "90000.00", count: 3 }], "90000.00");
-      }),
-      http.get(`${API}/accounting/expenses/`, ({ request }) => {
-        remember("expenses", request);
-        return grouped(
-          [{ key: "fuel", label: "Carburant", amount: "15000.00", count: 2 }],
-          "15000.00",
-        );
       }),
     );
   });

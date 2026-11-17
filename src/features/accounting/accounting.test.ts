@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  accountingQueryFromParams,
-  accountingQueryParams,
   currentMonth,
-  groupedFromApi,
   periodFromParams,
+  periodParams,
   profitAndLossFromApi,
   projectProfitFromApi,
   summaryFromApi,
@@ -35,22 +33,11 @@ describe("periodFromParams", () => {
   });
 });
 
-describe("accounting query", () => {
-  it("reads the groupings, falling back on the category", () => {
-    expect(
-      accountingQueryFromParams(new URLSearchParams("income=customer&expenses=wizard"), now),
-    ).toEqual({ from: "2026-11-01", to: "2026-11-30", income: "customer", expenses: "category" });
-  });
-
-  it("writes the period and only the groupings that are not the category", () => {
-    expect(
-      accountingQueryParams({
-        from: "2026-11-01",
-        to: "2026-11-30",
-        income: "category",
-        expenses: "supplier",
-      }).toString(),
-    ).toBe("from=2026-11-01&to=2026-11-30&expenses=supplier");
+describe("periodParams", () => {
+  it("writes the period in the address", () => {
+    expect(periodParams({ from: "2026-11-01", to: "2026-11-30" }).toString()).toBe(
+      "from=2026-11-01&to=2026-11-30",
+    );
   });
 });
 
@@ -81,26 +68,6 @@ describe("report mapping", () => {
       totalIncome: 90000,
       totalExpense: 0,
       netProfit: 90000,
-    });
-  });
-
-  it("keeps a group without a reference apart", () => {
-    expect(
-      groupedFromApi({
-        group_by: "supplier",
-        rows: [
-          { key: null, label: "غير محدد", amount: "500.00", count: 1 },
-          { key: "5", label: "Sidi", amount: "1500.00", count: 2 },
-        ],
-        total: "2000.00",
-        count: 3,
-      }),
-    ).toEqual({
-      rows: [
-        { key: "none-0", label: "غير محدد", amount: 500, count: 1 },
-        { key: "5", label: "Sidi", amount: 1500, count: 2 },
-      ],
-      total: 2000,
     });
   });
 

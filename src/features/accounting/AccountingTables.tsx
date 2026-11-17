@@ -1,10 +1,9 @@
 import { useLocale, useTranslations } from "use-intl";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataColumn } from "@/components/ui/DataTable";
-import { Select } from "@/components/ui/Select";
 import { TablePanel } from "@/components/ui/TablePanel";
 import { formatCount, formatMoney } from "@/lib/format";
-import type { AccountAmount, ExpenseGroup, GroupedAmounts, ProfitAndLoss } from "./accounting";
+import type { AccountAmount, AccountingSummary, ProfitAndLoss } from "./accounting";
 
 type AmountsTableProps = {
   title: string;
@@ -19,13 +18,13 @@ function AmountsTable({ title, rows, total }: AmountsTableProps) {
   const columns: DataColumn<AccountAmount>[] = [
     {
       key: "label",
-      header: t("groups.category"),
+      header: t("profitLoss.category"),
       className: "text-ink font-semibold",
       cell: (row) => <span dir="auto">{row.label}</span>,
     },
     {
       key: "amount",
-      header: t("grouped.amount"),
+      header: t("profitLoss.amount"),
       align: "end",
       className: "text-ink font-bold",
       cell: (row) => money(row.amount),
@@ -38,7 +37,7 @@ function AmountsTable({ title, rows, total }: AmountsTableProps) {
         columns={columns}
         rows={rows}
         rowKey={(row) => row.key}
-        empty={t("grouped.empty")}
+        empty={t("profitLoss.empty")}
         total={{ label: t("profitLoss.total"), column: "amount", value: money(total) }}
       />
     </TablePanel>
@@ -64,78 +63,48 @@ export function ProfitLossTables({ report }: { report: ProfitAndLoss }) {
   );
 }
 
-type GroupedTableProps<Group extends ExpenseGroup> = {
-  id: string;
-  title: string;
-  report: GroupedAmounts;
-  groups: readonly Group[];
-  groupBy: Group;
-  onGroupBy: (group: Group) => void;
-};
-
-export function GroupedTable<Group extends ExpenseGroup>({
-  id,
-  title,
-  report,
-  groups,
-  groupBy,
-  onGroupBy,
-}: GroupedTableProps<Group>) {
+export function SummaryTable({ summary }: { summary: AccountingSummary }) {
   const t = useTranslations("accounting");
-  const groupLabel = (group: ExpenseGroup) => t(`groups.${group}`);
   const locale = useLocale();
-  const columns: DataColumn<GroupedAmounts["rows"][number]>[] = [
+  const money = (amount: number) => formatMoney(amount, locale);
+  const columns: DataColumn<AccountingSummary>[] = [
     {
-      key: "label",
-      header: groupLabel(groupBy),
-      className: "text-ink font-semibold",
-      cell: (row) => <span dir="auto">{row.label}</span>,
-    },
-    {
-      key: "count",
-      header: t("grouped.count"),
-      align: "end",
-      className: "text-ink-muted font-semibold",
-      cell: (row) => formatCount(row.count, locale),
-    },
-    {
-      key: "amount",
-      header: t("grouped.amount"),
+      key: "income",
+      header: t("income"),
       align: "end",
       className: "text-ink font-bold",
-      cell: (row) => formatMoney(row.amount, locale),
+      cell: (row) => money(row.income),
+    },
+    {
+      key: "expense",
+      header: t("expense"),
+      align: "end",
+      className: "text-ink font-bold",
+      cell: (row) => money(row.expense),
+    },
+    {
+      key: "netProfit",
+      header: t("netProfit"),
+      align: "end",
+      className: "font-bold",
+      cell: (row) => (
+        <span className={row.netProfit < 0 ? "text-danger-700" : "text-ink"}>
+          {money(row.netProfit)}
+        </span>
+      ),
+    },
+    {
+      key: "unapproved",
+      header: t("unapproved"),
+      align: "end",
+      className: "text-ink font-bold",
+      cell: (row) => formatCount(row.unapproved, locale),
     },
   ];
 
   return (
-    <TablePanel
-      title={title}
-      action={
-        <div className="w-56">
-          <Select
-            id={`${id}-group`}
-            label={t("grouped.groupBy")}
-            value={groupBy}
-            options={groups.map((group) => ({ value: group, label: groupLabel(group) }))}
-            onChange={(event) => {
-              const chosen = groups.find((group) => group === event.target.value);
-              if (chosen !== undefined) onGroupBy(chosen);
-            }}
-          />
-        </div>
-      }
-    >
-      <DataTable
-        columns={columns}
-        rows={report.rows}
-        rowKey={(row) => row.key}
-        empty={t("grouped.empty")}
-        total={{
-          label: t("grouped.total"),
-          column: "amount",
-          value: formatMoney(report.total, locale),
-        }}
-      />
+    <TablePanel title={t("summary")}>
+      <DataTable columns={columns} rows={[summary]} rowKey={() => "summary"} empty="" />
     </TablePanel>
   );
 }

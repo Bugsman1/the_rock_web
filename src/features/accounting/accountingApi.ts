@@ -1,20 +1,7 @@
 import { apiClient, unwrap } from "@/lib/api/client";
 import type { ProjectId } from "@/lib/projects";
-import {
-  groupedFromApi,
-  profitAndLossFromApi,
-  projectProfitFromApi,
-  summaryFromApi,
-} from "./accounting";
-import type {
-  AccountingSummary,
-  ExpenseGroup,
-  GroupedAmounts,
-  IncomeGroup,
-  Period,
-  ProfitAndLoss,
-  ProjectProfit,
-} from "./accounting";
+import { profitAndLossFromApi, projectProfitFromApi, summaryFromApi } from "./accounting";
+import type { AccountingSummary, Period, ProfitAndLoss, ProjectProfit } from "./accounting";
 
 function reportQuery(period: Period, project?: ProjectId) {
   return {
@@ -47,28 +34,4 @@ export async function getSummary(project: ProjectId, period: Period): Promise<Ac
   });
 
   return summaryFromApi(unwrap(result));
-}
-
-export async function getIncome(
-  project: ProjectId,
-  period: Period,
-  groupBy: IncomeGroup,
-): Promise<GroupedAmounts> {
-  const result = await apiClient.GET("/api/v1/accounting/income/", {
-    params: { query: { ...reportQuery(period, project), group_by: groupBy } },
-  });
-
-  return groupedFromApi(unwrap(result));
-}
-
-export async function getExpenses(
-  project: ProjectId,
-  period: Period,
-  groupBy: ExpenseGroup,
-): Promise<GroupedAmounts> {
-  const result = await apiClient.GET("/api/v1/accounting/expenses/", {
-    params: { query: { ...reportQuery(period, project), group_by: groupBy } },
-  });
-
-  return groupedFromApi(unwrap(result));
 }

@@ -1480,33 +1480,14 @@
     "expense": "Dépenses",
     "netProfit": "Bénéfice net",
     "unapproved": "À approuver",
-    "tabs": {
-      "label": "Rapports",
-      "profitLoss": "Compte de résultat",
-      "income": "Entrées",
-      "expenses": "Dépenses"
-    },
     "profitLoss": {
       "incomeTitle": "Entrées par catégorie",
       "expenseTitle": "Dépenses par catégorie",
-      "total": "Total"
-    },
-    "grouped": {
-      "groupBy": "Regrouper par",
-      "amount": "Montant",
-      "count": "Mouvements",
       "total": "Total",
+      "category": "Catégorie",
+      "amount": "Montant",
       "empty": "Aucun mouvement approuvé sur cette période."
     },
-    "groups": {
-      "category": "Catégorie",
-      "customer": "Client",
-      "supplier": "Fournisseur",
-      "employee": "Employé",
-      "source": "Origine",
-      "grinder": "Machine",
-      "day": "Jour",
-      "month": "Mois"
-    }
+    "summary": "Résumé"
   }
 }

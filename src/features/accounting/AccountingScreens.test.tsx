@@ -1,5 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { screen, within } from "@testing-library/react";
 import { http } from "msw";
 import { describe, expect, it } from "vitest";
 import { formatMoney } from "@/lib/format";
@@ -65,41 +64,39 @@ describe("AccountingScreen", () => {
     server.use(http.get(`${API}/projects/`, () => page([project(3, "Zouérat 1")])));
     openAt(`/fr/accounting?${period}`);
 
-    expect(await screen.findByRole("tab", { name: text.tabs.profitLoss })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: text.summary })).toBeVisible();
     expect(asked.summary?.get("project")).toBe("3");
     expect(screen.queryByRole("link", { name: common.back })).toBeNull();
   });
 });
 
 describe("AccountingProjectScreen", () => {
-  it("shows the project's approved figures and its profit and loss", async () => {
+  it("shows the project's approved summary, then its income and expenses side by side", async () => {
     openAt(`/fr/accounting/projects/3?${period}`);
 
-    expect(await screen.findByText(text.netProfit)).toBeVisible();
-    expect(screen.getByText(text.netProfit).nextElementSibling).toHaveTextContent(money(70000));
-    expect(screen.getByText(text.unapproved).nextElementSibling).toHaveTextContent("2");
-    expect(screen.getByText("Camions")).toBeVisible();
-    for (const report of ["summary", "profitLoss", "income", "expenses"]) {
+    const summary = await screen.findByRole("heading", { name: text.summary });
+    const summaryPanel = within(summary.closest("section") ?? document.body);
+    const [, row] = summaryPanel.getAllByRole("row");
+    expect(
+      within(row ?? document.body)
+        .getAllByRole("cell")
+        .map((cell) => cell.textContent),
+    ).toEqual([90000, 20000, 70000].map((amount) => formatMoney(amount, "fr")).concat("2"));
+
+    const expenses = within(
+      screen.getByRole("heading", { name: text.profitLoss.expenseTitle }).closest("section") ??
+        document.body,
+    );
+    expect(expenses.getByText("Camions")).toBeVisible();
+    expect(expenses.getByRole("row", { name: /Total/ })).toHaveTextContent(money(20000));
+    for (const report of ["summary", "profitLoss"]) {
       expect(asked[report]?.get("project")).toBe("3");
       expect(asked[report]?.get("approved")).toBe("true");
     }
+    expect(screen.queryByRole("tab")).toBeNull();
     expect(screen.getByRole("link", { name: common.back })).toHaveAttribute(
       "href",
       `/fr/accounting?${period}`,
     );
-  });
-
-  it("groups the expenses the way the user picks", async () => {
-    const user = userEvent.setup();
-    const router = openAt(`/fr/accounting/projects/3?${period}`);
-
-    await user.click(await screen.findByRole("tab", { name: text.tabs.expenses }));
-    const panel = screen.getByRole("tabpanel");
-    expect(within(panel).getByText("Carburant")).toBeVisible();
-
-    await user.selectOptions(within(panel).getByLabelText(text.grouped.groupBy), "supplier");
-
-    await waitFor(() => expect(router.state.location.search).toBe(`?${period}&expenses=supplier`));
-    await waitFor(() => expect(asked.expenses?.get("group_by")).toBe("supplier"));
   });
 });

@@ -1480,33 +1480,14 @@
     "expense": "المصروفات",
     "netProfit": "صافي الربح",
     "unapproved": "بانتظار الاعتماد",
-    "tabs": {
-      "label": "التقارير",
-      "profitLoss": "الأرباح والخسائر",
-      "income": "الدخل",
-      "expenses": "المصروفات"
-    },
     "profitLoss": {
       "incomeTitle": "الدخل حسب الفئة",
       "expenseTitle": "المصروفات حسب الفئة",
-      "total": "المجموع"
-    },
-    "grouped": {
-      "groupBy": "تجميع حسب",
-      "amount": "المبلغ",
-      "count": "الحركات",
       "total": "المجموع",
+      "category": "الفئة",
+      "amount": "المبلغ",
       "empty": "لا توجد حركات معتمدة في هذه الفترة."
     },
-    "groups": {
-      "category": "الفئة",
-      "customer": "العميل",
-      "supplier": "المزوّد",
-      "employee": "الموظف",
-      "source": "المصدر",
-      "grinder": "الآلة",
-      "day": "اليوم",
-      "month": "الشهر"
-    }
+    "summary": "الملخص"
   }
 }
