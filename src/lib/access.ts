@@ -1,5 +1,6 @@
 import type { ApiSchema } from "./api/client";
 import {
+  ACCOUNTING_HREF,
   AUDIT_LOG_HREF,
   CASH_HREF,
   CUSTOMERS_HREF,
@@ -123,6 +124,7 @@ const sectionModules: readonly (readonly [string, Module])[] = [
   [SETTINGS_PROJECTS_HREF, "locations"],
   [AUDIT_LOG_HREF, "audit"],
   [CASH_HREF, "cash"],
+  [ACCOUNTING_HREF, "accounting"],
 ];
 
 const openToEveryone: readonly string[] = [SETTINGS_PROFILE_HREF, SETTINGS_LANGUAGE_HREF];

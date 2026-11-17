@@ -2,6 +2,7 @@ import type { IconName } from "@/components/ui/Icon";
 import { canOpen } from "@/lib/access";
 import type { Access } from "@/lib/access";
 import {
+  ACCOUNTING_HREF,
   AUDIT_LOG_HREF,
   CASH_HREF,
   CUSTOMERS_HREF,
@@ -63,7 +64,7 @@ const navGroups: readonly NavGroup[] = [
     items: [
       { key: "customers", href: CUSTOMERS_HREF, icon: "users-four" },
       { key: "settlement", href: SETTLEMENTS_HREF, icon: "receipt" },
-      { key: "accounting", href: "/accounting", icon: "calculator" },
+      { key: "accounting", href: ACCOUNTING_HREF, icon: "calculator" },
       { key: "treasury", href: CASH_HREF, icon: "building-bank" },
     ],
   },

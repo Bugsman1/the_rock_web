@@ -106,7 +106,7 @@
       "customers": "العملاء",
       "settlement": "التسوية النهائية",
       "accounting": "المحاسبة",
-      "treasury": "الخزينة",
+      "treasury": "الصندوق",
       "employees": "الموظفون والرواتب",
       "inventory": "المخزون",
       "suppliers": "إدارة الموردين",
@@ -379,7 +379,7 @@
         "accounts": "المستخدمون والصلاحيات",
         "locations": "المشاريع والآلات",
         "audit": "سجل التغييرات",
-        "cash": "الخزينة",
+        "cash": "الصندوق",
         "accounting": "المحاسبة"
       },
       "form": {
@@ -1403,7 +1403,7 @@
     "cashDeleted": "تم حذف الحركة"
   },
   "cash": {
-    "title": "الخزينة",
+    "title": "الصندوق",
     "recordIncome": "تسجيل دخل",
     "recordExpense": "تسجيل مصروف",
     "balances": {
@@ -1469,6 +1469,44 @@
       "debt_payment": "سداد دين عميل",
       "shipment_payment": "دفعة نقل شحنة",
       "settlement_payment": "دفعة تسوية نهائية"
+    }
+  },
+  "accounting": {
+    "title": "المحاسبة",
+    "approvedOnly": "تُحتسب حركات الصندوق المعتمدة فقط.",
+    "noProjects": "لا توجد مشاريع بعد. أضفها من الإعدادات.",
+    "period": "الفترة",
+    "income": "الدخل",
+    "expense": "المصروفات",
+    "netProfit": "صافي الربح",
+    "unapproved": "بانتظار الاعتماد",
+    "tabs": {
+      "label": "التقارير",
+      "profitLoss": "الأرباح والخسائر",
+      "income": "الدخل",
+      "expenses": "المصروفات"
+    },
+    "profitLoss": {
+      "incomeTitle": "الدخل حسب الفئة",
+      "expenseTitle": "المصروفات حسب الفئة",
+      "total": "المجموع"
+    },
+    "grouped": {
+      "groupBy": "تجميع حسب",
+      "amount": "المبلغ",
+      "count": "الحركات",
+      "total": "المجموع",
+      "empty": "لا توجد حركات معتمدة في هذه الفترة."
+    },
+    "groups": {
+      "category": "الفئة",
+      "customer": "العميل",
+      "supplier": "المزوّد",
+      "employee": "الموظف",
+      "source": "المصدر",
+      "grinder": "الآلة",
+      "day": "اليوم",
+      "month": "الشهر"
     }
   }
 }

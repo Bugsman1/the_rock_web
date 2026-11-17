@@ -190,6 +190,11 @@ describe("canOpen", () => {
     expect(canOpen(supervisor, "/audit-log")).toBe(false);
   });
 
+  it("opens accounting with its own view right", () => {
+    expect(canOpen(access(["accounting"]), "/accounting/projects/3")).toBe(true);
+    expect(canOpen(access(["cash"]), "/accounting")).toBe(false);
+  });
+
   it("opens the cash with its own view right", () => {
     expect(canOpen(access(["cash"]), "/cash")).toBe(true);
     expect(canOpen(access(["shipments"]), "/cash")).toBe(false);

@@ -46,6 +46,12 @@ describe("navGroupsFor", () => {
     ]);
   });
 
+  it("shows accounting only to a role that can view it", () => {
+    expect(navGroupsFor(viewing(["accounting"]))[0]?.items.map((item) => item.key)).toEqual([
+      "accounting",
+    ]);
+  });
+
   it("opens the treasury entry on the cash for a role that can view it", () => {
     const items = navGroupsFor(viewing(["cash"]))[0]?.items;
 

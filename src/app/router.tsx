@@ -1,6 +1,12 @@
 import { Outlet, redirect, useLoaderData } from "react-router";
 import type { Params, RouteObject } from "react-router";
 import { useLocale } from "use-intl";
+import {
+  AccountingProjectScreen,
+  accountingProjectLoader,
+  AccountingScreen,
+  accountingLoader,
+} from "@/features/accounting";
 import { AuditLogScreen, auditLogLoader } from "@/features/audit";
 import { LoginScreen } from "@/features/auth";
 import { CashProjectScreen, cashProjectLoader, CashScreen, cashLoader } from "@/features/cash";
@@ -222,6 +228,12 @@ const sectionRoutes: RouteObject[] = [
   { path: "suppliers", loader: suppliersLoader, element: <SuppliersScreen /> },
   { path: "suppliers/:supplier", loader: supplierLoader, element: <SupplierScreen /> },
   { path: "audit-log", loader: auditLogLoader, element: <AuditLogScreen /> },
+  { path: "accounting", loader: accountingLoader, element: <AccountingScreen /> },
+  {
+    path: "accounting/projects/:project",
+    loader: accountingProjectLoader,
+    element: <AccountingProjectScreen />,
+  },
   { path: "cash", loader: cashLoader, element: <CashScreen /> },
   { path: "cash/projects/:project", loader: cashProjectLoader, element: <CashProjectScreen /> },
   { path: "settings", element: <SettingsHomeScreen /> },

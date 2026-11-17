@@ -168,6 +168,16 @@ export function auditLogHref(list?: URLSearchParams): string {
   return withParams(AUDIT_LOG_HREF, list);
 }
 
+export const ACCOUNTING_HREF = "/accounting";
+
+export function accountingHref(params?: URLSearchParams): string {
+  return withParams(ACCOUNTING_HREF, params);
+}
+
+export function accountingProjectHref(project: string, params?: URLSearchParams): string {
+  return withParams(`${ACCOUNTING_HREF}/projects/${project}`, params);
+}
+
 export const CASH_HREF = "/cash";
 
 export function cashProjectHref(project: string, params?: URLSearchParams): string {

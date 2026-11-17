@@ -106,7 +106,7 @@
       "customers": "Clients",
       "settlement": "Règlement final",
       "accounting": "Comptabilité",
-      "treasury": "Trésorerie",
+      "treasury": "Caisse",
       "employees": "Employés et paie",
       "inventory": "Inventaire",
       "suppliers": "Fournisseurs",
@@ -379,7 +379,7 @@
         "accounts": "Utilisateurs et permissions",
         "locations": "Projets et machines",
         "audit": "Journal d'audit",
-        "cash": "Trésorerie",
+        "cash": "Caisse",
         "accounting": "Comptabilité"
       },
       "form": {
@@ -1403,7 +1403,7 @@
     "cashDeleted": "Mouvement supprimé"
   },
   "cash": {
-    "title": "Trésorerie",
+    "title": "Caisse",
     "recordIncome": "Enregistrer une entrée",
     "recordExpense": "Enregistrer une dépense",
     "balances": {
@@ -1469,6 +1469,44 @@
       "debt_payment": "Paiement de dette client",
       "shipment_payment": "Paiement du transport d'une expédition",
       "settlement_payment": "Paiement d'un règlement final"
+    }
+  },
+  "accounting": {
+    "title": "Comptabilité",
+    "approvedOnly": "Seuls les mouvements approuvés de la caisse sont comptés.",
+    "noProjects": "Aucun projet pour le moment. Ajoutez-en depuis les paramètres.",
+    "period": "Période",
+    "income": "Entrées",
+    "expense": "Dépenses",
+    "netProfit": "Bénéfice net",
+    "unapproved": "À approuver",
+    "tabs": {
+      "label": "Rapports",
+      "profitLoss": "Compte de résultat",
+      "income": "Entrées",
+      "expenses": "Dépenses"
+    },
+    "profitLoss": {
+      "incomeTitle": "Entrées par catégorie",
+      "expenseTitle": "Dépenses par catégorie",
+      "total": "Total"
+    },
+    "grouped": {
+      "groupBy": "Regrouper par",
+      "amount": "Montant",
+      "count": "Mouvements",
+      "total": "Total",
+      "empty": "Aucun mouvement approuvé sur cette période."
+    },
+    "groups": {
+      "category": "Catégorie",
+      "customer": "Client",
+      "supplier": "Fournisseur",
+      "employee": "Employé",
+      "source": "Origine",
+      "grinder": "Machine",
+      "day": "Jour",
+      "month": "Mois"
     }
   }
 }

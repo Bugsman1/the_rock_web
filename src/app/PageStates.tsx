@@ -25,7 +25,7 @@ const pageShapes: readonly (readonly [RegExp, SkeletonShape])[] = [
   [/^\/settlements\/projects\/\d+$/, "table"],
   [/^\/refining\/projects\/\d+$/, "table"],
   [/^\/inventory\/(projects|resources)\/\d+$/, "table"],
-  [/^\/(employees|cash)\/projects\/\d+$/, "table"],
+  [/^\/(employees|cash|accounting)\/projects\/\d+$/, "table"],
   [/^\/(employees|suppliers)\/\d+$/, "detail"],
   [/^\/(shipments|milling)\/projects\/\d+(\/history)?$/, "table"],
   [/^\/settings\/(profile|projects\/\d+)$/, "detail"],
