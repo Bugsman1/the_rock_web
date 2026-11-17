@@ -29,7 +29,6 @@ export function TablePanel({ title, search, action, filter, children }: TablePan
 
   return (
     <FilterSlot>
-      <FilterSlotTarget />
       <section className="rounded-card shadow-subtle border-line bg-surface overflow-hidden border-[1.5px]">
         <div className="border-line flex flex-wrap items-center justify-between gap-3 border-b-[1.5px] p-4">
           <h2 className="text-ink text-[16px] font-bold">{title}</h2>
@@ -57,6 +56,7 @@ export function TablePanel({ title, search, action, filter, children }: TablePan
           )}
         </div>
 
+        <FilterSlotTarget inPanel />
         {children}
       </section>
     </FilterSlot>

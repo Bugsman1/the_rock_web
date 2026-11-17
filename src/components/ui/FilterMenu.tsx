@@ -51,10 +51,15 @@ export function FilterSlot({ children }: { children: ReactNode }) {
   return <FilterSlotContext value={{ target, setTarget }}>{children}</FilterSlotContext>;
 }
 
-export function FilterSlotTarget() {
+export function FilterSlotTarget({ inPanel = false }: { inPanel?: boolean }) {
   const slot = use(FilterSlotContext);
 
-  return <div ref={slot?.setTarget} className="contents" />;
+  return (
+    <div
+      ref={slot?.setTarget}
+      className={inPanel ? "border-line border-b-[1.5px] p-4 empty:hidden" : "contents"}
+    />
+  );
 }
 
 export function useFilters<Row>(fields: FilterFields<Row>): {

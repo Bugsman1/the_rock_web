@@ -138,7 +138,6 @@ export function ShipmentHistory({
 
   return (
     <FilterSlot>
-      <FilterSlotTarget />
       <div className="rounded-card shadow-subtle border-line bg-surface flex flex-col border-[1.5px]">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
           <ShipmentFilterMenu
@@ -157,6 +156,7 @@ export function ShipmentHistory({
           </p>
         </div>
 
+        <FilterSlotTarget inPanel />
         <div className="border-line border-t">
           <DataTable
             columns={columns}
