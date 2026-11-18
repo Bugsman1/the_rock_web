@@ -1,6 +1,9 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
+import { useTranslations } from "use-intl";
 import { FilterButtonTarget, FilterSlot, FilterSlotTarget } from "./FilterMenu";
 import { Icon } from "./Icon";
+import { IconButton } from "./IconButton";
 import { Link } from "@/i18n/navigation";
 
 export function BackLink({ href, label }: { href: string; label: string }) {
@@ -44,12 +47,32 @@ export function PageStats({ stats }: { stats: readonly PageStat[] }) {
   );
 }
 
+export function PrivateStats({ stats }: { stats: readonly PageStat[] }) {
+  const common = useTranslations("common");
+  const [shown, setShown] = useState(true);
+
+  return (
+    <div className="rounded-card border-line bg-surface shadow-subtle flex items-center gap-2 border-[1.5px] py-1 ps-4 pe-1">
+      <PageStats
+        stats={shown ? stats : stats.map((stat) => ({ label: stat.label, value: "••••" }))}
+      />
+      <IconButton
+        icon={shown ? "eye-off" : "eye"}
+        label={common(shown ? "hideAmounts" : "showAmounts")}
+        aria-pressed={!shown}
+        onClick={() => setShown((current) => !current)}
+      />
+    </div>
+  );
+}
+
 type PageLayoutProps = {
   backHref?: string;
   backLabel: string;
   title: string;
   description?: ReactNode;
   stats?: readonly PageStat[];
+  privateStats?: readonly PageStat[];
   action?: ReactNode;
   children: ReactNode;
 };
@@ -60,9 +83,17 @@ export function PageLayout({
   title,
   description,
   stats,
+  privateStats,
   action,
   children,
 }: PageLayoutProps) {
+  const actions = (
+    <div className="flex flex-wrap gap-3">
+      <FilterButtonTarget />
+      {action}
+    </div>
+  );
+
   return (
     <FilterSlot>
       <div className="flex w-full flex-col gap-6">
@@ -77,11 +108,15 @@ export function PageLayout({
               )}
               {stats === undefined ? null : <PageStats stats={stats} />}
             </div>
-            <div className="flex flex-wrap gap-3">
-              <FilterButtonTarget />
-              {action}
-            </div>
+            {privateStats === undefined ? actions : null}
           </div>
+
+          {privateStats === undefined ? null : (
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <PrivateStats stats={privateStats} />
+              {actions}
+            </div>
+          )}
         </div>
 
         <FilterSlotTarget />

@@ -50,7 +50,9 @@
       "failed": "تعذر الحذف"
     },
     "project": "المشروع",
-    "projectPlaceholder": "اختر المشروع"
+    "projectPlaceholder": "اختر المشروع",
+    "hideAmounts": "إخفاء المبالغ",
+    "showAmounts": "إظهار المبالغ"
   },
   "filters": {
     "all": "الكل",

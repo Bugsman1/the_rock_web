@@ -224,7 +224,7 @@ export function CashProjectScreen() {
       {...(hasOtherProjects ? { backHref: CASH_HREF } : {})}
       backLabel={common("back")}
       title={common("projectTitle", { name: project.name })}
-      stats={balanceStats(balance)}
+      privateStats={balanceStats(balance)}
       action={
         can("cash", "add") ? (
           <>

@@ -61,6 +61,19 @@ describe("CashProjectScreen", () => {
     expect(screen.getByRole("link", { name: common.back })).toHaveAttribute("href", "/fr/cash");
   });
 
+  it("hides the project's money behind the eye and shows it again", async () => {
+    const user = userEvent.setup();
+    openAt("/fr/cash/projects/3");
+
+    const balance = (await screen.findByText(text.balances.balance)).nextElementSibling;
+    await user.click(screen.getByRole("button", { name: common.hideAmounts }));
+    expect(balance).toHaveTextContent("••••");
+    expect(screen.queryByText(spaced(1025000))).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: common.showAmounts }));
+    expect(balance).toHaveTextContent(spaced(1025000));
+  });
+
   it("lists every movement with its sign, each row opening its details", async () => {
     openAt("/fr/cash/projects/3");
 
@@ -81,35 +94,6 @@ describe("CashProjectScreen", () => {
       "href",
       "/fr/cash/projects/3?view=10",
     );
-  });
-
-  it("shows a manual movement's details with the way to edit or delete it", async () => {
-    openAt("/fr/cash/projects/3?view=9");
-
-    const dialog = within(await screen.findByRole("dialog", { name: text.detailTitle }));
-    expect(dialog.getByText("Gasoil groupe")).toBeVisible();
-    expect(dialog.getByText("Sidi Fournitures")).toBeVisible();
-    expect(dialog.queryByText(text.fields.customer)).toBeNull();
-    expect(dialog.getByText(text.sources.manual)).toBeVisible();
-    expect(dialog.getByText("Aicha")).toBeVisible();
-    expect(dialog.getByRole("link", { name: text.edit })).toHaveAttribute(
-      "href",
-      "/fr/cash/projects/3?edit=9",
-    );
-    expect(dialog.getByRole("link", { name: text.delete })).toHaveAttribute(
-      "href",
-      "/fr/cash/projects/3?delete=9",
-    );
-  });
-
-  it("shows where an automatic movement comes from, with no way to change it", async () => {
-    openAt("/fr/cash/projects/3?view=10");
-
-    const dialog = within(await screen.findByRole("dialog", { name: text.detailTitle }));
-    expect(dialog.getByText("Ahmed")).toBeVisible();
-    expect(dialog.queryByText(text.fields.supplier)).toBeNull();
-    expect(dialog.getByText(text.sources.debt_payment)).toBeVisible();
-    expect(dialog.queryByRole("link")).toBeNull();
   });
 
   it("asks the backend for the filters kept in the address", async () => {

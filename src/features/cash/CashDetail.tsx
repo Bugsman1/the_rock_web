@@ -34,8 +34,12 @@ export function CashDetail({ transaction, hrefOf }: CashDetailProps) {
             label: t("fields.amount"),
             value: `${sign}${formatMoney(transaction.amount, locale)}`,
           },
-          ...filled(t("fields.customer"), transaction.customerName),
-          ...filled(t("fields.supplier"), transaction.supplierName),
+          ...(transaction.customer === undefined
+            ? []
+            : filled(t("fields.customer"), transaction.customerName)),
+          ...(transaction.supplier === undefined
+            ? []
+            : filled(t("fields.supplier"), transaction.supplierName)),
           { label: t("fields.source"), value: t(`sources.${transaction.source}`) },
           ...filled(t("fields.by"), transaction.byName),
           {

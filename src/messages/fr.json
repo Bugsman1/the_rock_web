@@ -50,7 +50,9 @@
       "failed": "La suppression a échoué"
     },
     "project": "Projet",
-    "projectPlaceholder": "Choisir le projet"
+    "projectPlaceholder": "Choisir le projet",
+    "hideAmounts": "Masquer les montants",
+    "showAmounts": "Afficher les montants"
   },
   "filters": {
     "all": "Tous",
