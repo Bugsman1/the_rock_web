@@ -135,7 +135,7 @@ function ShipmentForm({ defaultValues, projects, mode }: ShipmentFormProps) {
     defaultValues,
   });
   const { handleSubmit, formState, setError, reset } = form;
-  const choices = useCustomerChoices();
+  const choices = useCustomerChoices(true);
   const newCustomer = useNewCustomer(form, choices.customers);
 
   async function onSubmit(values: NewShipmentValues) {

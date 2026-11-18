@@ -91,8 +91,18 @@ describe("ShipmentClientFields", () => {
 
     await user.clear(name);
     await waitFor(() =>
-      expect(within(screen.getByRole("listbox")).getAllByRole("option")).toHaveLength(1),
+      expect(within(screen.getByRole("listbox")).getAllByRole("option").length).toBeGreaterThan(2),
     );
+  });
+
+  it("lists the clients as soon as the empty client field is opened", async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.click(screen.getByLabelText(form.customerName));
+
+    expect(await screen.findByRole("option", { name: new RegExp(mohamed.name) })).toBeVisible();
+    expect(screen.getByRole("option", { name: messages.customers.new })).toBeVisible();
   });
 
   it("opens the new client form with the name already typed", async () => {

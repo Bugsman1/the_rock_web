@@ -52,10 +52,17 @@ export function PrivateStats({ stats }: { stats: readonly PageStat[] }) {
   const [shown, setShown] = useState(true);
 
   return (
-    <div className="rounded-card border-line bg-surface shadow-subtle flex items-center gap-2 border-[1.5px] py-1 ps-4 pe-1">
-      <PageStats
-        stats={shown ? stats : stats.map((stat) => ({ label: stat.label, value: "••••" }))}
-      />
+    <div className="rounded-card border-line bg-surface shadow-subtle flex items-center gap-2 border-[1.5px] py-1.5 ps-4 pe-1">
+      <dl className="flex flex-wrap gap-x-5 gap-y-1.5">
+        {stats.map((stat) => (
+          <div key={stat.label} className="flex flex-col">
+            <dt className="text-ink-muted text-[12px] font-semibold">{stat.label}</dt>
+            <dd className="text-ink text-[15px] font-bold whitespace-nowrap">
+              <bdi>{shown ? stat.value : "••••"}</bdi>
+            </dd>
+          </div>
+        ))}
+      </dl>
       <IconButton
         icon={shown ? "eye-off" : "eye"}
         label={common(shown ? "hideAmounts" : "showAmounts")}

@@ -56,6 +56,10 @@ export function ShipmentClientFields({ form, choices, newCustomer }: ShipmentCli
   const { customers, search } = choices;
 
   useEffect(() => {
+    search(getValues("customerName"));
+  }, [search, getValues]);
+
+  useEffect(() => {
     const typed = findCustomer(customers, getValues("customerName"));
 
     if (typed !== undefined) {
