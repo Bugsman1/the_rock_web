@@ -52,12 +52,12 @@ export function PrivateStats({ stats }: { stats: readonly PageStat[] }) {
   const [shown, setShown] = useState(true);
 
   return (
-    <div className="rounded-card border-line bg-surface shadow-subtle flex items-center gap-2 border-[1.5px] py-1.5 ps-4 pe-1">
-      <dl className="flex flex-wrap gap-x-5 gap-y-1.5">
+    <div className="rounded-card border-line bg-surface shadow-subtle flex items-center gap-2 border-[1.5px] py-2 ps-5 pe-2">
+      <dl className="flex flex-wrap gap-x-7 gap-y-2">
         {stats.map((stat) => (
-          <div key={stat.label} className="flex flex-col">
-            <dt className="text-ink-muted text-[12px] font-semibold">{stat.label}</dt>
-            <dd className="text-ink text-[15px] font-bold whitespace-nowrap">
+          <div key={stat.label} className="flex flex-col gap-0.5">
+            <dt className="text-ink-muted text-[14px] font-semibold">{stat.label}</dt>
+            <dd className="text-ink text-[19px] leading-tight font-bold whitespace-nowrap">
               <bdi>{shown ? stat.value : "••••"}</bdi>
             </dd>
           </div>
