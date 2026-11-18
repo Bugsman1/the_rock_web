@@ -1,5 +1,7 @@
+import ArrowDownIcon from "@/icons/arrow-down.svg?react";
 import ArrowLeftIcon from "@/icons/arrow-left.svg?react";
 import ArrowRightIcon from "@/icons/arrow-right.svg?react";
+import ArrowUpIcon from "@/icons/arrow-up.svg?react";
 import BellIcon from "@/icons/bell-simple.svg?react";
 import BuildingBankIcon from "@/icons/bank.svg?react";
 import CalculatorIcon from "@/icons/calculator.svg?react";
@@ -52,8 +54,10 @@ import XIcon from "@/icons/x.svg?react";
 import { cn } from "@/lib/cn";
 
 const glyphs = {
+  "arrow-down": ArrowDownIcon,
   "arrow-left": ArrowLeftIcon,
   "arrow-right": ArrowRightIcon,
+  "arrow-up": ArrowUpIcon,
   bell: BellIcon,
   "building-bank": BuildingBankIcon,
   calculator: CalculatorIcon,

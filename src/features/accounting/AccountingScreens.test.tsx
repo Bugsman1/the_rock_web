@@ -1,7 +1,9 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http } from "msw";
 import { describe, expect, it } from "vitest";
 import { formatMoney } from "@/lib/format";
+import messages from "@/messages/fr.json";
 import {
   API,
   common,
@@ -51,12 +53,21 @@ describe("AccountingScreen", () => {
     expect(asked.profitLoss?.get("date__lte")).toBe("2026-11-30");
   });
 
-  it("starts on the current month", async () => {
+  it("starts on the current month, without counting it as a filter", async () => {
     openAt("/fr/accounting");
 
     await screen.findByRole("heading", { name: title("Zouérat 1") });
 
     expect(asked.profitLoss?.get("date__gte")).toMatch(/^\d{4}-\d{2}-01$/);
+    expect(screen.getByRole("button", { name: messages.filters.button })).toBeVisible();
+  });
+
+  it("counts a chosen period as one filter", async () => {
+    openAt("/fr/accounting?from=2025-01-01&to=2025-01-31");
+
+    await screen.findByRole("heading", { name: title("Zouérat 1") });
+
+    expect(screen.getByRole("button", { name: `${messages.filters.button}1` })).toBeVisible();
   });
 
   it("opens the only project of a user who sees one", async () => {
@@ -70,7 +81,8 @@ describe("AccountingScreen", () => {
 });
 
 describe("AccountingProjectScreen", () => {
-  it("shows the project's summary, then its income and expenses side by side", async () => {
+  it("shows the project's summary, then tabs opening on the movements to approve", async () => {
+    const user = userEvent.setup();
     openAt(`/fr/accounting/projects/3?${period}`);
 
     const summary = await screen.findByRole("heading", { name: text.summary });
@@ -89,6 +101,15 @@ describe("AccountingProjectScreen", () => {
         ),
     );
 
+    expect(screen.getByRole("tab", { name: text.approval.title })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("heading", { name: text.approval.title })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: text.profitLoss.expenseTitle })).toBeNull();
+
+    await user.click(screen.getByRole("tab", { name: text.tabs.profitLoss }));
+    expect(screen.queryByRole("heading", { name: text.approval.title })).toBeNull();
     const expenses = within(
       screen.getByRole("heading", { name: text.profitLoss.expenseTitle }).closest("section") ??
         document.body,
@@ -98,7 +119,6 @@ describe("AccountingProjectScreen", () => {
     for (const report of ["summary", "profitLoss"]) {
       expect(asked[report]?.get("project")).toBe("3");
     }
-    expect(screen.queryByRole("tab")).toBeNull();
     expect(screen.getByRole("link", { name: common.back })).toHaveAttribute(
       "href",
       `/fr/accounting?${period}`,

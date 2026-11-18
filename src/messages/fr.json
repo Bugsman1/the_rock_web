@@ -1567,6 +1567,11 @@
       "total": "Total",
       "empty": "Aucun fournisseur à payer.",
       "advancesEmpty": "Aucune avance en cours."
+    },
+    "tabs": {
+      "label": "Rubriques de la comptabilité",
+      "profitLoss": "Entrées et dépenses",
+      "balances": "Créances et dettes"
     }
   }
 }

@@ -10,7 +10,7 @@ import { formatMoney } from "@/lib/format";
 import { isInService, rowOfProject } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
 import { accountingHref, accountingProjectHref } from "@/lib/routes";
-import { periodFromParams, periodParams } from "./accounting";
+import { currentMonth, periodFromParams, periodParams } from "./accounting";
 import type { Period } from "./accounting";
 import { getProjectProfits } from "./accountingApi";
 
@@ -23,17 +23,24 @@ export function PeriodFilter({
 }) {
   const t = useTranslations("accounting");
   const replace = useReplace();
+  const month = currentMonth(new Date());
+  const chosen = period.from !== month.from || period.to !== month.to;
 
   return (
     <FilterMenu
       groups={[]}
       dateLabel={t("period")}
-      state={{ selection: {}, client: "", from: period.from, to: period.to }}
+      state={{
+        selection: {},
+        client: "",
+        from: chosen ? period.from : "",
+        to: chosen ? period.to : "",
+      }}
       onApply={(state) =>
         replace(
           hrefFor({
-            from: state.from === "" ? period.from : state.from,
-            to: state.to === "" ? period.to : state.to,
+            from: state.from === "" ? month.from : state.from,
+            to: state.to === "" ? month.to : state.to,
           }),
         )
       }

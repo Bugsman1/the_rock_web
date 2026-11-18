@@ -41,25 +41,40 @@ type FilterMenuProps = FilterData & {
   dateLabel?: string;
 };
 
-type Slot = { target: HTMLElement | null; setTarget: (target: HTMLElement | null) => void };
+type Target = HTMLElement | null;
+
+type Slot = {
+  button: Target;
+  card: Target;
+  setButton: (target: Target) => void;
+  setCard: (target: Target) => void;
+};
 
 const FilterSlotContext = createContext<Slot | null>(null);
 
 export function FilterSlot({ children }: { children: ReactNode }) {
-  const [target, setTarget] = useState<HTMLElement | null>(null);
-
-  return <FilterSlotContext value={{ target, setTarget }}>{children}</FilterSlotContext>;
-}
-
-export function FilterSlotTarget({ inPanel = false }: { inPanel?: boolean }) {
-  const slot = use(FilterSlotContext);
+  const [button, setButton] = useState<Target>(null);
+  const [card, setCard] = useState<Target>(null);
 
   return (
-    <div
-      ref={slot?.setTarget}
-      className={inPanel ? "border-line border-b-[1.5px] p-4 empty:hidden" : "contents"}
-    />
+    <FilterSlotContext value={{ button, card, setButton, setCard }}>{children}</FilterSlotContext>
   );
+}
+
+export function FilterButtonTarget() {
+  const slot = use(FilterSlotContext);
+
+  return <div ref={slot?.setButton} className="flex flex-wrap gap-3 empty:hidden" />;
+}
+
+export function FilterSlotTarget() {
+  const slot = use(FilterSlotContext);
+
+  return <div ref={slot?.setCard} className="contents" />;
+}
+
+function placed(content: ReactNode, target: Target | undefined) {
+  return target === null || target === undefined ? content : createPortal(content, target);
 }
 
 export function useFilters<Row>(fields: FilterFields<Row>): {
@@ -277,25 +292,27 @@ export function FilterMenu(props: FilterMenuProps) {
   const [open, setOpen] = useState(false);
   const active = activeFilterCount(props.state);
   const card = open ? <FilterCard {...props} onClose={() => setOpen(false)} /> : null;
+  const button = (
+    <Button
+      variant="secondary"
+      width="auto"
+      aria-expanded={open}
+      onClick={() => setOpen((previous) => !previous)}
+    >
+      <Icon name="filter" />
+      {t("button")}
+      {active > 0 ? (
+        <span className="bg-brand-700 text-ink-inverted rounded-full px-2 text-xs font-bold">
+          {formatCount(active, locale)}
+        </span>
+      ) : null}
+    </Button>
+  );
 
   return (
     <>
-      <Button
-        variant="secondary"
-        width="auto"
-        aria-expanded={open}
-        onClick={() => setOpen((previous) => !previous)}
-      >
-        <Icon name="filter" />
-        {t("button")}
-        {active > 0 ? (
-          <span className="bg-brand-700 text-ink-inverted rounded-full px-2 text-xs font-bold">
-            {formatCount(active, locale)}
-          </span>
-        ) : null}
-      </Button>
-
-      {slot === null || slot.target === null ? card : createPortal(card, slot.target)}
+      {placed(button, slot?.button)}
+      {placed(card, slot?.card)}
     </>
   );
 }

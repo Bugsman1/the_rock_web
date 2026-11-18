@@ -13,6 +13,10 @@ serveAccounting(asked, sent);
 const period = "from=2026-11-01&to=2026-11-30";
 const money = (amount: number) => formatMoney(amount, "fr").replace(/\s/g, " ");
 
+async function openTab(name: string) {
+  await userEvent.setup().click(await screen.findByRole("tab", { name }));
+}
+
 function panel(title: string) {
   return within(screen.getByRole("heading", { name: title }).closest("section") ?? document.body);
 }
@@ -58,6 +62,7 @@ describe("AccountingProjectScreen review", () => {
     const user = userEvent.setup();
     openAt(`/fr/accounting/projects/3?${period}`);
 
+    await openTab(text.returns);
     await screen.findByRole("heading", { name: text.shipmentReturns.title });
     const returns = panel(text.shipmentReturns.title);
     expect(returns.getAllByRole("link", { name: /Saisir le retour/ })).toHaveLength(1);
@@ -92,6 +97,7 @@ describe("AccountingProjectScreen review", () => {
   it("shows what the project's customers owe and what it owes its suppliers", async () => {
     openAt(`/fr/accounting/projects/3?${period}`);
 
+    await openTab(text.tabs.balances);
     await screen.findByRole("heading", { name: text.receivables.title });
     expect(asked.receivables?.get("project")).toBe("3");
     expect(asked.payables?.get("project")).toBe("3");

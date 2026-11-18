@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { FilterButtonTarget, FilterSlot, FilterSlotTarget } from "./FilterMenu";
 import { Icon } from "./Icon";
 import { Link } from "@/i18n/navigation";
 
@@ -63,23 +64,29 @@ export function PageLayout({
   children,
 }: PageLayoutProps) {
   return (
-    <div className="flex w-full flex-col gap-6">
-      <div className="flex flex-col gap-3">
-        {backHref === undefined ? null : <BackLink href={backHref} label={backLabel} />}
+    <FilterSlot>
+      <div className="flex w-full flex-col gap-6">
+        <div className="flex flex-col gap-3">
+          {backHref === undefined ? null : <BackLink href={backHref} label={backLabel} />}
 
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-col gap-1.5">
-            <PageTitle>{title}</PageTitle>
-            {description === undefined ? null : (
-              <p className="text-ink-muted text-[15px] font-semibold">{description}</p>
-            )}
-            {stats === undefined ? null : <PageStats stats={stats} />}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-col gap-1.5">
+              <PageTitle>{title}</PageTitle>
+              {description === undefined ? null : (
+                <p className="text-ink-muted text-[15px] font-semibold">{description}</p>
+              )}
+              {stats === undefined ? null : <PageStats stats={stats} />}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <FilterButtonTarget />
+              {action}
+            </div>
           </div>
-          {action === undefined ? null : <div className="flex flex-wrap gap-3">{action}</div>}
         </div>
-      </div>
 
-      {children}
-    </div>
+        <FilterSlotTarget />
+        {children}
+      </div>
+    </FilterSlot>
   );
 }

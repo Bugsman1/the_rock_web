@@ -234,8 +234,7 @@ describe("RefiningScreen", () => {
     const router = openAt("/fr/refining/projects/3");
 
     await screen.findAllByRole("link", { name: text.editLabel.replace("{shipment}", "SH-3") });
-    const done = panel(text.operationsTitle);
-    await user.click(done.getByRole("button", { name: new RegExp(messages.filters.button) }));
+    await user.click(screen.getByRole("button", { name: new RegExp(messages.filters.button) }));
     await user.click(screen.getByRole("button", { name: text.fields.goldWithoutMaterial }));
     await user.click(screen.getByRole("checkbox", { name: text.goldFilter.notWeighed }));
     const machine = screen.getByRole("combobox", { name: text.fields.machine });

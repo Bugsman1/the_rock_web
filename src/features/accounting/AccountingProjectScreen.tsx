@@ -3,6 +3,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useTranslations } from "use-intl";
 import { useRouteDrawer } from "@/components/ui/Drawer";
 import { PageLayout } from "@/components/ui/PageHeader";
+import { Tabs } from "@/components/ui/Tabs";
 import { notFound } from "@/lib/api/client";
 import { findProject, isInService } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
@@ -99,10 +100,31 @@ export function AccountingProjectScreen() {
       }
     >
       <SummaryTable summary={summary} />
-      <ProfitLossTables report={profitLoss} />
-      <ApprovalPanel project={project.id} first={pending} hrefOf={hrefOf} />
-      <ReturnsPanel returns={returns} hrefOf={hrefOf} />
-      <BalancesTables receivables={receivables} payables={payables} />
+      <Tabs
+        label={t("tabs.label")}
+        items={[
+          {
+            id: "approval",
+            label: t("approval.title"),
+            content: <ApprovalPanel project={project.id} first={pending} hrefOf={hrefOf} />,
+          },
+          {
+            id: "profitLoss",
+            label: t("tabs.profitLoss"),
+            content: <ProfitLossTables report={profitLoss} />,
+          },
+          {
+            id: "returns",
+            label: t("returns"),
+            content: <ReturnsPanel returns={returns} hrefOf={hrefOf} />,
+          },
+          {
+            id: "balances",
+            label: t("tabs.balances"),
+            content: <BalancesTables receivables={receivables} payables={payables} />,
+          },
+        ]}
+      />
 
       <RejectDrawer key={rejecting?.id ?? "none"} transaction={rejecting} onClose={close} />
       <ReturnDrawer entry={returning} onClose={close} />

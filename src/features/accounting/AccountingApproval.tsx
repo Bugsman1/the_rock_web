@@ -46,6 +46,7 @@ function ApproveButton({ transaction }: { transaction: CashTransaction }) {
     <div className="flex flex-col items-end gap-1">
       <ActionButton
         icon="check"
+        tone="success"
         ariaLabel={t("approveLabel", { date: formatDateTime(transaction.at, locale) })}
         busy={busy}
         onClick={() => void approve()}
@@ -127,7 +128,7 @@ export function ApprovalPanel({ project, first, hrefOf }: ApprovalPanelProps) {
           <ActionLink
             href={hrefOf({ kind: "reject", id: row.id })}
             icon="x"
-            variant="ghost"
+            tone="danger"
             ariaLabel={t("approval.rejectLabel", { date: formatDateTime(row.at, locale) })}
           >
             {t("approval.reject")}
