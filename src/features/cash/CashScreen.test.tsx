@@ -1,4 +1,5 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http } from "msw";
 import { describe, expect, it } from "vitest";
 import { formatMoney } from "@/lib/format";
@@ -22,10 +23,22 @@ function cardOf(name: string) {
 }
 
 describe("CashScreen", () => {
+  it("hides every project's money until the eye opens it", async () => {
+    openAt("/fr/cash");
+
+    await screen.findByRole("heading", { name: title("Zouérat 1") });
+
+    expect(
+      cardOf("Zouérat 1").getByText(text.balances.balance).nextElementSibling,
+    ).toHaveTextContent("••••");
+    expect(screen.queryByText(money(1025000))).toBeNull();
+  });
+
   it("shows one card per project with its own money, each opening that project", async () => {
     openAt("/fr/cash");
 
     await screen.findByRole("heading", { name: title("Zouérat 1") });
+    await userEvent.setup().click(screen.getByRole("button", { name: common.showAmounts }));
     const zouerat = cardOf("Zouérat 1");
     const sfariyat = cardOf("Sfariyat 1");
 

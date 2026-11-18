@@ -126,6 +126,7 @@ export function serveCash(sent: Sent[]) {
   beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
   beforeEach(() => {
     sent.length = 0;
+    sessionStorage.clear();
     const record =
       (status: number, reply: object | null) =>
       async ({ request }: { request: Request }) => {

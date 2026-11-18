@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import { useTranslations } from "use-intl";
 import { FilterButtonTarget, FilterSlot, FilterSlotTarget } from "./FilterMenu";
@@ -47,28 +47,73 @@ export function PageStats({ stats }: { stats: readonly PageStat[] }) {
   );
 }
 
-export function PrivateStats({ stats }: { stats: readonly PageStat[] }) {
+const AMOUNTS_KEY = "amounts-shown";
+const amountListeners = new Set<() => void>();
+
+export const HIDDEN_AMOUNT = "••••";
+
+function storedAmountsShown(): boolean {
+  try {
+    return sessionStorage.getItem(AMOUNTS_KEY) === "yes";
+  } catch {
+    return false;
+  }
+}
+
+function subscribeAmounts(listener: () => void) {
+  amountListeners.add(listener);
+
+  return () => {
+    amountListeners.delete(listener);
+  };
+}
+
+function storeAmountsShown(shown: boolean) {
+  try {
+    sessionStorage.setItem(AMOUNTS_KEY, shown ? "yes" : "no");
+  } catch {
+    return;
+  }
+
+  for (const listener of amountListeners) {
+    listener();
+  }
+}
+
+export function useAmountsShown(): boolean {
+  return useSyncExternalStore(subscribeAmounts, storedAmountsShown, () => false);
+}
+
+export function AmountsEye() {
   const common = useTranslations("common");
-  const [shown, setShown] = useState(true);
+  const shown = useAmountsShown();
 
   return (
-    <div className="rounded-card border-line bg-surface shadow-subtle flex items-center gap-2 border-[1.5px] py-2 ps-5 pe-2">
-      <dl className="flex flex-wrap gap-x-7 gap-y-2">
+    <IconButton
+      icon={shown ? "eye-off" : "eye"}
+      label={common(shown ? "hideAmounts" : "showAmounts")}
+      aria-pressed={!shown}
+      onClick={() => storeAmountsShown(!shown)}
+    />
+  );
+}
+
+export function PrivateStats({ stats }: { stats: readonly PageStat[] }) {
+  const shown = useAmountsShown();
+
+  return (
+    <div className="rounded-card border-line bg-surface shadow-subtle flex grow basis-96 items-center gap-4 border-[1.5px] py-2.5 ps-6 pe-2">
+      <dl className="flex flex-1 flex-wrap justify-between gap-x-8 gap-y-2">
         {stats.map((stat) => (
           <div key={stat.label} className="flex flex-col gap-0.5">
-            <dt className="text-ink-muted text-[14px] font-semibold">{stat.label}</dt>
-            <dd className="text-ink text-[19px] leading-tight font-bold whitespace-nowrap">
-              <bdi>{shown ? stat.value : "••••"}</bdi>
+            <dt className="text-ink-muted text-[15px] font-semibold">{stat.label}</dt>
+            <dd className="text-ink text-[22px] leading-tight font-bold whitespace-nowrap">
+              <bdi>{shown ? stat.value : HIDDEN_AMOUNT}</bdi>
             </dd>
           </div>
         ))}
       </dl>
-      <IconButton
-        icon={shown ? "eye-off" : "eye"}
-        label={common(shown ? "hideAmounts" : "showAmounts")}
-        aria-pressed={!shown}
-        onClick={() => setShown((current) => !current)}
-      />
+      <AmountsEye />
     </div>
   );
 }

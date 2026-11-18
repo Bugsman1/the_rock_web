@@ -2,7 +2,7 @@ import { redirect, useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { CardGrid, LinkCard, StatGrid } from "@/components/ui/Cards";
-import { PageTitle } from "@/components/ui/PageHeader";
+import { AmountsEye, HIDDEN_AMOUNT, PageTitle, useAmountsShown } from "@/components/ui/PageHeader";
 import { defaultLocale, isLocale } from "@/i18n/locales";
 import { localizedHref } from "@/i18n/navigation";
 import { formatMoney } from "@/lib/format";
@@ -49,10 +49,14 @@ export function CashScreen() {
   const t = useTranslations("cash");
   const common = useTranslations("common");
   const balanceStats = useBalanceStats();
+  const shown = useAmountsShown();
 
   return (
     <div className="flex flex-col gap-6">
-      <PageTitle>{t("title")}</PageTitle>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <PageTitle>{t("title")}</PageTitle>
+        {projects.length === 0 ? null : <AmountsEye />}
+      </div>
 
       {projects.length === 0 ? (
         <p className="rounded-card border-line bg-surface text-ink-muted border-[1.5px] p-6 text-[15px] font-semibold">
@@ -67,7 +71,11 @@ export function CashScreen() {
               href={cashProjectHref(project.id)}
               linkLabel={common("openProject")}
             >
-              <StatGrid stats={balanceStats(balance)} />
+              <StatGrid
+                stats={balanceStats(balance).map((stat) =>
+                  shown ? stat : { label: stat.label, value: HIDDEN_AMOUNT },
+                )}
+              />
             </LinkCard>
           ))}
         </CardGrid>

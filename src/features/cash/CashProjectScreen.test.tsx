@@ -55,23 +55,27 @@ describe("CashProjectScreen", () => {
       }),
     ).toBeVisible();
     expect(asked).toEqual({ balance: "3", list: "3" });
+    await userEvent.setup().click(screen.getByRole("button", { name: common.showAmounts }));
     expect(screen.getByText(text.balances.balance).nextElementSibling).toHaveTextContent(
       spaced(1025000),
     );
     expect(screen.getByRole("link", { name: common.back })).toHaveAttribute("href", "/fr/cash");
   });
 
-  it("hides the project's money behind the eye and shows it again", async () => {
+  it("keeps the project's money hidden until the eye opens it, for the whole visit", async () => {
     const user = userEvent.setup();
     openAt("/fr/cash/projects/3");
 
     const balance = (await screen.findByText(text.balances.balance)).nextElementSibling;
-    await user.click(screen.getByRole("button", { name: common.hideAmounts }));
     expect(balance).toHaveTextContent("••••");
     expect(screen.queryByText(spaced(1025000))).toBeNull();
 
     await user.click(screen.getByRole("button", { name: common.showAmounts }));
     expect(balance).toHaveTextContent(spaced(1025000));
+    expect(sessionStorage.length).toBe(1);
+
+    await user.click(screen.getByRole("button", { name: common.hideAmounts }));
+    expect(balance).toHaveTextContent("••••");
   });
 
   it("lists every movement with its sign, each row opening its details", async () => {
