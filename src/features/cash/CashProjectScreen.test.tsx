@@ -64,14 +64,14 @@ describe("CashProjectScreen", () => {
   it("lists every movement with its sign, each row opening its details", async () => {
     openAt("/fr/cash/projects/3");
 
-    await screen.findByText("Sidi Fournitures");
+    await screen.findByText(`−${spaced(15000)}`);
     const list = panel(text.list.title);
     const [expense, income] = list.getAllByRole("row").slice(1);
 
     expect(cellsOf(expense)).toContain(`−${money(15000)}`);
-    expect(cellsOf(expense)).toContain("Sidi Fournitures");
     expect(cellsOf(income)).toContain(`+${money(40000)}`);
-    expect(cellsOf(income)).toContain("Ahmed");
+    expect(list.queryByText("Sidi Fournitures")).toBeNull();
+    expect(list.queryByText("Ahmed")).toBeNull();
     expect(screen.queryByText("Gasoil groupe")).toBeNull();
     expect(within(expense ?? document.body).getByRole("link")).toHaveAttribute(
       "href",
@@ -88,6 +88,8 @@ describe("CashProjectScreen", () => {
 
     const dialog = within(await screen.findByRole("dialog", { name: text.detailTitle }));
     expect(dialog.getByText("Gasoil groupe")).toBeVisible();
+    expect(dialog.getByText("Sidi Fournitures")).toBeVisible();
+    expect(dialog.queryByText(text.fields.customer)).toBeNull();
     expect(dialog.getByText(text.sources.manual)).toBeVisible();
     expect(dialog.getByText("Aicha")).toBeVisible();
     expect(dialog.getByRole("link", { name: text.edit })).toHaveAttribute(
@@ -105,6 +107,7 @@ describe("CashProjectScreen", () => {
 
     const dialog = within(await screen.findByRole("dialog", { name: text.detailTitle }));
     expect(dialog.getByText("Ahmed")).toBeVisible();
+    expect(dialog.queryByText(text.fields.supplier)).toBeNull();
     expect(dialog.getByText(text.sources.debt_payment)).toBeVisible();
     expect(dialog.queryByRole("link")).toBeNull();
   });
@@ -281,14 +284,14 @@ describe("CashProjectScreen", () => {
   it("never opens an automatic movement for change", async () => {
     openAt("/fr/cash/projects/3?edit=10");
 
-    expect(await screen.findByText("Ahmed")).toBeVisible();
+    expect(await screen.findByText(`+${spaced(40000)}`)).toBeVisible();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("gives a view-only role the balances and movements with no way to change them", async () => {
     openAt("/fr/cash/projects/3?new=income", viewOnly);
 
-    expect(await screen.findByText("Sidi Fournitures")).toBeVisible();
+    expect(await screen.findByText(`−${spaced(15000)}`)).toBeVisible();
     expect(screen.queryByRole("link", { name: new RegExp(text.recordIncome) })).toBeNull();
     expect(screen.queryByRole("link", { name: text.edit })).toBeNull();
     expect(screen.queryByRole("dialog")).toBeNull();

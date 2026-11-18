@@ -6,6 +6,7 @@ import { OperationForm } from "@/components/grinding/OperationForm";
 import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/ui/Icon";
 import { BackLink, PageTitle } from "@/components/ui/PageHeader";
+import { FilterButtonTarget, FilterSlot, FilterSlotTarget } from "@/components/ui/FilterMenu";
 import { useCan } from "@/lib/accessContext";
 import { notFound } from "@/lib/api/client";
 import { getCustomer } from "@/lib/customersApi";
@@ -104,70 +105,77 @@ export function MillingProjectScreen() {
   const now = new Date();
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3">
-        {hasOtherProjects ? <BackLink href={MILLING_HREF} label={common("back")} /> : null}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <PageTitle>{common("projectTitle", { name: project.name })}</PageTitle>
-          {canStart ? (
-            <ButtonLink
-              href={newMillingOperationHref(project.id, { list: listQueryParams(list) })}
-              variant="primary"
-            >
-              <Icon name="plus" />
-              {t("project.newOperation")}
-            </ButtonLink>
-          ) : null}
+    <FilterSlot>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3">
+          {hasOtherProjects ? <BackLink href={MILLING_HREF} label={common("back")} /> : null}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <PageTitle>{common("projectTitle", { name: project.name })}</PageTitle>
+            <div className="flex flex-wrap gap-3">
+              <FilterButtonTarget />
+              {canStart ? (
+                <ButtonLink
+                  href={newMillingOperationHref(project.id, { list: listQueryParams(list) })}
+                  variant="primary"
+                >
+                  <Icon name="plus" />
+                  {t("project.newOperation")}
+                </ButtonLink>
+              ) : null}
+            </div>
+          </div>
         </div>
-      </div>
 
-      <section className="rounded-card shadow-subtle border-line bg-surface flex flex-col gap-4 border-[1.5px] p-5">
-        <h2 className="text-ink text-[16px] font-bold">
-          {t("project.machinesTitle")}{" "}
-          <span className="text-ink-muted font-semibold">
-            {t("project.machinesRunning")} {count(counts.running)}{" "}
-            {t("outOf", { total: count(counts.total) })}
-          </span>
-        </h2>
+        <FilterSlotTarget />
 
-        <MachineList
+        <section className="rounded-card shadow-subtle border-line bg-surface flex flex-col gap-4 border-[1.5px] p-5">
+          <h2 className="text-ink text-[16px] font-bold">
+            {t("project.machinesTitle")}{" "}
+            <span className="text-ink-muted font-semibold">
+              {t("project.machinesRunning")} {count(counts.running)}{" "}
+              {t("outOf", { total: count(counts.total) })}
+            </span>
+          </h2>
+
+          <MachineList
+            project={project.id}
+            rows={machines.map((machine) => ({
+              number: machine.number,
+              status: machineStatus(machine, running),
+              operation: activeOperationOf(running, project.id, machine.number),
+            }))}
+          />
+        </section>
+
+        <MillingQueueTable
           project={project.id}
-          rows={machines.map((machine) => ({
-            number: machine.number,
-            status: machineStatus(machine, running),
-            operation: activeOperationOf(running, project.id, machine.number),
-          }))}
+          list={list}
+          filter={filter}
+          first={first}
+          clientName={clientName}
         />
-      </section>
 
-      <MillingQueueTable
-        project={project.id}
-        list={list}
-        filter={filter}
-        first={first}
-        clientName={clientName}
-      />
-
-      <Drawer
-        open={newOperation !== undefined && canStart && choices !== undefined}
-        title={t("operation.title")}
-        closeLabel={common("close")}
-        onClose={close}
-      >
-        <OperationForm
-          key={`${newOperation?.shipmentNumber ?? ""}-${newOperation?.machine ?? ""}`}
-          projectName={project.name}
-          shipments={choices?.shipments ?? []}
-          idleMachines={idleMachines(machines, running)}
-          operators={choices?.operators ?? []}
-          defaultShipmentNumber={newOperation?.shipmentNumber}
-          defaultMachine={newOperation?.machine}
-          defaultDate={todayAsInputValue(now)}
-          defaultTime={nowAsTimeValue(now)}
-          onCancel={close}
-          onSaved={close}
-        />
-      </Drawer>
-    </div>
+        <Drawer
+          open={newOperation !== undefined && canStart && choices !== undefined}
+          title={t("operation.title")}
+          closeLabel={common("close")}
+          onClose={close}
+        >
+          <OperationForm
+            key={`${newOperation?.shipmentNumber ?? ""}-${newOperation?.machine ?? ""}`}
+            projectName={project.name}
+            shipments={choices?.shipments ?? []}
+            idleMachines={idleMachines(machines, running)}
+            operators={choices?.operators ?? []}
+            defaultShipmentNumber={newOperation?.shipmentNumber}
+            defaultMachine={newOperation?.machine}
+            defaultDate={todayAsInputValue(now)}
+            defaultTime={nowAsTimeValue(now)}
+            onCancel={close}
+            onSaved={close}
+          />
+        </Drawer>
+      </div>
+    </FilterSlot>
   );
 }

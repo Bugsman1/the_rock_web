@@ -230,14 +230,14 @@ export function CashProjectScreen() {
           <>
             <ButtonLink
               href={hrefOf({ drawer: { kind: "new", type: "income" } })}
-              variant="primary"
+              variant="success"
             >
               <Icon name="plus" />
               {t("recordIncome")}
             </ButtonLink>
             <ButtonLink
               href={hrefOf({ drawer: { kind: "new", type: "expense" } })}
-              variant="secondary"
+              variant="danger"
             >
               <Icon name="minus" />
               {t("recordExpense")}

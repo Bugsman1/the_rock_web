@@ -52,12 +52,6 @@ export function TransactionTable({ transactions, filtered, hrefOf }: Transaction
       cell: (row) => text(categoryShown(row)),
     },
     {
-      key: "reference",
-      header: t("fields.reference"),
-      className: "text-ink font-semibold",
-      cell: (row) => text(row.customerName === "" ? row.supplierName : row.customerName),
-    },
-    {
       key: "amount",
       header: t("fields.amount"),
       align: "end",

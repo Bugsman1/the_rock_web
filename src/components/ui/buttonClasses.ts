@@ -4,6 +4,8 @@ const variants = {
   primary: "bg-brand-700 text-ink-inverted text-[16px] shadow-brand hover:bg-brand-800",
   secondary:
     "border-[1.5px] border-brand-700 bg-surface text-brand-700 text-[15px] hover:bg-surface-hover",
+  success:
+    "border-[1.5px] border-success-700 bg-surface text-success-700 text-[15px] hover:bg-success-50",
   danger:
     "border-[1.5px] border-danger-700 bg-surface text-danger-700 text-[15px] hover:bg-danger-50",
 } as const;

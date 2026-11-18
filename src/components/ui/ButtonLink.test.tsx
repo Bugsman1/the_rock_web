@@ -67,7 +67,7 @@ describe("ButtonLink and ActionLink while their page loads", () => {
 
     await waitFor(() => expect(router.state.location.search).toBe("?grinding=4"));
     expect(screen.getByRole("link", { name: "Démarrer l'affinage" })).toBeVisible();
-    expect(screen.queryByRole("dialog")).toBeNull();
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
   it("show the dots but no drawer when the link leads to another page", async () => {

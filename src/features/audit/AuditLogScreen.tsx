@@ -7,6 +7,7 @@ import type { DataColumn } from "@/components/ui/DataTable";
 import { FilterMenu } from "@/components/ui/FilterMenu";
 import type { FilterMenuGroup } from "@/components/ui/FilterMenu";
 import { PageTitle } from "@/components/ui/PageHeader";
+import { FilterButtonTarget, FilterSlot, FilterSlotTarget } from "@/components/ui/FilterMenu";
 import { Pagination } from "@/components/ui/Pagination";
 import { DelayedSearchField } from "@/components/ui/SearchField";
 import { TablePanel } from "@/components/ui/TablePanel";
@@ -153,59 +154,66 @@ export function AuditLogScreen() {
   );
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-baseline gap-4">
-        <PageTitle>{t("title")}</PageTitle>
-        <p className="text-ink-muted text-sm font-semibold">
-          {t("count", { count: formatCount(entries.total, locale) })}
-        </p>
-      </div>
+    <FilterSlot>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-baseline gap-4">
+            <PageTitle>{t("title")}</PageTitle>
+            <p className="text-ink-muted text-sm font-semibold">
+              {t("count", { count: formatCount(entries.total, locale) })}
+            </p>
+          </div>
+          <FilterButtonTarget />
+        </div>
 
-      <TablePanel
-        title={t("listTitle")}
-        search={{
-          field: (
-            <DelayedSearchField
-              id="audit-search"
-              label={common("search")}
-              placeholder={t("searchPlaceholder")}
-              query={query.search}
-              hrefFor={searchHref}
+        <FilterSlotTarget />
+
+        <TablePanel
+          title={t("listTitle")}
+          search={{
+            field: (
+              <DelayedSearchField
+                id="audit-search"
+                label={common("search")}
+                placeholder={t("searchPlaceholder")}
+                query={query.search}
+                hrefFor={searchHref}
+              />
+            ),
+          }}
+          filter={
+            <FilterMenu
+              groups={groups}
+              dateLabel={t("fields.at")}
+              state={auditFilterState(query)}
+              onApply={(state) =>
+                replace(auditLogHref(auditQueryParams(auditFilterFromState(query.search, state))))
+              }
             />
-          ),
-        }}
-        filter={
-          <FilterMenu
-            groups={groups}
-            dateLabel={t("fields.at")}
-            state={auditFilterState(query)}
-            onApply={(state) =>
-              replace(auditLogHref(auditQueryParams(auditFilterFromState(query.search, state))))
-            }
+          }
+        >
+          <AuditTable
+            entries={entries.items}
+            filtered={isAuditFiltered(query)}
+            hrefOf={(row) => hrefOf({ entry: row.id })}
           />
-        }
-      >
-        <AuditTable
-          entries={entries.items}
-          filtered={isAuditFiltered(query)}
-          hrefOf={(row) => hrefOf({ entry: row.id })}
-        />
 
-        {pageCount > 1 ? (
-          <Pagination
-            summary={common("pageOf", {
-              page: formatCount(page, locale),
-              count: formatCount(pageCount, locale),
-            })}
-            previousLabel={common("previousPage")}
-            nextLabel={common("nextPage")}
-            previousHref={page > 1 ? hrefOf({ page: page - 1 }) : undefined}
-            nextHref={page < pageCount ? hrefOf({ page: page + 1 }) : undefined}
-          />
-        ) : null}
-      </TablePanel>
+          {pageCount > 1 ? (
+            <Pagination
+              summary={common("pageOf", {
+                page: formatCount(page, locale),
+                count: formatCount(pageCount, locale),
+              })}
+              previousLabel={common("previousPage")}
+              nextLabel={common("nextPage")}
+              previousHref={page > 1 ? hrefOf({ page: page - 1 }) : undefined}
+              nextHref={page < pageCount ? hrefOf({ page: page + 1 }) : undefined}
+            />
+          ) : null}
+        </TablePanel>
 
-      <AuditEntryDrawer entry={entry} onClose={() => replace(hrefOf({}))} />
-    </div>
+        <AuditEntryDrawer entry={entry} onClose={() => replace(hrefOf({}))} />
+      </div>
+    </FilterSlot>
   );
 }

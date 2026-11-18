@@ -1439,7 +1439,6 @@
       "type": "Type",
       "category": "Catégorie",
       "description": "Description",
-      "reference": "Référence",
       "customer": "Client",
       "supplier": "Fournisseur",
       "amount": "Montant",

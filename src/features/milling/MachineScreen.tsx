@@ -6,6 +6,7 @@ import { ButtonLink } from "@/components/ui/ButtonLink";
 import { DetailList } from "@/components/ui/Cards";
 import { Icon } from "@/components/ui/Icon";
 import { BackLink, PageTitle } from "@/components/ui/PageHeader";
+import { FilterButtonTarget, FilterSlot, FilterSlotTarget } from "@/components/ui/FilterMenu";
 import { Tabs } from "@/components/ui/Tabs";
 import { useCan } from "@/lib/accessContext";
 import { notFound } from "@/lib/api/client";
@@ -180,56 +181,63 @@ export function MachineDetailScreen() {
   }
 
   return (
-    <div className="flex w-full flex-col gap-6">
-      <div className="flex flex-col gap-3">
-        <BackLink href={millingProjectHref(project.id)} label={common("back")} />
-        <div className="flex flex-wrap items-center gap-3">
-          <PageTitle>{t("machine.title", { number: count(machine.number) })}</PageTitle>
-          <MachineStatusLabel status={status} label={t(`statuses.${status}`)} badge />
-          <span className="text-ink-muted text-[15px] font-semibold">
-            {common("projectTitle", { name: project.name })}
-          </span>
+    <FilterSlot>
+      <div className="flex w-full flex-col gap-6">
+        <div className="flex flex-col gap-3">
+          <BackLink href={millingProjectHref(project.id)} label={common("back")} />
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <PageTitle>{t("machine.title", { number: count(machine.number) })}</PageTitle>
+              <MachineStatusLabel status={status} label={t(`statuses.${status}`)} badge />
+              <span className="text-ink-muted text-[15px] font-semibold">
+                {common("projectTitle", { name: project.name })}
+              </span>
+            </div>
+            <FilterButtonTarget />
+          </div>
         </div>
-      </div>
 
-      <section className="rounded-card shadow-subtle border-line bg-surface border-[1.5px] p-5">
-        <Tabs
-          label={t("machine.tabsLabel")}
-          items={[
-            { id: "current", label: t("machine.tabs.current"), content: currentPanel },
-            {
-              id: "maintenance",
-              label: t("machine.tabs.maintenance"),
-              content: (
-                <div className="flex flex-col gap-4">
-                  <DetailList
-                    items={[
-                      {
-                        label: t("machine.maintenance.status"),
-                        value: machine.inMaintenance
-                          ? t("machine.maintenance.underMaintenance")
-                          : t("machine.maintenance.inService"),
-                      },
-                    ]}
-                  />
-                  <p className="text-ink-muted text-[13px] font-semibold">
-                    {t("machine.maintenance.placeholder")}
-                  </p>
-                </div>
-              ),
-            },
-          ]}
+        <FilterSlotTarget />
+
+        <section className="rounded-card shadow-subtle border-line bg-surface border-[1.5px] p-5">
+          <Tabs
+            label={t("machine.tabsLabel")}
+            items={[
+              { id: "current", label: t("machine.tabs.current"), content: currentPanel },
+              {
+                id: "maintenance",
+                label: t("machine.tabs.maintenance"),
+                content: (
+                  <div className="flex flex-col gap-4">
+                    <DetailList
+                      items={[
+                        {
+                          label: t("machine.maintenance.status"),
+                          value: machine.inMaintenance
+                            ? t("machine.maintenance.underMaintenance")
+                            : t("machine.maintenance.inService"),
+                        },
+                      ]}
+                    />
+                    <p className="text-ink-muted text-[13px] font-semibold">
+                      {t("machine.maintenance.placeholder")}
+                    </p>
+                  </div>
+                ),
+              },
+            ]}
+          />
+        </section>
+
+        <MachineHistoryTable
+          project={project.id}
+          machine={machine.number}
+          list={list}
+          filter={filter}
+          first={first}
+          clientName={clientName}
         />
-      </section>
-
-      <MachineHistoryTable
-        project={project.id}
-        machine={machine.number}
-        list={list}
-        filter={filter}
-        first={first}
-        clientName={clientName}
-      />
-    </div>
+      </div>
+    </FilterSlot>
   );
 }

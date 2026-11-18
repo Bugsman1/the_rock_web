@@ -50,7 +50,7 @@ describe("CashScreen", () => {
     openAt("/fr/cash");
 
     expect(await screen.findByRole("heading", { name: title("Zouérat 1") })).toBeVisible();
-    expect(await screen.findByText("Sidi Fournitures")).toBeVisible();
+    expect(await screen.findByText(`−${money(15000)}`)).toBeVisible();
     expect(screen.queryByRole("link", { name: common.back })).toBeNull();
   });
 });

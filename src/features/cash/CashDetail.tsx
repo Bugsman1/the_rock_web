@@ -19,6 +19,7 @@ export function CashDetail({ transaction, hrefOf }: CashDetailProps) {
   const locale = useLocale();
   const can = useCan();
   const shown = (value: string) => (value === "" ? "—" : value);
+  const filled = (label: string, value: string) => (value === "" ? [] : [{ label, value }]);
   const editable = isEditable(transaction);
   const sign = transaction.type === "income" ? "+" : "−";
 
@@ -33,10 +34,10 @@ export function CashDetail({ transaction, hrefOf }: CashDetailProps) {
             label: t("fields.amount"),
             value: `${sign}${formatMoney(transaction.amount, locale)}`,
           },
-          { label: t("fields.customer"), value: shown(transaction.customerName) },
-          { label: t("fields.supplier"), value: shown(transaction.supplierName) },
+          ...filled(t("fields.customer"), transaction.customerName),
+          ...filled(t("fields.supplier"), transaction.supplierName),
           { label: t("fields.source"), value: t(`sources.${transaction.source}`) },
-          { label: t("fields.by"), value: shown(transaction.byName) },
+          ...filled(t("fields.by"), transaction.byName),
           {
             label: t("fields.status"),
             value:
@@ -48,7 +49,7 @@ export function CashDetail({ transaction, hrefOf }: CashDetailProps) {
                     date: formatDateTime(transaction.reviewedAt, locale),
                   }),
           },
-          { label: t("fields.description"), value: shown(transaction.description) },
+          ...filled(t("fields.description"), transaction.description),
         ]}
       />
 
