@@ -15,7 +15,7 @@ function tokenWithRole(role: string | null): string {
 }
 
 function answerWith(access: string) {
-  server.use(http.post(LOGIN_URL, () => HttpResponse.json({ access, refresh: "refresh-token" })));
+  server.use(http.post(LOGIN_URL, () => HttpResponse.json({ access })));
 }
 
 const values = { email: "manager@mills.mr", password: "secret123", rememberMe: true };

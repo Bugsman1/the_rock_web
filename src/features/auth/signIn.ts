@@ -14,13 +14,13 @@ export async function signIn({ email, password, rememberMe }: LoginValues): Prom
     return result;
   }
 
-  const role = decodeJwtPayload(result.tokens.access)?.role;
+  const role = decodeJwtPayload(result.access)?.role;
 
   if (typeof role !== "string" || role === "") {
     return { ok: false, reason: "noAccess" };
   }
 
-  saveSession(result.tokens, rememberMe);
+  saveSession(result.access, rememberMe);
 
   return { ok: true };
 }

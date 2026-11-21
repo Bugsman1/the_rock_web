@@ -1,16 +1,9 @@
 import { z } from "zod";
 import { connectedFetch, reportConnectionFailure, reportResponse } from "./connection";
-import type { SessionTokens } from "./session";
 
 const LOGIN_PATH = "/api/v1/auth/login/";
-const REFRESH_PATH = "/api/v1/auth/refresh/";
-const LOGOUT_PATH = "/api/v1/auth/logout/";
 
-const tokensSchema = z.object({ access: z.string().min(1), refresh: z.string().min(1) });
-const refreshedSchema = z.object({
-  access: z.string().min(1),
-  refresh: z.string().min(1).optional(),
-});
+const tokenSchema = z.object({ access: z.string().min(1) });
 
 type Credentials = {
   email: string;
@@ -18,7 +11,7 @@ type Credentials = {
 };
 
 type TokenRequestResult =
-  { ok: true; tokens: SessionTokens } | { ok: false; reason: "invalidCredentials" | "unavailable" };
+  { ok: true; access: string } | { ok: false; reason: "invalidCredentials" | "unavailable" };
 
 async function postJson(path: string, body: object): Promise<Response | undefined> {
   try {
@@ -47,27 +40,9 @@ export async function requestTokens(credentials: Credentials): Promise<TokenRequ
     return { ok: false, reason: "unavailable" };
   }
 
-  const parsed = response.ok ? tokensSchema.safeParse(await response.json()) : undefined;
+  const parsed = response.ok ? tokenSchema.safeParse(await response.json()) : undefined;
 
   return parsed?.success === true
-    ? { ok: true, tokens: parsed.data }
+    ? { ok: true, access: parsed.data.access }
     : { ok: false, reason: "invalidCredentials" };
-}
-
-export async function refreshTokens(refresh: string): Promise<SessionTokens | undefined> {
-  const response = await postJson(REFRESH_PATH, { refresh });
-
-  if (response === undefined || !response.ok) {
-    return undefined;
-  }
-
-  const parsed = refreshedSchema.safeParse(await response.json());
-
-  return parsed.success
-    ? { access: parsed.data.access, refresh: parsed.data.refresh ?? refresh }
-    : undefined;
-}
-
-export async function revokeSession(refresh: string): Promise<void> {
-  await postJson(LOGOUT_PATH, { refresh });
 }

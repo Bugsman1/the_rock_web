@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   apiClient,
   attachmentFileName,
@@ -14,11 +14,13 @@ import { isConnectionLost } from "./connection";
 import { readSession, saveSession } from "./session";
 
 const ME_URL = `${window.location.origin}/api/v1/auth/me/`;
-const REFRESH_URL = `${window.location.origin}/api/v1/auth/refresh/`;
 const server = setupServer();
 
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
-afterEach(() => server.resetHandlers());
+afterEach(() => {
+  server.resetHandlers();
+  vi.unstubAllGlobals();
+});
 afterAll(() => server.close());
 
 function tokenExpiringIn(seconds: number): string {
@@ -68,7 +70,7 @@ describe("apiClient", () => {
 
   it("sends the access token of the session", async () => {
     const access = tokenExpiringIn(600);
-    saveSession({ access, refresh: tokenExpiringIn(6000) }, true);
+    saveSession(access, true);
     const seen: { authorization?: string | null } = {};
     answerMe(seen);
 
@@ -77,89 +79,31 @@ describe("apiClient", () => {
     expect(seen.authorization).toBe(`Bearer ${access}`);
   });
 
-  it("renews an expired access token before sending the request", async () => {
-    const renewed = tokenExpiringIn(600);
-    saveSession({ access: tokenExpiringIn(-60), refresh: tokenExpiringIn(6000) }, true);
-    server.use(http.post(REFRESH_URL, () => HttpResponse.json({ access: renewed })));
+  it("never asks the server to renew an expired access token", async () => {
+    const expired = tokenExpiringIn(-60);
+    saveSession(expired, true);
     const seen: { authorization?: string | null } = {};
     answerMe(seen);
 
     await apiClient.GET("/api/v1/auth/me/");
 
-    expect(seen.authorization).toBe(`Bearer ${renewed}`);
-    expect(readSession()?.access).toBe(renewed);
+    expect(seen.authorization).toBe(`Bearer ${expired}`);
   });
 
-  it("renews only once when several requests find the access token expired", async () => {
-    const renewed = tokenExpiringIn(600);
-    const rotated = tokenExpiringIn(6000);
-    saveSession({ access: tokenExpiringIn(-60), refresh: tokenExpiringIn(6000) }, true);
-    let renewals = 0;
-    server.use(
-      http.post(REFRESH_URL, () => {
-        renewals += 1;
-        return renewals === 1
-          ? HttpResponse.json({ access: renewed, refresh: rotated })
-          : new HttpResponse(null, { status: 401 });
-      }),
-    );
-    const sent: (string | null)[] = [];
-    server.use(
-      http.get(ME_URL, ({ request }) => {
-        sent.push(request.headers.get("Authorization"));
-        return HttpResponse.json({});
-      }),
-    );
-
-    await Promise.all([
-      apiClient.GET("/api/v1/auth/me/"),
-      apiClient.GET("/api/v1/auth/me/"),
-      apiClient.GET("/api/v1/auth/me/"),
-    ]);
-
-    expect(renewals).toBe(1);
-    expect(sent).toEqual([`Bearer ${renewed}`, `Bearer ${renewed}`, `Bearer ${renewed}`]);
-    expect(readSession()).toEqual({ access: renewed, refresh: rotated });
-  });
-
-  it("keeps the session another tab renewed when its own renewal is refused", async () => {
-    const used = tokenExpiringIn(6000);
-    const elsewhere = { access: tokenExpiringIn(600), refresh: tokenExpiringIn(7000) };
-    saveSession({ access: tokenExpiringIn(-60), refresh: used }, true);
-    server.use(
-      http.post(REFRESH_URL, () => {
-        saveSession(elsewhere, true);
-        return new HttpResponse(null, { status: 401 });
-      }),
-    );
-    const seen: { authorization?: string | null } = {};
-    answerMe(seen);
-
-    await apiClient.GET("/api/v1/auth/me/");
-
-    expect(seen.authorization).toBe(`Bearer ${elsewhere.access}`);
-    expect(readSession()).toEqual(elsewhere);
-  });
-
-  it("ends the session when its renewal is refused and nothing newer was saved", async () => {
-    saveSession({ access: tokenExpiringIn(-60), refresh: tokenExpiringIn(6000) }, true);
-    server.use(http.post(REFRESH_URL, () => new HttpResponse(null, { status: 401 })));
-    const seen: { authorization?: string | null } = {};
-    answerMe(seen);
-
-    await apiClient.GET("/api/v1/auth/me/");
-
-    expect(seen.authorization).toBeNull();
-    expect(readSession()).toBeUndefined();
-  });
-
-  it("ends the session when the server refuses it", async () => {
-    saveSession({ access: tokenExpiringIn(600), refresh: tokenExpiringIn(6000) }, true);
+  it("ends the session and opens the login page when the server refuses it", async () => {
+    const replace = vi.fn();
+    vi.stubGlobal("location", {
+      origin: window.location.origin,
+      pathname: "/fr/shipments",
+      replace,
+    });
+    saveSession(tokenExpiringIn(600), true);
     server.use(http.get(ME_URL, () => new HttpResponse(null, { status: 401 })));
 
     await apiClient.GET("/api/v1/auth/me/");
 
     expect(readSession()).toBeUndefined();
+    expect(replace).toHaveBeenCalledWith("/fr/login");
   });
 });
 

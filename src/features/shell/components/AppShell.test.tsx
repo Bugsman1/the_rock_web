@@ -1,10 +1,8 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { http, HttpResponse } from "msw";
-import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { IntlProvider } from "use-intl";
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { modules, rightsFromApi } from "@/lib/access";
 import type { Access, Module } from "@/lib/access";
 import { reportConnectionFailure, reportResponse } from "@/lib/api/connection";
@@ -13,13 +11,6 @@ import messages from "@/messages/fr.json";
 import { AppShell } from "./AppShell";
 
 const nav = messages.shell.nav;
-
-const LOGOUT_URL = `${window.location.origin}/api/v1/auth/logout/`;
-const server = setupServer();
-
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
 
 function viewing(viewable: readonly Module[]): Access {
   return {
@@ -181,28 +172,8 @@ describe("AppShell", () => {
     expect(phoneMenuButton()).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("signs out, cancels the session on the server and returns to the login page", async () => {
-    saveSession({ access: "access-token", refresh: "refresh-token" }, true);
-    const revoked: unknown[] = [];
-    server.use(
-      http.post(LOGOUT_URL, async ({ request }) => {
-        revoked.push(await request.json());
-        return new HttpResponse(null, { status: 204 });
-      }),
-    );
-    const user = userEvent.setup();
-    renderShell();
-
-    await user.click(screen.getByRole("button", { name: messages.shell.logout }));
-
-    expect(readSession()).toBeUndefined();
-    expect(screen.getByText("login page")).toBeInTheDocument();
-    await waitFor(() => expect(revoked).toEqual([{ refresh: "refresh-token" }]));
-  });
-
-  it("still signs out when the server cannot be reached", async () => {
-    saveSession({ access: "access-token", refresh: "refresh-token" }, true);
-    server.use(http.post(LOGOUT_URL, () => HttpResponse.error()));
+  it("signs out by erasing the token and returns to the login page", async () => {
+    saveSession("access-token", true);
     const user = userEvent.setup();
     renderShell();
 

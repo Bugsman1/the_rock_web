@@ -4,9 +4,7 @@ import { z } from "zod";
 import type { Middleware } from "openapi-fetch";
 import { defaultLocale, isLocale } from "@/i18n/locales";
 import { localizedHref } from "@/i18n/navigation";
-import { isTokenExpired } from "@/lib/jwt";
 import { LOGIN_HREF } from "@/lib/routes";
-import { refreshTokens } from "./auth";
 import {
   CONNECTION_LOST_STATUS,
   isUnreachableStatus,
@@ -16,61 +14,11 @@ import {
 } from "./connection";
 import type { Readable } from "openapi-typescript-helpers";
 import type { components, paths } from "./schema";
-import { clearSession, readSession, updateSession } from "./session";
-import type { SessionTokens } from "./session";
-
-let pendingRenewal: Promise<SessionTokens | undefined> | undefined;
-
-function renewOnce(refresh: string): Promise<SessionTokens | undefined> {
-  pendingRenewal ??= refreshTokens(refresh).finally(() => {
-    pendingRenewal = undefined;
-  });
-
-  return pendingRenewal;
-}
-
-function renewedElsewhere(used: SessionTokens, now: Date): string | undefined {
-  const latest = readSession();
-
-  return latest !== undefined &&
-    latest.refresh !== used.refresh &&
-    !isTokenExpired(latest.access, now)
-    ? latest.access
-    : undefined;
-}
-
-async function currentAccessToken(now: Date): Promise<string | undefined> {
-  const session = readSession();
-
-  if (session === undefined) {
-    return undefined;
-  }
-
-  if (!isTokenExpired(session.access, now)) {
-    return session.access;
-  }
-
-  const tokens = isTokenExpired(session.refresh, now)
-    ? undefined
-    : await renewOnce(session.refresh);
-
-  if (tokens === undefined) {
-    const access = renewedElsewhere(session, now);
-
-    if (access === undefined) {
-      clearSession();
-    }
-
-    return access;
-  }
-
-  updateSession(tokens);
-  return tokens.access;
-}
+import { clearSession, readSession } from "./session";
 
 const sessionMiddleware: Middleware = {
-  async onRequest({ request }) {
-    const token = await currentAccessToken(new Date());
+  onRequest({ request }) {
+    const token = readSession();
 
     request.headers.set("Accept-Language", document.documentElement.lang);
 
@@ -83,6 +31,7 @@ const sessionMiddleware: Middleware = {
   onResponse({ response }) {
     if (response.status === 401) {
       clearSession();
+      window.location.replace(localizedHref(currentLocale(), LOGIN_HREF));
     }
 
     return response;

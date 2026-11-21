@@ -27,7 +27,7 @@ function signIn() {
   const exp = Math.floor(Date.now() / 1000) + 3600;
   const token = `header.${btoa(JSON.stringify({ exp, role: "manager" })).replace(/=+$/, "")}.signature`;
 
-  saveSession({ access: token, refresh: token }, true);
+  saveSession(token, true);
 }
 
 function answerMe(fullName: string, role = "manager", viewable: readonly Module[] = modules) {
