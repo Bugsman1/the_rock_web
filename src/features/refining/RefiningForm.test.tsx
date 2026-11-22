@@ -75,15 +75,19 @@ describe("RefiningForm", () => {
     );
   });
 
-  it("names the gold refiner chosen, and none until one is chosen", async () => {
+  it("asks for a gold refiner before saving, and sends the one chosen", async () => {
     renderForm();
     const refiner = screen.getByLabelText(fields.refiner);
 
     expect(refiner).toHaveValue("");
     expect(screen.getByRole("option", { name: "Brahim · SAF-1" })).toBeInTheDocument();
 
+    await userEvent.click(screen.getByRole("button", { name: text.form.submit }));
+
+    await waitFor(() => expect(refiner).toHaveAttribute("aria-invalid", "true"));
+    expect(api.createRefiningOperation).not.toHaveBeenCalled();
+
     const user = await fillRefiningForm("120.5", "118.25", "14.3");
-    await user.selectOptions(refiner, "21");
     await user.click(screen.getByRole("button", { name: text.form.submit }));
 
     await waitFor(() =>
@@ -100,6 +104,7 @@ describe("RefiningForm", () => {
 
     expect(screen.queryByLabelText(fields.worker)).not.toBeInTheDocument();
 
+    await user.selectOptions(screen.getByLabelText(fields.refiner), "21");
     await user.type(screen.getByLabelText(fields.weightBefore), "10");
     await user.type(screen.getByLabelText(fields.weightAfter), "10");
     await user.type(screen.getByLabelText(fields.goldWithMaterial), "2");
@@ -134,7 +139,7 @@ describe("RefiningForm", () => {
 
     await user.click(screen.getByRole("button", { name: text.form.submit }));
 
-    expect(await screen.findAllByText(messages.common.validation.required)).toHaveLength(5);
+    expect(await screen.findAllByText(messages.common.validation.required)).toHaveLength(6);
     expect(api.createRefiningOperation).not.toHaveBeenCalled();
   });
 

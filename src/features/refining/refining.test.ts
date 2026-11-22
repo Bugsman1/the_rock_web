@@ -29,7 +29,7 @@ const messages = {
 
 const values: RefiningValues = {
   workerId: "2",
-  refinerId: "",
+  refinerId: "9",
   date: "2026-10-12",
   time: "09:30",
   weightBefore: 120.5,
@@ -127,17 +127,19 @@ describe("createRefiningSchema", () => {
     expect(errorsOf(values)).toEqual({});
   });
 
-  it("requires the worker and the weights, but not yet the gold without material", () => {
+  it("requires the worker, the refiner and the weights, but not yet the gold without material", () => {
     expect(
       errorsOf({
         ...values,
         workerId: "",
+        refinerId: "",
         weightBefore: Number.NaN,
         goldWithMaterial: Number.NaN,
         goldWithoutMaterial: Number.NaN,
       }),
     ).toEqual({
       workerId: "required",
+      refinerId: "required",
       weightBefore: "required",
       goldWithMaterial: "required",
     });
@@ -181,7 +183,7 @@ describe("refiningToApi", () => {
     ).toEqual({
       grinding_operation: 5,
       worker: 2,
-      refiner: null,
+      refiner: 9,
       refining_date: "2026-10-12T09:30:00.000Z",
       weight_before: "120.500",
       weight_after: "118.250",
@@ -190,13 +192,6 @@ describe("refiningToApi", () => {
       loss_reason: "normalShortage",
       notes: "",
     });
-  });
-
-  it("sends the gold refiner chosen, or none", () => {
-    const target = { grindingOperationId: "5", refinedAt: "2026-10-12T09:30:00.000Z" };
-
-    expect(refiningToApi({ ...values, refinerId: "9" }, target).refiner).toBe(9);
-    expect(refiningToApi(values, target).refiner).toBeNull();
   });
 
   it("sends no loss reason when nothing was lost or more came back", () => {
@@ -240,7 +235,7 @@ describe("editing a refining", () => {
   it("sends only what can change after the refining was recorded, an empty gold as not weighed", () => {
     expect(refiningUpdateToApi({ ...values, goldWithoutMaterial: Number.NaN })).toEqual({
       worker: Number(values.workerId),
-      refiner: null,
+      refiner: 9,
       weight_after: toDecimal(values.weightAfter),
       gold_weight_with_mercury: toDecimal(values.goldWithMaterial),
       gold_weight_without_mercury: null,

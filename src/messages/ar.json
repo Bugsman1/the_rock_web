@@ -815,7 +815,7 @@
       "weightBefore": "وزن المادة قبل التصفية (غ)",
       "weightAfter": "وزن المادة بعد التصفية (غ)",
       "goldWithMaterial": "الذهب مع المادة (غ)",
-      "goldWithoutMaterial": "الذهب بدون المادة (غ)",
+      "goldWithoutMaterial": "الذهب الصافي (غ)",
       "loss": "الخسارة (غ)",
       "surplus": "الفائض (غ)",
       "lossReason": "سبب الخسارة",
@@ -826,7 +826,7 @@
     },
     "form": {
       "workerPlaceholder": "اختر المسؤول",
-      "noRefiner": "بدون صفّاي",
+      "refinerPlaceholder": "اختر الصفّاي",
       "submit": "تسجيل التصفية",
       "saving": "جارٍ تسجيل التصفية",
       "lossReasonPlaceholder": "اختر سبب الخسارة",
@@ -835,7 +835,7 @@
     "errors": {
       "weightInvalid": "أدخل وزنًا صحيحًا",
       "goldTooHeavy": "لا يمكن أن يزن الذهب أكثر من المادة المصفّاة",
-      "withoutMaterialTooHeavy": "يجب أن يكون الذهب بدون المادة أقل من الذهب مع المادة"
+      "withoutMaterialTooHeavy": "يجب أن يكون الذهب الصافي أقل من الذهب مع المادة"
     },
     "lossReasons": {
       "normalShortage": "نقص عادي",

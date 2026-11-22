@@ -826,7 +826,7 @@
     },
     "form": {
       "workerPlaceholder": "Choisir le responsable",
-      "noRefiner": "Aucun affineur",
+      "refinerPlaceholder": "Choisir l'affineur",
       "submit": "Enregistrer l'affinage",
       "saving": "Enregistrement de l'affinage",
       "lossReasonPlaceholder": "Choisir la raison de la perte",

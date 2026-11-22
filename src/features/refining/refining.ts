@@ -123,7 +123,7 @@ export function createRefiningSchema(messages: {
   return z
     .object({
       workerId: z.string().min(1, messages.required),
-      refinerId: z.string(),
+      refinerId: z.string().min(1, messages.required),
       date: z
         .string()
         .min(1, { message: messages.required, abort: true })
@@ -208,7 +208,7 @@ export type RefiningTarget = {
 export function refiningUpdateToApi(values: RefiningValues) {
   return {
     worker: Number(values.workerId),
-    refiner: values.refinerId === "" ? null : Number(values.refinerId),
+    refiner: Number(values.refinerId),
     weight_after: toDecimal(values.weightAfter),
     gold_weight_with_mercury: toDecimal(values.goldWithMaterial),
     gold_weight_without_mercury: Number.isFinite(values.goldWithoutMaterial)

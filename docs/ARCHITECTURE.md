@@ -592,8 +592,8 @@ grinding).
 (`grinding_operation`, also returned in responses). The form first shows the grinding read-only (shipment, client,
 project, machine, operator, bags ground, start, end). A refining always covers exactly the bags of its
 grinding (no bags input; the backend sets `bags_count` itself). Form fields: worker, gold refiner
-(optional, "no refiner" by default: the project's `SAF` employees still employed from `/refiners/`,
-shown as name and matricule; sent as `refiner`, `null` for none; the backend pays the refiner its
+(required: no refiner chosen by default, the form cannot be saved until one is; the project's `SAF` employees still employed from `/refiners/`,
+shown as name and matricule; sent as `refiner`; the backend pays the refiner its
 gold without material × their cost per gram; the refinings table has a refiner column), date, weight
 before and after, gold with material and gold without material (without strictly less than with, or both 0, checked
 as soon as either is typed; without ≤ weight before; weight after may be more than before, backend

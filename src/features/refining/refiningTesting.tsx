@@ -312,6 +312,7 @@ export function readOnlyField(label: string) {
 export async function fillRefiningForm(before: string, after: string, goldWithout: string) {
   const user = userEvent.setup();
   await user.selectOptions(screen.getByLabelText(text.fields.worker), "4");
+  await user.selectOptions(screen.getByLabelText(text.fields.refiner), "21");
   await user.type(screen.getByLabelText(text.fields.weightBefore), before);
   await user.type(screen.getByLabelText(text.fields.weightAfter), after);
   await user.type(

@@ -140,6 +140,7 @@ describe("RefiningForm weights, loss and surplus", () => {
     const user = userEvent.setup();
 
     await user.selectOptions(screen.getByLabelText(fields.worker), "4");
+    await user.selectOptions(screen.getByLabelText(fields.refiner), "21");
     await user.type(screen.getByLabelText(fields.weightAfter), "130");
     await user.type(screen.getByLabelText(fields.goldWithMaterial), "2");
 

@@ -204,13 +204,12 @@ export function RefiningForm({
         <Select
           id="refining-refiner"
           label={t("fields.refiner")}
-          options={[
-            { value: "", label: t("form.noRefiner") },
-            ...refiners.map((refiner) => ({
-              value: refiner.id,
-              label: `${refiner.name} · ${refiner.matricule}`,
-            })),
-          ]}
+          required
+          placeholder={t("form.refinerPlaceholder")}
+          options={refiners.map((refiner) => ({
+            value: refiner.id,
+            label: `${refiner.name} · ${refiner.matricule}`,
+          }))}
           error={errors.refinerId?.message}
           {...register("refinerId")}
         />
