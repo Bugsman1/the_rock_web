@@ -1427,7 +1427,8 @@
       "capital": "Capital",
       "income": "Entrées",
       "expense": "Dépenses",
-      "balance": "Solde"
+      "balance": "Solde",
+      "refinersBalance": "Caisse des affineurs"
     },
     "list": {
       "title": "Mouvements",
@@ -1448,11 +1449,16 @@
       "status": "Statut",
       "actions": "Actions",
       "categoryName": "Nom de la dépense",
-      "source": "Origine"
+      "source": "Origine",
+      "cashBox": "Caisse"
     },
     "types": {
       "income": "Entrée",
       "expense": "Dépense"
+    },
+    "cashBoxes": {
+      "project": "Caisse du projet",
+      "refiners": "Caisse des affineurs"
     },
     "edit": "Modifier",
     "delete": "Supprimer",
@@ -1481,7 +1487,9 @@
       "supplier_payment": "Paiement fournisseur",
       "debt_payment": "Paiement de dette client",
       "shipment_payment": "Paiement du transport d'une expédition",
-      "settlement_return": "Retour d'une expédition réglée"
+      "settlement_return": "Retour d'une expédition réglée",
+      "employee_withdrawal": "Retrait d'un employé",
+      "refining": "Paie d'un affineur"
     },
     "statuses": {
       "pending": "En attente",
@@ -1508,6 +1516,7 @@
       "empty": "Aucun mouvement approuvé sur cette période."
     },
     "summary": "Résumé",
+    "summaryEmpty": "Aucun résumé pour ce projet.",
     "returns": "Retours",
     "losses": "Pertes",
     "fields": {

@@ -7,6 +7,7 @@ import type { CashTransaction } from "@/lib/cashTransactions";
 import { isRecordId } from "@/lib/projects";
 import type { ProjectId } from "@/lib/projects";
 import {
+  isRefinersHalfOfPay,
   payablesFromApi,
   profitAndLossFromApi,
   projectProfitFromApi,
@@ -51,12 +52,16 @@ export async function getProfitAndLoss(project: ProjectId, period: Period): Prom
   return profitAndLossFromApi(unwrap(result));
 }
 
-export async function getSummary(project: ProjectId, period: Period): Promise<AccountingSummary> {
+export async function getSummary(
+  project: ProjectId,
+  period: Period,
+): Promise<AccountingSummary | undefined> {
   const result = await apiClient.GET("/api/v1/accounting/summary/", {
     params: { query: reportQuery(period, project) },
   });
+  const row = unwrap(result).find((summary) => String(summary.project) === project);
 
-  return summaryFromApi(unwrap(result));
+  return row === undefined ? undefined : summaryFromApi(row);
 }
 
 export async function getReceivables(project: ProjectId): Promise<Receivables> {
@@ -83,7 +88,12 @@ export async function getPendingPage(
     params: { query: { project: Number(project), status: "pending", page, page_size: PAGE_SIZE } },
   });
 
-  return toPage(unwrap(result), page, transactionFromApi);
+  const pending = toPage(unwrap(result), page, transactionFromApi);
+
+  return {
+    ...pending,
+    items: pending.items.filter((transaction) => !isRefinersHalfOfPay(transaction)),
+  };
 }
 
 export async function getShipmentReturns(project: ProjectId): Promise<readonly ShipmentReturn[]> {

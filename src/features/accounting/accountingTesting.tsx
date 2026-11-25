@@ -82,6 +82,10 @@ export const pendingExpense: ApiSchema<"CashTransaction"> = {
   grinder: null,
   grinder_code: "",
   source: "manual",
+  cash_box: "project",
+  cash_box_display: "Caisse du projet",
+  employee_withdrawal: null,
+  refining_operation: null,
   supplier_payment: null,
   debt_payment: null,
   shipment_payment: null,
@@ -160,19 +164,24 @@ export function serveAccounting(asked: Asked, sent: Sent[] = []) {
       }),
       http.get(`${API}/accounting/summary/`, ({ request }) => {
         remember("summary", request);
-        return HttpResponse.json({
-          total_income: "90000.00",
-          total_expense: "20000.00",
-          net_profit: "70000.00",
-          total_returns: "60000.00",
-          total_losses: "5000.00",
-          receivables: "0.00",
-          payables: "0.00",
-          supplier_advances: "0.00",
-          capital: "1000000.00",
-          cash_balance: "1070000.00",
-          unapproved_transactions: 2,
-        });
+        return HttpResponse.json([
+          {
+            project: 3,
+            project_name: "Zouérat 1",
+            project_site: "zouerat",
+            total_income: "90000.00",
+            total_expense: "20000.00",
+            net_profit: "70000.00",
+            total_returns: "60000.00",
+            total_losses: "5000.00",
+            receivables: "0.00",
+            payables: "0.00",
+            supplier_advances: "0.00",
+            capital: "1000000.00",
+            cash_balance: "1070000.00",
+            unapproved_transactions: 2,
+          },
+        ]);
       }),
       http.get(`${API}/cash-transactions/`, ({ request }) => {
         remember("pending", request);

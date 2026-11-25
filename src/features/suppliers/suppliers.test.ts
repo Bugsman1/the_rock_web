@@ -22,6 +22,7 @@ const apiSupplier = {
     { id: 2, name: "mercury", project: 3, project_name: "Zouérat 1", is_stockable: true },
     { id: 8, name: "Chaux", project: 3, project_name: "Zouérat 1", is_stockable: true },
   ],
+  projects: [],
   created_at: "2026-10-12T08:00:00Z",
   updated_at: "2026-10-12T08:00:00Z",
 };

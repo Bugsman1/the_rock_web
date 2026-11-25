@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { transactionFromApi } from "@/lib/cashTransactions";
+import { pendingExpense } from "./accountingTesting";
 import {
   currentMonth,
+  isRefinersHalfOfPay,
   periodFromParams,
   periodParams,
   profitAndLossFromApi,
@@ -41,6 +44,28 @@ describe("periodParams", () => {
   });
 });
 
+describe("isRefinersHalfOfPay", () => {
+  it("picks only the refiners' cash half of a refiner's pay", () => {
+    const pay = {
+      ...pendingExpense,
+      source: "refining" as const,
+      category: "refiners_pay" as const,
+    };
+
+    expect(isRefinersHalfOfPay(transactionFromApi({ ...pay, cash_box: "refiners" }))).toBe(true);
+    expect(isRefinersHalfOfPay(transactionFromApi({ ...pay, cash_box: "project" }))).toBe(false);
+    expect(
+      isRefinersHalfOfPay(
+        transactionFromApi({
+          ...pendingExpense,
+          source: "employee_withdrawal",
+          cash_box: "refiners",
+        }),
+      ),
+    ).toBe(false);
+  });
+});
+
 describe("report mapping", () => {
   it("reads the backend's amounts as numbers", () => {
     expect(
@@ -78,6 +103,9 @@ describe("report mapping", () => {
   it("reads the summary's figures and the movements waiting for approval", () => {
     expect(
       summaryFromApi({
+        project: 3,
+        project_name: "Zouérat 1",
+        project_site: "zouerat",
         total_income: "90000.00",
         total_expense: "20000.00",
         net_profit: "70000.00",

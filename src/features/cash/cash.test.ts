@@ -50,6 +50,7 @@ describe("transactionFromApi", () => {
       supplier: "5",
       supplierName: "Sidi Fournitures",
       source: "manual",
+      cashBox: "project",
       manual: true,
       status: "pending",
       reviewedAt: undefined,
@@ -102,7 +103,7 @@ describe("isEditable", () => {
 });
 
 describe("balanceFromApi", () => {
-  it("reads the backend's capital, income, expenses and balance of a project", () => {
+  it("reads the project's own cash apart from its refiners' cash", () => {
     expect(
       balanceFromApi({
         project: 4,
@@ -112,7 +113,11 @@ describe("balanceFromApi", () => {
         income: "0.00",
         expense: "2000.00",
         net: "-2000.00",
-        balance: "-2000.00",
+        owner_balance: "-2000.00",
+        refiners_income: "500.00",
+        refiners_expense: "0.00",
+        refiners_balance: "500.00",
+        balance: "-1500.00",
       }),
     ).toEqual({
       project: "4",
@@ -120,7 +125,8 @@ describe("balanceFromApi", () => {
       capital: 0,
       income: 0,
       expense: 2000,
-      balance: -2000,
+      ownerBalance: -2000,
+      refinersBalance: 500,
     });
   });
 });

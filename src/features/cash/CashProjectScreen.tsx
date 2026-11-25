@@ -4,8 +4,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { useCustomerSearch } from "@/components/customers/useCustomerSearch";
 import { ButtonLink } from "@/components/ui/ButtonLink";
-import { DeleteDrawer } from "@/components/ui/DeleteDrawer";
-import { Drawer, useRouteDrawer } from "@/components/ui/Drawer";
+import { useRouteDrawer } from "@/components/ui/Drawer";
 import { FilterMenu } from "@/components/ui/FilterMenu";
 import type { FilterMenuGroup } from "@/components/ui/FilterMenu";
 import { Icon } from "@/components/ui/Icon";
@@ -17,23 +16,14 @@ import { useReplace } from "@/i18n/navigation";
 import { useCan } from "@/lib/accessContext";
 import { notFound, tryLoad } from "@/lib/api/client";
 import { getCustomer } from "@/lib/customersApi";
-import { formatCount, formatDateTime, formatMoney } from "@/lib/format";
+import { formatCount } from "@/lib/format";
 import { findProject, isInService, rowOfProject } from "@/lib/projects";
-import type { Project } from "@/lib/projects";
 import { getProjects } from "@/lib/projectsApi";
 import { CASH_HREF, cashProjectHref } from "@/lib/routes";
 import { getSupplierChoices } from "@/lib/suppliersApi";
-import { isEditable, transactionTypes } from "./cash";
-import type { CashTransaction } from "@/lib/cashTransactions";
-import {
-  deleteTransaction,
-  getBalances,
-  getCategories,
-  getTransaction,
-  getTransactionPage,
-} from "./cashApi";
-import { CashDetail } from "./CashDetail";
-import { CashForm } from "./CashForm";
+import { cashBoxes, transactionTypes } from "./cash";
+import { getBalances, getCategories, getTransaction, getTransactionPage } from "./cashApi";
+import { CashDrawers } from "./CashDrawers";
 import type { CashChoices } from "./CashForm";
 import {
   cashFilterFromState,
@@ -42,7 +32,7 @@ import {
   cashQueryParams,
   isCashFiltered,
 } from "./cashQuery";
-import type { CashDrawer, CashQuery } from "./cashQuery";
+import type { CashDrawer } from "./cashQuery";
 import { useBalanceStats } from "./CashScreen";
 import { TransactionTable } from "./CashTables";
 
@@ -91,6 +81,12 @@ function useFilterGroups({ categories, suppliers }: CashChoices): FilterMenuGrou
       options: transactionTypes.map((type) => ({ value: type, label: t(`types.${type}`) })),
     },
     {
+      key: "cashBox",
+      label: t("fields.cashBox"),
+      single: true,
+      options: cashBoxes.map((box) => ({ value: box, label: t(`cashBoxes.${box}`) })),
+    },
+    {
       key: "category",
       label: t("fields.category"),
       options: categories.map((category) => ({ value: category.value, label: category.label })),
@@ -106,85 +102,6 @@ function useFilterGroups({ categories, suppliers }: CashChoices): FilterMenuGrou
           },
         ]),
   ];
-}
-
-type CashDrawersProps = {
-  project: Project;
-  hrefOf: (drawer: CashDrawer) => string;
-  query: CashQuery;
-  transaction: CashTransaction | undefined;
-  choices: CashChoices;
-  close: () => void;
-};
-
-function CashDrawers({ project, hrefOf, query, transaction, choices, close }: CashDrawersProps) {
-  const t = useTranslations("cash");
-  const common = useTranslations("common");
-  const toasts = useTranslations("toasts");
-  const locale = useLocale();
-  const can = useCan();
-  const drawer = query.drawer;
-  const creating = drawer?.kind === "new" && can("cash", "add") ? drawer.type : undefined;
-  const editable = transaction !== undefined && isEditable(transaction) ? transaction : undefined;
-  const viewing = drawer?.kind === "view" ? transaction : undefined;
-  const editing = drawer?.kind === "edit" && can("cash", "edit") ? editable : undefined;
-  const removing = drawer?.kind === "delete" && can("cash", "delete") ? editable : undefined;
-  const formType = creating ?? editing?.type;
-
-  return (
-    <>
-      <Drawer
-        open={viewing !== undefined}
-        title={t("detailTitle")}
-        closeLabel={common("close")}
-        onClose={close}
-      >
-        {viewing === undefined ? null : <CashDetail transaction={viewing} hrefOf={hrefOf} />}
-      </Drawer>
-
-      <Drawer
-        open={formType !== undefined}
-        title={
-          editing !== undefined
-            ? t("form.editTitle")
-            : t(creating === "expense" ? "form.expenseTitle" : "form.incomeTitle")
-        }
-        closeLabel={common("close")}
-        onClose={close}
-      >
-        {formType === undefined ? null : (
-          <CashForm
-            key={editing?.id ?? formType}
-            project={project}
-            type={formType}
-            transaction={editing}
-            choices={choices}
-            onSaved={close}
-            onCancel={close}
-          />
-        )}
-      </Drawer>
-
-      <DeleteDrawer
-        key={removing?.id ?? "none"}
-        open={removing !== undefined}
-        title={t("remove.title")}
-        question={t("remove.question", {
-          description: removing?.description ?? "",
-          amount: formatMoney(removing?.amount ?? 0, locale),
-          date: removing === undefined ? "" : formatDateTime(removing.at, locale),
-        })}
-        deletedMessage={toasts("cashDeleted")}
-        onDelete={() =>
-          removing === undefined
-            ? Promise.resolve({ ok: false, reason: undefined })
-            : deleteTransaction(removing.id)
-        }
-        onDeleted={close}
-        onClose={close}
-      />
-    </>
-  );
 }
 
 export function CashProjectScreen() {

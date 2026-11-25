@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/client";
-import type { CashStatus } from "@/lib/cashTransactions";
+import type { CashStatus, CashTransaction } from "@/lib/cashTransactions";
 import { isIsoDate, todayAsInputValue } from "@/lib/datetime";
 import { fromDecimal, toMoneyDecimal } from "@/lib/format";
 import { isRecordId } from "@/lib/projects";
@@ -103,6 +103,10 @@ export function profitAndLossFromApi(report: ApiSchema<"ProfitAndLoss">): Profit
     totalExpense: fromDecimal(report.total_expense),
     netProfit: fromDecimal(report.net_profit),
   };
+}
+
+export function isRefinersHalfOfPay(transaction: CashTransaction): boolean {
+  return transaction.source === "refining" && transaction.cashBox === "refiners";
 }
 
 export function summaryFromApi(summary: ApiSchema<"FinancialSummary">): AccountingSummary {

@@ -40,6 +40,7 @@ export function CashDetail({ transaction, hrefOf }: CashDetailProps) {
           ...(transaction.supplier === undefined
             ? []
             : filled(t("fields.supplier"), transaction.supplierName)),
+          { label: t("fields.cashBox"), value: t(`cashBoxes.${transaction.cashBox}`) },
           { label: t("fields.source"), value: t(`sources.${transaction.source}`) },
           ...filled(t("fields.by"), transaction.byName),
           {

@@ -6,6 +6,8 @@ export type TransactionType = ApiSchema<"TransactionTypeEnum">;
 
 export type CashStatus = ApiSchema<"CashTransactionStatusEnum">;
 
+export type CashBox = ApiSchema<"CashBoxEnum">;
+
 export type CashTransaction = {
   id: string;
   project: string;
@@ -22,6 +24,7 @@ export type CashTransaction = {
   supplier: string | undefined;
   supplierName: string;
   source: ApiSchema<"SourceEnum">;
+  cashBox: CashBox;
   manual: boolean;
   status: CashStatus;
   reviewedAt: IsoTimestamp | undefined;
@@ -54,6 +57,7 @@ export function transactionFromApi(transaction: ApiSchema<"CashTransaction">): C
     supplier: optionalId(transaction.supplier),
     supplierName: transaction.supplier_name,
     source: transaction.source,
+    cashBox: transaction.cash_box,
     manual: transaction.source === "manual",
     status: transaction.status,
     reviewedAt:

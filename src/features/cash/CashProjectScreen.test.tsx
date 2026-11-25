@@ -108,10 +108,11 @@ describe("CashProjectScreen", () => {
         return page([]);
       }),
     );
-    openAt("/fr/cash/projects/3?type=expense&category=fuel&from=2026-11-01&q=gasoil");
+    openAt("/fr/cash/projects/3?type=expense&box=refiners&category=fuel&from=2026-11-01&q=gasoil");
 
     expect(await screen.findByText(text.list.noResults)).toBeVisible();
     expect(asked?.get("transaction_type")).toBe("expense");
+    expect(asked?.get("cash_box")).toBe("refiners");
     expect(asked?.getAll("category__in")).toEqual(["fuel"]);
     expect(asked?.get("project")).toBe("3");
     expect(asked?.get("transaction_date__date__gte")).toBe("2026-11-01");

@@ -130,11 +130,12 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Approved income, expenses and net profit, and the settlements' returns and losses,
-         *     over the filtered period; and as of now the receivables, payables, supplier advances,
-         *     the projects' capital and cash balance and how many transactions wait for review.
+         * @description Per active project (by name; ?project= / ?site= narrow them): approved income,
+         *     expenses and net profit, and the settlements' returns and losses, over the filtered
+         *     period; and as of now its receivables, payables, supplier advances, capital and cash
+         *     balance and how many of its transactions wait for review.
          */
-        get: operations["accounting_summary_retrieve"];
+        get: operations["accounting_summary_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -212,10 +213,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * @description Takes a set of user credentials and returns an access and refresh JSON web
-         *     token pair to prove the authentication of those credentials.
-         */
+        /** @description Email and password in, {"access": ...} out: the session token, never refreshed. */
         post: operations["auth_login_create"];
         delete?: never;
         options?: never;
@@ -233,10 +231,9 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * @description Blacklists the refresh token sent, so it can no longer be refreshed: 204 on success, 401
-         *     when it is invalid, expired or already blacklisted. Open without an access token, so a user
-         *     whose access token has expired can still log out; the access token itself stays valid until
-         *     it expires.
+         * @description Blacklists the session token the request is authenticated with, so it is refused from
+         *     then on: 204, or 401 when it is missing, invalid, expired or already blacklisted. The user's
+         *     other sessions are unaffected.
          */
         post: operations["auth_logout_create"];
         delete?: never;
@@ -262,26 +259,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/auth/refresh/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * @description Takes a refresh type JSON web token and returns an access type JSON web
-         *     token if the refresh token is valid.
-         */
-        post: operations["auth_refresh_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/cash-transactions/": {
         parameters: {
             query?: never;
@@ -293,11 +270,15 @@ export interface paths {
          * @description The cash of each project: its income and expenses, newest first. Every transaction
          *     starts pending (?status=pending|approved|rejected); a project's balance
          *     (/cash-transactions/balance/) is its capital plus its approved income less its approved
-         *     expenses. Manual transactions are written here; the automatic ones (supplier, shipment
-         *     transport and customer debt payments, settlement returns) are read-only and follow
-         *     their source. Any of them is approved or rejected after review (the accounting module's
-         *     edit permission), which locks it and its source until it is unapproved. The accounting
-         *     reports read these same rows, approved ones only.
+         *     expenses, in its own cash box (?cash_box=project); its gold refiners' cash box
+         *     (?cash_box=refiners) holds their pay apart: what their weighed refinings earned them (each
+         *     an expense of the project's cash too) less what they withdrew. Manual transactions are
+         *     written here, in the project's cash; the automatic ones (supplier, shipment transport and
+         *     customer debt payments, settlement returns, employee withdrawals, refiners' pay) are
+         *     read-only and follow their source. Any of them is approved or rejected after review (the
+         *     accounting module's edit permission; a refiner's pay, both halves together), which locks
+         *     it and its source until it is unapproved. The accounting reports read the project's own
+         *     cash, approved rows only.
          */
         get: operations["cash_transactions_list"];
         put?: never;
@@ -305,11 +286,15 @@ export interface paths {
          * @description The cash of each project: its income and expenses, newest first. Every transaction
          *     starts pending (?status=pending|approved|rejected); a project's balance
          *     (/cash-transactions/balance/) is its capital plus its approved income less its approved
-         *     expenses. Manual transactions are written here; the automatic ones (supplier, shipment
-         *     transport and customer debt payments, settlement returns) are read-only and follow
-         *     their source. Any of them is approved or rejected after review (the accounting module's
-         *     edit permission), which locks it and its source until it is unapproved. The accounting
-         *     reports read these same rows, approved ones only.
+         *     expenses, in its own cash box (?cash_box=project); its gold refiners' cash box
+         *     (?cash_box=refiners) holds their pay apart: what their weighed refinings earned them (each
+         *     an expense of the project's cash too) less what they withdrew. Manual transactions are
+         *     written here, in the project's cash; the automatic ones (supplier, shipment transport and
+         *     customer debt payments, settlement returns, employee withdrawals, refiners' pay) are
+         *     read-only and follow their source. Any of them is approved or rejected after review (the
+         *     accounting module's edit permission; a refiner's pay, both halves together), which locks
+         *     it and its source until it is unapproved. The accounting reports read the project's own
+         *     cash, approved rows only.
          */
         post: operations["cash_transactions_create"];
         delete?: never;
@@ -329,22 +314,30 @@ export interface paths {
          * @description The cash of each project: its income and expenses, newest first. Every transaction
          *     starts pending (?status=pending|approved|rejected); a project's balance
          *     (/cash-transactions/balance/) is its capital plus its approved income less its approved
-         *     expenses. Manual transactions are written here; the automatic ones (supplier, shipment
-         *     transport and customer debt payments, settlement returns) are read-only and follow
-         *     their source. Any of them is approved or rejected after review (the accounting module's
-         *     edit permission), which locks it and its source until it is unapproved. The accounting
-         *     reports read these same rows, approved ones only.
+         *     expenses, in its own cash box (?cash_box=project); its gold refiners' cash box
+         *     (?cash_box=refiners) holds their pay apart: what their weighed refinings earned them (each
+         *     an expense of the project's cash too) less what they withdrew. Manual transactions are
+         *     written here, in the project's cash; the automatic ones (supplier, shipment transport and
+         *     customer debt payments, settlement returns, employee withdrawals, refiners' pay) are
+         *     read-only and follow their source. Any of them is approved or rejected after review (the
+         *     accounting module's edit permission; a refiner's pay, both halves together), which locks
+         *     it and its source until it is unapproved. The accounting reports read the project's own
+         *     cash, approved rows only.
          */
         get: operations["cash_transactions_retrieve"];
         /**
          * @description The cash of each project: its income and expenses, newest first. Every transaction
          *     starts pending (?status=pending|approved|rejected); a project's balance
          *     (/cash-transactions/balance/) is its capital plus its approved income less its approved
-         *     expenses. Manual transactions are written here; the automatic ones (supplier, shipment
-         *     transport and customer debt payments, settlement returns) are read-only and follow
-         *     their source. Any of them is approved or rejected after review (the accounting module's
-         *     edit permission), which locks it and its source until it is unapproved. The accounting
-         *     reports read these same rows, approved ones only.
+         *     expenses, in its own cash box (?cash_box=project); its gold refiners' cash box
+         *     (?cash_box=refiners) holds their pay apart: what their weighed refinings earned them (each
+         *     an expense of the project's cash too) less what they withdrew. Manual transactions are
+         *     written here, in the project's cash; the automatic ones (supplier, shipment transport and
+         *     customer debt payments, settlement returns, employee withdrawals, refiners' pay) are
+         *     read-only and follow their source. Any of them is approved or rejected after review (the
+         *     accounting module's edit permission; a refiner's pay, both halves together), which locks
+         *     it and its source until it is unapproved. The accounting reports read the project's own
+         *     cash, approved rows only.
          */
         put: operations["cash_transactions_update"];
         post?: never;
@@ -352,11 +345,15 @@ export interface paths {
          * @description The cash of each project: its income and expenses, newest first. Every transaction
          *     starts pending (?status=pending|approved|rejected); a project's balance
          *     (/cash-transactions/balance/) is its capital plus its approved income less its approved
-         *     expenses. Manual transactions are written here; the automatic ones (supplier, shipment
-         *     transport and customer debt payments, settlement returns) are read-only and follow
-         *     their source. Any of them is approved or rejected after review (the accounting module's
-         *     edit permission), which locks it and its source until it is unapproved. The accounting
-         *     reports read these same rows, approved ones only.
+         *     expenses, in its own cash box (?cash_box=project); its gold refiners' cash box
+         *     (?cash_box=refiners) holds their pay apart: what their weighed refinings earned them (each
+         *     an expense of the project's cash too) less what they withdrew. Manual transactions are
+         *     written here, in the project's cash; the automatic ones (supplier, shipment transport and
+         *     customer debt payments, settlement returns, employee withdrawals, refiners' pay) are
+         *     read-only and follow their source. Any of them is approved or rejected after review (the
+         *     accounting module's edit permission; a refiner's pay, both halves together), which locks
+         *     it and its source until it is unapproved. The accounting reports read the project's own
+         *     cash, approved rows only.
          */
         delete: operations["cash_transactions_destroy"];
         options?: never;
@@ -365,11 +362,15 @@ export interface paths {
          * @description The cash of each project: its income and expenses, newest first. Every transaction
          *     starts pending (?status=pending|approved|rejected); a project's balance
          *     (/cash-transactions/balance/) is its capital plus its approved income less its approved
-         *     expenses. Manual transactions are written here; the automatic ones (supplier, shipment
-         *     transport and customer debt payments, settlement returns) are read-only and follow
-         *     their source. Any of them is approved or rejected after review (the accounting module's
-         *     edit permission), which locks it and its source until it is unapproved. The accounting
-         *     reports read these same rows, approved ones only.
+         *     expenses, in its own cash box (?cash_box=project); its gold refiners' cash box
+         *     (?cash_box=refiners) holds their pay apart: what their weighed refinings earned them (each
+         *     an expense of the project's cash too) less what they withdrew. Manual transactions are
+         *     written here, in the project's cash; the automatic ones (supplier, shipment transport and
+         *     customer debt payments, settlement returns, employee withdrawals, refiners' pay) are
+         *     read-only and follow their source. Any of them is approved or rejected after review (the
+         *     accounting module's edit permission; a refiner's pay, both halves together), which locks
+         *     it and its source until it is unapproved. The accounting reports read the project's own
+         *     cash, approved rows only.
          */
         patch: operations["cash_transactions_partial_update"];
         trace?: never;
@@ -447,9 +448,12 @@ export interface paths {
         /**
          * @description Each active project (a project-scoped user's own only), by name: its capital —
          *     set on the project, never moved by a transaction —, its total approved income
-         *     and expenses, net (income − expenses) and current balance: capital + income −
-         *     expenses. Computed from the active approved transactions on every read, never
-         *     stored; a pending or rejected one is not counted.
+         *     and expenses in the owner's cash, net (income − expenses) and owner_balance (the
+         *     owner's money: capital + income − expenses). Its gold refiners' cash apart:
+         *     refiners_income (what their refinings earned them), refiners_expense (what they
+         *     withdrew) and refiners_balance (the refiners' money: income − expense). balance is
+         *     the sum of the two: all the money the project holds. Computed from the active approved
+         *     transactions on every read, never stored; a pending or rejected one is not counted.
          *     ?project= keeps that one project, ?date__lte= counts the transactions up to the end
          *     of that day.
          */
@@ -837,13 +841,13 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Employees' days of unpaid absence, newest first, each deducted from the salary at the
+         * @description Employees' days of unpaid absence, last created first, each deducted from the salary at the
          *     day's rate.
          */
         get: operations["employee_absences_list"];
         put?: never;
         /**
-         * @description Employees' days of unpaid absence, newest first, each deducted from the salary at the
+         * @description Employees' days of unpaid absence, last created first, each deducted from the salary at the
          *     day's rate.
          */
         post: operations["employee_absences_create"];
@@ -861,25 +865,25 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Employees' days of unpaid absence, newest first, each deducted from the salary at the
+         * @description Employees' days of unpaid absence, last created first, each deducted from the salary at the
          *     day's rate.
          */
         get: operations["employee_absences_retrieve"];
         /**
-         * @description Employees' days of unpaid absence, newest first, each deducted from the salary at the
+         * @description Employees' days of unpaid absence, last created first, each deducted from the salary at the
          *     day's rate.
          */
         put: operations["employee_absences_update"];
         post?: never;
         /**
-         * @description Employees' days of unpaid absence, newest first, each deducted from the salary at the
+         * @description Employees' days of unpaid absence, last created first, each deducted from the salary at the
          *     day's rate.
          */
         delete: operations["employee_absences_destroy"];
         options?: never;
         head?: never;
         /**
-         * @description Employees' days of unpaid absence, newest first, each deducted from the salary at the
+         * @description Employees' days of unpaid absence, last created first, each deducted from the salary at the
          *     day's rate.
          */
         patch: operations["employee_absences_partial_update"];
@@ -893,14 +897,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description What employees paid of their debts, newest first. A payment entered here is paid
+         * @description What employees paid of their debts, last created first. A payment entered here is paid
          *     another way, never above what is left of the debts not paid by salary; the payments from
          *     the salary are written by the system and are not created, edited nor deleted here.
          */
         get: operations["employee_debt_payments_list"];
         put?: never;
         /**
-         * @description What employees paid of their debts, newest first. A payment entered here is paid
+         * @description What employees paid of their debts, last created first. A payment entered here is paid
          *     another way, never above what is left of the debts not paid by salary; the payments from
          *     the salary are written by the system and are not created, edited nor deleted here.
          */
@@ -919,20 +923,20 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description What employees paid of their debts, newest first. A payment entered here is paid
+         * @description What employees paid of their debts, last created first. A payment entered here is paid
          *     another way, never above what is left of the debts not paid by salary; the payments from
          *     the salary are written by the system and are not created, edited nor deleted here.
          */
         get: operations["employee_debt_payments_retrieve"];
         /**
-         * @description What employees paid of their debts, newest first. A payment entered here is paid
+         * @description What employees paid of their debts, last created first. A payment entered here is paid
          *     another way, never above what is left of the debts not paid by salary; the payments from
          *     the salary are written by the system and are not created, edited nor deleted here.
          */
         put: operations["employee_debt_payments_update"];
         post?: never;
         /**
-         * @description What employees paid of their debts, newest first. A payment entered here is paid
+         * @description What employees paid of their debts, last created first. A payment entered here is paid
          *     another way, never above what is left of the debts not paid by salary; the payments from
          *     the salary are written by the system and are not created, edited nor deleted here.
          */
@@ -940,7 +944,7 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * @description What employees paid of their debts, newest first. A payment entered here is paid
+         * @description What employees paid of their debts, last created first. A payment entered here is paid
          *     another way, never above what is left of the debts not paid by salary; the payments from
          *     the salary are written by the system and are not created, edited nor deleted here.
          */
@@ -955,7 +959,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description The debts employees took, newest first, each with its date, description and whether
+         * @description The debts employees took, last created first, each with its date, description and whether
          *     it is paid by salary. Each write recomputes the employee's totals and, when the balance
          *     covers what is left of the debts paid by salary, the salary pays it; the others are paid
          *     by hand. The debts of a kind cannot be lowered, deleted nor moved to the other kind below
@@ -964,7 +968,7 @@ export interface paths {
         get: operations["employee_debts_list"];
         put?: never;
         /**
-         * @description The debts employees took, newest first, each with its date, description and whether
+         * @description The debts employees took, last created first, each with its date, description and whether
          *     it is paid by salary. Each write recomputes the employee's totals and, when the balance
          *     covers what is left of the debts paid by salary, the salary pays it; the others are paid
          *     by hand. The debts of a kind cannot be lowered, deleted nor moved to the other kind below
@@ -985,7 +989,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description The debts employees took, newest first, each with its date, description and whether
+         * @description The debts employees took, last created first, each with its date, description and whether
          *     it is paid by salary. Each write recomputes the employee's totals and, when the balance
          *     covers what is left of the debts paid by salary, the salary pays it; the others are paid
          *     by hand. The debts of a kind cannot be lowered, deleted nor moved to the other kind below
@@ -993,7 +997,7 @@ export interface paths {
          */
         get: operations["employee_debts_retrieve"];
         /**
-         * @description The debts employees took, newest first, each with its date, description and whether
+         * @description The debts employees took, last created first, each with its date, description and whether
          *     it is paid by salary. Each write recomputes the employee's totals and, when the balance
          *     covers what is left of the debts paid by salary, the salary pays it; the others are paid
          *     by hand. The debts of a kind cannot be lowered, deleted nor moved to the other kind below
@@ -1002,7 +1006,7 @@ export interface paths {
         put: operations["employee_debts_update"];
         post?: never;
         /**
-         * @description The debts employees took, newest first, each with its date, description and whether
+         * @description The debts employees took, last created first, each with its date, description and whether
          *     it is paid by salary. Each write recomputes the employee's totals and, when the balance
          *     covers what is left of the debts paid by salary, the salary pays it; the others are paid
          *     by hand. The debts of a kind cannot be lowered, deleted nor moved to the other kind below
@@ -1012,7 +1016,7 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * @description The debts employees took, newest first, each with its date, description and whether
+         * @description The debts employees took, last created first, each with its date, description and whether
          *     it is paid by salary. Each write recomputes the employee's totals and, when the balance
          *     covers what is left of the debts paid by salary, the salary pays it; the others are paid
          *     by hand. The debts of a kind cannot be lowered, deleted nor moved to the other kind below
@@ -1071,13 +1075,13 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Gold refiners' costs per gram, oldest first: the starting one (from the start date)
+         * @description Gold refiners' costs per gram, last created first: the starting one (from the start date)
          *     and each change, counted from its date until the next one. Each refiner has their own.
          */
         get: operations["employee_refining_costs_list"];
         put?: never;
         /**
-         * @description Gold refiners' costs per gram, oldest first: the starting one (from the start date)
+         * @description Gold refiners' costs per gram, last created first: the starting one (from the start date)
          *     and each change, counted from its date until the next one. Each refiner has their own.
          */
         post: operations["employee_refining_costs_create"];
@@ -1095,25 +1099,25 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Gold refiners' costs per gram, oldest first: the starting one (from the start date)
+         * @description Gold refiners' costs per gram, last created first: the starting one (from the start date)
          *     and each change, counted from its date until the next one. Each refiner has their own.
          */
         get: operations["employee_refining_costs_retrieve"];
         /**
-         * @description Gold refiners' costs per gram, oldest first: the starting one (from the start date)
+         * @description Gold refiners' costs per gram, last created first: the starting one (from the start date)
          *     and each change, counted from its date until the next one. Each refiner has their own.
          */
         put: operations["employee_refining_costs_update"];
         post?: never;
         /**
-         * @description Gold refiners' costs per gram, oldest first: the starting one (from the start date)
+         * @description Gold refiners' costs per gram, last created first: the starting one (from the start date)
          *     and each change, counted from its date until the next one. Each refiner has their own.
          */
         delete: operations["employee_refining_costs_destroy"];
         options?: never;
         head?: never;
         /**
-         * @description Gold refiners' costs per gram, oldest first: the starting one (from the start date)
+         * @description Gold refiners' costs per gram, last created first: the starting one (from the start date)
          *     and each change, counted from its date until the next one. Each refiner has their own.
          */
         patch: operations["employee_refining_costs_partial_update"];
@@ -1127,13 +1131,13 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Employees' salaries, oldest first: the starting salary (from the start date) and each
+         * @description Employees' salaries, last created first: the starting salary (from the start date) and each
          *     raise, paid from its date until the next one.
          */
         get: operations["employee_salaries_list"];
         put?: never;
         /**
-         * @description Employees' salaries, oldest first: the starting salary (from the start date) and each
+         * @description Employees' salaries, last created first: the starting salary (from the start date) and each
          *     raise, paid from its date until the next one.
          */
         post: operations["employee_salaries_create"];
@@ -1151,25 +1155,25 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Employees' salaries, oldest first: the starting salary (from the start date) and each
+         * @description Employees' salaries, last created first: the starting salary (from the start date) and each
          *     raise, paid from its date until the next one.
          */
         get: operations["employee_salaries_retrieve"];
         /**
-         * @description Employees' salaries, oldest first: the starting salary (from the start date) and each
+         * @description Employees' salaries, last created first: the starting salary (from the start date) and each
          *     raise, paid from its date until the next one.
          */
         put: operations["employee_salaries_update"];
         post?: never;
         /**
-         * @description Employees' salaries, oldest first: the starting salary (from the start date) and each
+         * @description Employees' salaries, last created first: the starting salary (from the start date) and each
          *     raise, paid from its date until the next one.
          */
         delete: operations["employee_salaries_destroy"];
         options?: never;
         head?: never;
         /**
-         * @description Employees' salaries, oldest first: the starting salary (from the start date) and each
+         * @description Employees' salaries, last created first: the starting salary (from the start date) and each
          *     raise, paid from its date until the next one.
          */
         patch: operations["employee_salaries_partial_update"];
@@ -1183,18 +1187,22 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description The history of what employees withdrew from their salary, newest first. Each write
+         * @description The history of what employees withdrew from their salary, last created first. Each write
          *     recomputes the employee's withdrawn amount; a withdrawal is never more than the
          *     employee's balance (an edit adds that much at most), and none is made nor raised while a
-         *     debt paid by salary is not paid, checked under the employee's lock.
+         *     debt paid by salary is not paid, checked under the employee's lock. Each withdrawal is
+         *     an expense of the cash of the employee's project; once that expense is approved or
+         *     rejected the withdrawal is locked (400).
          */
         get: operations["employee_withdrawals_list"];
         put?: never;
         /**
-         * @description The history of what employees withdrew from their salary, newest first. Each write
+         * @description The history of what employees withdrew from their salary, last created first. Each write
          *     recomputes the employee's withdrawn amount; a withdrawal is never more than the
          *     employee's balance (an edit adds that much at most), and none is made nor raised while a
-         *     debt paid by salary is not paid, checked under the employee's lock.
+         *     debt paid by salary is not paid, checked under the employee's lock. Each withdrawal is
+         *     an expense of the cash of the employee's project; once that expense is approved or
+         *     rejected the withdrawal is locked (400).
          */
         post: operations["employee_withdrawals_create"];
         delete?: never;
@@ -1211,34 +1219,42 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description The history of what employees withdrew from their salary, newest first. Each write
+         * @description The history of what employees withdrew from their salary, last created first. Each write
          *     recomputes the employee's withdrawn amount; a withdrawal is never more than the
          *     employee's balance (an edit adds that much at most), and none is made nor raised while a
-         *     debt paid by salary is not paid, checked under the employee's lock.
+         *     debt paid by salary is not paid, checked under the employee's lock. Each withdrawal is
+         *     an expense of the cash of the employee's project; once that expense is approved or
+         *     rejected the withdrawal is locked (400).
          */
         get: operations["employee_withdrawals_retrieve"];
         /**
-         * @description The history of what employees withdrew from their salary, newest first. Each write
+         * @description The history of what employees withdrew from their salary, last created first. Each write
          *     recomputes the employee's withdrawn amount; a withdrawal is never more than the
          *     employee's balance (an edit adds that much at most), and none is made nor raised while a
-         *     debt paid by salary is not paid, checked under the employee's lock.
+         *     debt paid by salary is not paid, checked under the employee's lock. Each withdrawal is
+         *     an expense of the cash of the employee's project; once that expense is approved or
+         *     rejected the withdrawal is locked (400).
          */
         put: operations["employee_withdrawals_update"];
         post?: never;
         /**
-         * @description The history of what employees withdrew from their salary, newest first. Each write
+         * @description The history of what employees withdrew from their salary, last created first. Each write
          *     recomputes the employee's withdrawn amount; a withdrawal is never more than the
          *     employee's balance (an edit adds that much at most), and none is made nor raised while a
-         *     debt paid by salary is not paid, checked under the employee's lock.
+         *     debt paid by salary is not paid, checked under the employee's lock. Each withdrawal is
+         *     an expense of the cash of the employee's project; once that expense is approved or
+         *     rejected the withdrawal is locked (400).
          */
         delete: operations["employee_withdrawals_destroy"];
         options?: never;
         head?: never;
         /**
-         * @description The history of what employees withdrew from their salary, newest first. Each write
+         * @description The history of what employees withdrew from their salary, last created first. Each write
          *     recomputes the employee's withdrawn amount; a withdrawal is never more than the
          *     employee's balance (an edit adds that much at most), and none is made nor raised while a
-         *     debt paid by salary is not paid, checked under the employee's lock.
+         *     debt paid by salary is not paid, checked under the employee's lock. Each withdrawal is
+         *     an expense of the cash of the employee's project; once that expense is approved or
+         *     rejected the withdrawal is locked (400).
          */
         patch: operations["employee_withdrawals_partial_update"];
         trace?: never;
@@ -2356,12 +2372,20 @@ export interface paths {
         /**
          * @description The mill's suppliers and their balance: what was paid to each less what it
          *     delivered. Suppliers are global, like customers: not limited to a project.
+         *
+         *     ?project=<id>: only the suppliers dealing with that project (supplying one of its
+         *     resources, or with a payment or delivery there), each with its figures, resources and
+         *     projects row of that project only: nothing of what it does with another project.
          */
         get: operations["suppliers_list"];
         put?: never;
         /**
          * @description The mill's suppliers and their balance: what was paid to each less what it
          *     delivered. Suppliers are global, like customers: not limited to a project.
+         *
+         *     ?project=<id>: only the suppliers dealing with that project (supplying one of its
+         *     resources, or with a payment or delivery there), each with its figures, resources and
+         *     projects row of that project only: nothing of what it does with another project.
          */
         post: operations["suppliers_create"];
         delete?: never;
@@ -2380,17 +2404,29 @@ export interface paths {
         /**
          * @description The mill's suppliers and their balance: what was paid to each less what it
          *     delivered. Suppliers are global, like customers: not limited to a project.
+         *
+         *     ?project=<id>: only the suppliers dealing with that project (supplying one of its
+         *     resources, or with a payment or delivery there), each with its figures, resources and
+         *     projects row of that project only: nothing of what it does with another project.
          */
         get: operations["suppliers_retrieve"];
         /**
          * @description The mill's suppliers and their balance: what was paid to each less what it
          *     delivered. Suppliers are global, like customers: not limited to a project.
+         *
+         *     ?project=<id>: only the suppliers dealing with that project (supplying one of its
+         *     resources, or with a payment or delivery there), each with its figures, resources and
+         *     projects row of that project only: nothing of what it does with another project.
          */
         put: operations["suppliers_update"];
         post?: never;
         /**
          * @description The mill's suppliers and their balance: what was paid to each less what it
          *     delivered. Suppliers are global, like customers: not limited to a project.
+         *
+         *     ?project=<id>: only the suppliers dealing with that project (supplying one of its
+         *     resources, or with a payment or delivery there), each with its figures, resources and
+         *     projects row of that project only: nothing of what it does with another project.
          */
         delete: operations["suppliers_destroy"];
         options?: never;
@@ -2398,6 +2434,10 @@ export interface paths {
         /**
          * @description The mill's suppliers and their balance: what was paid to each less what it
          *     delivered. Suppliers are global, like customers: not limited to a project.
+         *
+         *     ?project=<id>: only the suppliers dealing with that project (supplying one of its
+         *     resources, or with a payment or delivery there), each with its figures, resources and
+         *     projects row of that project only: nothing of what it does with another project.
          */
         patch: operations["suppliers_partial_update"];
         trace?: never;
@@ -2519,6 +2559,12 @@ export interface components {
             model: string;
             model_name: string;
         };
+        /**
+         * @description * `project` - Project cash
+         *     * `refiners` - Gold refiners' cash
+         * @enum {string}
+         */
+        CashBoxEnum: "project" | "refiners";
         CashCategory: {
             value: string;
             label: string;
@@ -2537,6 +2583,8 @@ export interface components {
             project: number;
             project_name: $Read<string>;
             project_site: $Read<string>;
+            cash_box: $Read<components["schemas"]["CashBoxEnum"]>;
+            cash_box_display: $Read<string>;
             transaction_type: components["schemas"]["TransactionTypeEnum"];
             transaction_type_display: $Read<string>;
             category: components["schemas"]["CategoryEnum"];
@@ -2560,6 +2608,8 @@ export interface components {
             debt_payment: $Read<number | null>;
             shipment_payment: $Read<number | null>;
             settlement_return: $Read<number | null>;
+            employee_withdrawal: $Read<number | null>;
+            refining_operation: $Read<number | null>;
             status: $Read<components["schemas"]["CashTransactionStatusEnum"]>;
             status_display: $Read<string>;
             is_approved: $Read<boolean>;
@@ -2599,6 +2649,7 @@ export interface components {
          *     * `other_services` - Other services
          *     * `customer_debt_payment` - Customer debt payment
          *     * `settlement_return` - Settlement return
+         *     * `refiners_earnings` - Gold refiners' earnings
          *     * `other_income` - Other income
          *     * `grinding_expense` - Grinding
          *     * `refining_expense` - Refining
@@ -2610,6 +2661,8 @@ export interface components {
          *     * `spare_parts` - Spare parts
          *     * `electricity` - Electricity
          *     * `supplier_payment` - Supplier payment
+         *     * `employee_withdrawal` - Employee withdrawal
+         *     * `refiners_pay` - Gold refiners' pay
          *     * `daily_expenses` - Daily expenses
          *     * `water` - Water
          *     * `machinery_equipment` - Machinery and equipment
@@ -2618,7 +2671,7 @@ export interface components {
          *     * `other_expense` - Other expenses
          * @enum {string}
          */
-        CategoryEnum: "grinding_income" | "refining_income" | "transport_income" | "equipment_rental" | "other_services" | "customer_debt_payment" | "settlement_return" | "other_income" | "grinding_expense" | "refining_expense" | "transport_expense" | "materials" | "wages" | "fuel" | "maintenance" | "spare_parts" | "electricity" | "supplier_payment" | "daily_expenses" | "water" | "machinery_equipment" | "small_vehicles" | "trucks" | "other_expense";
+        CategoryEnum: "grinding_income" | "refining_income" | "transport_income" | "equipment_rental" | "other_services" | "customer_debt_payment" | "settlement_return" | "refiners_earnings" | "other_income" | "grinding_expense" | "refining_expense" | "transport_expense" | "materials" | "wages" | "fuel" | "maintenance" | "spare_parts" | "electricity" | "supplier_payment" | "employee_withdrawal" | "refiners_pay" | "daily_expenses" | "water" | "machinery_equipment" | "small_vehicles" | "trucks" | "other_expense";
         /**
          * @description * `initial` - Initial quantity
          *     * `increase` - Increase
@@ -2630,10 +2683,6 @@ export interface components {
          * @enum {string}
          */
         ChangeTypeEnum: "initial" | "increase" | "decrease" | "taken" | "returned" | "delivered" | "delivery_corrected";
-        CustomTokenObtainPair: {
-            email: $Write<string>;
-            password: $Write<string>;
-        };
         /**
          * @description ModelSerializer whose generated unique checks (unique=True fields) also see soft-deleted
          *     rows: they keep their value in the database's unique index, so missing them would turn a
@@ -3131,6 +3180,9 @@ export interface components {
             updated_at: $Read<string>;
         };
         FinancialSummary: {
+            project: number;
+            project_name: string;
+            project_site: string;
             /** Format: decimal */
             total_income: string;
             /** Format: decimal */
@@ -3157,7 +3209,7 @@ export interface components {
             capital: string;
             /**
              * Format: decimal
-             * @description Capital + approved income − expenses, all time.
+             * @description All the money the project holds, all time: the owner's (capital + approved income − expenses) plus the gold refiners' cash.
              */
             cash_balance: string;
             /** @description Transactions pending review (neither approved nor rejected). */
@@ -3261,6 +3313,11 @@ export interface components {
          * @enum {string}
          */
         JobTitleEnum: "ADM" | "CHF" | "ENG" | "MOU" | "MIN" | "MEC" | "SOU" | "TEC" | "SAF";
+        /** @description Email and password in, the session token out as {"access": ...}: no refresh token. */
+        Login: {
+            email: $Write<string>;
+            password: $Write<string>;
+        };
         /** @description Grindings still running long_grinding_hours after their start. */
         LongGrindings: {
             count: number;
@@ -3813,6 +3870,8 @@ export interface components {
             project?: number;
             project_name?: $Read<string>;
             project_site?: $Read<string>;
+            cash_box?: $Read<components["schemas"]["CashBoxEnum"]>;
+            cash_box_display?: $Read<string>;
             transaction_type?: components["schemas"]["TransactionTypeEnum"];
             transaction_type_display?: $Read<string>;
             category?: components["schemas"]["CategoryEnum"];
@@ -3836,6 +3895,8 @@ export interface components {
             debt_payment?: $Read<number | null>;
             shipment_payment?: $Read<number | null>;
             settlement_return?: $Read<number | null>;
+            employee_withdrawal?: $Read<number | null>;
+            refining_operation?: $Read<number | null>;
             status?: $Read<components["schemas"]["CashTransactionStatusEnum"]>;
             status_display?: $Read<string>;
             is_approved?: $Read<boolean>;
@@ -4536,6 +4597,7 @@ export interface components {
             /** Format: decimal */
             balance?: $Read<string>;
             resources?: number[];
+            projects?: $Read<components["schemas"]["SupplierProjectBalance"][]>;
             /**
              * أنشئت في
              * Format: date-time
@@ -4710,7 +4772,27 @@ export interface components {
             net: string;
             /**
              * Format: decimal
-             * @description What the project has now: capital + income − expenses.
+             * @description The owner's money: capital + income − expenses (the project's own cash).
+             */
+            owner_balance: string;
+            /**
+             * Format: decimal
+             * @description Gold refiners' cash: what their approved refinings earned them.
+             */
+            refiners_income: string;
+            /**
+             * Format: decimal
+             * @description Gold refiners' cash: what they withdrew (approved).
+             */
+            refiners_expense: string;
+            /**
+             * Format: decimal
+             * @description The gold refiners' money: their cash's income − expenses.
+             */
+            refiners_balance: string;
+            /**
+             * Format: decimal
+             * @description All the money the project holds: owner_balance + refiners_balance.
              */
             balance: string;
         };
@@ -5226,9 +5308,11 @@ export interface components {
          *     * `debt_payment` - Customer debt payment
          *     * `shipment_payment` - Shipment transport payment
          *     * `settlement_return` - Settlement return
+         *     * `employee_withdrawal` - Employee withdrawal
+         *     * `refining` - Refiner's pay for a refining
          * @enum {string}
          */
-        SourceEnum: "manual" | "supplier_payment" | "debt_payment" | "shipment_payment" | "settlement_return";
+        SourceEnum: "manual" | "supplier_payment" | "debt_payment" | "shipment_payment" | "settlement_return" | "employee_withdrawal" | "refining";
         /**
          * @description * `active` - Active
          *     * `inactive` - Inactive
@@ -5249,6 +5333,7 @@ export interface components {
             /** Format: decimal */
             balance: $Read<string>;
             resources?: number[];
+            projects: $Read<components["schemas"]["SupplierProjectBalance"][]>;
             /**
              * أنشئت في
              * Format: date-time
@@ -5351,12 +5436,19 @@ export interface components {
             /** Format: date-time */
             updated_at: $Read<string>;
         };
-        TokenBlacklist: {
-            refresh: $Write<string>;
-        };
-        TokenRefresh: {
-            access: $Read<string>;
-            refresh: string;
+        /**
+         * @description A supplier's account with one project: its payments from that project's cash, its
+         *     deliveries to that project's resources, and the balance between them.
+         */
+        SupplierProjectBalance: {
+            project: number;
+            project_name: string;
+            /** Format: decimal */
+            paid_amount: string;
+            /** Format: decimal */
+            delivered_amount: string;
+            /** Format: decimal */
+            balance: string;
         };
         /**
          * @description * `income` - Income
@@ -5573,7 +5665,7 @@ export interface operations {
             };
         };
     };
-    accounting_summary_retrieve: {
+    accounting_summary_list: {
         parameters: {
             query?: {
                 /** @description From this day (included). */
@@ -5598,7 +5690,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FinancialSummary"];
+                    "application/json": components["schemas"]["FinancialSummary"][];
                 };
             };
         };
@@ -5693,9 +5785,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CustomTokenObtainPair"];
-                "application/x-www-form-urlencoded": components["schemas"]["CustomTokenObtainPair"];
-                "multipart/form-data": components["schemas"]["CustomTokenObtainPair"];
+                "application/json": components["schemas"]["Login"];
+                "application/x-www-form-urlencoded": components["schemas"]["Login"];
+                "multipart/form-data": components["schemas"]["Login"];
             };
         };
         responses: {
@@ -5704,7 +5796,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CustomTokenObtainPair"];
+                    "application/json": components["schemas"]["Login"];
                 };
             };
         };
@@ -5716,13 +5808,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TokenBlacklist"];
-                "application/x-www-form-urlencoded": components["schemas"]["TokenBlacklist"];
-                "multipart/form-data": components["schemas"]["TokenBlacklist"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description No response body */
             204: {
@@ -5752,62 +5838,15 @@ export interface operations {
             };
         };
     };
-    auth_refresh_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TokenRefresh"];
-                "application/x-www-form-urlencoded": components["schemas"]["TokenRefresh"];
-                "multipart/form-data": components["schemas"]["TokenRefresh"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenRefresh"];
-                };
-            };
-        };
-    };
     cash_transactions_list: {
         parameters: {
             query?: {
                 approved?: boolean;
                 /**
-                 * @description * `grinding_income` - Grinding
-                 *     * `refining_income` - Refining
-                 *     * `transport_income` - Transport
-                 *     * `equipment_rental` - Equipment rental
-                 *     * `other_services` - Other services
-                 *     * `customer_debt_payment` - Customer debt payment
-                 *     * `settlement_return` - Settlement return
-                 *     * `other_income` - Other income
-                 *     * `grinding_expense` - Grinding
-                 *     * `refining_expense` - Refining
-                 *     * `transport_expense` - Transport
-                 *     * `materials` - Refining materials and mercury
-                 *     * `wages` - Production wages
-                 *     * `fuel` - Fuel
-                 *     * `maintenance` - Maintenance
-                 *     * `spare_parts` - Spare parts
-                 *     * `electricity` - Electricity
-                 *     * `supplier_payment` - Supplier payment
-                 *     * `daily_expenses` - Daily expenses
-                 *     * `water` - Water
-                 *     * `machinery_equipment` - Machinery and equipment
-                 *     * `small_vehicles` - Small vehicles
-                 *     * `trucks` - Trucks
-                 *     * `other_expense` - Other expenses
+                 * @description * `project` - Project cash
+                 *     * `refiners` - Gold refiners' cash
                  */
-                category?: "customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water";
+                cash_box?: "project" | "refiners";
                 /**
                  * @description * `grinding_income` - Grinding
                  *     * `refining_income` - Refining
@@ -5816,6 +5855,7 @@ export interface operations {
                  *     * `other_services` - Other services
                  *     * `customer_debt_payment` - Customer debt payment
                  *     * `settlement_return` - Settlement return
+                 *     * `refiners_earnings` - Gold refiners' earnings
                  *     * `other_income` - Other income
                  *     * `grinding_expense` - Grinding
                  *     * `refining_expense` - Refining
@@ -5827,6 +5867,8 @@ export interface operations {
                  *     * `spare_parts` - Spare parts
                  *     * `electricity` - Electricity
                  *     * `supplier_payment` - Supplier payment
+                 *     * `employee_withdrawal` - Employee withdrawal
+                 *     * `refiners_pay` - Gold refiners' pay
                  *     * `daily_expenses` - Daily expenses
                  *     * `water` - Water
                  *     * `machinery_equipment` - Machinery and equipment
@@ -5834,7 +5876,37 @@ export interface operations {
                  *     * `trucks` - Trucks
                  *     * `other_expense` - Other expenses
                  */
-                category__in?: ("customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water")[];
+                category?: "customer_debt_payment" | "daily_expenses" | "electricity" | "employee_withdrawal" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refiners_earnings" | "refiners_pay" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water";
+                /**
+                 * @description * `grinding_income` - Grinding
+                 *     * `refining_income` - Refining
+                 *     * `transport_income` - Transport
+                 *     * `equipment_rental` - Equipment rental
+                 *     * `other_services` - Other services
+                 *     * `customer_debt_payment` - Customer debt payment
+                 *     * `settlement_return` - Settlement return
+                 *     * `refiners_earnings` - Gold refiners' earnings
+                 *     * `other_income` - Other income
+                 *     * `grinding_expense` - Grinding
+                 *     * `refining_expense` - Refining
+                 *     * `transport_expense` - Transport
+                 *     * `materials` - Refining materials and mercury
+                 *     * `wages` - Production wages
+                 *     * `fuel` - Fuel
+                 *     * `maintenance` - Maintenance
+                 *     * `spare_parts` - Spare parts
+                 *     * `electricity` - Electricity
+                 *     * `supplier_payment` - Supplier payment
+                 *     * `employee_withdrawal` - Employee withdrawal
+                 *     * `refiners_pay` - Gold refiners' pay
+                 *     * `daily_expenses` - Daily expenses
+                 *     * `water` - Water
+                 *     * `machinery_equipment` - Machinery and equipment
+                 *     * `small_vehicles` - Small vehicles
+                 *     * `trucks` - Trucks
+                 *     * `other_expense` - Other expenses
+                 */
+                category__in?: ("customer_debt_payment" | "daily_expenses" | "electricity" | "employee_withdrawal" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refiners_earnings" | "refiners_pay" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water")[];
                 customer?: number;
                 employee?: number;
                 grinder?: number;
@@ -5845,6 +5917,7 @@ export interface operations {
                 /** @description Number of results to return per page. */
                 page_size?: number;
                 project?: number;
+                refining_operation?: number;
                 /** @description A search term. */
                 search?: string;
                 /**
@@ -5858,8 +5931,10 @@ export interface operations {
                  *     * `debt_payment` - Customer debt payment
                  *     * `shipment_payment` - Shipment transport payment
                  *     * `settlement_return` - Settlement return
+                 *     * `employee_withdrawal` - Employee withdrawal
+                 *     * `refining` - Refiner's pay for a refining
                  */
-                source?: "debt_payment" | "manual" | "settlement_return" | "shipment_payment" | "supplier_payment";
+                source?: "debt_payment" | "employee_withdrawal" | "manual" | "refining" | "settlement_return" | "shipment_payment" | "supplier_payment";
                 /**
                  * @description * `pending` - Pending
                  *     * `approved` - Approved
@@ -6089,32 +6164,10 @@ export interface operations {
             query?: {
                 approved?: boolean;
                 /**
-                 * @description * `grinding_income` - Grinding
-                 *     * `refining_income` - Refining
-                 *     * `transport_income` - Transport
-                 *     * `equipment_rental` - Equipment rental
-                 *     * `other_services` - Other services
-                 *     * `customer_debt_payment` - Customer debt payment
-                 *     * `settlement_return` - Settlement return
-                 *     * `other_income` - Other income
-                 *     * `grinding_expense` - Grinding
-                 *     * `refining_expense` - Refining
-                 *     * `transport_expense` - Transport
-                 *     * `materials` - Refining materials and mercury
-                 *     * `wages` - Production wages
-                 *     * `fuel` - Fuel
-                 *     * `maintenance` - Maintenance
-                 *     * `spare_parts` - Spare parts
-                 *     * `electricity` - Electricity
-                 *     * `supplier_payment` - Supplier payment
-                 *     * `daily_expenses` - Daily expenses
-                 *     * `water` - Water
-                 *     * `machinery_equipment` - Machinery and equipment
-                 *     * `small_vehicles` - Small vehicles
-                 *     * `trucks` - Trucks
-                 *     * `other_expense` - Other expenses
+                 * @description * `project` - Project cash
+                 *     * `refiners` - Gold refiners' cash
                  */
-                category?: "customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water";
+                cash_box?: "project" | "refiners";
                 /**
                  * @description * `grinding_income` - Grinding
                  *     * `refining_income` - Refining
@@ -6123,6 +6176,7 @@ export interface operations {
                  *     * `other_services` - Other services
                  *     * `customer_debt_payment` - Customer debt payment
                  *     * `settlement_return` - Settlement return
+                 *     * `refiners_earnings` - Gold refiners' earnings
                  *     * `other_income` - Other income
                  *     * `grinding_expense` - Grinding
                  *     * `refining_expense` - Refining
@@ -6134,6 +6188,8 @@ export interface operations {
                  *     * `spare_parts` - Spare parts
                  *     * `electricity` - Electricity
                  *     * `supplier_payment` - Supplier payment
+                 *     * `employee_withdrawal` - Employee withdrawal
+                 *     * `refiners_pay` - Gold refiners' pay
                  *     * `daily_expenses` - Daily expenses
                  *     * `water` - Water
                  *     * `machinery_equipment` - Machinery and equipment
@@ -6141,7 +6197,37 @@ export interface operations {
                  *     * `trucks` - Trucks
                  *     * `other_expense` - Other expenses
                  */
-                category__in?: ("customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water")[];
+                category?: "customer_debt_payment" | "daily_expenses" | "electricity" | "employee_withdrawal" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refiners_earnings" | "refiners_pay" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water";
+                /**
+                 * @description * `grinding_income` - Grinding
+                 *     * `refining_income` - Refining
+                 *     * `transport_income` - Transport
+                 *     * `equipment_rental` - Equipment rental
+                 *     * `other_services` - Other services
+                 *     * `customer_debt_payment` - Customer debt payment
+                 *     * `settlement_return` - Settlement return
+                 *     * `refiners_earnings` - Gold refiners' earnings
+                 *     * `other_income` - Other income
+                 *     * `grinding_expense` - Grinding
+                 *     * `refining_expense` - Refining
+                 *     * `transport_expense` - Transport
+                 *     * `materials` - Refining materials and mercury
+                 *     * `wages` - Production wages
+                 *     * `fuel` - Fuel
+                 *     * `maintenance` - Maintenance
+                 *     * `spare_parts` - Spare parts
+                 *     * `electricity` - Electricity
+                 *     * `supplier_payment` - Supplier payment
+                 *     * `employee_withdrawal` - Employee withdrawal
+                 *     * `refiners_pay` - Gold refiners' pay
+                 *     * `daily_expenses` - Daily expenses
+                 *     * `water` - Water
+                 *     * `machinery_equipment` - Machinery and equipment
+                 *     * `small_vehicles` - Small vehicles
+                 *     * `trucks` - Trucks
+                 *     * `other_expense` - Other expenses
+                 */
+                category__in?: ("customer_debt_payment" | "daily_expenses" | "electricity" | "employee_withdrawal" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refiners_earnings" | "refiners_pay" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water")[];
                 customer?: number;
                 /** @description Income and expenses up to the end of this day (YYYY-MM-DD). */
                 date__lte?: string;
@@ -6151,6 +6237,7 @@ export interface operations {
                 ordering?: string;
                 /** @description Only this project (a project's own page). */
                 project?: number;
+                refining_operation?: number;
                 /** @description A search term. */
                 search?: string;
                 /**
@@ -6164,8 +6251,10 @@ export interface operations {
                  *     * `debt_payment` - Customer debt payment
                  *     * `shipment_payment` - Shipment transport payment
                  *     * `settlement_return` - Settlement return
+                 *     * `employee_withdrawal` - Employee withdrawal
+                 *     * `refining` - Refiner's pay for a refining
                  */
-                source?: "debt_payment" | "manual" | "settlement_return" | "shipment_payment" | "supplier_payment";
+                source?: "debt_payment" | "employee_withdrawal" | "manual" | "refining" | "settlement_return" | "shipment_payment" | "supplier_payment";
                 /**
                  * @description * `pending` - Pending
                  *     * `approved` - Approved
@@ -6202,32 +6291,10 @@ export interface operations {
             query?: {
                 approved?: boolean;
                 /**
-                 * @description * `grinding_income` - Grinding
-                 *     * `refining_income` - Refining
-                 *     * `transport_income` - Transport
-                 *     * `equipment_rental` - Equipment rental
-                 *     * `other_services` - Other services
-                 *     * `customer_debt_payment` - Customer debt payment
-                 *     * `settlement_return` - Settlement return
-                 *     * `other_income` - Other income
-                 *     * `grinding_expense` - Grinding
-                 *     * `refining_expense` - Refining
-                 *     * `transport_expense` - Transport
-                 *     * `materials` - Refining materials and mercury
-                 *     * `wages` - Production wages
-                 *     * `fuel` - Fuel
-                 *     * `maintenance` - Maintenance
-                 *     * `spare_parts` - Spare parts
-                 *     * `electricity` - Electricity
-                 *     * `supplier_payment` - Supplier payment
-                 *     * `daily_expenses` - Daily expenses
-                 *     * `water` - Water
-                 *     * `machinery_equipment` - Machinery and equipment
-                 *     * `small_vehicles` - Small vehicles
-                 *     * `trucks` - Trucks
-                 *     * `other_expense` - Other expenses
+                 * @description * `project` - Project cash
+                 *     * `refiners` - Gold refiners' cash
                  */
-                category?: "customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water";
+                cash_box?: "project" | "refiners";
                 /**
                  * @description * `grinding_income` - Grinding
                  *     * `refining_income` - Refining
@@ -6236,6 +6303,7 @@ export interface operations {
                  *     * `other_services` - Other services
                  *     * `customer_debt_payment` - Customer debt payment
                  *     * `settlement_return` - Settlement return
+                 *     * `refiners_earnings` - Gold refiners' earnings
                  *     * `other_income` - Other income
                  *     * `grinding_expense` - Grinding
                  *     * `refining_expense` - Refining
@@ -6247,6 +6315,8 @@ export interface operations {
                  *     * `spare_parts` - Spare parts
                  *     * `electricity` - Electricity
                  *     * `supplier_payment` - Supplier payment
+                 *     * `employee_withdrawal` - Employee withdrawal
+                 *     * `refiners_pay` - Gold refiners' pay
                  *     * `daily_expenses` - Daily expenses
                  *     * `water` - Water
                  *     * `machinery_equipment` - Machinery and equipment
@@ -6254,13 +6324,44 @@ export interface operations {
                  *     * `trucks` - Trucks
                  *     * `other_expense` - Other expenses
                  */
-                category__in?: ("customer_debt_payment" | "daily_expenses" | "electricity" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water")[];
+                category?: "customer_debt_payment" | "daily_expenses" | "electricity" | "employee_withdrawal" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refiners_earnings" | "refiners_pay" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water";
+                /**
+                 * @description * `grinding_income` - Grinding
+                 *     * `refining_income` - Refining
+                 *     * `transport_income` - Transport
+                 *     * `equipment_rental` - Equipment rental
+                 *     * `other_services` - Other services
+                 *     * `customer_debt_payment` - Customer debt payment
+                 *     * `settlement_return` - Settlement return
+                 *     * `refiners_earnings` - Gold refiners' earnings
+                 *     * `other_income` - Other income
+                 *     * `grinding_expense` - Grinding
+                 *     * `refining_expense` - Refining
+                 *     * `transport_expense` - Transport
+                 *     * `materials` - Refining materials and mercury
+                 *     * `wages` - Production wages
+                 *     * `fuel` - Fuel
+                 *     * `maintenance` - Maintenance
+                 *     * `spare_parts` - Spare parts
+                 *     * `electricity` - Electricity
+                 *     * `supplier_payment` - Supplier payment
+                 *     * `employee_withdrawal` - Employee withdrawal
+                 *     * `refiners_pay` - Gold refiners' pay
+                 *     * `daily_expenses` - Daily expenses
+                 *     * `water` - Water
+                 *     * `machinery_equipment` - Machinery and equipment
+                 *     * `small_vehicles` - Small vehicles
+                 *     * `trucks` - Trucks
+                 *     * `other_expense` - Other expenses
+                 */
+                category__in?: ("customer_debt_payment" | "daily_expenses" | "electricity" | "employee_withdrawal" | "equipment_rental" | "fuel" | "grinding_expense" | "grinding_income" | "machinery_equipment" | "maintenance" | "materials" | "other_expense" | "other_income" | "other_services" | "refiners_earnings" | "refiners_pay" | "refining_expense" | "refining_income" | "settlement_return" | "small_vehicles" | "spare_parts" | "supplier_payment" | "transport_expense" | "transport_income" | "trucks" | "wages" | "water")[];
                 customer?: number;
                 employee?: number;
                 grinder?: number;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 project?: number;
+                refining_operation?: number;
                 /** @description A search term. */
                 search?: string;
                 /**
@@ -6274,8 +6375,10 @@ export interface operations {
                  *     * `debt_payment` - Customer debt payment
                  *     * `shipment_payment` - Shipment transport payment
                  *     * `settlement_return` - Settlement return
+                 *     * `employee_withdrawal` - Employee withdrawal
+                 *     * `refining` - Refiner's pay for a refining
                  */
-                source?: "debt_payment" | "manual" | "settlement_return" | "shipment_payment" | "supplier_payment";
+                source?: "debt_payment" | "employee_withdrawal" | "manual" | "refining" | "settlement_return" | "shipment_payment" | "supplier_payment";
                 /**
                  * @description * `pending` - Pending
                  *     * `approved` - Approved
@@ -10931,6 +11034,8 @@ export interface operations {
                 page?: number;
                 /** @description Number of results to return per page. */
                 page_size?: number;
+                /** @description Only the suppliers dealing with this project, with the figures, resources and projects row of this project only. */
+                project?: number;
                 /** @description A search term. */
                 search?: string;
             };
@@ -10980,7 +11085,10 @@ export interface operations {
     };
     suppliers_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Only the suppliers dealing with this project, with the figures, resources and projects row of this project only. */
+                project?: number;
+            };
             header?: never;
             path: {
                 /** @description A unique integer value identifying this supplier. */

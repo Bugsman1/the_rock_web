@@ -57,6 +57,7 @@ export async function getTransactionPage(
         page_size: PAGE_SIZE,
         search: textOr(filter.search),
         transaction_type: filter.type,
+        cash_box: filter.cashBox,
         ...(filter.categories.length === 0 ? {} : { category__in: [...filter.categories] }),
         customer: numberOr(filter.customer),
         supplier: numberOr(filter.supplier),

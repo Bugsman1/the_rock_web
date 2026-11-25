@@ -8,13 +8,14 @@ import {
 } from "./cashQuery";
 
 const address =
-  "q=gasoil&type=expense&category=fuel,wages&customer=7&supplier=5&from=2026-11-01&to=2026-11-30&page=2";
+  "q=gasoil&type=expense&box=refiners&category=fuel,wages&customer=7&supplier=5&from=2026-11-01&to=2026-11-30&page=2";
 
 describe("cashQueryFromParams", () => {
   it("reads the search, the filters, the page and the drawer from the address", () => {
     expect(cashQueryFromParams(new URLSearchParams(`${address}&edit=9`))).toEqual({
       search: "gasoil",
       type: "expense",
+      cashBox: "refiners",
       categories: ["fuel", "wages"],
       customer: "7",
       supplier: "5",
@@ -29,11 +30,12 @@ describe("cashQueryFromParams", () => {
     expect(
       cashQueryFromParams(
         new URLSearchParams(
-          "type=gift&category=bonus&customer=../7&from=hier&new=transfer&delete=x",
+          "type=gift&box=safe&category=bonus&customer=../7&from=hier&new=transfer&delete=x",
         ),
       ),
     ).toMatchObject({
       type: undefined,
+      cashBox: undefined,
       categories: [],
       customer: "",
       from: "",
@@ -71,6 +73,7 @@ describe("cash filters", () => {
     expect(state).toEqual({
       selection: {
         type: ["expense"],
+        cashBox: ["refiners"],
         category: ["fuel", "wages"],
         supplier: ["5"],
       },
@@ -81,6 +84,7 @@ describe("cash filters", () => {
     expect(cashFilterFromState("gasoil", state)).toMatchObject({
       search: "gasoil",
       type: "expense",
+      cashBox: "refiners",
       categories: ["fuel", "wages"],
       customer: "7",
       page: 1,
@@ -91,5 +95,6 @@ describe("cash filters", () => {
   it("says whether any search or filter is on", () => {
     expect(isCashFiltered(cashQueryFromParams(new URLSearchParams("page=3")))).toBe(false);
     expect(isCashFiltered(cashQueryFromParams(new URLSearchParams("type=income")))).toBe(true);
+    expect(isCashFiltered(cashQueryFromParams(new URLSearchParams("box=project")))).toBe(true);
   });
 });

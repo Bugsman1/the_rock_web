@@ -70,7 +70,7 @@ export function ProfitLossTables({ report }: { report: ProfitAndLoss }) {
   );
 }
 
-export function SummaryTable({ summary }: { summary: AccountingSummary }) {
+export function SummaryTable({ summary }: { summary: AccountingSummary | undefined }) {
   const t = useTranslations("accounting");
   const locale = useLocale();
   const money = (amount: number) => formatMoney(amount, locale);
@@ -127,7 +127,12 @@ export function SummaryTable({ summary }: { summary: AccountingSummary }) {
 
   return (
     <TablePanel title={t("summary")}>
-      <DataTable columns={columns} rows={[summary]} rowKey={() => "summary"} empty="" />
+      <DataTable
+        columns={columns}
+        rows={summary === undefined ? [] : [summary]}
+        rowKey={() => "summary"}
+        empty={t("summaryEmpty")}
+      />
     </TablePanel>
   );
 }

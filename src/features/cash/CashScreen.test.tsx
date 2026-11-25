@@ -34,7 +34,7 @@ describe("CashScreen", () => {
     expect(screen.queryByText(money(1025000))).toBeNull();
   });
 
-  it("shows one card per project with its own money, each opening that project", async () => {
+  it("shows one card per project with its own money apart from its refiners' cash, each opening that project", async () => {
     openAt("/fr/cash");
 
     await screen.findByRole("heading", { name: title("Zouérat 1") });
@@ -47,6 +47,9 @@ describe("CashScreen", () => {
     );
     expect(zouerat.getByText(text.balances.capital).nextElementSibling).toHaveTextContent(
       money(1000000),
+    );
+    expect(zouerat.getByText(text.balances.refinersBalance).nextElementSibling).toHaveTextContent(
+      money(2000),
     );
     expect(sfariyat.getByText(text.balances.balance).nextElementSibling).toHaveTextContent(
       money(-2000),

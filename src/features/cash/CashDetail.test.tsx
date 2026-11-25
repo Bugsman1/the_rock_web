@@ -16,6 +16,7 @@ describe("CashDetail", () => {
     expect(dialog.getByText("Sidi Fournitures")).toBeVisible();
     expect(dialog.queryByText(text.fields.customer)).toBeNull();
     expect(dialog.getByText(text.sources.manual)).toBeVisible();
+    expect(dialog.getByText(text.cashBoxes.project)).toBeVisible();
     expect(dialog.getByText("Aicha")).toBeVisible();
     expect(dialog.getByRole("link", { name: text.edit })).toHaveAttribute(
       "href",
@@ -34,6 +35,28 @@ describe("CashDetail", () => {
     expect(dialog.getByText("Ahmed")).toBeVisible();
     expect(dialog.queryByText(text.fields.supplier)).toBeNull();
     expect(dialog.getByText(text.sources.debt_payment)).toBeVisible();
+    expect(dialog.queryByRole("link")).toBeNull();
+  });
+
+  it("shows a refiner's withdrawal as coming out of the refiners' cash", async () => {
+    server.use(
+      http.get(`${API}/cash-transactions/12/`, () =>
+        HttpResponse.json({
+          ...apiTransaction,
+          id: 12,
+          category: "employee_withdrawal",
+          source: "employee_withdrawal",
+          cash_box: "refiners",
+          supplier: null,
+          supplier_name: "",
+        }),
+      ),
+    );
+    openAt("/fr/cash/projects/3?view=12");
+
+    const dialog = within(await screen.findByRole("dialog", { name: text.detailTitle }));
+    expect(dialog.getByText(text.sources.employee_withdrawal)).toBeVisible();
+    expect(dialog.getByText(text.cashBoxes.refiners)).toBeVisible();
     expect(dialog.queryByRole("link")).toBeNull();
   });
 

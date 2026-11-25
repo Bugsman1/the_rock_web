@@ -1,9 +1,18 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { formatMoney } from "@/lib/format";
 import messages from "@/messages/fr.json";
-import { openAt, serveAccounting, text } from "./accountingTesting";
+import {
+  API,
+  openAt,
+  page,
+  pendingExpense,
+  server,
+  serveAccounting,
+  text,
+} from "./accountingTesting";
 import type { Asked, Sent } from "./accountingTesting";
 
 const asked: Asked = {};
@@ -19,6 +28,11 @@ async function openTab(name: string) {
 
 function panel(title: string) {
   return within(screen.getByRole("heading", { name: title }).closest("section") ?? document.body);
+}
+
+async function panelOnceShown(title: string) {
+  await screen.findByRole("heading", { name: title });
+  return panel(title);
 }
 
 describe("AccountingProjectScreen review", () => {
@@ -39,6 +53,38 @@ describe("AccountingProjectScreen review", () => {
         { method: "POST", path: "/cash-transactions/9/approve/", body: undefined },
       ]),
     );
+  });
+
+  it("lists a refiner's pay once, by its project cash expense", async () => {
+    const pay = {
+      ...pendingExpense,
+      source: "refining" as const,
+      category: "refiners_pay" as const,
+      supplier: null,
+      supplier_name: "",
+    };
+    server.use(
+      http.get(`${API}/cash-transactions/`, () =>
+        page([
+          { ...pay, id: 21, cash_box: "project", amount: "4000.00" },
+          { ...pay, id: 22, cash_box: "refiners", transaction_type: "income", amount: "4000.00" },
+        ]),
+      ),
+    );
+    openAt(`/fr/accounting/projects/3?${period}`);
+
+    await screen.findByRole("heading", { name: text.approval.title });
+    const pending = panel(text.approval.title);
+
+    expect(pending.getAllByRole("button", { name: /Approuver le mouvement/ })).toHaveLength(1);
+    expect(pending.getByText(money(4000), { exact: false })).toBeVisible();
+  });
+
+  it("shows an empty summary when the backend has no row for the project", async () => {
+    server.use(http.get(`${API}/accounting/summary/`, () => HttpResponse.json([])));
+    openAt(`/fr/accounting/projects/3?${period}`);
+
+    expect((await panelOnceShown(text.summary)).getByText(text.summaryEmpty)).toBeVisible();
   });
 
   it("rejects a movement only once confirmed", async () => {

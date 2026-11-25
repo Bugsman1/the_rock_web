@@ -37,10 +37,11 @@ export function useBalanceStats() {
   const money = (amount: number | undefined) => formatMoney(amount ?? 0, locale);
 
   return (balance: ProjectBalance | undefined) => [
-    { label: t("balance"), value: money(balance?.balance) },
+    { label: t("balance"), value: money(balance?.ownerBalance) },
     { label: t("capital"), value: money(balance?.capital) },
     { label: t("income"), value: money(balance?.income) },
     { label: t("expense"), value: money(balance?.expense) },
+    { label: t("refinersBalance"), value: money(balance?.refinersBalance) },
   ];
 }
 

@@ -3,7 +3,7 @@ import type { ApiSchema, BackendFieldErrors, FieldErrors } from "@/lib/api/clien
 import { requiredIsoDate, requiredTime } from "@/lib/datetime";
 import { fromDecimal, toMoneyDecimal } from "@/lib/format";
 import type { IsoTimestamp } from "@/lib/format";
-import type { CashTransaction, TransactionType } from "@/lib/cashTransactions";
+import type { CashBox, CashTransaction, TransactionType } from "@/lib/cashTransactions";
 
 const DESCRIPTION_MAX_LENGTH = 255;
 const CATEGORY_NAME_MAX_LENGTH = 100;
@@ -12,6 +12,12 @@ export const transactionTypes = ["income", "expense"] as const satisfies readonl
 
 export function isTransactionType(value: string): value is TransactionType {
   return transactionTypes.some((type) => type === value);
+}
+
+export const cashBoxes = ["project", "refiners"] as const satisfies readonly CashBox[];
+
+export function isCashBox(value: string): value is CashBox {
+  return cashBoxes.some((box) => box === value);
 }
 
 type Category = ApiSchema<"CategoryEnum">;
@@ -29,7 +35,8 @@ export type ProjectBalance = {
   capital: number;
   income: number;
   expense: number;
-  balance: number;
+  ownerBalance: number;
+  refinersBalance: number;
 };
 
 export function isEditable(transaction: CashTransaction): boolean {
@@ -59,6 +66,7 @@ const categoryValues: readonly Category[] = [
   "other_services",
   "customer_debt_payment",
   "settlement_return",
+  "refiners_earnings",
   "other_income",
   "grinding_expense",
   "refining_expense",
@@ -70,6 +78,8 @@ const categoryValues: readonly Category[] = [
   "spare_parts",
   "electricity",
   "supplier_payment",
+  "employee_withdrawal",
+  "refiners_pay",
   "daily_expenses",
   "water",
   "machinery_equipment",
@@ -116,7 +126,8 @@ export function balanceFromApi(balance: ApiSchema<"ProjectCashBalance">): Projec
     capital: fromDecimal(balance.capital),
     income: fromDecimal(balance.income),
     expense: fromDecimal(balance.expense),
-    balance: fromDecimal(balance.balance),
+    ownerBalance: fromDecimal(balance.owner_balance),
+    refinersBalance: fromDecimal(balance.refiners_balance),
   };
 }
 

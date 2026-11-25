@@ -2,15 +2,16 @@ import { parsePageNumber } from "@/lib/api/pagination";
 import { isIsoDate } from "@/lib/datetime";
 import type { FilterState } from "@/lib/filters";
 import { isRecordId } from "@/lib/projects";
-import { categoryValueOf, isTransactionType } from "./cash";
+import { categoryValueOf, isCashBox, isTransactionType } from "./cash";
 import type { CashCategory } from "./cash";
-import type { TransactionType } from "@/lib/cashTransactions";
+import type { CashBox, TransactionType } from "@/lib/cashTransactions";
 
 type Category = CashCategory["value"];
 
 export type CashFilter = {
   search: string;
   type: TransactionType | undefined;
+  cashBox: CashBox | undefined;
   categories: readonly Category[];
   customer: string;
   supplier: string;
@@ -50,10 +51,12 @@ function dateOrEmpty(value: string | null): string {
 
 export function cashQueryFromParams(params: URLSearchParams): CashQuery {
   const type = params.get("type") ?? "";
+  const cashBox = params.get("box") ?? "";
 
   return {
     search: (params.get("q") ?? "").trim(),
     type: isTransactionType(type) ? type : undefined,
+    cashBox: isCashBox(cashBox) ? cashBox : undefined,
     categories: (params.get("category") ?? "").split(",").flatMap((value) => {
       const category = categoryValueOf(value);
       return category === undefined ? [] : [category];
@@ -81,6 +84,7 @@ export function cashQueryParams(
   const values: readonly (readonly [string, string | undefined])[] = [
     ["q", query.search],
     ["type", query.type],
+    ["box", query.cashBox],
     ["category", query.categories.join(",")],
     ["customer", query.customer],
     ["supplier", query.supplier],
@@ -104,6 +108,7 @@ export function cashFilterState(filter: CashFilter): FilterState {
   return {
     selection: {
       type: chosen(filter.type),
+      cashBox: chosen(filter.cashBox),
       category: filter.categories,
       supplier: chosen(filter.supplier),
     },
@@ -120,6 +125,7 @@ export function cashFilterFromState(search: string, state: FilterState): CashFil
     new URLSearchParams({
       q: search,
       type: first("type"),
+      box: first("cashBox"),
       category: (state.selection.category ?? []).join(","),
       customer: state.client,
       supplier: first("supplier"),
@@ -133,6 +139,7 @@ export function isCashFiltered(filter: CashFilter): boolean {
   return (
     filter.search !== "" ||
     filter.type !== undefined ||
+    filter.cashBox !== undefined ||
     filter.categories.length > 0 ||
     [filter.customer, filter.supplier, filter.from, filter.to].some((value) => value !== "")
   );
